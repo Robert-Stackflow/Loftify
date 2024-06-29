@@ -1,0 +1,251 @@
+import 'package:flutter/material.dart';
+import 'package:loftify/Models/github_response.dart';
+import 'package:loftify/Utils/cache_util.dart';
+import 'package:loftify/Utils/itoast.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
+import 'package:tuple/tuple.dart';
+
+import '../../Api/github_api.dart';
+import '../../Providers/global_provider.dart';
+import '../../Providers/provider_manager.dart';
+import '../../Utils/hive_util.dart';
+import '../../Utils/locale_util.dart';
+import '../../Utils/uri_util.dart';
+import '../../Utils/utils.dart';
+import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
+import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
+import '../../Widgets/Dialog/custom_dialog.dart';
+import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
+
+class GeneralSettingScreen extends StatefulWidget {
+  const GeneralSettingScreen({super.key});
+
+  static const String routeName = "/setting/general";
+
+  @override
+  State<GeneralSettingScreen> createState() => _GeneralSettingScreenState();
+}
+
+class _GeneralSettingScreenState extends State<GeneralSettingScreen>
+    with TickerProviderStateMixin {
+  String _cacheSize = "";
+  List<Tuple2<String, Locale?>> _supportedLocaleTuples = [];
+  bool inAppBrowser = HiveUtil.getBool(key: HiveUtil.inappWebviewKey);
+  String currentVersion = "";
+  String latestVersion = "";
+  ReleaseItem? latestReleaseItem;
+  bool autoCheckUpdate = HiveUtil.getBool(key: HiveUtil.autoCheckUpdateKey);
+
+  @override
+  void initState() {
+    super.initState();
+    filterLocale();
+    getCacheSize();
+    fetchReleases(false);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+  }
+
+  void getCacheSize() {
+    CacheUtil.loadCache().then((value) {
+      setState(() {
+        _cacheSize = value;
+      });
+    });
+  }
+
+  void filterLocale() {
+    _supportedLocaleTuples = [];
+    List<Locale> locales = S.delegate.supportedLocales;
+    _supportedLocaleTuples.add(Tuple2(S.current.followSystem, null));
+    for (Locale locale in locales) {
+      dynamic tuple = LocaleUtil.getTuple(locale);
+      if (tuple != null) {
+        _supportedLocaleTuples.add(tuple);
+      }
+    }
+  }
+
+  Future<void> fetchReleases(bool showTip) async {
+    if (showTip) {
+      CustomLoadingDialog.showLoading(context, title: "检查更新中...");
+    }
+    await PackageInfo.fromPlatform().then((PackageInfo packageInfo) {
+      setState(() {
+        currentVersion = packageInfo.version;
+      });
+    });
+    GithubApi.getReleases("Robert-Stackflow", "Loftify").then((releases) async {
+      for (var release in releases) {
+        String tagName = release.tagName;
+        tagName = tagName.replaceAll(RegExp(r'[a-zA-Z]'), '');
+        setState(() {
+          if (latestVersion.compareTo(tagName) < 0) {
+            latestVersion = tagName;
+            latestReleaseItem = release;
+          }
+        });
+      }
+      if (showTip) {
+        CustomLoadingDialog.dismissLoading(context);
+        if (latestVersion.compareTo(currentVersion) > 0 &&
+            latestReleaseItem != null) {
+          CustomConfirmDialog.showAnimatedFromBottom(
+            context,
+            title: "发现新版本",
+            message:
+                "当前版本：$currentVersion，最新版本：$latestVersion，是否立即更新？${Utils.isNotEmpty(latestReleaseItem!.body) ? "\n更新日志：${latestReleaseItem!.body}" : ""}",
+            confirmButtonText: "前往更新",
+            cancelButtonText: "暂不更新",
+            onTapConfirm: () {
+              Navigator.pop(context);
+              UriUtil.openExternal(latestReleaseItem!.htmlUrl);
+            },
+            onTapCancel: () {
+              Navigator.pop(context);
+            },
+            customDialogType: CustomDialogType.normal,
+          );
+        } else {
+          IToast.showTop(context, text: S.current.checkUpdatesAlreadyLatest);
+        }
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.transparent,
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: ItemBuilder.buildSimpleAppBar(
+            title: S.current.generalSetting,
+            context: context,
+            transparent: true),
+        body: EasyRefresh(
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            children: [
+              const SizedBox(height: 10),
+              Selector<GlobalProvider, Locale?>(
+                selector: (context, globalProvider) => globalProvider.locale,
+                builder: (context, locale, child) => ItemBuilder.buildEntryItem(
+                  context: context,
+                  title: S.current.language,
+                  tip: LocaleUtil.getLabel(locale)!,
+                  topRadius: true,
+                  bottomRadius: true,
+                  onTap: () {
+                    filterLocale();
+                    BottomSheetBuilder.showListBottomSheet(
+                      context,
+                      (context) => TileList.fromOptions(
+                        _supportedLocaleTuples,
+                        (item2) {
+                          ProviderManager.globalProvider.locale = item2;
+                          Navigator.pop(context);
+                        },
+                        selected: locale,
+                        context: context,
+                        title: S.current.chooseLanguage,
+                        onCloseTap: () => Navigator.pop(context),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 10),
+              ItemBuilder.buildRadioItem(
+                value: inAppBrowser,
+                context: context,
+                title: "内置浏览器",
+                topRadius: true,
+                bottomRadius: true,
+                onTap: () {
+                  setState(() {
+                    inAppBrowser = !inAppBrowser;
+                    HiveUtil.put(
+                        key: HiveUtil.inappWebviewKey, value: inAppBrowser);
+                  });
+                },
+              ),
+              const SizedBox(height: 10),
+              ItemBuilder.buildRadioItem(
+                value: autoCheckUpdate,
+                topRadius: true,
+                context: context,
+                title: "自动检查更新",
+                onTap: () {
+                  setState(() {
+                    autoCheckUpdate = !autoCheckUpdate;
+                    HiveUtil.put(
+                        key: HiveUtil.autoCheckUpdateKey,
+                        value: autoCheckUpdate);
+                  });
+                },
+              ),
+              ItemBuilder.buildEntryItem(
+                context: context,
+                title: S.current.checkUpdates,
+                bottomRadius: true,
+                description: latestVersion.compareTo(currentVersion) > 0
+                    ? "新版本：$latestVersion"
+                    : S.current.checkUpdatesAlreadyLatest,
+                descriptionColor: latestVersion.compareTo(currentVersion) > 0
+                    ? Colors.redAccent
+                    : null,
+                tip: currentVersion,
+                onTap: () {
+                  fetchReleases(true);
+                },
+              ),
+              const SizedBox(height: 10),
+              // ItemBuilder.buildRadioItem(
+              //   value: true,
+              //   context: context,
+              //   title: "记录日志",
+              //   topRadius: true,
+              //   onTap: () {},
+              // ),
+              // ItemBuilder.buildEntryItem(
+              //   context: context,
+              //   title: "清空日志",
+              //   tip: _cacheSize,
+              //   onTap: () {},
+              // ),
+              ItemBuilder.buildEntryItem(
+                context: context,
+                title: S.current.clearCache,
+                topRadius: true,
+                bottomRadius: true,
+                tip: _cacheSize,
+                onTap: () {
+                  getTemporaryDirectory().then((tempDir) {
+                    CacheUtil.delDir(tempDir).then((value) {
+                      CacheUtil.loadCache().then((value) {
+                        setState(() {
+                          _cacheSize = value;
+                          IToast.showTop(context,
+                              text: S.current.clearCacheSuccess);
+                        });
+                      });
+                    });
+                  });
+                },
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

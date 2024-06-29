@@ -1,0 +1,101 @@
+name: loftify
+version: 1.6.0
+description: An third-party application for LOFTER
+
+environment:
+  sdk: '>=3.1.4 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  # 控件
+  lottie: ^3.1.2 # Lottie
+  animations: ^2.0.11 # 动画
+  fluttertoast: ^8.2.1 # 吐司
+  waterfall_flow: ^3.0.3 # 瀑布流
+  flutter_widget_from_html: ^0.15.0 # 将HTML渲染成组件
+  card_swiper: ^3.0.1 # 卡片滑动
+  modal_bottom_sheet: ^3.0.0 # 底部弹窗
+  video_player: ^2.8.6 # 视频播放
+  like_button: ^2.0.5 # 点赞按钮
+  sliding_up_panel: ^2.0.0+1 # 滑动面板
+  blur: ^3.1.0 # 模糊
+  path_drawing: ^1.0.1 # 路径绘制
+  group_button: ^5.3.4 # 分组按钮
+  custom_sliding_segmented_control: ^1.8.3 # 分段控制器
+  flutter_inappwebview: ^6.0.0
+  # 系统
+  provider: ^6.0.5 # 状态管理
+  local_auth: ^2.2.0 # 指纹验证
+  local_auth_android: ^1.0.37 # 指纹验证
+  package_info_plus: ^8.0.0 # 应用信息
+  device_info_plus: ^10.1.0 # 设备信息
+  flutter_windowmanager: ^0.2.0 # 窗口管理
+  share_plus: ^9.0.0 # 分享
+  url_launcher: ^6.2.6 # ULR跳转
+  flutter_displaymode: ^0.6.0 # 设置刷新率
+  image_gallery_saver: ^2.0.3 # 保存图片
+  google_fonts: ^6.2.1 # 字体
+  # 存储/网络
+  path:
+  sqflite: ^2.3.3+1 # SQLite数据库
+  http: ^1.2.1
+  dio: ^5.4.3+1
+  hive: ^2.2.3 # Hive
+  hive_flutter: ^1.1.0 # Hive
+  path_provider: ^2.0.12
+  crypto: ^3.0.3 # 加密
+  encrypt: ^5.0.3 # 加密
+  pointycastle: 3.9.1
+  dio_cache_interceptor: ^3.5.0 # dio缓存
+  dio_cookie_manager: ^3.1.1 # dio cookie管理
+  cached_network_image: ^3.2.1 # 网络图片缓存
+  flutter_cache_manager: ^3.3.1 # 缓存管理
+  # 工具
+  intl:
+  html: ^0.15.0
+  tuple: ^2.0.0 # 元组
+  palette_generator: ^0.3.3+3 # 获取主色调
+  flutter_native_splash: ^2.4.0
+  vector_math: ^2.1.4
+  app_links: ^6.1.1
+  chinese_font_library: ^1.2.0
+  restart_app: ^1.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  build_runner: ^2.4.9
+  flutter_lints: ^4.0.0
+  json_serializable: ^6.7.1
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  color_dark: "#121212"
+  image: "assets/logo-transparent.png"
+  android: true
+  ios: true
+
+  android_12:
+    image: assets/logo-transparent.png
+    icon_background_color: "#FFFFFF"
+    image_dark: assets/logo-transparent.png
+    icon_background_color_dark: "#121212"
+
+flutter_intl:
+  enabled: true
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/article/
+    - assets/lottie/
+    - assets/icon/
+    - assets/illust/
+    - assets/mess/
+    - assets/avatar.png
+    - assets/logo.png
+    - assets/logo.svg
+    - assets/logo-transparent.png
