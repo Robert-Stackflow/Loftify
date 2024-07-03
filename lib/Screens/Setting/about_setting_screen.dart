@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:loftify/Screens/Setting/update_log_screen.dart';
+import 'package:loftify/Utils/route_util.dart';
 import 'package:loftify/Utils/uri_util.dart';
+import 'package:loftify/Widgets/BottomSheet/star_bottom_sheet.dart';
 import 'package:loftify/Widgets/Custom/no_shadow_scroll_behavior.dart';
+import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../Utils/hive_util.dart';
-import '../../Utils/itoast.dart';
 import '../../Widgets/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../generated/l10n.dart';
@@ -102,7 +106,9 @@ class _AboutSettingScreenState extends State<AboutSettingScreen>
                       topRadius: true,
                       showLeading: true,
                       onTap: () {
-                        UriUtil.launchUrlUri(context, releaseUrl);
+                        // UriUtil.launchUrlUri(context, releaseUrl);
+                        RouteUtil.pushCupertinoRoute(
+                            context, const UpdateLogScreen());
                       },
                       leading: Icons.merge_type_outlined,
                     ),
@@ -132,7 +138,15 @@ class _AboutSettingScreenState extends State<AboutSettingScreen>
                       title: S.current.rate,
                       showLeading: true,
                       onTap: () {
-                        IToast.showTop(context, text: "啾咪~~");
+                        showMaterialModalBottomSheet(
+                          context: context,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(16),
+                            ),
+                          ),
+                          builder: (context) => const StarBottomSheet(),
+                        );
                       },
                       leading: Icons.rate_review_outlined,
                     ),
@@ -141,7 +155,8 @@ class _AboutSettingScreenState extends State<AboutSettingScreen>
                       title: S.current.shareApp,
                       showLeading: true,
                       onTap: () {
-                        IToast.showTop(context, text: "啾~~咪~~");
+                        Share.share(
+                            "Loftify - 简洁的LOFTER第三方APP\nhttps://apps.cloudchewie.com/loftify");
                       },
                       leading: Icons.share_rounded,
                     ),

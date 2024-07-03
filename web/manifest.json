@@ -1,11 +1,11 @@
 {
-    "name": "psychology",
-    "short_name": "psychology",
+    "name": "loftify",
+    "short_name": "loftify",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "An APP about psychology",
+    "description": "An third-party application for LOFTER",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

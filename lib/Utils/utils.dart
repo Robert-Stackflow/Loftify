@@ -150,32 +150,47 @@ class Utils {
     );
   }
 
+  static Future<File> copyAndRenameFile(File file, String newFileName) async {
+    String dir = file.parent.path;
+    String newPath = '$dir/$newFileName';
+    File copiedFile = await file.copy(newPath);
+    await copiedFile.rename(newPath);
+    return copiedFile;
+  }
+
   static Future<bool> saveImage(
     BuildContext context,
     String imageUrl, {
     bool showToast = true,
   }) async {
-    CachedNetworkImage image =
-        ItemBuilder.buildCachedImage(imageUrl: imageUrl, context: context);
-    BaseCacheManager manager = image.cacheManager ?? DefaultCacheManager();
-    Map<String, String> headers = image.httpHeaders ?? {};
-    File file = await manager.getSingleFile(
-      image.imageUrl,
-      headers: headers,
-    );
-    var result = await ImageGallerySaver.saveFile(
-      file.path,
-      name: Utils.extractFileNameFromUrl(imageUrl),
-    );
-    bool success = result != null && result['isSuccess'];
-    if (showToast) {
-      if (success) {
-        IToast.showTop(context, text: "图片已保存至相册");
-      } else {
-        IToast.showTop(context, text: "保存失败，请重试");
+    try {
+      CachedNetworkImage image =
+          ItemBuilder.buildCachedImage(imageUrl: imageUrl, context: context);
+      BaseCacheManager manager = image.cacheManager ?? DefaultCacheManager();
+      Map<String, String> headers = image.httpHeaders ?? {};
+      File file = await manager.getSingleFile(
+        image.imageUrl,
+        headers: headers,
+      );
+      File copiedFile =
+          await copyAndRenameFile(file, Utils.extractFileNameFromUrl(imageUrl));
+      var result = await ImageGallerySaver.saveFile(
+        copiedFile.path,
+        name: Utils.extractFileNameFromUrl(imageUrl),
+      );
+      bool success = result != null && result['isSuccess'];
+      if (showToast) {
+        if (success) {
+          IToast.showTop(context, text: "图片已保存至相册");
+        } else {
+          IToast.showTop(context, text: "保存失败，请重试");
+        }
       }
+      return success;
+    } catch (e) {
+      IToast.showTop(context, text: "保存失败，请重试");
+      return false;
     }
-    return success;
   }
 
   static Future<bool> saveVideo(
@@ -184,23 +199,28 @@ class Utils {
     bool showToast = true,
     Function(int, int)? onReceiveProgress,
   }) async {
-    var appDocDir = await getTemporaryDirectory();
-    String savePath = appDocDir.path + extractFileNameFromUrl(videoUrl);
-    await Dio()
-        .download(videoUrl, savePath, onReceiveProgress: onReceiveProgress);
-    var result = await ImageGallerySaver.saveFile(
-      savePath,
-      name: Utils.extractFileNameFromUrl(videoUrl),
-    );
-    bool success = result != null && result['isSuccess'];
-    if (showToast) {
-      if (success) {
-        IToast.showTop(context, text: "视频已保存");
-      } else {
-        IToast.showTop(context, text: "保存失败，请重试");
+    try {
+      var appDocDir = await getTemporaryDirectory();
+      String savePath = appDocDir.path + extractFileNameFromUrl(videoUrl);
+      await Dio()
+          .download(videoUrl, savePath, onReceiveProgress: onReceiveProgress);
+      var result = await ImageGallerySaver.saveFile(
+        savePath,
+        name: Utils.extractFileNameFromUrl(videoUrl),
+      );
+      bool success = result != null && result['isSuccess'];
+      if (showToast) {
+        if (success) {
+          IToast.showTop(context, text: "视频已保存");
+        } else {
+          IToast.showTop(context, text: "保存失败，请重试");
+        }
       }
+      return success;
+    } catch (e) {
+      IToast.showTop(context, text: "保存失败，请重试");
+      return false;
     }
-    return success;
   }
 
   static String removeWatermark(String str) {

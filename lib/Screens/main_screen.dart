@@ -88,9 +88,9 @@ class MainScreenState extends State<MainScreen>
           latestReleaseItem != null) {
         CustomConfirmDialog.showAnimatedFromBottom(
           context,
-          title: "发现新版本",
+          title: "发现新版本$latestVersion",
           message:
-              "当前版本：$currentVersion，最新版本：$latestVersion，是否立即更新？${Utils.isNotEmpty(latestReleaseItem!.body) ? "\n更新日志：${latestReleaseItem!.body}" : ""}",
+              "是否立即更新？${Utils.isNotEmpty(latestReleaseItem!.body) ? "\n更新日志：${latestReleaseItem!.body}" : ""}",
           confirmButtonText: "前往更新",
           cancelButtonText: "暂不更新",
           onTapConfirm: () {
