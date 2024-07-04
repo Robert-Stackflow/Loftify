@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../Utils/asset_util.dart';
+import '../../../Utils/utils.dart';
 import '../colors.dart';
 import '../custom_dialog.dart';
 import '../widgets/custom_dialog_button.dart';
@@ -80,40 +81,33 @@ class CustomInfoDialogWidget extends StatelessWidget {
                           color,
                         ),
                 ),
-              if (!noImage)
-                const SizedBox(
-                  height: 24,
-                ),
+              if (!noImage) const SizedBox(height: 24),
               if (title != null)
                 Text(
                   title ?? "",
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 19,
                     height: 1.2,
                     fontWeight: FontWeight.w600,
                     color: textColor,
                   ),
                   textAlign: TextAlign.center,
                 ),
-              if (title != null)
-                const SizedBox(
-                  height: 15,
-                ),
-              if (message != null && message!.isNotEmpty)
+              if (Utils.isNotEmpty(title)) const SizedBox(height: 20),
+              if (Utils.isNotEmpty(message))
                 Text(
                   message!,
                   style: TextStyle(
-                    color: textColor,
+                    color: textColor ??
+                        Theme.of(context).textTheme.labelMedium?.color,
                     height: 1.5,
-                    fontSize: 18,
+                    fontSize: 17,
                     fontWeight: FontWeight.w400,
                   ),
-                  textAlign: TextAlign.center,
+                  textAlign: TextAlign.start,
                 ),
               if (messageChild != null) messageChild!,
-              const SizedBox(
-                height: 15,
-              ),
+              const SizedBox(height: 15),
               CustomDialogButton(
                 buttonTextColor: buttonTextColor ?? Colors.white,
                 text: buttonText,

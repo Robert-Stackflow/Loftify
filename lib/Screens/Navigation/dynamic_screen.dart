@@ -22,6 +22,7 @@ import '../../Utils/utils.dart';
 import '../../Widgets/Custom/custom_tab_indicator.dart';
 import '../../Widgets/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import 'home_screen.dart';
 
 class DynamicScreen extends StatefulWidget {
   const DynamicScreen({super.key});
@@ -29,16 +30,39 @@ class DynamicScreen extends StatefulWidget {
   static const String routeName = "/nav/dynamic";
 
   @override
-  State<DynamicScreen> createState() => _DynamicScreenState();
+  State<DynamicScreen> createState() => DynamicScreenState();
 }
 
-class _DynamicScreenState extends State<DynamicScreen>
+class DynamicScreenState extends State<DynamicScreen>
     with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
   late TabController _tabController;
   int _currentTabIndex = 0;
   final List<String> _tabLabelList = ["标签", "合集", "粮单"];
+  int lastRefreshTime = 0;
+  GlobalKey _tagTabKey = GlobalKey();
+  GlobalKey _collectionTabKey = GlobalKey();
+  GlobalKey _grainTabKey = GlobalKey();
+
+  void scrollToTopAndRefresh() {
+    int nowTime = DateTime.now().millisecondsSinceEpoch;
+    if (lastRefreshTime == 0 || (nowTime - lastRefreshTime) > krefreshTimeout) {
+      lastRefreshTime = nowTime;
+      switch (_currentTabIndex) {
+        case 0:
+          (_tagTabKey.currentState as SubscribeTagTabState).callRefresh();
+          break;
+        case 1:
+          (_collectionTabKey.currentState as SubscribeCollectionTabState)
+              .callRefresh();
+          break;
+        case 2:
+          (_grainTabKey.currentState as SubscribeGrainTabState).callRefresh();
+          break;
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -60,10 +84,10 @@ class _DynamicScreenState extends State<DynamicScreen>
       appBar: _buildAppBar(),
       body: TabBarView(
         controller: _tabController,
-        children: const [
-          SubscribeTagTab(),
-          SubscribeCollectionTab(),
-          SubscribeGrainTab(),
+        children: [
+          SubscribeTagTab(key: _tagTabKey),
+          SubscribeCollectionTab(key: _collectionTabKey),
+          SubscribeGrainTab(key: _grainTabKey),
         ],
       ),
     );
@@ -133,9 +157,20 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
   final EasyRefreshController _refreshController = EasyRefreshController();
   int _offset = 0;
   bool _loading = false;
+  final ScrollController _scrollController = ScrollController();
 
   callRefresh() {
-    _refreshController.callRefresh();
+    if (_scrollController.offset > MediaQuery.sizeOf(context).height) {
+      _scrollController
+          .animateTo(0,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut)
+          .then((_) {
+        _refreshController.callRefresh();
+      });
+    } else {
+      _refreshController.callRefresh();
+    }
   }
 
   _fetchResult({bool refresh = false}) async {
@@ -201,6 +236,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
       },
       triggerAxis: Axis.vertical,
       childBuilder: (context, physics) => CustomScrollView(
+        controller: _scrollController,
         physics: physics,
         slivers: [
           SliverList(
@@ -415,8 +451,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
                       isArticle: false,
                     ),
                   );
-                }else if (item.cardInfo != null &&
-                    item.cardInfo!.type == 2) {
+                } else if (item.cardInfo != null && item.cardInfo!.type == 2) {
                   RouteUtil.pushCupertinoRoute(
                     context,
                     UserDetailScreen(
@@ -662,9 +697,20 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
   final EasyRefreshController _refreshController = EasyRefreshController();
   int _total = 0;
   bool _loading = false;
+  final ScrollController _scrollController = ScrollController();
 
   callRefresh() {
-    _refreshController.callRefresh();
+    if (_scrollController.offset > MediaQuery.sizeOf(context).height) {
+      _scrollController
+          .animateTo(0,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut)
+          .then((_) {
+        _refreshController.callRefresh();
+      });
+    } else {
+      _refreshController.callRefresh();
+    }
   }
 
   _fetchResult({bool refresh = false}) async {
@@ -693,6 +739,17 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
               }
               _subscribeList.addAll(tmp);
             }
+            //移除_subcribeList中collectionId重复的项目
+            List<TimelineCollection> uniqueSubscribeList = [];
+            Set<int> seenIds = {};
+            for (var item in _subscribeList) {
+              if (!seenIds.contains(item.collectionId)) {
+                seenIds.add(item.collectionId);
+                uniqueSubscribeList.add(item);
+              }
+            }
+            _subscribeList.clear();
+            _subscribeList.addAll(uniqueSubscribeList);
             if (value['data']['guessLikeList'] != null) {
               if (refresh) _guessLikeList.clear();
               List<TimelineGuessCollection> tmp =
@@ -735,6 +792,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
       },
       triggerAxis: Axis.vertical,
       childBuilder: (context, physics) => CustomScrollView(
+        controller: _scrollController,
         physics: physics,
         slivers: [
           SliverList(
@@ -1090,9 +1148,20 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
   final EasyRefreshController _refreshController = EasyRefreshController();
   int _total = 0;
   bool _loading = false;
+  final ScrollController _scrollController = ScrollController();
 
   callRefresh() {
-    _refreshController.callRefresh();
+    if (_scrollController.offset > MediaQuery.sizeOf(context).height) {
+      _scrollController
+          .animateTo(0,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut)
+          .then((_) {
+        _refreshController.callRefresh();
+      });
+    } else {
+      _refreshController.callRefresh();
+    }
   }
 
   _fetchResult({bool refresh = false}) async {
@@ -1153,6 +1222,7 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
       },
       triggerAxis: Axis.vertical,
       childBuilder: (context, physics) => CustomScrollView(
+        controller: _scrollController,
         physics: physics,
         slivers: [
           SliverList(

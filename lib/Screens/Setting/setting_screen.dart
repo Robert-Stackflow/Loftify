@@ -193,7 +193,8 @@ class _SettingScreenState extends State<SettingScreen>
         onTap: () async {
           CustomConfirmDialog.showAnimatedFromBottom(
             context,
-            message: "是否退出登录？",
+            title: "退出登录",
+            message: "确认退出登录？退出后本地的设置项不会被删除",
             confirmButtonText: S.current.confirm,
             cancelButtonText: S.current.cancel,
             onTapConfirm: () async {

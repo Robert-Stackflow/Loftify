@@ -110,6 +110,10 @@ class Utils {
     return Uri.parse(imageUrl).pathSegments.last;
   }
 
+  static String replaceLineBreak(String str) {
+    return str.replaceAll(RegExp(r"\r\n"), "<br/>");
+  }
+
   static Future<ShareResultStatus> shareImage(
     BuildContext context,
     String imageUrl, {
@@ -187,6 +191,30 @@ class Utils {
         }
       }
       return success;
+    } catch (e) {
+      IToast.showTop(context, text: "保存失败，请重试");
+      return false;
+    }
+  }
+
+  static Future<bool> saveImages(
+    BuildContext context,
+    List<String> imageUrls, {
+    bool showToast = true,
+  }) async {
+    try {
+      List<bool> statusList = await Future.wait(imageUrls.map((e) async {
+        return await saveImage(context, e, showToast: false);
+      }).toList());
+      bool result = statusList.every((element) => element);
+      if (showToast) {
+        if (result) {
+          IToast.showTop(context, text: "所有图片已保存至相册");
+        } else {
+          IToast.showTop(context, text: "保存失败，请重试");
+        }
+      }
+      return result;
     } catch (e) {
       IToast.showTop(context, text: "保存失败，请重试");
       return false;

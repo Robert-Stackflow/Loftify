@@ -601,7 +601,8 @@ class UserDetailScreenState extends State<UserDetailScreen>
     if (_fullBlogData!.isBlackBlog) {
       CustomConfirmDialog.showAnimatedFromBottom(
         context,
-        message: "是否解除拉黑",
+        title: "解除黑名单",
+        message: "确认解除「${_fullBlogData!.blogInfo.blogNickName}」的黑名单？",
         confirmButtonText: S.current.confirm,
         cancelButtonText: S.current.cancel,
         onTapConfirm: () async {
@@ -1069,7 +1070,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                       });
                     }
                   },
-                  redOptions: const [5,6,7],
+                  redOptions: const [5, 6, 7],
                   showCancel: true,
                   context: context,
                   showTitle: false,

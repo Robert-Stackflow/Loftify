@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Screens/Post/post_detail_screen.dart';
+import 'package:loftify/Widgets/Dialog/custom_dialog.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:tuple/tuple.dart';
 
@@ -60,6 +61,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
   String collectionUrl = "";
   bool loading = false;
   List<PostDetailData> posts = [];
+  bool isOldest = false;
   final List<ArchiveData> _archiveDataList = [];
 
   _fetchIncantation() {
@@ -82,14 +84,16 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
     });
   }
 
-  _fetchData({bool refresh = false}) async {
+  _fetchData({bool refresh = false, bool showLoading = false}) async {
     if (loading) return;
+    if (showLoading) CustomLoadingDialog.showLoading(context, title: "加载中...");
     loading = true;
     int offset = refresh ? 0 : posts.length;
     return await CollectionApi.getCollectionDetail(
       collectionId: widget.collectionId,
       blogId: widget.blogId,
       offset: offset,
+      order: isOldest ? 1 : 0,
     ).then((value) {
       try {
         if (value['meta']['status'] != 200) {
@@ -144,6 +148,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
         if (mounted) IToast.showTop(context, text: "加载失败");
         return IndicatorResult.fail;
       } finally {
+        if (showLoading) CustomLoadingDialog.dismissLoading(context);
         if (mounted) setState(() {});
         loading = false;
       }
@@ -307,19 +312,56 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(height: hasDesc ? 12 : 8),
-                      if (hasDesc)
-                        Text(
-                          postCollection!.description,
-                          style: Theme.of(context).textTheme.labelLarge,
-                        ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              hasDesc ? postCollection!.description : "暂无简介",
+                              style:
+                                  Theme.of(context).textTheme.labelLarge?.apply(
+                                        color: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.color,
+                                      ),
+                            ),
+                          ),
+                          ItemBuilder.buildIconTextButton(
+                            context,
+                            text: isOldest ? "最旧" : "最新",
+                            quarterTurns: 3,
+                            icon: Icon(
+                              isOldest
+                                  ? Icons.switch_right_rounded
+                                  : Icons.switch_left_rounded,
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .labelMedium
+                                  ?.color,
+                              size: 18,
+                            ),
+                            fontSizeDelta: 1,
+                            color:
+                                Theme.of(context).textTheme.labelMedium?.color,
+                            onTap: () {
+                              setState(() {
+                                isOldest = !isOldest;
+                              });
+                              _fetchData(refresh: true, showLoading: true);
+                            },
+                          ),
+                        ],
+                      ),
                       if (Utils.isNotEmpty(postCollection!.tags))
                         _buildTagList(),
-                      if (hasDesc || Utils.isNotEmpty(postCollection!.tags))
-                        ItemBuilder.buildDivider(
-                          context,
-                          horizontal: 0,
-                        ),
+                      ItemBuilder.buildDivider(
+                        context,
+                        horizontal: 0,
+                      ),
                     ],
                   ),
                 ),

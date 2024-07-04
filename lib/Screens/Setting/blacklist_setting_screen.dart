@@ -134,6 +134,7 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
               onTap: () {
                 CustomConfirmDialog.showAnimatedFromBottom(
                   context,
+                  title: "解除黑名单",
                   message: "确认解除「${blacklistItem.blogInfo.blogNickName}」的黑名单？",
                   confirmButtonText: "解除",
                   cancelButtonText: "取消",

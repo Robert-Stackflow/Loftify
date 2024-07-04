@@ -131,6 +131,7 @@ class _UserDynamicShieldSettingScreenState
               onTap: () {
                 CustomConfirmDialog.showAnimatedFromBottom(
                   context,
+                  title: "恢复查看动态",
                   message: "确认恢复查看「${blogInfo.blogNickName}」的动态？",
                   confirmButtonText: "确认",
                   cancelButtonText: "取消",

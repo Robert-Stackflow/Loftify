@@ -4,6 +4,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../Api/github_api.dart';
 import '../../Models/github_response.dart';
 import '../../Utils/uri_util.dart';
+import '../../Utils/utils.dart';
 import '../../Widgets/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../generated/l10n.dart';
@@ -21,7 +22,7 @@ class _UpdateLogScreenState extends State<UpdateLogScreen>
     with TickerProviderStateMixin {
   String releaseUrl = "https://github.com/Robert-Stackflow/Loftify/releases";
   List<ReleaseItem> releaseItems = [];
-  EasyRefreshController _refreshController = EasyRefreshController();
+  final EasyRefreshController _refreshController = EasyRefreshController();
   String currentVersion = "";
   String latestVersion = "";
 
@@ -123,10 +124,21 @@ class _UpdateLogScreenState extends State<UpdateLogScreen>
                         color: Theme.of(context).primaryColor,
                       ),
                     const Spacer(),
-                    Icon(
-                      Icons.keyboard_arrow_right_rounded,
-                      size: 20,
-                      color: Theme.of(context).textTheme.labelMedium?.color,
+                    // Icon(
+                    //   Icons.keyboard_arrow_right_rounded,
+                    //   size: 20,
+                    //   color: Theme.of(context).textTheme.labelMedium?.color,
+                    // ),
+                    ItemBuilder.buildIconButton(
+                      context: context,
+                      icon: Icon(
+                        Icons.download_rounded,
+                        size: 20,
+                        color: Theme.of(context).textTheme.labelMedium?.color,
+                      ),
+                      onTap: () {
+                        UriUtil.launchUrlUri(context,item.assets[0].browserDownloadUrl);
+                      },
                     ),
                   ],
                 ),
@@ -134,7 +146,7 @@ class _UpdateLogScreenState extends State<UpdateLogScreen>
                 const SizedBox(height: 9),
                 ItemBuilder.buildHtmlWidget(
                   context,
-                  item.body ?? "",
+                  Utils.replaceLineBreak(item.body ?? ""),
                   textStyle: Theme.of(context).textTheme.titleMedium?.apply(
                         fontSizeDelta: 1,
                         color: Theme.of(context).textTheme.bodySmall?.color,

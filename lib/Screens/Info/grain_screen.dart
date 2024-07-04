@@ -242,15 +242,16 @@ class _GrainScreenState extends State<GrainScreen>
       onLeadingTap: () {
         Navigator.pop(context);
       },
-      title: Text("我的合集", style: Theme.of(context).textTheme.titleLarge),
+      title: Text("我的粮单", style: Theme.of(context).textTheme.titleLarge),
       actions: [
+        ItemBuilder.buildBlankIconButton(context),
         const SizedBox(width: 5),
-        ItemBuilder.buildIconButton(
-            context: context,
-            icon: Icon(Icons.more_vert_rounded,
-                color: Theme.of(context).iconTheme.color),
-            onTap: () {}),
-        const SizedBox(width: 5),
+        // ItemBuilder.buildIconButton(
+        //     context: context,
+        //     icon: Icon(Icons.more_vert_rounded,
+        //         color: Theme.of(context).iconTheme.color),
+        //     onTap: () {}),
+        // const SizedBox(width: 5),
       ],
     );
   }

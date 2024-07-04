@@ -101,7 +101,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
             context,
             title: "发现新版本$latestVersion",
             message:
-                "是否立即更新？${Utils.isNotEmpty(latestReleaseItem!.body) ? "\n更新日志：${latestReleaseItem!.body}" : ""}",
+                "是否立即更新？${Utils.isNotEmpty(latestReleaseItem!.body) ? "更新日志如下：\n${latestReleaseItem!.body}" : ""}",
             confirmButtonText: "前往更新",
             cancelButtonText: "暂不更新",
             onTapConfirm: () {
@@ -228,11 +228,13 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                 bottomRadius: true,
                 tip: _cacheSize,
                 onTap: () {
+                  CustomLoadingDialog.showLoading(context, title: "清除缓存中...");
                   getTemporaryDirectory().then((tempDir) {
                     CacheUtil.delDir(tempDir).then((value) {
                       CacheUtil.loadCache().then((value) {
                         setState(() {
                           _cacheSize = value;
+                          CustomLoadingDialog.dismissLoading(context);
                           IToast.showTop(context,
                               text: S.current.clearCacheSuccess);
                         });

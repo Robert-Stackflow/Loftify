@@ -7,6 +7,7 @@ import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:loftify/Api/github_api.dart';
 import 'package:loftify/Models/nav_entry.dart';
 import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
+import 'package:loftify/Screens/Navigation/dynamic_screen.dart';
 import 'package:loftify/Screens/Navigation/home_screen.dart';
 import 'package:loftify/Utils/asset_util.dart';
 import 'package:loftify/Utils/uri_util.dart';
@@ -90,7 +91,7 @@ class MainScreenState extends State<MainScreen>
           context,
           title: "发现新版本$latestVersion",
           message:
-              "是否立即更新？${Utils.isNotEmpty(latestReleaseItem!.body) ? "\n更新日志：${latestReleaseItem!.body}" : ""}",
+              "是否立即更新？${Utils.isNotEmpty(latestReleaseItem!.body) ? "更新日志如下：\n${latestReleaseItem!.body}" : ""}",
           confirmButtonText: "前往更新",
           cancelButtonText: "暂不更新",
           onTapConfirm: () {
@@ -179,7 +180,12 @@ class MainScreenState extends State<MainScreen>
         _pageList[index] is HomeScreen &&
         _keyList[index].currentState != null) {
       (_keyList[index].currentState as HomeScreenState).scrollToTopAndRefresh();
+    } else if (index == _bottomBarSelectedIndex &&
+        _pageList[index] is DynamicScreen &&
+        _keyList[index].currentState != null) {
+      (_keyList[index].currentState as DynamicScreenState).scrollToTopAndRefresh();
     }
+
     _pageController.jumpToPage(index);
     setState(() {
       _bottomBarSelectedIndex = index;

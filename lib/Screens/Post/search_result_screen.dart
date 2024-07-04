@@ -10,6 +10,7 @@ import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Screens/Post/grain_detail_screen.dart';
 import 'package:loftify/Screens/Post/tag_detail_screen.dart';
+import 'package:loftify/Utils/iprint.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Widgets/PostItem/search_post_flow_item_builder.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
@@ -693,10 +694,11 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                                     onLikeTap: () async {
                               var item = _allResult!.posts[index];
                               HapticFeedback.mediumImpact();
+                              IPrint.debug(item.toJson());
                               return await PostApi.likeOrUnLike(
                                       isLike: !item.favorite,
                                       postId: item.itemId,
-                                      blogId: item.blogInfo!.blogId)
+                                      blogId: item.postData!.postView.blogId)
                                   .then((value) {
                                 setState(() {
                                   if (value['meta']['status'] != 200) {

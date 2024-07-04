@@ -311,12 +311,12 @@ class _PostScreenState extends State<PostScreen>
               setState(() {});
             }),
         const SizedBox(width: 5),
-        ItemBuilder.buildIconButton(
-            context: context,
-            icon: Icon(Icons.more_vert_rounded,
-                color: Theme.of(context).iconTheme.color),
-            onTap: () {}),
-        const SizedBox(width: 5),
+        // ItemBuilder.buildIconButton(
+        //     context: context,
+        //     icon: Icon(Icons.more_vert_rounded,
+        //         color: Theme.of(context).iconTheme.color),
+        //     onTap: () {}),
+        // const SizedBox(width: 5),
       ],
     );
   }

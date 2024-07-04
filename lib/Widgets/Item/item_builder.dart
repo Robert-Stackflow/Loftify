@@ -2129,6 +2129,7 @@ class ItemBuilder {
     bool showIcon = true,
     Function()? onTap,
     Color? color,
+    int quarterTurns = 0,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -2137,7 +2138,8 @@ class ItemBuilder {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                if (icon != null && showIcon) icon,
+                if (icon != null && showIcon)
+                  RotatedBox(quarterTurns: quarterTurns, child: icon),
                 if (icon != null && showIcon) SizedBox(width: spacing),
                 Text(
                   text,
@@ -2153,7 +2155,8 @@ class ItemBuilder {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                if (icon != null && showIcon) icon,
+                if (icon != null && showIcon)
+                  RotatedBox(quarterTurns: quarterTurns, child: icon),
                 if (icon != null && showIcon) SizedBox(height: spacing),
                 Text(
                   text,

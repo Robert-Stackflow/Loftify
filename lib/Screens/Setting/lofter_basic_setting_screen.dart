@@ -124,6 +124,7 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
             value['meta']['status'] == 4212) {
           CustomConfirmDialog.showAnimatedFromBottom(
             context,
+            title: "版权水印关闭提示",
             message: "由于一些历史遗留问题，你需要先在电脑上关闭版权水印功能（主页设置-版权-版权水印）",
             confirmButtonText: "前往更改",
             cancelButtonText: "暂不更改",

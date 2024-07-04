@@ -65,7 +65,9 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
   int currentIndex = 0;
   List<Color> mainColors = [];
   late dynamic downloadIcon;
+  late dynamic allDownloadIcon;
   DownloadState downloadState = DownloadState.none;
+  DownloadState allDownloadState = DownloadState.none;
 
   @override
   void initState() {
@@ -77,6 +79,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
     }
     super.initState();
     setDownloadState(DownloadState.none);
+    setAllDownloadState(DownloadState.none);
     imageUrls = widget.imageUrls;
     captions = widget.captions ?? [];
     minScale = widget.minScale;
@@ -270,6 +273,39 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
     }
   }
 
+  void setAllDownloadState(DownloadState state, {bool recover = true}) {
+    switch (state) {
+      case DownloadState.none:
+        allDownloadIcon =
+            const Icon(Icons.done_all_rounded, color: Colors.white, size: 22);
+        break;
+      case DownloadState.loading:
+        allDownloadIcon = const SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(
+            color: Colors.white,
+            strokeWidth: 2,
+          ),
+        );
+        break;
+      case DownloadState.succeed:
+        allDownloadIcon = const Icon(Icons.check_rounded, color: Colors.green);
+        break;
+      case DownloadState.failed:
+        allDownloadIcon =
+            const Icon(Icons.warning_amber_rounded, color: Colors.redAccent);
+        break;
+    }
+    allDownloadState = state;
+    if (mounted) setState(() {});
+    if (recover) {
+      Future.delayed(const Duration(seconds: 2), () {
+        setAllDownloadState(DownloadState.none, recover: false);
+      });
+    }
+  }
+
   PreferredSizeWidget _buildAppBar() {
     return ItemBuilder.buildAppBar(
       context: context,
@@ -359,6 +395,34 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
           },
         ),
         const SizedBox(width: 5),
+        if (imageUrls.length > 1)
+          ItemBuilder.buildIconButton(
+            context: context,
+            icon: allDownloadIcon,
+            onTap: () {
+              if (allDownloadState == DownloadState.none) {
+                setAllDownloadState(DownloadState.loading);
+                Utils.saveImages(
+                  context,
+                  imageUrls
+                      .map(
+                        (e) => Utils.getUrlByQuality(
+                          getUrl(imageUrls.indexOf(e)),
+                          ImageQuality.raw,
+                        ),
+                      )
+                      .toList(),
+                ).then((res) {
+                  if (res) {
+                    setAllDownloadState(DownloadState.succeed);
+                  } else {
+                    setAllDownloadState(DownloadState.failed);
+                  }
+                });
+              }
+            },
+          ),
+        if (imageUrls.length > 1) const SizedBox(width: 5),
       ],
     );
   }

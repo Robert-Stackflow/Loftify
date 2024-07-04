@@ -141,6 +141,7 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
             onTap: () {
               CustomConfirmDialog.showAnimatedFromBottom(
                 context,
+                title: "解除屏蔽标签",
                 message: "确认解除屏蔽「$tag」？",
                 confirmButtonText: "解除",
                 cancelButtonText: "取消",

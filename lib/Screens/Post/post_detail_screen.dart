@@ -710,14 +710,16 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                       context,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
-                    Text(
-                      _postDetailData!.post?.ipLocation ?? "",
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    ItemBuilder.buildDot(
-                      context,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
+                    if (Utils.isNotEmpty(_postDetailData!.post?.ipLocation))
+                      Text(
+                        _postDetailData!.post?.ipLocation ?? "",
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    if (Utils.isNotEmpty(_postDetailData!.post?.ipLocation))
+                      ItemBuilder.buildDot(
+                        context,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                     Text(
                       "${_postDetailData!.post?.postCount?.postHot ?? 0}热度",
                       style: Theme.of(context).textTheme.bodySmall,

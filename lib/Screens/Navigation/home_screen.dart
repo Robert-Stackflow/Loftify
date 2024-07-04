@@ -19,7 +19,7 @@ import '../../Widgets/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../generated/l10n.dart';
 
-int _krefreshTimeout = 300;
+int krefreshTimeout = 300;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -172,7 +172,7 @@ class HomeScreenState extends State<HomeScreen>
   void scrollToTopAndRefresh() {
     int nowTime = DateTime.now().millisecondsSinceEpoch;
     if (lastRefreshTime == 0 ||
-        (nowTime - lastRefreshTime) > _krefreshTimeout) {
+        (nowTime - lastRefreshTime) > krefreshTimeout) {
       lastRefreshTime = nowTime;
       if (_scrollController.offset > MediaQuery.sizeOf(context).height) {
         _scrollController

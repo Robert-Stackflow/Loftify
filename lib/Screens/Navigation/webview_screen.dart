@@ -262,7 +262,7 @@ class _WebviewScreenState extends State<WebviewScreen>
                 ? LinearProgressIndicator(
                     value: progress,
                     color: Theme.of(context).primaryColor,
-                    backgroundColor: AppTheme.getBackground(context),
+                    backgroundColor: Colors.transparent,
                     minHeight: 2,
                   )
                 : Container(),

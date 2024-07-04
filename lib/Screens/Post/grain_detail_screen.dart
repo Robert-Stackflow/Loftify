@@ -21,6 +21,7 @@ import '../../Widgets/Animation/animated_fade.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
 import '../../Widgets/Custom/auto_slideup_panel.dart';
+import '../../Widgets/Dialog/custom_dialog.dart';
 import '../../Widgets/EasyRefresh/easy_refresh.dart';
 
 const double minCardHeightFraction = 0.63;
@@ -55,6 +56,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
   bool loading = false;
   List<GrainPostItem> posts = [];
   final List<ArchiveData> _archiveDataList = [];
+  bool isOldest = false;
 
   _fetchIncantation() {
     GrainApi.getIncantation(
@@ -77,14 +79,16 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
     });
   }
 
-  _fetchData({bool refresh = false}) async {
+  _fetchData({bool refresh = false, bool showLoading = false}) async {
     if (loading) return;
+    if (showLoading) CustomLoadingDialog.showLoading(context, title: "加载中...");
     loading = true;
     int offset = refresh ? 0 : grainDetailData?.offset ?? 0;
     return await GrainApi.getGrainDetail(
       grainId: widget.grainId,
       blogId: widget.blogId,
       offset: offset,
+      sortType: isOldest ? 0 : 1,
     ).then((value) {
       try {
         if (value['code'] != 0) {
@@ -135,6 +139,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
         if (mounted) IToast.showTop(context, text: "加载失败");
         return IndicatorResult.fail;
       } finally {
+        if (showLoading) CustomLoadingDialog.dismissLoading(context);
         if (mounted) setState(() {});
         loading = false;
       }
@@ -299,19 +304,60 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(height: hasDesc ? 12 : 8),
-                      if (hasDesc)
-                        Text(
-                          grainDetailData!.grainInfo.description,
-                          style: Theme.of(context).textTheme.labelLarge,
-                        ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              hasDesc
+                                  ? grainDetailData!.grainInfo.description
+                                  : "暂无简介",
+                              style:
+                                  Theme.of(context).textTheme.labelLarge?.apply(
+                                        color: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.color,
+                                      ),
+                            ),
+                          ),
+                          ItemBuilder.buildIconTextButton(
+                            context,
+                            text: isOldest ? "最旧" : "最新",
+                            quarterTurns: 3,
+                            icon: Icon(
+                              isOldest
+                                  ? Icons.switch_right_rounded
+                                  : Icons.switch_left_rounded,
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .labelMedium
+                                  ?.color,
+                              size: 18,
+                            ),
+                            fontSizeDelta: 1,
+                            color:
+                                Theme.of(context).textTheme.labelMedium?.color,
+                            onTap: () {
+                              setState(() {
+                                isOldest = !isOldest;
+                              });
+                              _fetchData(refresh: true, showLoading: true);
+                            },
+                          ),
+                        ],
+                      ),
                       if (grainDetailData!.grainInfo.tags.isNotEmpty)
                         _buildTagList(),
-                      if (hasDesc || grainDetailData!.grainInfo.tags.isNotEmpty)
-                        ItemBuilder.buildDivider(
-                          context,
-                          horizontal: 0,
-                        ),
+                      ItemBuilder.buildDivider(
+                        context,
+                        horizontal: 0,
+                        vertical:
+                            grainDetailData!.grainInfo.tags.isEmpty ? 10 : 8,
+                      ),
                     ],
                   ),
                 ),
