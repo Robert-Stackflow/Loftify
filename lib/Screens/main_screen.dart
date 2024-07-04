@@ -92,11 +92,18 @@ class MainScreenState extends State<MainScreen>
           title: "发现新版本$latestVersion",
           message:
               "是否立即更新？${Utils.isNotEmpty(latestReleaseItem!.body) ? "更新日志如下：\n${latestReleaseItem!.body}" : ""}",
-          confirmButtonText: "前往更新",
+          confirmButtonText: "立即下载",
           cancelButtonText: "暂不更新",
           onTapConfirm: () {
             Navigator.pop(context);
-            UriUtil.openExternal(latestReleaseItem!.htmlUrl);
+            Utils.downloadAndUpdate(
+              context,
+              latestReleaseItem!.assets.isNotEmpty
+                  ? latestReleaseItem!.assets[0].browserDownloadUrl
+                  : "",
+              latestReleaseItem!.htmlUrl,
+              version: latestVersion,
+            );
           },
           onTapCancel: () {
             Navigator.pop(context);
@@ -183,7 +190,8 @@ class MainScreenState extends State<MainScreen>
     } else if (index == _bottomBarSelectedIndex &&
         _pageList[index] is DynamicScreen &&
         _keyList[index].currentState != null) {
-      (_keyList[index].currentState as DynamicScreenState).scrollToTopAndRefresh();
+      (_keyList[index].currentState as DynamicScreenState)
+          .scrollToTopAndRefresh();
     }
 
     _pageController.jumpToPage(index);

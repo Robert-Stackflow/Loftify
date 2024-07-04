@@ -13,13 +13,19 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:install_plugin/install_plugin.dart';
 import 'package:intl/intl.dart';
 import 'package:loftify/Models/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
+import 'package:loftify/Utils/iprint.dart';
+import 'package:loftify/Utils/notification_util.dart';
+import 'package:loftify/Utils/uri_util.dart';
 import 'package:loftify/Widgets/BottomSheet/slide_captcha_bottom_sheet.dart';
+import 'package:loftify/Widgets/Dialog/custom_dialog.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:restart_app/restart_app.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -105,7 +111,6 @@ class Utils {
         Utils.removeImageParam(element) == Utils.removeImageParam(image));
   }
 
-  //从imageUrl中提取出文件名
   static String extractFileNameFromUrl(String imageUrl) {
     return Uri.parse(imageUrl).pathSegments.last;
   }
@@ -593,5 +598,83 @@ class Utils {
         return const SlideCaptchaBottomSheet();
       },
     );
+  }
+
+  static Future<void> downloadAndUpdate(
+    BuildContext context,
+    String apkUrl,
+    String htmlUrl, {
+    String? version,
+    bool isUpdate = true,
+    Function(double)? onReceiveProgress,
+  }) async {
+    await Permission.storage.onDeniedCallback(() {
+      IToast.showTop(context, text: "请授予文件存储权限");
+    }).onGrantedCallback(() async {
+      if (Utils.isNotEmpty(apkUrl)) {
+        double progressValue = 0.0;
+        var appDocDir = await getTemporaryDirectory();
+        String savePath =
+            "${appDocDir.path}/${Utils.extractFileNameFromUrl(apkUrl)}";
+        try {
+          await Dio().download(
+            apkUrl,
+            savePath,
+            onReceiveProgress: (count, total) {
+              final value = count / total;
+              if (progressValue != value) {
+                if (progressValue < 1.0) {
+                  progressValue = count / total;
+                } else {
+                  progressValue = 0.0;
+                }
+                NotificationUtil.sendProgressNotification(
+                  0,
+                  (progressValue * 100).toInt(),
+                  title: isUpdate
+                      ? '正在下载新版本安装包...'
+                      : '正在下载版本${version ?? ""}的安装包...',
+                  payload: version ?? "",
+                );
+                onReceiveProgress?.call(progressValue);
+              }
+            },
+          ).then((response) async {
+            if (response.statusCode == 200) {
+              NotificationUtil.closeNotification(0);
+              NotificationUtil.sendInfoNotification(
+                1,
+                "下载完成",
+                isUpdate
+                    ? "新版本安装包已经下载完成，点击立即安装"
+                    : "版本${version ?? ""}的安装包已经下载完成，点击立即安装",
+                payload: savePath,
+              );
+            } else {
+              UriUtil.openExternal(htmlUrl);
+            }
+          });
+        } catch (e) {
+          IPrint.debug(e);
+          NotificationUtil.closeNotification(0);
+          NotificationUtil.sendInfoNotification(
+            2,
+            "下载失败，请重试",
+            "新版本安装包下载失败，请重试",
+          );
+        }
+      } else {
+        UriUtil.openExternal(htmlUrl);
+      }
+    }).onPermanentlyDeniedCallback(() {
+      IToast.showTop(context, text: "已拒绝文件存储权限，将跳转到浏览器下载");
+      UriUtil.openExternal(apkUrl);
+    }).onRestrictedCallback(() {
+      IToast.showTop(context, text: "请授予文件存储权限");
+    }).onLimitedCallback(() {
+      IToast.showTop(context, text: "请授予文件存储权限");
+    }).onProvisionalCallback(() {
+      IToast.showTop(context, text: "请授予文件存储权限");
+    }).request();
   }
 }

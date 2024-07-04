@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:hive_flutter/adapters.dart';
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Providers/global_provider.dart';
 import 'package:loftify/Screens/Info/favorite_folder_list_screen.dart';
@@ -41,6 +42,7 @@ import 'Screens/Navigation/dynamic_screen.dart';
 import 'Screens/Navigation/home_screen.dart';
 import 'Screens/Setting/about_setting_screen.dart';
 import 'Screens/main_screen.dart';
+import 'Utils/notification_util.dart';
 import 'generated/l10n.dart';
 
 Future<void> main() async {
@@ -49,6 +51,7 @@ Future<void> main() async {
   PaintingBinding.instance.imageCache.maximumSizeBytes = 1024 * 1024 * 1024 * 2;
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   await ProviderManager.init();
+  NotificationUtil.init();
   await RequestHeaderUtil.initAndroidInfo();
   SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);

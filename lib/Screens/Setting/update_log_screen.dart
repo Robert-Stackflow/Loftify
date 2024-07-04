@@ -137,7 +137,16 @@ class _UpdateLogScreenState extends State<UpdateLogScreen>
                         color: Theme.of(context).textTheme.labelMedium?.color,
                       ),
                       onTap: () {
-                        UriUtil.launchUrlUri(context,item.assets[0].browserDownloadUrl);
+                        Utils.downloadAndUpdate(
+                          context,
+                          item.assets.isNotEmpty
+                              ? item.assets[0].browserDownloadUrl
+                              : "",
+                          item.htmlUrl,
+                          version:
+                              item.tagName.replaceAll(RegExp(r'[a-zA-Z]'), ''),
+                          isUpdate: false,
+                        );
                       },
                     ),
                   ],

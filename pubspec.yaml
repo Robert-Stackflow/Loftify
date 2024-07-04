@@ -37,7 +37,9 @@ dependencies:
   url_launcher: ^6.2.6 # ULR跳转
   flutter_displaymode: ^0.6.0 # 设置刷新率
   image_gallery_saver: ^2.0.3 # 保存图片
-  google_fonts: ^6.2.1 # 字体
+  permission_handler: ^11.3.1
+  install_plugin: ^2.1.0
+  flutter_local_notifications: ^17.2.1
   # 存储/网络
   path:
   sqflite: ^2.3.3+1 # SQLite数据库
