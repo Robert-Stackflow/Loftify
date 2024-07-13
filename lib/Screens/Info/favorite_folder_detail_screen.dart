@@ -172,10 +172,10 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
   }
 
   Widget _buildNineGrid(int startIndex, int count) {
-    return GridView.count(
+    return GridView.extent(
       padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
       shrinkWrap: true,
-      crossAxisCount: 3,
+      maxCrossAxisExtent: 200,
       mainAxisSpacing: 6,
       crossAxisSpacing: 6,
       physics: const NeverScrollableScrollPhysics(),

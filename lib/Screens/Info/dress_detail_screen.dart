@@ -112,10 +112,10 @@ class _DressDetailScreenState extends State<DressDetailScreen>
       cacheExtent: 9999,
       padding: const EdgeInsets.all(10),
       itemCount: _giftDress!.partList.length,
-      gridDelegate: const SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 10,
+      gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
         mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        maxCrossAxisExtent: 300,
       ),
       itemBuilder: (context, index) {
         return _buildItem(_giftDress!.partList[index]);

@@ -118,7 +118,10 @@ class GeneralPostItemBuilder {
               showMoreSheet(context, item);
             }
           : null,
-      child: main,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: main,
+      ),
     );
   }
 

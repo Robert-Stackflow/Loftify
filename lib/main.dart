@@ -1,11 +1,9 @@
-import 'dart:io';
-
+import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
-import 'package:hive_flutter/adapters.dart';
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Providers/global_provider.dart';
 import 'package:loftify/Screens/Info/favorite_folder_list_screen.dart';
@@ -43,6 +41,7 @@ import 'Screens/Navigation/home_screen.dart';
 import 'Screens/Setting/about_setting_screen.dart';
 import 'Screens/main_screen.dart';
 import 'Utils/notification_util.dart';
+import 'Utils/utils.dart';
 import 'generated/l10n.dart';
 
 Future<void> main() async {
@@ -52,17 +51,31 @@ Future<void> main() async {
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   await ProviderManager.init();
   NotificationUtil.init();
-  await RequestHeaderUtil.initAndroidInfo();
+  if (Utils.isAndroid()) {
+    await RequestHeaderUtil.initAndroidInfo();
+  }
   SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   runApp(const MyApp());
-  if (Platform.isAndroid) {
+  if (Utils.isAndroid()) {
     SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         statusBarIconBrightness: Brightness.dark);
     SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
   }
-  await initDisplayMode();
+  if (Utils.isMobile()) {
+    await initDisplayMode();
+  }
+  if (Utils.isDesktop()) {
+    doWhenWindowReady(() {
+      const minSize = Size(450, 600);
+      const initialSize = Size(1120, 740);
+      appWindow.minSize = minSize;
+      appWindow.size = initialSize;
+      appWindow.alignment = Alignment.center;
+      appWindow.show();
+    });
+  }
   FlutterNativeSplash.remove();
 }
 

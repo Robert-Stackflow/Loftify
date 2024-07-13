@@ -81,6 +81,41 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.1.19"
+  bitsdojo_window:
+    dependency: "direct main"
+    description:
+      path: "third-party/bitsdojo_window/bitsdojo_window"
+      relative: true
+    source: path
+    version: "0.1.6"
+  bitsdojo_window_linux:
+    dependency: transitive
+    description:
+      path: "third-party/bitsdojo_window/bitsdojo_window_linux"
+      relative: true
+    source: path
+    version: "0.1.4"
+  bitsdojo_window_macos:
+    dependency: transitive
+    description:
+      path: "third-party/bitsdojo_window/bitsdojo_window_macos"
+      relative: true
+    source: path
+    version: "0.1.4"
+  bitsdojo_window_platform_interface:
+    dependency: transitive
+    description:
+      path: "third-party/bitsdojo_window/bitsdojo_window_platform_interface"
+      relative: true
+    source: path
+    version: "0.1.2"
+  bitsdojo_window_windows:
+    dependency: transitive
+    description:
+      path: "third-party/bitsdojo_window/bitsdojo_window_windows"
+      relative: true
+    source: path
+    version: "0.1.6"
   blur:
     dependency: "direct main"
     description:
@@ -1290,6 +1325,22 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.5.4"
+  sqflite_common_ffi:
+    dependency: "direct main"
+    description:
+      name: sqflite_common_ffi
+      sha256: "4d6137c29e930d6e4a8ff373989dd9de7bac12e3bc87bce950f6e844e8ad3bb5"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.3.3"
+  sqlite3:
+    dependency: transitive
+    description:
+      name: sqlite3
+      sha256: "6d17989c0b06a5870b2190d391925186f944cb943e5262d0d3f778fcfca3bc6e"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.4.4"
   stack_trace:
     dependency: transitive
     description:

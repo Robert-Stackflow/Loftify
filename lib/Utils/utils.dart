@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
@@ -13,7 +14,6 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_gallery_saver/image_gallery_saver.dart';
-import 'package:install_plugin/install_plugin.dart';
 import 'package:intl/intl.dart';
 import 'package:loftify/Models/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
@@ -21,7 +21,6 @@ import 'package:loftify/Utils/iprint.dart';
 import 'package:loftify/Utils/notification_util.dart';
 import 'package:loftify/Utils/uri_util.dart';
 import 'package:loftify/Widgets/BottomSheet/slide_captcha_bottom_sheet.dart';
-import 'package:loftify/Widgets/Dialog/custom_dialog.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:path_provider/path_provider.dart';
@@ -598,6 +597,18 @@ class Utils {
         return const SlideCaptchaBottomSheet();
       },
     );
+  }
+
+  static bool isAndroid() {
+    return Platform.isAndroid;
+  }
+
+  static bool isMobile() {
+    return !kIsWeb && (Platform.isIOS || Platform.isAndroid);
+  }
+
+  static bool isDesktop() {
+    return !kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux);
   }
 
   static Future<void> downloadAndUpdate(

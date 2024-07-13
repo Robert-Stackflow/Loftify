@@ -348,8 +348,12 @@ class UriUtil {
     String url, {
     bool processUri = true,
   }) {
-    RouteUtil.pushCupertinoRoute(
-        context, WebviewScreen(url: url, processUri: processUri));
+    if (Utils.isMobile()) {
+      RouteUtil.pushCupertinoRoute(
+          context, WebviewScreen(url: url, processUri: processUri));
+    } else {
+      openExternal(url);
+    }
   }
 
   static Future<void> openExternal(String url) async {

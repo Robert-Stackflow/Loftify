@@ -2,32 +2,47 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:app_links/app_links.dart';
+import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:loftify/Api/github_api.dart';
 import 'package:loftify/Models/nav_entry.dart';
+import 'package:loftify/Resources/colors.dart';
 import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
 import 'package:loftify/Screens/Navigation/dynamic_screen.dart';
 import 'package:loftify/Screens/Navigation/home_screen.dart';
 import 'package:loftify/Utils/asset_util.dart';
 import 'package:loftify/Utils/uri_util.dart';
 import 'package:loftify/Widgets/Dialog/custom_dialog.dart';
+import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:loftify/Widgets/LottieCupertinoRefresh/lottie_cupertino_refresh.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../Api/login_api.dart';
+import '../Api/user_api.dart';
+import '../Models/account_response.dart';
 import '../Models/github_response.dart';
+import '../Providers/global_provider.dart';
 import '../Providers/provider_manager.dart';
 import '../Resources/fonts.dart';
 import '../Utils/hive_util.dart';
 import '../Utils/iprint.dart';
+import '../Utils/itoast.dart';
 import '../Utils/lottie_util.dart';
 import '../Utils/route_util.dart';
 import '../Utils/utils.dart';
 import '../Widgets/EasyRefresh/easy_refresh.dart';
 import '../Widgets/Scaffold/my_bottom_navigation_bar.dart';
 import '../Widgets/Scaffold/my_scaffold.dart';
+import 'Info/dress_screen.dart';
+import 'Info/system_notice_screen.dart';
+import 'Info/user_detail_screen.dart';
 import 'Lock/pin_verify_screen.dart';
+import 'Setting/setting_screen.dart';
+
+const borderColor = Color(0xFF805306);
+const backgroundStartColor = Color(0xFFFFD500);
+const backgroundEndColor = Color(0xFFF6A00C);
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -53,6 +68,35 @@ class MainScreenState extends State<MainScreen>
   Timer? _timer;
   int _bottomBarSelectedIndex = 0;
   final _pageController = PageController(keepPage: true);
+  late AnimationController darkModeController;
+  Widget? darkModeWidget;
+  FullBlogInfo? blogInfo;
+
+  _fetchUserInfo() async {
+    if (ProviderManager.globalProvider.token.isNotEmpty) {
+      return await UserApi.getUserInfo().then((value) async {
+        try {
+          if (value['meta']['status'] != 200) {
+            IToast.showTop(context,
+                text: value['meta']['desc'] ?? value['meta']['msg']);
+            return IndicatorResult.fail;
+          } else {
+            AccountResponse accountResponse =
+                AccountResponse.fromJson(value['response']);
+            await HiveUtil.setUserInfo(accountResponse.blogs[0].blogInfo);
+            setState(() {
+              blogInfo = accountResponse.blogs[0].blogInfo;
+            });
+            return IndicatorResult.success;
+          }
+        } catch (_, t) {
+          if (mounted) IToast.showTop(context, text: "加载失败");
+          return IndicatorResult.fail;
+        } finally {}
+      });
+    }
+    return IndicatorResult.success;
+  }
 
   Future<void> initDeepLinks() async {
     final appLinks = AppLinks();
@@ -117,6 +161,18 @@ class MainScreenState extends State<MainScreen>
   @override
   void initState() {
     super.initState();
+    if (Utils.isDesktop()) {
+      _fetchUserInfo();
+    }
+    darkModeController = AnimationController(vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      darkModeWidget = LottieUtil.load(
+        LottieUtil.sunLight,
+        size: 25,
+        autoForward: !Utils.isDark(context),
+        controller: darkModeController,
+      );
+    });
     FontEnum.downloadFont(showToast: false);
     initDeepLinks();
     if (HiveUtil.getBool(key: HiveUtil.autoCheckUpdateKey)) fetchReleases();
@@ -130,11 +186,13 @@ class MainScreenState extends State<MainScreen>
     EasyRefresh.defaultFooterBuilder = () => LottieCupertinoFooter(
           indicator: LottieUtil.load(LottieUtil.getLoadingPath(context)),
         );
-    if (HiveUtil.getBool(
-        key: HiveUtil.enableSafeModeKey, defaultValue: false)) {
-      FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
-    } else {
-      FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
+    if (Utils.isMobile()) {
+      if (HiveUtil.getBool(
+          key: HiveUtil.enableSafeModeKey, defaultValue: false)) {
+        FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
+      } else {
+        FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
+      }
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       goLogin();
@@ -228,6 +286,18 @@ class MainScreenState extends State<MainScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    return _buildBodyByPlatform();
+  }
+
+  _buildBodyByPlatform() {
+    if (Utils.isMobile()) {
+      return _buildMobileBody();
+    } else {
+      return _buildDesktopBody();
+    }
+  }
+
+  _buildMobileBody() {
     return FutureBuilder(
       future: Future.sync(() => initData()),
       builder: (_, __) => MyScaffold(
@@ -253,6 +323,225 @@ class MainScreenState extends State<MainScreen>
     );
   }
 
+  _buildDesktopBody() {
+    return FutureBuilder(
+      future: Future.sync(() => initData()),
+      builder: (_, __) => MyScaffold(
+        body: Row(
+          children: [_sideBar(), _desktopMainContent()],
+        ),
+      ),
+    );
+  }
+
+  changeMode() {
+    if (Utils.isDark(context)) {
+      ProviderManager.globalProvider.themeMode = ActiveThemeMode.light;
+      darkModeController.forward();
+    } else {
+      ProviderManager.globalProvider.themeMode = ActiveThemeMode.dark;
+      darkModeController.reverse();
+    }
+  }
+
+  _sideBar() {
+    return SizedBox(
+      width: 65,
+      child: Container(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: Stack(
+          children: [
+            MoveWindow(),
+            Column(
+              children: [
+                const SizedBox(height: 100),
+                MyBottomNavigationBar(
+                  currentIndex: _bottomBarSelectedIndex,
+                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                  items: _navigationBarItemList,
+                  direction: Axis.vertical,
+                  elevation: 0,
+                  unselectedItemColor:
+                      Theme.of(context).textTheme.labelSmall?.color,
+                  selectedItemColor: Theme.of(context).primaryColor,
+                  unselectedLabelStyle: const TextStyle(fontSize: 12),
+                  selectedLabelStyle: const TextStyle(fontSize: 12),
+                  onTap: onBottomNavigationBarItemTap,
+                  onDoubleTap: onBottomNavigationBarItemTap,
+                ),
+                const Spacer(),
+                Column(
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        if (blogInfo == null) {
+                          RouteUtil.pushCupertinoRoute(
+                              context, const LoginByCaptchaScreen());
+                        } else {
+                          RouteUtil.pushCupertinoRoute(
+                            context,
+                            UserDetailScreen(
+                                blogId: blogInfo!.blogId,
+                                blogName: blogInfo!.blogName),
+                          );
+                        }
+                      },
+                      child: MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: ItemBuilder.buildAvatar(
+                          showLoading: false,
+                          context: context,
+                          imageUrl: blogInfo?.bigAvaImg ?? "",
+                          useDefaultAvatar: blogInfo == null,
+                          size: 30,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ItemBuilder.buildDynamicIconButton(
+                        context: context,
+                        icon: darkModeWidget,
+                        onTap: changeMode,
+                        onChangemode: (context, themeMode, child) {
+                          if (darkModeController.duration != null) {
+                            if (themeMode == ActiveThemeMode.light) {
+                              darkModeController.forward();
+                            } else if (themeMode == ActiveThemeMode.dark) {
+                              darkModeController.reverse();
+                            } else {
+                              if (Utils.isDark(context)) {
+                                darkModeController.reverse();
+                              } else {
+                                darkModeController.forward();
+                              }
+                            }
+                          }
+                        }),
+                    const SizedBox(height: 4),
+                    ItemBuilder.buildIconButton(
+                        context: context,
+                        icon: AssetUtil.loadDouble(
+                          context,
+                          AssetUtil.dressLightIcon,
+                          AssetUtil.dressDarkIcon,
+                        ),
+                        onTap: () {
+                          RouteUtil.pushCupertinoRoute(
+                            context,
+                            const DressScreen(),
+                          );
+                        }),
+                    const SizedBox(width: 4),
+                    ItemBuilder.buildIconButton(
+                      context: context,
+                      icon: Icon(
+                        Icons.mail_outline_rounded,
+                        color: Theme.of(context).iconTheme.color,
+                      ),
+                      onTap: () {
+                        RouteUtil.pushCupertinoRoute(
+                          context,
+                          const SystemNoticeScreen(),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 4),
+                    ItemBuilder.buildDynamicIconButton(
+                        context: context,
+                        icon: AssetUtil.loadDouble(
+                          context,
+                          AssetUtil.settingLightIcon,
+                          AssetUtil.settingDarkIcon,
+                        ),
+                        onTap: () {
+                          RouteUtil.pushCupertinoRoute(
+                              context, const SettingScreen());
+                        }),
+                    const SizedBox(height: 15),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void maximizeOrRestore() {
+    setState(() {
+      appWindow.maximizeOrRestore();
+    });
+  }
+
+  _desktopMainContent() {
+    return Expanded(
+      child: Column(
+        children: [
+          WindowTitleBarBox(
+            titleBarHeightDelta: 40,
+            margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: min(300, MediaQuery.sizeOf(context).width - 240),
+                  child: ItemBuilder.buildDesktopSearchBar(
+                      context: context,
+                      background: Colors.grey.withAlpha(40),
+                      hintText: "搜索感兴趣的内容",
+                      borderRadius: 8,
+                      bottomMargin: 18,
+                      hintFontSizeDelta: 1,
+                      onSubmitted: (text) {}),
+                ),
+                const Spacer(),
+                Row(
+                  children: [
+                    MinimizeWindowButton(
+                      colors: MyColors.getNormalButtonColors(context),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    appWindow.isMaximized
+                        ? RestoreWindowButton(
+                            colors: MyColors.getNormalButtonColors(context),
+                            borderRadius: BorderRadius.circular(10),
+                            onPressed: maximizeOrRestore,
+                          )
+                        : MaximizeWindowButton(
+                            colors: MyColors.getNormalButtonColors(context),
+                            borderRadius: BorderRadius.circular(10),
+                            onPressed: maximizeOrRestore,
+                          ),
+                    CloseWindowButton(
+                      colors: MyColors.getNormalButtonColors(context),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.only(right: 10),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+                child: PageView(
+                  controller: _pageController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: _pageList,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void cancleTimer() {
     if (_timer != null) {
       _timer!.cancel();
@@ -261,8 +550,9 @@ class MainScreenState extends State<MainScreen>
 
   void setTimer() {
     _timer = Timer(
-        Duration(minutes: ProviderManager.globalProvider.autoLockTime),
-        goPinVerify);
+      Duration(minutes: ProviderManager.globalProvider.autoLockTime),
+      goPinVerify,
+    );
   }
 
   @override
@@ -287,6 +577,7 @@ class MainScreenState extends State<MainScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    darkModeController.dispose();
     super.dispose();
   }
 

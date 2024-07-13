@@ -70,7 +70,20 @@ class ItemBuilder {
               ),
             )
           : Container(),
-      actions: actions,
+      actions: [
+        ...?actions,
+        // if (Utils.isDesktop())
+        //   Row(
+        //     children: [
+        //       MinimizeWindowButton(
+        //           colors: MyColors.getNormalButtonColors(context)),
+        //       MaximizeWindowButton(
+        //           colors: MyColors.getNormalButtonColors(context)),
+        //       CloseWindowButton(colors: MyColors.getCloseButtonColors(context)),
+        //       const SizedBox(width: 10),
+        //     ],
+        //   ),
+      ],
     );
   }
 
@@ -86,6 +99,7 @@ class ItemBuilder {
     bool transparent = false,
     Color? backgroundColor,
   }) {
+    center = Utils.isDesktop() ? false : center;
     return MyAppBar(
       key: key,
       backgroundColor: transparent
@@ -108,7 +122,7 @@ class ItemBuilder {
       title: leading != null
           ? center
               ? Center(child: title)
-              : title
+              : title ?? Container()
           : center
               ? Center(
                   child: Container(
@@ -120,7 +134,20 @@ class ItemBuilder {
                   margin: const EdgeInsets.only(left: 20),
                   child: title,
                 ),
-      actions: actions,
+      actions: [
+        ...?actions,
+        // if (Utils.isDesktop())
+        //   Row(
+        //     children: [
+        //       MinimizeWindowButton(
+        //           colors: MyColors.getNormalButtonColors(context)),
+        //       MaximizeWindowButton(
+        //           colors: MyColors.getNormalButtonColors(context)),
+        //       CloseWindowButton(colors: MyColors.getCloseButtonColors(context)),
+        //       const SizedBox(width: 10),
+        //     ],
+        //   ),
+      ],
     );
   }
 
@@ -1631,6 +1658,72 @@ class ItemBuilder {
                   hintStyle: Theme.of(context).textTheme.titleSmall?.apply(
                       color: Theme.of(context).textTheme.labelSmall?.color),
                 ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Widget buildDesktopSearchBar({
+    required BuildContext context,
+    required hintText,
+    required Null Function(dynamic value) onSubmitted,
+    double height = 35,
+    TextEditingController? controller,
+    FocusNode? focusNode,
+    Color? background,
+    double borderRadius = 50,
+    double? bottomMargin,
+    double hintFontSizeDelta = 0,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: background ?? Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(borderRadius),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Card(
+              elevation: 0,
+              color: Colors.transparent,
+              child: TextField(
+                focusNode: focusNode,
+                controller: controller,
+                textInputAction: TextInputAction.search,
+                onSubmitted: onSubmitted,
+                style: Theme.of(context).textTheme.titleSmall?.apply(
+                      fontSizeDelta: hintFontSizeDelta,
+                    ),
+                decoration: InputDecoration(
+                  constraints:
+                      BoxConstraints(minHeight: height, maxHeight: height),
+                  contentPadding: EdgeInsets.only(
+                      bottom: bottomMargin ?? (49 - height), left: 8),
+                  border: InputBorder.none,
+                  hintText: hintText,
+                  hintStyle: Theme.of(context).textTheme.titleSmall?.apply(
+                        color: Theme.of(context).textTheme.labelSmall?.color,
+                        fontSizeDelta: hintFontSizeDelta,
+                      ),
+                ),
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
+              onSubmitted(controller?.text);
+            },
+            child: MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: AssetUtil.loadDouble(
+                context,
+                AssetUtil.searchLightIcon,
+                AssetUtil.searchDarkIcon,
+                size: 20,
               ),
             ),
           ),

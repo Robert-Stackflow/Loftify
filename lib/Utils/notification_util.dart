@@ -7,6 +7,12 @@ class NotificationUtil {
       FlutterLocalNotificationsPlugin();
 
   static init() async {
+    if (Utils.isAndroid()) {
+      await initAndroid();
+    }
+  }
+
+  static initAndroid() async {
     var android = const AndroidInitializationSettings("@mipmap/ic_launcher");
     await flutterLocalNotificationsPlugin.initialize(
       InitializationSettings(android: android),
@@ -23,7 +29,9 @@ class NotificationUtil {
   }
 
   static Future<void> closeNotification(int id) async {
-    return flutterLocalNotificationsPlugin.cancel(id);
+    if (Utils.isAndroid()) {
+      return flutterLocalNotificationsPlugin.cancel(id);
+    }
   }
 
   static Future<void> sendProgressNotification(
@@ -32,6 +40,7 @@ class NotificationUtil {
     String? title,
     String? payload,
   }) async {
+    if (!Utils.isAndroid()) return;
     AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
       'progress channel',
@@ -60,6 +69,7 @@ class NotificationUtil {
     String body, {
     String? payload,
   }) async {
+    if (!Utils.isAndroid()) return;
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
       'download complete channel',

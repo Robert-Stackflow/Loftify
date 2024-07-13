@@ -229,10 +229,10 @@ class _PostScreenState extends State<PostScreen>
   }
 
   Widget _buildNineGrid(int startIndex, int count) {
-    return GridView.count(
+    return GridView.extent(
       padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
       shrinkWrap: true,
-      crossAxisCount: 3,
+      maxCrossAxisExtent: 200,
       mainAxisSpacing: 6,
       crossAxisSpacing: 6,
       physics: const NeverScrollableScrollPhysics(),
@@ -250,10 +250,10 @@ class _PostScreenState extends State<PostScreen>
       physics: physics,
       cacheExtent: 9999,
       padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-      gridDelegate: const SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
         mainAxisSpacing: 6,
         crossAxisSpacing: 6,
+        maxCrossAxisExtent: 300,
       ),
       itemBuilder: (BuildContext context, int index) {
         return CommonInfoItemBuilder.buildWaterfallFlowPostItem(

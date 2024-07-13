@@ -140,10 +140,10 @@ class _DressScreenState extends State<DressScreen>
       cacheExtent: 9999,
       padding: const EdgeInsets.all(10),
       itemCount: _giftDressList.length,
-      gridDelegate: const SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 10,
+      gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
         mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        maxCrossAxisExtent: 300,
       ),
       itemBuilder: (context, index) {
         return _buildGiftDressItem(_giftDressList[index]);
@@ -175,8 +175,8 @@ class _DressScreenState extends State<DressScreen>
               context: context,
               showLoading: false,
               placeholderBackground: Colors.transparent,
-              width: (MediaQuery.sizeOf(context).width - 180) / 2,
-              height: (MediaQuery.sizeOf(context).width - 180) / 2,
+              width: 200,
+              height: 200,
             ),
             const SizedBox(height: 10),
             Text(

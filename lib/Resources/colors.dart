@@ -1,3 +1,4 @@
+import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
 import 'package:like_button/like_button.dart';
 
@@ -90,6 +91,26 @@ class MyColors {
     dotSecondaryColor: Color(0xff0099cc),
   );
   static const Color likeButtonColor = Color(0xFFF06292);
+
+  static getNormalButtonColors(BuildContext context) {
+    return WindowButtonColors(
+      mouseOver: Theme.of(context).splashColor,
+      mouseDown: Theme.of(context).splashColor,
+      iconNormal: Theme.of(context).iconTheme.color,
+      iconMouseOver: Theme.of(context).iconTheme.color,
+      iconMouseDown: Theme.of(context).iconTheme.color,
+    );
+  }
+
+  static getCloseButtonColors(BuildContext context) {
+    return WindowButtonColors(
+      mouseOver: const Color(0xFFD32F2F),
+      mouseDown: const Color(0xFFB71C1C),
+      iconNormal: Theme.of(context).iconTheme.color,
+      iconMouseOver: Colors.white,
+      iconMouseDown: Colors.white,
+    );
+  }
 
   static getLinkColor(BuildContext context) {
     return ProviderManager.currentBrightness(context) == Brightness.light

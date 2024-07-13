@@ -552,10 +552,10 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
   }
 
   Widget _buildNineGrid(int startIndex, int count) {
-    return GridView.count(
+    return GridView.extent(
       padding: const EdgeInsets.only(top: 12),
       shrinkWrap: true,
-      crossAxisCount: 3,
+      maxCrossAxisExtent: 200,
       mainAxisSpacing: 6,
       crossAxisSpacing: 6,
       physics: const NeverScrollableScrollPhysics(),

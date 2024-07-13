@@ -9,6 +9,7 @@ import '../../Providers/provider_manager.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
+import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
 import '../../Widgets/EasyRefresh/easy_refresh.dart';
@@ -59,82 +60,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             children: [
-              const SizedBox(height: 10),
-              ItemBuilder.buildCaptionItem(
-                  context: context, title: S.current.privacySetting),
-              ItemBuilder.buildRadioItem(
-                context: context,
-                value: _enableGuesturePasswd,
-                title: "启用手势密码",
-                onTap: onEnablePinTapped,
-              ),
-              Visibility(
-                visible: _enableGuesturePasswd,
-                child: ItemBuilder.buildEntryItem(
-                  context: context,
-                  title: _hasGuesturePasswd ? "更改手势密码" : "设置手势密码",
-                  description: _hasGuesturePasswd ? "" : "设置手势密码后才能使用锁定功能",
-                  onTap: onChangePinTapped,
-                ),
-              ),
-              Visibility(
-                visible: _enableGuesturePasswd &&
-                    _hasGuesturePasswd &&
-                    _biometricAvailable,
-                child: ItemBuilder.buildRadioItem(
-                  context: context,
-                  value: _enableBiometric,
-                  title: "生物识别",
-                  onTap: onBiometricTapped,
-                ),
-              ),
-              Visibility(
-                visible: _enableGuesturePasswd && _hasGuesturePasswd,
-                child: ItemBuilder.buildRadioItem(
-                  context: context,
-                  value: _autoLock,
-                  title: "处于后台自动锁定",
-                  onTap: onEnableAutoLockTapped,
-                ),
-              ),
-              Visibility(
-                visible:
-                    _enableGuesturePasswd && _hasGuesturePasswd && _autoLock,
-                child: Selector<GlobalProvider, int>(
-                  selector: (context, globalProvider) =>
-                      globalProvider.autoLockTime,
-                  builder: (context, autoLockTime, child) =>
-                      ItemBuilder.buildEntryItem(
-                    context: context,
-                    title: "自动锁定时机",
-                    tip: GlobalProvider.getAutoLockOptionLabel(autoLockTime),
-                    onTap: () {
-                      BottomSheetBuilder.showListBottomSheet(
-                        context,
-                        (context) => TileList.fromOptions(
-                          GlobalProvider.getAutoLockOptions(),
-                          (item2) {
-                            ProviderManager.globalProvider.autoLockTime = item2;
-                            Navigator.pop(context);
-                          },
-                          selected: autoLockTime,
-                          context: context,
-                          title: "选择自动锁定时机",
-                          onCloseTap: () => Navigator.pop(context),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              ItemBuilder.buildRadioItem(
-                context: context,
-                value: _enableSafeMode,
-                title: "安全模式",
-                bottomRadius: true,
-                description: "当软件进入最近任务列表页面，隐藏页面内容；同时禁用应用内截图",
-                onTap: onSafeModeTapped,
-              ),
+             if(Utils.isMobile()) ..._privacySettings(),
               const SizedBox(height: 10),
               ItemBuilder.buildEntryItem(
                 context: context,
@@ -152,6 +78,83 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
         ),
       ),
     );
+  }
+
+  _privacySettings() {
+    return [
+      const SizedBox(height: 10),
+      ItemBuilder.buildCaptionItem(
+          context: context, title: S.current.privacySetting),
+      ItemBuilder.buildRadioItem(
+        context: context,
+        value: _enableGuesturePasswd,
+        title: "启用手势密码",
+        onTap: onEnablePinTapped,
+      ),
+      Visibility(
+        visible: _enableGuesturePasswd,
+        child: ItemBuilder.buildEntryItem(
+          context: context,
+          title: _hasGuesturePasswd ? "更改手势密码" : "设置手势密码",
+          description: _hasGuesturePasswd ? "" : "设置手势密码后才能使用锁定功能",
+          onTap: onChangePinTapped,
+        ),
+      ),
+      Visibility(
+        visible:
+            _enableGuesturePasswd && _hasGuesturePasswd && _biometricAvailable,
+        child: ItemBuilder.buildRadioItem(
+          context: context,
+          value: _enableBiometric,
+          title: "生物识别",
+          onTap: onBiometricTapped,
+        ),
+      ),
+      Visibility(
+        visible: _enableGuesturePasswd && _hasGuesturePasswd,
+        child: ItemBuilder.buildRadioItem(
+          context: context,
+          value: _autoLock,
+          title: "处于后台自动锁定",
+          onTap: onEnableAutoLockTapped,
+        ),
+      ),
+      Visibility(
+        visible: _enableGuesturePasswd && _hasGuesturePasswd && _autoLock,
+        child: Selector<GlobalProvider, int>(
+          selector: (context, globalProvider) => globalProvider.autoLockTime,
+          builder: (context, autoLockTime, child) => ItemBuilder.buildEntryItem(
+            context: context,
+            title: "自动锁定时机",
+            tip: GlobalProvider.getAutoLockOptionLabel(autoLockTime),
+            onTap: () {
+              BottomSheetBuilder.showListBottomSheet(
+                context,
+                (context) => TileList.fromOptions(
+                  GlobalProvider.getAutoLockOptions(),
+                  (item2) {
+                    ProviderManager.globalProvider.autoLockTime = item2;
+                    Navigator.pop(context);
+                  },
+                  selected: autoLockTime,
+                  context: context,
+                  title: "选择自动锁定时机",
+                  onCloseTap: () => Navigator.pop(context),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+      ItemBuilder.buildRadioItem(
+        context: context,
+        value: _enableSafeMode,
+        title: "安全模式",
+        bottomRadius: true,
+        description: "当软件进入最近任务列表页面，隐藏页面内容；同时禁用应用内截图",
+        onTap: onSafeModeTapped,
+      ),
+    ];
   }
 
   initBiometricAuthentication() async {
@@ -248,10 +251,12 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
   onSafeModeTapped() {
     setState(() {
       _enableSafeMode = !_enableSafeMode;
-      if (_enableSafeMode) {
-        FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
-      } else {
-        FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
+      if (Utils.isMobile()) {
+        if (_enableSafeMode) {
+          FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
+        } else {
+          FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
+        }
       }
       HiveUtil.put(key: HiveUtil.enableSafeModeKey, value: _enableSafeMode);
     });

@@ -78,7 +78,7 @@ class HomeScreenState extends State<HomeScreen>
               .addAll(tmp.map((e) => PostListItem.fromJson(e)).toList());
           return IndicatorResult.success;
         }
-      } catch (e,t) {
+      } catch (e, t) {
         IPrint.debug(e);
         IPrint.debug(t);
         if (mounted) IToast.showTop(context, text: "加载失败");
@@ -114,11 +114,10 @@ class HomeScreenState extends State<HomeScreen>
           controller: _scrollController,
           cacheExtent: 9999,
           padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-          gridDelegate:
-              const SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
+          gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
             mainAxisSpacing: 6,
             crossAxisSpacing: 6,
+            maxCrossAxisExtent: 300,
           ),
           itemBuilder: (BuildContext context, int index) {
             return GestureDetector(
@@ -171,8 +170,7 @@ class HomeScreenState extends State<HomeScreen>
 
   void scrollToTopAndRefresh() {
     int nowTime = DateTime.now().millisecondsSinceEpoch;
-    if (lastRefreshTime == 0 ||
-        (nowTime - lastRefreshTime) > krefreshTimeout) {
+    if (lastRefreshTime == 0 || (nowTime - lastRefreshTime) > krefreshTimeout) {
       lastRefreshTime = nowTime;
       if (_scrollController.offset > MediaQuery.sizeOf(context).height) {
         _scrollController

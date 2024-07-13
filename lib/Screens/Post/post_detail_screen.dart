@@ -1306,10 +1306,10 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     return SliverPadding(
       padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
       sliver: SliverWaterfallFlow(
-        gridDelegate: const SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
+        gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
           mainAxisSpacing: 12,
           crossAxisSpacing: 6,
+          maxCrossAxisExtent: 300,
         ),
         delegate: SliverChildBuilderDelegate(
           (BuildContext context, int index) {

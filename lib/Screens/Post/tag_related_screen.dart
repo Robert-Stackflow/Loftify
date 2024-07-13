@@ -111,10 +111,10 @@ class _TagRelatedScreenState extends State<TagRelatedScreen>
         cacheExtent: 9999,
         physics: physics,
         padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-        gridDelegate: const SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
+        gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
           mainAxisSpacing: 6,
           crossAxisSpacing: 6,
+          maxCrossAxisExtent: 300,
         ),
         itemBuilder: (BuildContext context, int index) {
           return GestureDetector(

@@ -43,6 +43,7 @@ dependencies:
   # 存储/网络
   path:
   sqflite: ^2.3.3+1 # SQLite数据库
+  sqflite_common_ffi: ^2.3.3 # SQLite数据库
   http: ^1.2.1
   dio: ^5.4.3+1
   hive: ^2.2.3 # Hive
@@ -65,6 +66,9 @@ dependencies:
   app_links: ^6.1.1
   chinese_font_library: ^1.2.0
   restart_app: ^1.2.1
+  bitsdojo_window:
+#    ^0.1.6
+    path: ./third-party/bitsdojo_window/bitsdojo_window
 
 dev_dependencies:
   flutter_test:

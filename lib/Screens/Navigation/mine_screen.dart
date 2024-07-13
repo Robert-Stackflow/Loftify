@@ -124,7 +124,7 @@ class _MineScreenState extends State<MineScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      appBar: _buildAppBar(),
+      appBar: Utils.isDesktop() ? null : _buildAppBar(),
       body: EasyRefresh(
         controller: _refreshController,
         onRefresh: _onRefresh,
@@ -224,8 +224,7 @@ class _MineScreenState extends State<MineScreen>
                     Text(
                       "${meInfoData!.blogInfo.postCount}篇文章 · ${meInfoData!.collectionCount}个合集",
                       style: Theme.of(context).textTheme.titleSmall?.apply(
-                            color:
-                                Theme.of(context).textTheme.bodySmall?.color,
+                            color: Theme.of(context).textTheme.bodySmall?.color,
                             fontSizeDelta: 0,
                             fontWeightDelta: 2,
                           ),

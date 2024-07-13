@@ -64,7 +64,7 @@ class _UpdateLogScreenState extends State<UpdateLogScreen>
       appBar: ItemBuilder.buildSimpleAppBar(
         transparent: true,
         title: S.current.changeLog,
-        leading: Icons.close_rounded,
+        leading: Icons.arrow_back_rounded,
         context: context,
       ),
       body: EasyRefresh(

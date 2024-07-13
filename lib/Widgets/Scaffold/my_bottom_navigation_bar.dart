@@ -167,6 +167,7 @@ class MyBottomNavigationBar extends StatefulWidget {
   MyBottomNavigationBar({
     super.key,
     required this.items,
+    this.direction = Axis.horizontal,
     this.onTap,
     this.onDoubleTap,
     this.currentIndex = 0,
@@ -208,6 +209,8 @@ class MyBottomNavigationBar extends StatefulWidget {
   /// Defines the appearance of the button items that are arrayed within the
   /// bottom navigation bar.
   final List<BottomNavigationBarItem> items;
+
+  final Axis direction;
 
   /// Called when one of the [items] is tapped.
   ///
@@ -399,6 +402,9 @@ class _BottomNavigationTile extends StatelessWidget {
     required this.mouseCursor,
     required this.enableFeedback,
     required this.layout,
+    this.customTopPadding,
+    this.customBottomPadding,
+    this.useExpanded = true,
   });
 
   final BottomNavigationBarType type;
@@ -421,6 +427,9 @@ class _BottomNavigationTile extends StatelessWidget {
   final MouseCursor mouseCursor;
   final bool enableFeedback;
   final BottomNavigationBarLandscapeLayout layout;
+  final double? customTopPadding;
+  final double? customBottomPadding;
+  final bool useExpanded;
 
   @override
   Widget build(BuildContext context) {
@@ -507,7 +516,9 @@ class _BottomNavigationTile extends StatelessWidget {
       // mouseCursor: mouseCursor,
       // enableFeedback: enableFeedback,
       child: Padding(
-        padding: EdgeInsets.only(top: topPadding, bottom: bottomPadding),
+        padding: EdgeInsets.only(
+            top: customTopPadding ?? topPadding,
+            bottom: customBottomPadding ?? bottomPadding),
         child: _Tile(
           layout: layout,
           icon: _TileIcon(
@@ -555,10 +566,12 @@ class _BottomNavigationTile extends StatelessWidget {
       ),
     );
 
-    return Expanded(
-      flex: size,
-      child: result,
-    );
+    return useExpanded
+        ? Expanded(
+            flex: size,
+            child: result,
+          )
+        : result;
   }
 }
 
@@ -1028,44 +1041,51 @@ class _MyBottomNavigationBarState extends State<MyBottomNavigationBar>
               bottomTheme.mouseCursor?.resolve(states) ??
               WidgetStateMouseCursor.clickable.resolve(states);
 
-      tiles.add(_BottomNavigationTile(
-        _effectiveType,
-        widget.items[i],
-        _animations[i],
-        widget.iconSize,
-        key: widget.items[i].key,
-        selectedIconTheme: widget.useLegacyColorScheme
-            ? widget.selectedIconTheme ?? bottomTheme.selectedIconTheme
-            : effectiveSelectedIconTheme,
-        unselectedIconTheme: widget.useLegacyColorScheme
-            ? widget.unselectedIconTheme ?? bottomTheme.unselectedIconTheme
-            : effectiveUnselectedIconTheme,
-        selectedLabelStyle: effectiveSelectedLabelStyle,
-        unselectedLabelStyle: effectiveUnselectedLabelStyle,
-        enableFeedback:
-            widget.enableFeedback ?? bottomTheme.enableFeedback ?? true,
-        onTap: () {
-          widget.onTap?.call(i);
-        },
-        onDoubleTap: () {
-          widget.onDoubleTap?.call(i);
-        },
-        labelColorTween:
-            widget.useLegacyColorScheme ? colorTween : labelColorTween,
-        iconColorTween:
-            widget.useLegacyColorScheme ? colorTween : iconColorTween,
-        flex: _evaluateFlex(_animations[i]),
-        selected: i == widget.currentIndex,
-        showSelectedLabels:
-            widget.showSelectedLabels ?? bottomTheme.showSelectedLabels ?? true,
-        showUnselectedLabels: widget.showUnselectedLabels ??
-            bottomTheme.showUnselectedLabels ??
-            _defaultShowUnselected,
-        indexLabel: localizations.tabLabel(
-            tabIndex: i + 1, tabCount: widget.items.length),
-        mouseCursor: effectiveMouseCursor,
-        layout: layout,
-      ));
+      tiles.add(MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: _BottomNavigationTile(
+            _effectiveType,
+            widget.items[i],
+            _animations[i],
+            widget.iconSize,
+            key: widget.items[i].key,
+            selectedIconTheme: widget.useLegacyColorScheme
+                ? widget.selectedIconTheme ?? bottomTheme.selectedIconTheme
+                : effectiveSelectedIconTheme,
+            unselectedIconTheme: widget.useLegacyColorScheme
+                ? widget.unselectedIconTheme ?? bottomTheme.unselectedIconTheme
+                : effectiveUnselectedIconTheme,
+            selectedLabelStyle: effectiveSelectedLabelStyle,
+            unselectedLabelStyle: effectiveUnselectedLabelStyle,
+            enableFeedback:
+                widget.enableFeedback ?? bottomTheme.enableFeedback ?? true,
+            onTap: () {
+              widget.onTap?.call(i);
+            },
+            onDoubleTap: () {
+              widget.onDoubleTap?.call(i);
+            },
+            labelColorTween:
+                widget.useLegacyColorScheme ? colorTween : labelColorTween,
+            iconColorTween:
+                widget.useLegacyColorScheme ? colorTween : iconColorTween,
+            flex: _evaluateFlex(_animations[i]),
+            selected: i == widget.currentIndex,
+            showSelectedLabels: widget.showSelectedLabels ??
+                bottomTheme.showSelectedLabels ??
+                true,
+            showUnselectedLabels: widget.showUnselectedLabels ??
+                bottomTheme.showUnselectedLabels ??
+                _defaultShowUnselected,
+            indexLabel: localizations.tabLabel(
+                tabIndex: i + 1, tabCount: widget.items.length),
+            mouseCursor: effectiveMouseCursor,
+            layout: layout,
+            customBottomPadding:
+                widget.direction == Axis.horizontal ? null : 24,
+            customTopPadding: widget.direction == Axis.horizontal ? null : 0,
+            useExpanded: widget.direction == Axis.horizontal,
+          )));
     }
     return tiles;
   }
@@ -1098,8 +1118,7 @@ class _MyBottomNavigationBarState extends State<MyBottomNavigationBar>
         elevation: widget.elevation ?? bottomTheme.elevation ?? 8.0,
         color: backgroundColor,
         child: ConstrainedBox(
-          constraints: BoxConstraints(
-              minHeight: kBottomNavigationBarHeight + additionalBottomPadding),
+          constraints: BoxConstraints(minHeight: 0),
           child: CustomPaint(
             painter: _RadialPainter(
               circles: _circles.toList(),
@@ -1115,10 +1134,16 @@ class _MyBottomNavigationBarState extends State<MyBottomNavigationBar>
                   removeBottom: true,
                   child: DefaultTextStyle.merge(
                     overflow: TextOverflow.ellipsis,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: _createTiles(layout),
-                    ),
+                    child: widget.direction == Axis.horizontal
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: _createTiles(layout),
+                          )
+                        : Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: _createTiles(layout),
+                          ),
                   ),
                 ),
               ),
