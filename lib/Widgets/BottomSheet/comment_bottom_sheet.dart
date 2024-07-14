@@ -157,6 +157,10 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.getBackground(context),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+      ),
       height: MediaQuery.sizeOf(context).height * 0.8,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Column(

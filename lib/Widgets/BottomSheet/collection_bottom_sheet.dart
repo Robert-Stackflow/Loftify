@@ -6,6 +6,7 @@ import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Screens/Post/collection_detail_screen.dart';
 
 import '../../Models/history_response.dart';
+import '../../Resources/theme.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
@@ -148,6 +149,12 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(20),
+        ),
+        color: AppTheme.getBackground(context),
+      ),
       height: MediaQuery.sizeOf(context).height * 0.8,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Column(
@@ -203,7 +210,10 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
                 children: [
                   Text(
                     "${widget.postCollection.name}（${widget.postCollection.postCount}篇）",
-                    style: Theme.of(context).textTheme.titleMedium?.apply(fontWeightDelta: 2),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.apply(fontWeightDelta: 2),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

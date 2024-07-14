@@ -706,7 +706,7 @@ class CustomConfirmDialog {
 class CustomLoadingDialog {
   static void showLoading(
     BuildContext context, {
-    bool dismissible = false,
+    bool dismissible = true,
     String? title,
     double size = 40,
   }) {

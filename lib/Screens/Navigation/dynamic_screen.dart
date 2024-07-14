@@ -13,6 +13,7 @@ import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Screens/Post/tag_detail_screen.dart';
 import 'package:loftify/Utils/asset_util.dart';
 import 'package:loftify/Utils/route_util.dart';
+import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Api/tag_api.dart';
 import '../../Resources/colors.dart';
@@ -118,6 +119,7 @@ class DynamicScreenState extends State<DynamicScreen>
             .map((entry) => ItemBuilder.buildAnimatedTab(context,
                 selected: entry.key == _currentTabIndex, text: entry.value))
             .toList(),
+        overlayColor: WidgetStateProperty.all(Colors.transparent),
         labelPadding: const EdgeInsets.only(right: 32),
         enableFeedback: true,
         dividerHeight: 0,
@@ -345,11 +347,13 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
   }
 
   _buildSubscribeTagList(ScrollPhysics physics) {
-    return SliverList.builder(
-      itemCount: _subscribeList.length,
-      itemBuilder: (context, index) {
+    return SliverWaterfallFlow.extent(
+      maxCrossAxisExtent: 600,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 6,
+      children: List.generate(_subscribeList.length, (int index) {
         return _buildSubscribeTagItem(_subscribeList[index]);
-      },
+      }),
     );
   }
 
@@ -837,11 +841,11 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
   }
 
   _buildSubscribeCollectionList(ScrollPhysics physics) {
-    return SliverList.builder(
-      itemCount: _subscribeList.length,
-      itemBuilder: (context, index) {
+    return SliverWaterfallFlow.extent(
+      maxCrossAxisExtent: 560,
+      children: List.generate(_subscribeList.length, (index) {
         return _buildSubscribeCollectionItem(_subscribeList[index]);
-      },
+      }),
     );
   }
 
@@ -859,7 +863,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
         );
       },
       child: Container(
-        height: 106,
+        height: 110,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         color: Colors.transparent,
         child: Row(
@@ -947,6 +951,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
                           .textTheme
                           .bodySmall
                           ?.apply(fontSizeDelta: 1),
+                      maxLines: 3,
                     ),
                   const Spacer(),
                 ],
@@ -959,11 +964,11 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
   }
 
   _buildGuessLikeCollectionList(ScrollPhysics physics) {
-    return SliverList.builder(
-      itemCount: _guessLikeList.length,
-      itemBuilder: (context, index) {
+    return SliverWaterfallFlow.extent(
+      maxCrossAxisExtent: 560,
+      children: List.generate(_guessLikeList.length, (index) {
         return _buildGuessLikeCollectionItem(_guessLikeList[index]);
-      },
+      }),
     );
   }
 
@@ -983,7 +988,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
         );
       },
       child: Container(
-        height: 106,
+        height: 125,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         color: Colors.transparent,
         child: Row(
@@ -1053,6 +1058,8 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
                   Text(
                     item.latestPost,
                     style: Theme.of(context).textTheme.labelMedium,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 6),
                   SizedBox(
@@ -1085,12 +1092,14 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
-                        "${item.postCount}篇 · ${item.subscribeCount}订阅",
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.apply(fontSizeDelta: -1),
-                      ),
+                          "${item.postCount}篇 · ${Utils.formatCount(item.subscribeCount)}订阅",
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleSmall
+                              ?.apply(fontSizeDelta: -1),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       const Spacer(),
                       ItemBuilder.buildIconTextButton(context,
                           text: item.subscribed ? "取消订阅" : "订阅",
@@ -1247,11 +1256,11 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
   }
 
   _buildSubscribeGrainList(ScrollPhysics physics) {
-    return SliverList.builder(
-      itemCount: _subscribeList.length,
-      itemBuilder: (context, index) {
+    return SliverWaterfallFlow.extent(
+      maxCrossAxisExtent: 560,
+      children: List.generate(_subscribeList.length, (index) {
         return _buildSubscribeGrainItem(_subscribeList[index]);
-      },
+      }),
     );
   }
 

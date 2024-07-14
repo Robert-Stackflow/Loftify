@@ -146,7 +146,6 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
                 confirmButtonText: "解除",
                 cancelButtonText: "取消",
                 onTapConfirm: () {
-                  Navigator.pop(context);
                   SettingApi.shieldOrUnshieldTag(tag: tag, isShield: false)
                       .then((value) {
                     IToast.showTop(context,
@@ -158,7 +157,6 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
                   });
                 },
                 onTapCancel: () {
-                  Navigator.pop(context);
                 },
                 customDialogType: CustomDialogType.normal,
               );

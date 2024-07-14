@@ -287,6 +287,7 @@ class _SearchScreenState extends State<SearchScreen>
               background: AppTheme.getBackground(context),
               tabBar: TabBar(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                overlayColor:  WidgetStateProperty.all(Colors.transparent),
                 tabAlignment: TabAlignment.start,
                 isScrollable: true,
                 controller: _tabController,

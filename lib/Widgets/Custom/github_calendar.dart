@@ -169,7 +169,7 @@ class SquareWall extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.extent(
+    return GridView.count(
       physics: const ClampingScrollPhysics(),
       scrollDirection: Axis.horizontal,
       crossAxisSpacing: boxPadding,

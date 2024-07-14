@@ -184,6 +184,7 @@ class MyBottomNavigationBar extends StatefulWidget {
     this.unselectedFontSize = 12.0,
     this.selectedLabelStyle,
     this.unselectedLabelStyle,
+    this.clearNavSelectState = false,
     this.showSelectedLabels,
     this.showUnselectedLabels,
     this.mouseCursor,
@@ -296,6 +297,7 @@ class MyBottomNavigationBar extends StatefulWidget {
   /// The [TextStyle] of the [BottomNavigationBarItem] labels when they are not
   /// selected.
   final TextStyle? unselectedLabelStyle;
+  final bool clearNavSelectState;
 
   /// The font size of the [BottomNavigationBarItem] labels when they are selected.
   ///
@@ -534,6 +536,7 @@ class _BottomNavigationTile extends StatelessWidget {
             colorTween: labelColorTween!,
             animation: animation,
             item: item,
+            selected: selected,
             selectedLabelStyle: selectedLabelStyle,
             unselectedLabelStyle: unselectedLabelStyle,
             showSelectedLabels: showSelectedLabels,
@@ -661,6 +664,7 @@ class _Label extends StatelessWidget {
     required this.colorTween,
     required this.animation,
     required this.item,
+    required this.selected,
     required this.selectedLabelStyle,
     required this.unselectedLabelStyle,
     required this.showSelectedLabels,
@@ -673,6 +677,7 @@ class _Label extends StatelessWidget {
   final TextStyle selectedLabelStyle;
   final TextStyle unselectedLabelStyle;
   final bool showSelectedLabels;
+  final bool selected;
   final bool showUnselectedLabels;
 
   @override
@@ -787,8 +792,11 @@ class _MyBottomNavigationBarState extends State<MyBottomNavigationBar>
         reverseCurve: Curves.fastOutSlowIn.flipped,
       );
     });
-    _controllers[widget.currentIndex].value = 1.0;
-    _backgroundColor = widget.items[widget.currentIndex].backgroundColor;
+
+    if (widget.clearNavSelectState == false) {
+      _controllers[widget.currentIndex].value = 1.0;
+      _backgroundColor = widget.items[widget.currentIndex].backgroundColor;
+    }
   }
 
   // Computes the default value for the [type] parameter.
@@ -874,9 +882,9 @@ class _MyBottomNavigationBarState extends State<MyBottomNavigationBar>
   @override
   void didUpdateWidget(MyBottomNavigationBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-
     // No animated segue if the length of the items list changes.
-    if (widget.items.length != oldWidget.items.length) {
+    if (widget.items.length != oldWidget.items.length ||
+        widget.clearNavSelectState != oldWidget.clearNavSelectState) {
       _resetState();
       return;
     }
@@ -1032,7 +1040,8 @@ class _MyBottomNavigationBarState extends State<MyBottomNavigationBar>
     final List<Widget> tiles = <Widget>[];
     for (int i = 0; i < widget.items.length; i++) {
       final Set<WidgetState> states = <WidgetState>{
-        if (i == widget.currentIndex) WidgetState.selected,
+        if (i == widget.currentIndex && widget.clearNavSelectState == false)
+          WidgetState.selected,
       };
 
       final MouseCursor effectiveMouseCursor =
@@ -1070,7 +1079,8 @@ class _MyBottomNavigationBarState extends State<MyBottomNavigationBar>
             iconColorTween:
                 widget.useLegacyColorScheme ? colorTween : iconColorTween,
             flex: _evaluateFlex(_animations[i]),
-            selected: i == widget.currentIndex,
+            selected:
+                i == widget.currentIndex && widget.clearNavSelectState == false,
             showSelectedLabels: widget.showSelectedLabels ??
                 bottomTheme.showSelectedLabels ??
                 true,

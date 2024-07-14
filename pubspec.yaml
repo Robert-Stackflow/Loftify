@@ -49,6 +49,7 @@ dependencies:
   hive: ^2.2.3 # Hive
   hive_flutter: ^1.1.0 # Hive
   path_provider: ^2.0.12
+  file_picker: ^8.0.6
   crypto: ^3.0.3 # 加密
   encrypt: ^5.0.3 # 加密
   pointycastle: 3.9.1
@@ -66,6 +67,8 @@ dependencies:
   app_links: ^6.1.1
   chinese_font_library: ^1.2.0
   restart_app: ^1.2.1
+  desktop_multi_window: ^0.2.0
+  responsive_builder: ^0.7.1
   bitsdojo_window:
 #    ^0.1.6
     path: ./third-party/bitsdojo_window/bitsdojo_window

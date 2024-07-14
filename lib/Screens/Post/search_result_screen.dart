@@ -517,6 +517,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
               background: AppTheme.getBackground(context),
               tabBar: TabBar(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                overlayColor:  WidgetStateProperty.all(Colors.transparent),
                 controller: _tabController,
                 tabs: _tabLabelList
                     .asMap()

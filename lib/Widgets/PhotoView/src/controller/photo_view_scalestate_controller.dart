@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/widgets.dart' show VoidCallback;
+
 import '../../src/photo_view_scale_state.dart';
 import '../../src/utils/ignorable_change_notifier.dart';
 

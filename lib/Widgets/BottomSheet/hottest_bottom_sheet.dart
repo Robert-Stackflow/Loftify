@@ -4,6 +4,7 @@ import 'package:loftify/Api/tag_api.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 
 import '../../Models/enums.dart';
+import '../../Resources/theme.dart';
 
 class NewestFilterBottomSheet extends StatefulWidget {
   const NewestFilterBottomSheet({
@@ -50,15 +51,23 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildHeader(),
-        ItemBuilder.buildDivider(context, horizontal: 0, vertical: 0),
-        _buildButtons(),
-        ItemBuilder.buildDivider(context, horizontal: 0, vertical: 0),
-        _buildFooter(),
-      ],
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(20),
+        ),
+        color: AppTheme.getBackground(context),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildHeader(),
+          ItemBuilder.buildDivider(context, horizontal: 0, vertical: 0),
+          _buildButtons(),
+          ItemBuilder.buildDivider(context, horizontal: 0, vertical: 0),
+          _buildFooter(),
+        ],
+      ),
     );
   }
 

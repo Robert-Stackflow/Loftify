@@ -62,6 +62,7 @@ class HiveUtil {
 
   //image
   static const String followMainColorKey = "followMainColor";
+  static const String savePathKey = "savePaths";
   static const String waterfallFlowImageQualityKey =
       "waterfallFlowImageQuality";
   static const String postDetailImageQualityKey = "postDetailImageQuality";

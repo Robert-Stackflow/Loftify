@@ -1,7 +1,9 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Models/enums.dart';
 
 import '../../Utils/hive_util.dart';
+import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
 import '../../Widgets/EasyRefresh/easy_refresh.dart';
@@ -30,6 +32,7 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
   ImageQuality longPressLinkButtonImageQuality =
       HiveUtil.getImageQuality(HiveUtil.longPressLinkButtonImageQualityKey);
   bool followMainColor = HiveUtil.getBool(key: HiveUtil.followMainColorKey);
+  String? savePath = HiveUtil.getString(key: HiveUtil.savePathKey);
 
   @override
   void initState() {
@@ -196,15 +199,32 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
                   );
                 },
               ),
-              // const SizedBox(height: 10),
-              // ItemBuilder.buildCaptionItem(context: context, title: "图片下载"),
-              // ItemBuilder.buildEntryItem(
-              //   context: context,
-              //   title: "文件保存路径",
-              //   description: "Pictures/Loftify",
-              //   tip: "修改",
-              //   onTap: () {},
-              // ),
+              const SizedBox(height: 10),
+              if (Utils.isDesktop())
+                ItemBuilder.buildCaptionItem(context: context, title: "保存设置"),
+              if (Utils.isDesktop())
+                ItemBuilder.buildEntryItem(
+                  context: context,
+                  title: "图片/视频保存路径",
+                  bottomRadius: true,
+                  description: savePath ?? "",
+                  tip: "修改",
+                  onTap: () async {
+                    String? selectedDirectory =
+                    await FilePicker.platform.getDirectoryPath(
+                      dialogTitle: "选择图片/视频保存路径",
+                      lockParentWindow: true,
+                    );
+                    if (selectedDirectory != null) {
+                      setState(() {
+                        savePath = selectedDirectory;
+                        HiveUtil.put(
+                            key: HiveUtil.savePathKey,
+                            value: selectedDirectory);
+                      });
+                    }
+                  },
+                ),
               // ItemBuilder.buildEntryItem(
               //   context: context,
               //   title: "文件命名格式",

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:loftify/Resources/colors.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:tuple/tuple.dart';
 
@@ -33,9 +32,8 @@ class TileList extends StatelessWidget {
                 title: t.item1,
                 trailing: Icons.done_rounded,
                 showTrailing: t.item2 == selected,
-                titleColor: redOptions.contains(t.item2)
-                    ? Colors.redAccent
-                    : null,
+                titleColor:
+                    redOptions.contains(t.item2) ? Colors.redAccent : null,
                 crossAxisAlignment: crossAxisAlignment,
                 onTap: () {
                   onSelected(t.item2);

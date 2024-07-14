@@ -390,7 +390,6 @@ class UserDetailScreenState extends State<UserDetailScreen>
                                 ),
                                 buttonText: "加油哦",
                                 onTapDismiss: () {
-                                  Navigator.pop(context);
                                 },
                                 customDialogType: CustomDialogType.custom,
                               );
@@ -462,6 +461,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                 delegate: SliverAppBarDelegate(
                   tabBar: TabBar(
                     controller: _tabController,
+                    overlayColor: WidgetStateProperty.all(Colors.transparent),
                     tabs: tabList,
                     labelPadding: const EdgeInsets.symmetric(horizontal: 12),
                     dividerHeight: 0,
@@ -612,10 +612,8 @@ class UserDetailScreenState extends State<UserDetailScreen>
                 setState(() {});
                 updateFollowStatus();
               });
-          Navigator.pop(context);
         },
         onTapCancel: () {
-          Navigator.pop(context);
         },
         customDialogType: CustomDialogType.custom,
       );

@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -182,20 +182,39 @@ class Utils {
       );
       File copiedFile =
           await copyAndRenameFile(file, Utils.extractFileNameFromUrl(imageUrl));
-      var result = await ImageGallerySaver.saveFile(
-        copiedFile.path,
-        name: Utils.extractFileNameFromUrl(imageUrl),
-      );
-      bool success = result != null && result['isSuccess'];
-      if (showToast) {
-        if (success) {
-          IToast.showTop(context, text: "图片已保存至相册");
+      if (Utils.isMobile()) {
+        var result = await ImageGallerySaver.saveFile(
+          copiedFile.path,
+          name: Utils.extractFileNameFromUrl(imageUrl),
+        );
+        bool success = result != null && result['isSuccess'];
+        if (showToast) {
+          if (success) {
+            IToast.showTop(context, text: "图片已保存至相册");
+          } else {
+            IToast.showTop(context, text: "保存失败，请重试");
+          }
+        }
+        return success;
+      } else {
+        String? saveDirectory = await checkSaveDirectory(context);
+        if (Utils.isNotEmpty(saveDirectory)) {
+          String newPath =
+              '$saveDirectory/${Utils.extractFileNameFromUrl(imageUrl)}';
+          await copiedFile.copy(newPath);
+          if (showToast) {
+            IToast.showTop(context, text: "图片已保存至$saveDirectory");
+          }
+          return true;
         } else {
-          IToast.showTop(context, text: "保存失败，请重试");
+          IToast.showTop(context, text: "保存失败，请设置图片保存路径");
+          return false;
         }
       }
-      return success;
     } catch (e) {
+      if (e is PathNotFoundException) {
+        IToast.showTop(context, text: "保存路径不存在");
+      }
       IToast.showTop(context, text: "保存失败，请重试");
       return false;
     }
@@ -213,7 +232,12 @@ class Utils {
       bool result = statusList.every((element) => element);
       if (showToast) {
         if (result) {
-          IToast.showTop(context, text: "所有图片已保存至相册");
+          if (Utils.isMobile()) {
+            IToast.showTop(context, text: "所有图片已保存至相册");
+          } else {
+            String? saveDirectory = await checkSaveDirectory(context);
+            IToast.showTop(context, text: "所有图片已保存至$saveDirectory");
+          }
         } else {
           IToast.showTop(context, text: "保存失败，请重试");
         }
@@ -223,6 +247,30 @@ class Utils {
       IToast.showTop(context, text: "保存失败，请重试");
       return false;
     }
+  }
+
+  static Future<String?> checkSaveDirectory(BuildContext context) async {
+    if (Utils.isDesktop()) {
+      String? saveDirectory = HiveUtil.getString(key: HiveUtil.savePathKey);
+      if (Utils.isEmpty(saveDirectory)) {
+        await Future.delayed(const Duration(milliseconds: 300), () async {
+          String? selectedDirectory =
+              await FilePicker.platform.getDirectoryPath(
+            dialogTitle: "选择图片/视频保存路径",
+            lockParentWindow: true,
+          );
+          if (selectedDirectory != null) {
+            saveDirectory = selectedDirectory;
+            HiveUtil.put(key: HiveUtil.savePathKey, value: selectedDirectory);
+          }
+        });
+      }
+      if (Utils.isNotEmpty(saveDirectory)) {
+        Directory(saveDirectory!).createSync(recursive: true);
+      }
+      return saveDirectory;
+    }
+    return null;
   }
 
   static Future<bool> saveVideo(
@@ -236,20 +284,39 @@ class Utils {
       String savePath = appDocDir.path + extractFileNameFromUrl(videoUrl);
       await Dio()
           .download(videoUrl, savePath, onReceiveProgress: onReceiveProgress);
-      var result = await ImageGallerySaver.saveFile(
-        savePath,
-        name: Utils.extractFileNameFromUrl(videoUrl),
-      );
-      bool success = result != null && result['isSuccess'];
-      if (showToast) {
-        if (success) {
-          IToast.showTop(context, text: "视频已保存");
+      if (Utils.isMobile()) {
+        var result = await ImageGallerySaver.saveFile(
+          savePath,
+          name: Utils.extractFileNameFromUrl(videoUrl),
+        );
+        bool success = result != null && result['isSuccess'];
+        if (showToast) {
+          if (success) {
+            IToast.showTop(context, text: "视频已保存");
+          } else {
+            IToast.showTop(context, text: "保存失败，请重试");
+          }
+        }
+        return success;
+      } else {
+        String? saveDirectory = await checkSaveDirectory(context);
+        if (Utils.isNotEmpty(saveDirectory)) {
+          String newPath =
+              '$saveDirectory/demo/${Utils.extractFileNameFromUrl(videoUrl)}';
+          await File(savePath).copy(newPath);
+          if (showToast) {
+            IToast.showTop(context, text: "视频已保存至$saveDirectory");
+          }
+          return true;
         } else {
-          IToast.showTop(context, text: "保存失败，请重试");
+          IToast.showTop(context, text: "保存失败，请设置视频保存路径");
+          return false;
         }
       }
-      return success;
     } catch (e) {
+      if (e is PathNotFoundException) {
+        IToast.showTop(context, text: "保存路径不存在");
+      }
       IToast.showTop(context, text: "保存失败，请重试");
       return false;
     }
@@ -608,7 +675,8 @@ class Utils {
   }
 
   static bool isDesktop() {
-    return !kIsWeb && (Platform.isMacOS || Platform.isWindows || Platform.isLinux);
+    return !kIsWeb &&
+        (Platform.isMacOS || Platform.isWindows || Platform.isLinux);
   }
 
   static Future<void> downloadAndUpdate(

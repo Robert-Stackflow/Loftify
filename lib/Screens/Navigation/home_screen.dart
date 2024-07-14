@@ -15,6 +15,7 @@ import '../../Models/recommend_response.dart';
 import '../../Utils/asset_util.dart';
 import '../../Utils/iprint.dart';
 import '../../Utils/route_util.dart';
+import '../../Utils/utils.dart';
 import '../../Widgets/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../generated/l10n.dart';
@@ -193,19 +194,20 @@ class HomeScreenState extends State<HomeScreen>
       title:
           Text(S.current.home, style: Theme.of(context).textTheme.titleLarge),
       actions: [
-        ItemBuilder.buildIconButton(
-            context: context,
-            icon: AssetUtil.loadDouble(
-              context,
-              AssetUtil.searchLightIcon,
-              AssetUtil.searchDarkIcon,
-            ),
-            onTap: () {
-              RouteUtil.pushCupertinoRoute(
+        if (Utils.isMobile())
+          ItemBuilder.buildIconButton(
+              context: context,
+              icon: AssetUtil.loadDouble(
                 context,
-                const SearchScreen(),
-              );
-            }),
+                AssetUtil.searchLightIcon,
+                AssetUtil.searchDarkIcon,
+              ),
+              onTap: () {
+                RouteUtil.pushCupertinoRoute(
+                  context,
+                  const SearchScreen(),
+                );
+              }),
         const SizedBox(width: 10),
       ],
     );

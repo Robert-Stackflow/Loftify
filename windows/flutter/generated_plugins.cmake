@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   bitsdojo_window_windows
+  desktop_multi_window
   local_auth_windows
   permission_handler_windows
   share_plus

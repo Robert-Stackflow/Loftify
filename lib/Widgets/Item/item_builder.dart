@@ -42,6 +42,7 @@ class ItemBuilder {
     required BuildContext context,
     bool transparent = false,
   }) {
+    bool showLeading = !Utils.isDesktop();
     return MyAppBar(
       key: key,
       backgroundColor: transparent
@@ -49,19 +50,23 @@ class ItemBuilder {
           : Theme.of(context).appBarTheme.backgroundColor,
       elevation: 0,
       scrolledUnderElevation: 0,
-      leading: Container(
-        margin: const EdgeInsets.only(left: 8),
-        child: buildIconButton(
-          context: context,
-          icon: Icon(leading, color: Theme.of(context).iconTheme.color),
-          onTap: () {
-            Navigator.pop(context);
-          },
-        ),
-      ),
+      leadingWidth: showLeading ? 56.0 : 0.0,
+      automaticallyImplyLeading: false,
+      leading: showLeading
+          ? Container(
+              margin: const EdgeInsets.only(left: 8),
+              child: buildIconButton(
+                context: context,
+                icon: Icon(leading, color: Theme.of(context).iconTheme.color),
+                onTap: () {
+                  Navigator.pop(context);
+                },
+              ),
+            )
+          : null,
       title: title.isNotEmpty
           ? Container(
-              margin: const EdgeInsets.only(left: 5),
+              margin: EdgeInsets.only(left: showLeading ? 5 : 20),
               child: Text(
                 title,
                 style: Theme.of(context).textTheme.titleMedium?.apply(
@@ -99,7 +104,8 @@ class ItemBuilder {
     bool transparent = false,
     Color? backgroundColor,
   }) {
-    center = Utils.isDesktop() ? false : center;
+    bool showLeading = leading != null && !Utils.isDesktop();
+    // center = Utils.isDesktop() ? false : center;
     return MyAppBar(
       key: key,
       backgroundColor: transparent
@@ -107,8 +113,9 @@ class ItemBuilder {
           : backgroundColor ?? Theme.of(context).appBarTheme.backgroundColor,
       elevation: 0,
       scrolledUnderElevation: 0,
-      leadingWidth: leading != null ? 56.0 : 0.0,
-      leading: leading != null
+      automaticallyImplyLeading: false,
+      leadingWidth: showLeading ? 56.0 : 0.0,
+      leading: showLeading
           ? Container(
               margin: const EdgeInsets.only(left: 4),
               child: buildIconButton(
@@ -119,7 +126,7 @@ class ItemBuilder {
               ),
             )
           : null,
-      title: leading != null
+      title: showLeading
           ? center
               ? Center(child: title)
               : title ?? Container()
@@ -1623,7 +1630,6 @@ class ItemBuilder {
     required BuildContext context,
     required hintText,
     required Null Function(dynamic value) onSubmitted,
-    double height = 35,
     TextEditingController? controller,
     FocusNode? focusNode,
   }) {
@@ -1634,15 +1640,14 @@ class ItemBuilder {
         borderRadius: BorderRadius.circular(50),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           AssetUtil.load(
             AssetUtil.searchDarkIcon,
             size: 20,
           ),
           Expanded(
-            child: Card(
-              elevation: 0,
-              color: Colors.transparent,
+            child: Center(
               child: TextField(
                 focusNode: focusNode,
                 controller: controller,
@@ -1650,10 +1655,8 @@ class ItemBuilder {
                 onSubmitted: onSubmitted,
                 style: Theme.of(context).textTheme.titleSmall,
                 decoration: InputDecoration(
-                  constraints:
-                      BoxConstraints(minHeight: height, maxHeight: height),
-                  contentPadding: EdgeInsets.only(bottom: 49 - height, left: 8),
-                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.only(left: 8),
+                  border: const OutlineInputBorder(borderSide: BorderSide.none),
                   hintText: hintText,
                   hintStyle: Theme.of(context).textTheme.titleSmall?.apply(
                       color: Theme.of(context).textTheme.labelSmall?.color),
@@ -1669,8 +1672,7 @@ class ItemBuilder {
   static Widget buildDesktopSearchBar({
     required BuildContext context,
     required hintText,
-    required Null Function(dynamic value) onSubmitted,
-    double height = 35,
+    required Function(dynamic value) onSubmitted,
     TextEditingController? controller,
     FocusNode? focusNode,
     Color? background,
@@ -1699,11 +1701,8 @@ class ItemBuilder {
                       fontSizeDelta: hintFontSizeDelta,
                     ),
                 decoration: InputDecoration(
-                  constraints:
-                      BoxConstraints(minHeight: height, maxHeight: height),
-                  contentPadding: EdgeInsets.only(
-                      bottom: bottomMargin ?? (49 - height), left: 8),
-                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.only(left: 8),
+                  border: const OutlineInputBorder(borderSide: BorderSide.none),
                   hintText: hintText,
                   hintStyle: Theme.of(context).textTheme.titleSmall?.apply(
                         color: Theme.of(context).textTheme.labelSmall?.color,

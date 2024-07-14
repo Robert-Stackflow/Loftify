@@ -111,7 +111,10 @@ class CustomInfoDialogWidget extends StatelessWidget {
               CustomDialogButton(
                 buttonTextColor: buttonTextColor ?? Colors.white,
                 text: buttonText,
-                onTap: onTapDismiss,
+                onTap: () {
+                  onTapDismiss.call();
+                  Navigator.pop(context);
+                },
                 bgColor: CustomDialogColors.getBgColor(
                   context,
                   customDialogType,

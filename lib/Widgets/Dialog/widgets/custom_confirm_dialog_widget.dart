@@ -115,7 +115,10 @@ class CustomConfirmDialogWidget extends StatelessWidget {
                   Expanded(
                     flex: 1,
                     child: CustomDialogButton(
-                      onTap: onTapCancel,
+                      onTap: () {
+                        onTapCancel.call();
+                        Navigator.pop(context);
+                      },
                       text: cancelButtonText,
                       bgColor: CustomDialogColors.getBgColor(
                         context,
@@ -132,7 +135,10 @@ class CustomConfirmDialogWidget extends StatelessWidget {
                     flex: 1,
                     child: CustomDialogButton(
                       buttonTextColor: buttonTextColor ?? Colors.white,
-                      onTap: onTapConfirm,
+                      onTap: () {
+                        onTapConfirm.call();
+                        Navigator.pop(context);
+                      },
                       text: confirmButtonText,
                       bgColor: CustomDialogColors.getBgColor(
                         context,

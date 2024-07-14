@@ -129,12 +129,10 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
             confirmButtonText: "前往更改",
             cancelButtonText: "暂不更改",
             onTapConfirm: () {
-              Navigator.pop(context);
               UriUtil.launchUrlUri(
                   context, "https://www.lofter.com/theme/${blogInfo.blogName}");
             },
             onTapCancel: () {
-              Navigator.pop(context);
             },
             customDialogType: CustomDialogType.normal,
           );

@@ -1,13 +1,9 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Api/tag_api.dart';
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Resources/theme.dart';
-import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Utils/itoast.dart';
-import 'package:loftify/Utils/route_util.dart';
-import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Api/post_api.dart';

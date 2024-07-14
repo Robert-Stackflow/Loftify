@@ -11,12 +11,14 @@ import 'package:loftify/Resources/colors.dart';
 import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
 import 'package:loftify/Screens/Navigation/dynamic_screen.dart';
 import 'package:loftify/Screens/Navigation/home_screen.dart';
+import 'package:loftify/Screens/Setting/setting_screen.dart';
 import 'package:loftify/Utils/asset_util.dart';
 import 'package:loftify/Utils/uri_util.dart';
 import 'package:loftify/Widgets/Dialog/custom_dialog.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:loftify/Widgets/LottieCupertinoRefresh/lottie_cupertino_refresh.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:provider/provider.dart';
 
 import '../Api/login_api.dart';
 import '../Api/user_api.dart';
@@ -38,7 +40,10 @@ import 'Info/dress_screen.dart';
 import 'Info/system_notice_screen.dart';
 import 'Info/user_detail_screen.dart';
 import 'Lock/pin_verify_screen.dart';
-import 'Setting/setting_screen.dart';
+import 'Post/search_result_screen.dart';
+
+final GlobalKey<NavigatorState> desktopNavigatorKey =
+    GlobalKey<NavigatorState>();
 
 const borderColor = Color(0xFF805306);
 const backgroundStartColor = Color(0xFFFFD500);
@@ -71,6 +76,7 @@ class MainScreenState extends State<MainScreen>
   late AnimationController darkModeController;
   Widget? darkModeWidget;
   FullBlogInfo? blogInfo;
+  bool clearNavSelectState = false;
 
   _fetchUserInfo() async {
     if (ProviderManager.globalProvider.token.isNotEmpty) {
@@ -89,7 +95,7 @@ class MainScreenState extends State<MainScreen>
             });
             return IndicatorResult.success;
           }
-        } catch (_, t) {
+        } catch (_) {
           if (mounted) IToast.showTop(context, text: "加载失败");
           return IndicatorResult.fail;
         } finally {}
@@ -139,7 +145,6 @@ class MainScreenState extends State<MainScreen>
           confirmButtonText: "立即下载",
           cancelButtonText: "暂不更新",
           onTapConfirm: () {
-            Navigator.pop(context);
             Utils.downloadAndUpdate(
               context,
               latestReleaseItem!.assets.isNotEmpty
@@ -149,9 +154,7 @@ class MainScreenState extends State<MainScreen>
               version: latestVersion,
             );
           },
-          onTapCancel: () {
-            Navigator.pop(context);
-          },
+          onTapCancel: () {},
           customDialogType: CustomDialogType.normal,
         );
       }
@@ -199,9 +202,12 @@ class MainScreenState extends State<MainScreen>
       goPinVerify();
     });
     fetchData();
-    // ProviderManager.globalProvider.addListener(() {
-    //   initData();
-    // });
+    ProviderManager.globalProvider.addListener(() {
+      // initData();
+      setState(() {
+        clearNavSelectState = ProviderManager.globalProvider.desktopCanpop;
+      });
+    });
   }
 
   Future<void> fetchData() async {
@@ -251,8 +257,15 @@ class MainScreenState extends State<MainScreen>
       (_keyList[index].currentState as DynamicScreenState)
           .scrollToTopAndRefresh();
     }
-
-    _pageController.jumpToPage(index);
+    if (Utils.isMobile()) {
+      _pageController.jumpToPage(index);
+    } else {
+      if (ProviderManager.globalProvider.desktopCanpop ||
+          ProviderManager.globalProvider.bottomBarSelectedIndex != index) {
+        ProviderManager.globalProvider.bottomBarSelectedIndex = index;
+        RouteUtil.pushDesktopFadeRoute(_pageList[index], removeUtil: true);
+      }
+    }
     setState(() {
       _bottomBarSelectedIndex = index;
     });
@@ -354,11 +367,52 @@ class MainScreenState extends State<MainScreen>
             MoveWindow(),
             Column(
               children: [
-                const SizedBox(height: 100),
+                const SizedBox(height: 17),
+                Selector<GlobalProvider, bool>(
+                  selector: (context, globalProvider) =>
+                      globalProvider.desktopCanpop,
+                  builder: (context, desktopCanpop, child) => MouseRegion(
+                    cursor: desktopCanpop
+                        ? SystemMouseCursors.click
+                        : SystemMouseCursors.basic,
+                    child: GestureDetector(
+                      onTap: () {
+                        if (desktopNavigatorKey.currentState != null &&
+                            desktopNavigatorKey.currentState!.canPop()) {
+                          desktopNavigatorKey.currentState?.pop();
+                          ProviderManager.globalProvider.desktopCanpop =
+                              desktopNavigatorKey.currentState!.canPop();
+                        } else {
+                          ProviderManager.globalProvider.desktopCanpop =
+                              desktopNavigatorKey.currentState?.canPop() ??
+                                  false;
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(9.5),
+                        decoration: BoxDecoration(
+                          color: desktopCanpop
+                              ? Colors.grey.withAlpha(40)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          size: 20,
+                          color: desktopCanpop
+                              ? Theme.of(context).iconTheme.color
+                              : Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 30),
                 MyBottomNavigationBar(
                   currentIndex: _bottomBarSelectedIndex,
                   backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                   items: _navigationBarItemList,
+                  clearNavSelectState: clearNavSelectState,
                   direction: Axis.vertical,
                   elevation: 0,
                   unselectedItemColor:
@@ -375,11 +429,10 @@ class MainScreenState extends State<MainScreen>
                     GestureDetector(
                       onTap: () {
                         if (blogInfo == null) {
-                          RouteUtil.pushCupertinoRoute(
-                              context, const LoginByCaptchaScreen());
+                          RouteUtil.pushDesktopFadeRoute(
+                              const LoginByCaptchaScreen());
                         } else {
-                          RouteUtil.pushCupertinoRoute(
-                            context,
+                          RouteUtil.pushDesktopFadeRoute(
                             UserDetailScreen(
                                 blogId: blogInfo!.blogId,
                                 blogName: blogInfo!.blogName),
@@ -417,7 +470,7 @@ class MainScreenState extends State<MainScreen>
                             }
                           }
                         }),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     ItemBuilder.buildIconButton(
                         context: context,
                         icon: AssetUtil.loadDouble(
@@ -426,12 +479,9 @@ class MainScreenState extends State<MainScreen>
                           AssetUtil.dressDarkIcon,
                         ),
                         onTap: () {
-                          RouteUtil.pushCupertinoRoute(
-                            context,
-                            const DressScreen(),
-                          );
+                          RouteUtil.pushDesktopFadeRoute(const DressScreen());
                         }),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 6),
                     ItemBuilder.buildIconButton(
                       context: context,
                       icon: Icon(
@@ -439,13 +489,10 @@ class MainScreenState extends State<MainScreen>
                         color: Theme.of(context).iconTheme.color,
                       ),
                       onTap: () {
-                        RouteUtil.pushCupertinoRoute(
-                          context,
-                          const SystemNoticeScreen(),
-                        );
+                        RouteUtil.pushDesktopFadeRoute(
+                            const SystemNoticeScreen());
                       },
                     ),
-                    const SizedBox(height: 4),
                     ItemBuilder.buildDynamicIconButton(
                         context: context,
                         icon: AssetUtil.loadDouble(
@@ -453,9 +500,8 @@ class MainScreenState extends State<MainScreen>
                           AssetUtil.settingLightIcon,
                           AssetUtil.settingDarkIcon,
                         ),
-                        onTap: () {
-                          RouteUtil.pushCupertinoRoute(
-                              context, const SettingScreen());
+                        onTap: () async {
+                          RouteUtil.pushDesktopFadeRoute(const SettingScreen());
                         }),
                     const SizedBox(height: 15),
                   ],
@@ -487,12 +533,16 @@ class MainScreenState extends State<MainScreen>
                   width: min(300, MediaQuery.sizeOf(context).width - 240),
                   child: ItemBuilder.buildDesktopSearchBar(
                       context: context,
+                      controller: TextEditingController(),
                       background: Colors.grey.withAlpha(40),
                       hintText: "搜索感兴趣的内容",
                       borderRadius: 8,
                       bottomMargin: 18,
                       hintFontSizeDelta: 1,
-                      onSubmitted: (text) {}),
+                      onSubmitted: (text) {
+                        RouteUtil.pushDesktopFadeRoute(
+                            SearchResultScreen(searchKey: text));
+                      }),
                 ),
                 const Spacer(),
                 Row(
@@ -529,10 +579,27 @@ class MainScreenState extends State<MainScreen>
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
-                child: PageView(
-                  controller: _pageController,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: _pageList,
+                child: Navigator(
+                  key: desktopNavigatorKey,
+                  onGenerateRoute: (settings) {
+                    if (settings.name == "/") {
+                      return PageRouteBuilder(
+                        transitionDuration: const Duration(milliseconds: 300),
+                        pageBuilder: (BuildContext context,
+                            Animation<double> animation,
+                            Animation secondaryAnimation) {
+                          return FadeTransition(
+                            opacity: CurvedAnimation(
+                              parent: animation,
+                              curve: Curves.easeInOut,
+                            ),
+                            child: _pageList[0],
+                          );
+                        },
+                      );
+                    }
+                    return null;
+                  },
                 ),
               ),
             ),

@@ -23,6 +23,7 @@ import '../../Resources/colors.dart';
 import '../../Resources/theme.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
+import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/comment_bottom_sheet.dart';
 import '../../Widgets/Item/item_builder.dart';
 
@@ -375,16 +376,9 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
               });
             },
             onComment: () {
-              showMaterialModalBottomSheet(
-                context: context,
-                enableDrag: false,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(20),
-                  ),
-                ),
-                backgroundColor: AppTheme.getBackground(context),
-                builder: (context) => SingleChildScrollView(
+              BottomSheetBuilder.showBottomSheet(
+                context,
+                (context) => SingleChildScrollView(
                   controller: ModalScrollController.of(context),
                   child: CommentBottomSheet(
                     postId: postListItem.postData!.postView.id,
@@ -392,6 +386,8 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
                     publishTime: postListItem.postData!.postView.publishTime,
                   ),
                 ),
+                enableDrag: false,
+                backgroundColor: AppTheme.getBackground(context),
               );
             },
             onTapAvatar: () {

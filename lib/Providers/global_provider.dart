@@ -5,11 +5,7 @@ import '../Models/nav_entry.dart';
 import '../Utils/hive_util.dart';
 import '../generated/l10n.dart';
 
-enum ActiveThemeMode {
-  system,
-  light,
-  dark,
-}
+enum ActiveThemeMode { system, light, dark }
 
 class GlobalProvider with ChangeNotifier {
   String _captchaToken = "";
@@ -18,6 +14,24 @@ class GlobalProvider with ChangeNotifier {
 
   set captchaToken(String value) {
     _captchaToken = value;
+    notifyListeners();
+  }
+
+  bool _desktopCanpop = false;
+
+  bool get desktopCanpop => _desktopCanpop;
+
+  set desktopCanpop(bool value) {
+    _desktopCanpop = value;
+    notifyListeners();
+  }
+
+  int _bottomBarSelectedIndex = 0;
+
+  int get bottomBarSelectedIndex => _bottomBarSelectedIndex;
+
+  set bottomBarSelectedIndex(int value) {
+    _bottomBarSelectedIndex = value;
     notifyListeners();
   }
 

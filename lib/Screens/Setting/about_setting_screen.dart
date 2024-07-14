@@ -9,6 +9,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../Utils/hive_util.dart';
+import '../../Utils/utils.dart';
 import '../../Widgets/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../generated/l10n.dart';
@@ -48,11 +49,13 @@ class _AboutSettingScreenState extends State<AboutSettingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: ItemBuilder.buildSimpleAppBar(
-        transparent: true,
-        leading: Icons.close_rounded,
-        context: context,
-      ),
+      appBar: Utils.isDesktop()
+          ? null
+          : ItemBuilder.buildSimpleAppBar(
+              transparent: true,
+              leading: Icons.close_rounded,
+              context: context,
+            ),
       body: EasyRefresh(
         child: ListView(
           children: [

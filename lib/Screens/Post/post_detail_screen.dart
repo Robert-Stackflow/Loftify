@@ -19,6 +19,7 @@ import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Widgets/BottomSheet/collection_bottom_sheet.dart';
 import 'package:loftify/Widgets/BottomSheet/comment_bottom_sheet.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+import 'package:responsive_builder/responsive_builder.dart';
 import 'package:tuple/tuple.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
@@ -472,16 +473,41 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   Widget _buildBody() {
-    return EasyRefresh.builder(
-      onRefresh: _onRefresh,
-      onLoad: _onLoad,
-      triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => _postDetailData != null
+    return ScreenTypeLayout.builder(
+      mobile: (context) => EasyRefresh.builder(
+        onRefresh: _onRefresh,
+        onLoad: _onLoad,
+        triggerAxis: Axis.vertical,
+        childBuilder: (context, physics) => _postDetailData != null
+            ? Stack(
+                children: [
+                  AbsorbPointer(
+                    absorbing: false,
+                    child: _buildMainBody(physics),
+                  ),
+                  Visibility(
+                    visible: _showDoubleTapLike,
+                    child: Positioned(
+                      left: doubleTapDx,
+                      top: doubleTapDy,
+                      child: IgnorePointer(
+                        child: doubleTapLikeWidget,
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : ItemBuilder.buildLoadingDialog(
+                context,
+                background: AppTheme.getBackground(context),
+              ),
+      ),
+      tablet: (context) => _postDetailData != null
           ? Stack(
               children: [
                 AbsorbPointer(
                   absorbing: false,
-                  child: _buildMainBody(physics),
+                  child: _buildMainBody(const ScrollPhysics()),
                 ),
                 Visibility(
                   visible: _showDoubleTapLike,
@@ -555,6 +581,13 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   _buildMainBody(ScrollPhysics physics) {
+    return ScreenTypeLayout.builder(
+      mobile: (context) => _buildMobileMainBody(physics),
+      tablet: (context) => _buildTabletMainBody(),
+    );
+  }
+
+  _buildMobileMainBody(ScrollPhysics physics) {
     return CustomScrollView(
       controller: _scrollController,
       physics: physics,
@@ -563,103 +596,137 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              GestureDetector(
-                onTap: () {
-                  RouteUtil.pushCupertinoRoute(
-                    context,
-                    UserDetailScreen(
-                      blogId: _postDetailData!.post!.blogId,
-                      blogName: _postDetailData!.post!.blogInfo!.blogName,
-                    ),
-                  );
-                },
-                child: _buildUserRow(),
-              ),
-              if (_hasImage()) _buildImageList(),
-              GestureDetector(
-                onDoubleTapDown: _handleDoubleTapDown,
-                onDoubleTap: _handleDoubleTap,
-                child: _buildPostContent(),
-              ),
-              if (hasCollection()) _buildCollectionItem(),
-              if (hasGrain()) _buildGrainItem(),
-              GestureDetector(
-                onDoubleTapDown: _handleDoubleTapDown,
-                onDoubleTap: _handleDoubleTap,
-                child: _buildTagList(),
-              ),
-              Stack(
-                children: [
-                  ItemBuilder.buildDivider(context),
-                  _buildOperationRow(),
-                ],
-              ),
-              Container(
-                key: commentKey,
-                child: ItemBuilder.buildTitle(
-                  context,
-                  title: hotComments.isNotEmpty ? "热门评论" : "最新评论",
-                  bottomMargin: 12,
-                  topMargin: 24,
-                ),
-              ),
-              Flexible(
-                fit: FlexFit.loose,
-                child: _buildComments(
-                    hotComments.isNotEmpty ? hotComments : newComments),
-              ),
-              if (totalHotOrNewComments <= 0)
-                Container(
-                  alignment: Alignment.center,
-                  margin: const EdgeInsets.symmetric(vertical: 24),
-                  child: ItemBuilder.buildEmptyPlaceholder(
-                      context: context, text: "暂无评论"),
-                ),
-              if (totalHotOrNewComments > 0)
-                Container(
-                  margin: EdgeInsets.only(
-                    left: MediaQuery.sizeOf(context).width / 5,
-                    right: MediaQuery.sizeOf(context).width / 5,
-                    top: 20,
-                  ),
-                  child: ItemBuilder.buildRoundButton(
-                    context,
-                    text: "查看全部评论",
-                    onTap: () {
-                      showMaterialModalBottomSheet(
-                        context: context,
-                        enableDrag: false,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(
-                            top: Radius.circular(20),
-                          ),
-                        ),
-                        backgroundColor: AppTheme.getBackground(context),
-                        builder: (context) => SingleChildScrollView(
-                          controller: ModalScrollController.of(context),
-                          child: CommentBottomSheet(
-                            postId: postId,
-                            blogId: blogId,
-                            publishTime: _postDetailData!.post!.publishTime,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ItemBuilder.buildTitle(
-                context,
-                title: "更多推荐",
-                bottomMargin: 12,
-                topMargin: 24,
-              ),
-            ],
+            children: _buildCommonContent(false),
           ),
         ),
         _buildRecommendFlow(),
       ],
     );
+  }
+
+  _buildTabletMainBody() {
+    return Row(
+      children: [
+        SizedBox(
+          width: 400,
+          child: ListView(
+            children: [
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: _buildCommonContent(true),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          margin: const EdgeInsets.only(top: 8, bottom: 8, right: 4),
+          width: 1,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: Theme.of(context).dividerColor,
+          ),
+        ),
+        Expanded(
+          child: _buildRecommendFlow(sliver: false),
+        ),
+      ],
+    );
+  }
+
+  _buildCommonContent(bool isTablet) {
+    return <Widget>[
+      GestureDetector(
+        onTap: () {
+          RouteUtil.pushCupertinoRoute(
+            context,
+            UserDetailScreen(
+              blogId: _postDetailData!.post!.blogId,
+              blogName: _postDetailData!.post!.blogInfo!.blogName,
+            ),
+          );
+        },
+        child: _buildUserRow(),
+      ),
+      if (_hasImage()) _buildImageList(),
+      GestureDetector(
+        onDoubleTapDown: _handleDoubleTapDown,
+        onDoubleTap: _handleDoubleTap,
+        child: _buildPostContent(),
+      ),
+      if (hasCollection()) _buildCollectionItem(),
+      if (hasGrain()) _buildGrainItem(),
+      GestureDetector(
+        onDoubleTapDown: _handleDoubleTapDown,
+        onDoubleTap: _handleDoubleTap,
+        child: _buildTagList(),
+      ),
+      Stack(
+        children: [
+          ItemBuilder.buildDivider(context),
+          _buildOperationRow(),
+        ],
+      ),
+      Container(
+        key: commentKey,
+        child: ItemBuilder.buildTitle(
+          context,
+          title: hotComments.isNotEmpty ? "热门评论" : "最新评论",
+          bottomMargin: 12,
+          topMargin: 24,
+        ),
+      ),
+      Flexible(
+        fit: FlexFit.loose,
+        child:
+            _buildComments(hotComments.isNotEmpty ? hotComments : newComments),
+      ),
+      if (totalHotOrNewComments <= 0)
+        Container(
+          alignment: Alignment.center,
+          margin: const EdgeInsets.symmetric(vertical: 24),
+          child:
+              ItemBuilder.buildEmptyPlaceholder(context: context, text: "暂无评论"),
+        ),
+      if (totalHotOrNewComments > 0)
+        Center(
+          child: Container(
+            margin: EdgeInsets.only(
+              left: isTablet ? 0 : MediaQuery.sizeOf(context).width / 5,
+              right: isTablet ? 0 : MediaQuery.sizeOf(context).width / 5,
+              top: 20,
+              bottom: isTablet ? 20 : 0,
+            ),
+            width: isTablet ? 240 : null,
+            child: ItemBuilder.buildRoundButton(
+              context,
+              text: "查看全部评论",
+              onTap: () {
+                BottomSheetBuilder.showBottomSheet(
+                  context,
+                  (context) => SingleChildScrollView(
+                    controller: ModalScrollController.of(context),
+                    child: CommentBottomSheet(
+                      postId: postId,
+                      blogId: blogId,
+                      publishTime: _postDetailData!.post!.publishTime,
+                    ),
+                  ),
+                  enableDrag: false,
+                  backgroundColor: AppTheme.getBackground(context),
+                );
+              },
+            ),
+          ),
+        ),
+      if (!isTablet)
+        ItemBuilder.buildTitle(
+          context,
+          title: "更多推荐",
+          bottomMargin: 12,
+          topMargin: 24,
+        ),
+    ];
   }
 
   _buildUserRow() {
@@ -1302,8 +1369,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     );
   }
 
-  Widget _buildRecommendFlow() {
-    return SliverPadding(
+  Widget _buildRecommendFlow({bool sliver = true}) {
+    Widget list = SliverPadding(
       padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
       sliver: SliverWaterfallFlow(
         gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
@@ -1359,6 +1426,32 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         ),
       ),
     );
+    if (sliver) {
+      return list;
+    } else {
+      return Container(
+        padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+        child: EasyRefresh.builder(
+          onRefresh: _onRefresh,
+          onLoad: _onLoad,
+          triggerAxis: Axis.vertical,
+          childBuilder: (context, physics) => CustomScrollView(
+            physics: physics,
+            slivers: [
+              SliverToBoxAdapter(
+                child: ItemBuilder.buildTitle(
+                  context,
+                  title: "更多推荐",
+                  bottomMargin: 16,
+                  topMargin: 0,
+                ),
+              ),
+              list,
+            ],
+          ),
+        ),
+      );
+    }
   }
 
   hasCollection() {
@@ -1371,16 +1464,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   showCollectionBottomSheet() {
-    showMaterialModalBottomSheet(
-      context: context,
-      enableDrag: false,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
-      ),
-      backgroundColor: AppTheme.getBackground(context),
-      builder: (context) => SingleChildScrollView(
+    BottomSheetBuilder.showBottomSheet(
+      context,
+      (context) => SingleChildScrollView(
         controller: ModalScrollController.of(context),
         child: CollectionBottomSheet(
           postCollection: _postDetailData!.post!.postCollection!,
@@ -1390,6 +1476,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           blogName: blogName,
         ),
       ),
+      enableDrag: false,
     );
   }
 
@@ -1401,6 +1488,12 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       onLeadingTap: () {
         Navigator.pop(context);
       },
+      title: Text(
+        "帖子详情",
+        style: Theme.of(context).textTheme.titleLarge?.apply(
+              fontWeightDelta: 2,
+            ),
+      ),
       actions: [
         if (hasCollection())
           GestureDetector(

@@ -43,7 +43,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
   void initState() {
     super.initState();
     filterLocale();
-    getCacheSize();
+    if (Utils.isMobile()) getCacheSize();
     fetchReleases(false);
   }
 
@@ -104,7 +104,6 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
             confirmButtonText: "立即下载",
             cancelButtonText: "暂不更新",
             onTapConfirm: () {
-              Navigator.pop(context);
               Utils.downloadAndUpdate(
                 context,
                 latestReleaseItem!.assets.isNotEmpty
@@ -114,9 +113,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                 version: latestVersion,
               );
             },
-            onTapCancel: () {
-              Navigator.pop(context);
-            },
+            onTapCancel: () {},
             customDialogType: CustomDialogType.normal,
           );
         } else {
@@ -227,28 +224,29 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
               //   tip: _cacheSize,
               //   onTap: () {},
               // ),
-              ItemBuilder.buildEntryItem(
-                context: context,
-                title: S.current.clearCache,
-                topRadius: true,
-                bottomRadius: true,
-                tip: _cacheSize,
-                onTap: () {
-                  CustomLoadingDialog.showLoading(context, title: "清除缓存中...");
-                  getTemporaryDirectory().then((tempDir) {
-                    CacheUtil.delDir(tempDir).then((value) {
-                      CacheUtil.loadCache().then((value) {
-                        setState(() {
-                          _cacheSize = value;
-                          CustomLoadingDialog.dismissLoading(context);
-                          IToast.showTop(context,
-                              text: S.current.clearCacheSuccess);
+              if (Utils.isMobile())
+                ItemBuilder.buildEntryItem(
+                  context: context,
+                  title: S.current.clearCache,
+                  topRadius: true,
+                  bottomRadius: true,
+                  tip: _cacheSize,
+                  onTap: () {
+                    CustomLoadingDialog.showLoading(context, title: "清除缓存中...");
+                    getTemporaryDirectory().then((tempDir) {
+                      CacheUtil.delDir(tempDir).then((value) {
+                        CacheUtil.loadCache().then((value) {
+                          setState(() {
+                            _cacheSize = value;
+                            CustomLoadingDialog.dismissLoading(context);
+                            IToast.showTop(context,
+                                text: S.current.clearCacheSuccess);
+                          });
                         });
                       });
                     });
-                  });
-                },
-              ),
+                  },
+                ),
               const SizedBox(height: 10),
             ],
           ),

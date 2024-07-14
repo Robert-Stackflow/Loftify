@@ -1,4 +1,5 @@
 import 'package:bitsdojo_window/bitsdojo_window.dart';
+import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
@@ -44,7 +45,7 @@ import 'Utils/notification_util.dart';
 import 'Utils/utils.dart';
 import 'generated/l10n.dart';
 
-Future<void> main() async {
+Future<void> main(List<String> args) async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   imageCache.maximumSizeBytes = 1024 * 1024 * 1024 * 2;
   PaintingBinding.instance.imageCache.maximumSizeBytes = 1024 * 1024 * 1024 * 2;
@@ -54,8 +55,6 @@ Future<void> main() async {
   if (Utils.isAndroid()) {
     await RequestHeaderUtil.initAndroidInfo();
   }
-  SystemChrome.setPreferredOrientations(
-      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   runApp(const MyApp());
   if (Utils.isAndroid()) {
     SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
@@ -63,6 +62,8 @@ Future<void> main() async {
         statusBarIconBrightness: Brightness.dark);
     SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
   }
+  SystemChrome.setPreferredOrientations(
+      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   if (Utils.isMobile()) {
     await initDisplayMode();
   }
@@ -193,6 +194,53 @@ class MyApp extends StatelessWidget {
             LoginByLofterIDScreen.routeName: (context) =>
                 const LoginByLofterIDScreen(),
           },
+        ),
+      ),
+    );
+  }
+}
+
+class _ExampleSubWindow extends StatelessWidget {
+  const _ExampleSubWindow({
+    required this.windowController,
+    required this.args,
+  });
+
+  final WindowController windowController;
+  final Map? args;
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('Plugin example app'),
+        ),
+        body: Column(
+          children: [
+            if (args != null)
+              Text(
+                'Arguments: ${args.toString()}',
+                style: const TextStyle(fontSize: 20),
+              ),
+            // ValueListenableBuilder<bool>(
+            //   valueListenable: DesktopLifecycle.instance.isActive,
+            //   builder: (context, active, child) {
+            //     if (active) {
+            //       return const Text('Window Active');
+            //     } else {
+            //       return const Text('Window Inactive');
+            //     }
+            //   },
+            // ),
+            TextButton(
+              onPressed: () async {
+                windowController.close();
+              },
+              child: const Text('Close this window'),
+            ),
+            // Expanded(child: EventWidget(controller: windowController)),
+          ],
         ),
       ),
     );

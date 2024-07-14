@@ -136,7 +136,6 @@ class _UserDynamicShieldSettingScreenState
                   confirmButtonText: "确认",
                   cancelButtonText: "取消",
                   onTapConfirm: () {
-                    Navigator.pop(context);
                     UserApi.shieldBlogOrUnShield(
                       blogId: blogInfo.blogId,
                       isShield: false,
@@ -150,7 +149,6 @@ class _UserDynamicShieldSettingScreenState
                     });
                   },
                   onTapCancel: () {
-                    Navigator.pop(context);
                   },
                   customDialogType: CustomDialogType.normal,
                 );

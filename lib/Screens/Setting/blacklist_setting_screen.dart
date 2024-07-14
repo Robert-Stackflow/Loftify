@@ -139,7 +139,6 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
                   confirmButtonText: "解除",
                   cancelButtonText: "取消",
                   onTapConfirm: () {
-                    Navigator.pop(context);
                     UserApi.blockOrUnBlock(
                       blogId: blacklistItem.blogInfo.blogId,
                       isBlock: false,
@@ -155,7 +154,6 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
                     });
                   },
                   onTapCancel: () {
-                    Navigator.pop(context);
                   },
                   customDialogType: CustomDialogType.normal,
                 );

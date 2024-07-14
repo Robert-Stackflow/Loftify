@@ -7,6 +7,7 @@ import 'package:loftify/Screens/Post/collection_detail_screen.dart';
 import 'package:loftify/Utils/asset_util.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/route_util.dart';
+import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Models/enums.dart';
 import '../../Utils/utils.dart';
@@ -84,6 +85,7 @@ class _TagCollectionGrainScreenState extends State<TagCollectionGrainScreen>
               background: AppTheme.getBackground(context),
               tabBar: TabBar(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                overlayColor: WidgetStateProperty.all(Colors.transparent),
                 controller: _tabController,
                 tabs: _tabList,
                 labelPadding: const EdgeInsets.symmetric(horizontal: 0),
@@ -173,7 +175,6 @@ class CollectionTabState extends State<CollectionTab>
   bool get wantKeepAlive => true;
   final List<SimpleCollectionInfo> _recommendCollectionList = [];
   final List<SimpleCollectionInfo> _hotCollectionList = [];
-  final SwiperController _collectionSwiperController = SwiperController();
   final EasyRefreshController _collectionRefreshController =
       EasyRefreshController();
   int _collectionOffset = 0;
@@ -294,14 +295,13 @@ class CollectionTabState extends State<CollectionTab>
   }
 
   Widget _buildRecommendCollectionList() {
-    return GridView.builder(
+    return WaterfallFlow.builder(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       shrinkWrap: true,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
+      gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
         mainAxisSpacing: 16,
-        crossAxisSpacing: 6,
-        childAspectRatio: 0.87,
+        crossAxisSpacing: 8,
+        maxCrossAxisExtent: 180,
       ),
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _recommendCollectionList.length,
@@ -311,7 +311,6 @@ class CollectionTabState extends State<CollectionTab>
   }
 
   Widget _buildRecommendCollectionItem(SimpleCollectionInfo info) {
-    double width = (MediaQuery.sizeOf(context).width - 54) / 3;
     return GestureDetector(
       onTap: () {
         RouteUtil.pushCupertinoRoute(
@@ -325,6 +324,7 @@ class CollectionTabState extends State<CollectionTab>
       },
       child: Column(
         mainAxisSize: MainAxisSize.max,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Stack(
             children: [
@@ -333,8 +333,8 @@ class CollectionTabState extends State<CollectionTab>
                 child: ItemBuilder.buildCachedImage(
                   context: context,
                   imageUrl: info.coverUrl,
-                  width: width,
-                  height: width,
+                  width: 160,
+                  height: 160,
                   fit: BoxFit.cover,
                   showLoading: false,
                 ),
@@ -397,17 +397,14 @@ class CollectionTabState extends State<CollectionTab>
   Widget _buildHotCollectionRankList() {
     return SizedBox(
       height: 248,
-      child: Swiper(
-        controller: _collectionSwiperController,
-        loop: false,
-        control: null,
-        viewportFraction: 0.91,
+      child: ListView.builder(
+        shrinkWrap: true,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
         itemCount: (_hotCollectionList.length / 3).ceil(),
         itemBuilder: (context, index) {
-          return _buildHotCollectionRankListItem(
-            index,
-          );
+          return _buildHotCollectionRankListItem(index);
         },
       ),
     );
@@ -465,6 +462,7 @@ class CollectionTabState extends State<CollectionTab>
         padding: const EdgeInsets.all(8),
         color: Colors.transparent,
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               height: 24,
@@ -496,8 +494,9 @@ class CollectionTabState extends State<CollectionTab>
               ),
             ),
             const SizedBox(width: 12),
-            Expanded(
-              child: Column(
+            SizedBox(
+              width: 180,
+              child:Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -543,7 +542,6 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
   bool get wantKeepAlive => true;
   final List<SimpleGrainInfo> _hotGrainList = [];
   final List<SimpleGrainInfo> _recommendGrainList = [];
-  final SwiperController _grainSwiperController = SwiperController();
   final EasyRefreshController _grainRefreshController = EasyRefreshController();
   int _grainOffset = 0;
   bool _grainLoading = false;
@@ -660,14 +658,13 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
   }
 
   Widget _buildRecommendGrainList() {
-    return GridView.builder(
+    return WaterfallFlow.builder(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       shrinkWrap: true,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
+      gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
         mainAxisSpacing: 16,
-        crossAxisSpacing: 6,
-        childAspectRatio: 0.85,
+        crossAxisSpacing: 8,
+        maxCrossAxisExtent: 180,
       ),
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _recommendGrainList.length,
@@ -677,7 +674,6 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
   }
 
   Widget _buildRecommendGrainItem(SimpleGrainInfo info) {
-    double width = (MediaQuery.sizeOf(context).width - 54) / 3;
     return GestureDetector(
       onTap: () {
         RouteUtil.pushCupertinoRoute(
@@ -690,6 +686,7 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
       },
       child: Column(
         mainAxisSize: MainAxisSize.max,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Stack(
             children: [
@@ -706,8 +703,8 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
                   child: ItemBuilder.buildCachedImage(
                     context: context,
                     imageUrl: info.coverUrl,
-                    width: width,
-                    height: width,
+                    width: 180,
+                    height: 180,
                     fit: BoxFit.cover,
                     showLoading: false,
                   ),
@@ -771,17 +768,14 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
   Widget _buildHotGrainRankList() {
     return SizedBox(
       height: 248,
-      child: Swiper(
-        controller: _grainSwiperController,
-        loop: false,
-        control: null,
-        viewportFraction: 0.91,
+      child: ListView.builder(
+        shrinkWrap: true,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
         itemCount: (_hotGrainList.length / 3).ceil(),
         itemBuilder: (context, index) {
-          return _buildHotGrainRankListItem(
-            index,
-          );
+          return _buildHotGrainRankListItem(index);
         },
       ),
     );
@@ -807,7 +801,22 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
     );
   }
 
+  String? getIcon(int index) {
+    switch (index) {
+      case 0:
+        return AssetUtil.hottestIcon;
+      case 1:
+        return AssetUtil.hotIcon;
+      case 2:
+        return AssetUtil.hotlessIcon;
+      default:
+        return null;
+    }
+  }
+
+
   Widget _buildHotGrainRankItem(int index, SimpleGrainInfo info) {
+    String? icon = getIcon(index);
     return GestureDetector(
       onTap: () {
         RouteUtil.pushCupertinoRoute(
@@ -823,12 +832,24 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
         padding: const EdgeInsets.all(8),
         color: Colors.transparent,
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              index.toString(),
-              style: Theme.of(context).textTheme.labelLarge?.apply(
-                    fontWeightDelta: 3,
-                  ),
+            Container(
+              height: 24,
+              width: 24,
+              alignment: Alignment.center,
+              decoration: icon != null
+                  ? BoxDecoration(
+                image: AssetUtil.loadDecorationImage(icon),
+              )
+                  : null,
+              child: Text(
+                "${index + 1}",
+                style: Theme.of(context).textTheme.labelLarge?.apply(
+                  fontWeightDelta: 3,
+                  color: icon != null ? Colors.transparent : null,
+                ),
+              ),
             ),
             const SizedBox(width: 24),
             ClipRRect(
@@ -843,7 +864,8 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
               ),
             ),
             const SizedBox(width: 12),
-            Expanded(
+            SizedBox(
+              width: 180,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

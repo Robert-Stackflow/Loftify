@@ -1,7 +1,6 @@
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
-import 'package:loftify/Utils/iprint.dart';
 
 const double DEFAULT_BAR_HEIGHT = 60;
 

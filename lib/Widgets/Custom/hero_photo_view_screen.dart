@@ -423,6 +423,16 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
             },
           ),
         if (imageUrls.length > 1) const SizedBox(width: 5),
+        if (Utils.isDesktop())
+          ItemBuilder.buildIconButton(
+            context: context,
+            icon:
+                const Icon(Icons.close_rounded, color: Colors.white, size: 22),
+            onTap: () {
+              Navigator.pop(context);
+            },
+          ),
+        if (Utils.isDesktop()) const SizedBox(width: 5),
       ],
     );
   }

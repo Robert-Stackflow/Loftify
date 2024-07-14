@@ -13,7 +13,6 @@ import 'package:loftify/Screens/Post/tag_related_screen.dart';
 import 'package:loftify/Utils/asset_util.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/route_util.dart';
-import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:tuple/tuple.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
@@ -380,6 +379,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
         background: AppTheme.getBackground(context),
         tabBar: TabBar(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+          overlayColor: WidgetStateProperty.all(Colors.transparent),
           controller: _tabController,
           tabs: _tabLabelList
               .asMap()
@@ -493,15 +493,9 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                 ),
                 text: "筛选",
                 onTap: () {
-                  showMaterialModalBottomSheet(
-                    context: context,
-                    backgroundColor: AppTheme.getBackground(context),
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(20),
-                      ),
-                    ),
-                    builder: (context) => NewestFilterBottomSheet(
+                  BottomSheetBuilder.showBottomSheet(
+                    context,
+                    (context) => NewestFilterBottomSheet(
                       params: _newestParams.clone(),
                       onConfirm: (params) {
                         _newestParams = params;
@@ -603,14 +597,9 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                 ),
                 text: "筛选",
                 onTap: () {
-                  showMaterialModalBottomSheet(
-                    context: context,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(16),
-                      ),
-                    ),
-                    builder: (context) => NewestFilterBottomSheet(
+                  BottomSheetBuilder.showBottomSheet(
+                    context,
+                    (context) => NewestFilterBottomSheet(
                       params: _hottestParams.clone(),
                       onConfirm: (params) {
                         _hottestParams = params;
