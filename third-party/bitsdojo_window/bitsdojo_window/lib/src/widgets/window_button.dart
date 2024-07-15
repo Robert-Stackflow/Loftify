@@ -18,11 +18,12 @@ class WindowButtonContext {
   Color? backgroundColor;
   Color iconColor;
 
-  WindowButtonContext(
-      {required this.context,
-      required this.mouseState,
-      this.backgroundColor,
-      required this.iconColor});
+  WindowButtonContext({
+    required this.context,
+    required this.mouseState,
+    this.backgroundColor,
+    required this.iconColor,
+  });
 }
 
 class WindowButtonColors {
@@ -51,11 +52,11 @@ class WindowButtonColors {
 
 final _defaultButtonColors = WindowButtonColors(
     normal: Colors.transparent,
-    iconNormal: Color(0xFF805306),
-    mouseOver: Color(0xFF404040),
-    mouseDown: Color(0xFF202020),
-    iconMouseOver: Color(0xFFFFFFFF),
-    iconMouseDown: Color(0xFFF0F0F0));
+    iconNormal: const Color(0xFF805306),
+    mouseOver: const Color(0xFF404040),
+    mouseDown: const Color(0xFF202020),
+    iconMouseOver: const Color(0xFFFFFFFF),
+    iconMouseDown: const Color(0xFFF0F0F0));
 
 class WindowButton extends StatelessWidget {
   final WindowButtonBuilder? builder;
@@ -66,16 +67,16 @@ class WindowButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final BorderRadius? borderRadius;
 
-  WindowButton(
-      {Key? key,
-      WindowButtonColors? colors,
-      this.builder,
-      @required this.iconBuilder,
-      this.padding,
-      this.onPressed,
-      this.borderRadius,
-      this.animate = false})
-      : super(key: key) {
+  WindowButton({
+    super.key,
+    WindowButtonColors? colors,
+    this.builder,
+    @required this.iconBuilder,
+    this.padding,
+    this.onPressed,
+    this.borderRadius,
+    this.animate = false,
+  }) {
     this.colors = colors ?? _defaultButtonColors;
   }
 
@@ -110,9 +111,8 @@ class WindowButton extends StatelessWidget {
             backgroundColor: getBackgroundColor(mouseState),
             iconColor: getIconColor(mouseState));
 
-        var icon = (this.iconBuilder != null)
-            ? this.iconBuilder!(buttonContext)
-            : Container();
+        var icon =
+            (iconBuilder != null) ? iconBuilder!(buttonContext) : Container();
         double borderSize = appWindow.borderSize;
         double defaultPadding =
             (appWindow.titleBarHeight - borderSize) / 3 - (borderSize / 2);
@@ -128,9 +128,8 @@ class WindowButton extends StatelessWidget {
             duration: Duration(milliseconds: animationMs),
             color: buttonContext.backgroundColor ?? fadeOutColor,
             child: iconWithPadding);
-        var button = (this.builder != null)
-            ? this.builder!(buttonContext, icon)
-            : iconWithPadding;
+        var button =
+            (builder != null) ? builder!(buttonContext, icon) : iconWithPadding;
         return MouseRegion(
           cursor: SystemMouseCursors.click,
           child: ClipRRect(
@@ -144,24 +143,21 @@ class WindowButton extends StatelessWidget {
         );
       },
       onPressed: () {
-        if (this.onPressed != null) this.onPressed!();
+        if (onPressed != null) onPressed!();
       },
     );
   }
 }
 
 class MinimizeWindowButton extends WindowButton {
-  MinimizeWindowButton(
-      {Key? key,
-      WindowButtonColors? colors,
-      VoidCallback? onPressed,
-      BorderRadius? borderRadius,
-      bool? animate})
-      : super(
-            key: key,
-            colors: colors,
+  MinimizeWindowButton({
+    super.key,
+    super.colors,
+    VoidCallback? onPressed,
+    super.borderRadius,
+    bool? animate,
+  }) : super(
             animate: animate ?? false,
-            borderRadius: borderRadius,
             padding: EdgeInsets.zero,
             iconBuilder: (buttonContext) => Icon(Icons.horizontal_rule_rounded,
                 color: buttonContext.iconColor),
@@ -169,16 +165,13 @@ class MinimizeWindowButton extends WindowButton {
 }
 
 class MaximizeWindowButton extends WindowButton {
-  MaximizeWindowButton(
-      {Key? key,
-      WindowButtonColors? colors,
-      VoidCallback? onPressed,
-      BorderRadius? borderRadius,
-      bool? animate})
-      : super(
-            key: key,
-            colors: colors,
-            borderRadius: borderRadius,
+  MaximizeWindowButton({
+    super.key,
+    super.colors,
+    VoidCallback? onPressed,
+    super.borderRadius,
+    bool? animate,
+  }) : super(
             padding: EdgeInsets.zero,
             animate: animate ?? false,
             iconBuilder: (buttonContext) => Icon(
@@ -189,17 +182,14 @@ class MaximizeWindowButton extends WindowButton {
 }
 
 class RestoreWindowButton extends WindowButton {
-  RestoreWindowButton(
-      {Key? key,
-      WindowButtonColors? colors,
-      VoidCallback? onPressed,
-      BorderRadius? borderRadius,
-      bool? animate})
-      : super(
-            key: key,
-            colors: colors,
+  RestoreWindowButton({
+    super.key,
+    super.colors,
+    VoidCallback? onPressed,
+    super.borderRadius,
+    bool? animate,
+  }) : super(
             padding: EdgeInsets.zero,
-            borderRadius: borderRadius,
             animate: animate ?? false,
             iconBuilder: (buttonContext) => Icon(Icons.fullscreen_exit_rounded,
                 color: buttonContext.iconColor),
@@ -207,25 +197,25 @@ class RestoreWindowButton extends WindowButton {
 }
 
 final _defaultCloseButtonColors = WindowButtonColors(
-    mouseOver: Color(0xFFD32F2F),
-    mouseDown: Color(0xFFB71C1C),
-    iconNormal: Color(0xFF805306),
-    iconMouseOver: Color(0xFFFFFFFF));
+    mouseOver: const Color(0xFFD32F2F),
+    mouseDown: const Color(0xFFB71C1C),
+    iconNormal: const Color(0xFF805306),
+    iconMouseOver: const Color(0xFFFFFFFF));
 
 class CloseWindowButton extends WindowButton {
-  CloseWindowButton(
-      {Key? key,
-      WindowButtonColors? colors,
-      VoidCallback? onPressed,
-      BorderRadius? borderRadius,
-      bool? animate})
-      : super(
-            key: key,
+  CloseWindowButton({
+    super.key,
+    WindowButtonColors? colors,
+    VoidCallback? onPressed,
+    super.borderRadius,
+    bool? animate,
+    bool onlyHide = false,
+  }) : super(
             colors: colors ?? _defaultCloseButtonColors,
-            borderRadius: borderRadius,
             padding: EdgeInsets.zero,
             animate: animate ?? false,
             iconBuilder: (buttonContext) => Icon(Icons.close_rounded,
                 size: 24, color: buttonContext.iconColor),
-            onPressed: onPressed ?? () => appWindow.close());
+            onPressed: onPressed ??
+                () => onlyHide ? appWindow.hide() : appWindow.close());
 }
