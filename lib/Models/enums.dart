@@ -1,5 +1,7 @@
 import 'package:tuple/tuple.dart';
 
+double kLoadExtentOffset = 400;
+
 enum TokenType {
   none,
   captchCode,

@@ -50,6 +50,8 @@ class _PostScreenState extends State<PostScreen>
   HistoryLayoutMode _layoutMode = HistoryLayoutMode.nineGrid;
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
+  final ScrollController _scrollController = ScrollController();
+  bool _noMore = false;
 
   @override
   void initState() {
@@ -63,10 +65,18 @@ class _PostScreenState extends State<PostScreen>
     if (widget.infoMode != InfoMode.me) {
       _onRefresh();
     }
+    _scrollController.addListener(() {
+      if (!_noMore &&
+          _scrollController.position.pixels >
+              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
+        _onLoad();
+      }
+    });
   }
 
   _fetchLike({bool refresh = false}) async {
     if (_loading) return;
+    if (refresh) _noMore = false;
     _loading = true;
     int offset = 0;
     if (refresh) {
@@ -146,6 +156,7 @@ class _PostScreenState extends State<PostScreen>
             }
             if (mounted) setState(() {});
             if (tmp.isEmpty && !refresh) {
+              _noMore = true;
               return IndicatorResult.noMore;
             } else {
               return IndicatorResult.success;
@@ -222,6 +233,7 @@ class _PostScreenState extends State<PostScreen>
       startIndex += e.count;
     }
     return ListView(
+      controller: _scrollController,
       padding: EdgeInsets.zero,
       physics: physics,
       children: widgets,
@@ -232,7 +244,7 @@ class _PostScreenState extends State<PostScreen>
     return GridView.extent(
       padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
       shrinkWrap: true,
-      maxCrossAxisExtent: 200,
+      maxCrossAxisExtent: 160,
       mainAxisSpacing: 6,
       crossAxisSpacing: 6,
       physics: const NeverScrollableScrollPhysics(),
@@ -240,7 +252,7 @@ class _PostScreenState extends State<PostScreen>
         int trueIndex = startIndex + index;
         return CommonInfoItemBuilder.buildNineGridPostItem(
             context, _postList[trueIndex],
-            wh: (MediaQuery.sizeOf(context).width - 22) / 3);
+            wh: 160);
       }),
     );
   }
@@ -249,6 +261,7 @@ class _PostScreenState extends State<PostScreen>
     return WaterfallFlow.builder(
       physics: physics,
       cacheExtent: 9999,
+      controller: _scrollController,
       padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
       gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
         mainAxisSpacing: 6,

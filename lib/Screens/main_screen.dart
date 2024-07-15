@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:app_links/app_links.dart';
-import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:loftify/Api/github_api.dart';
@@ -17,8 +16,11 @@ import 'package:loftify/Utils/uri_util.dart';
 import 'package:loftify/Widgets/Dialog/custom_dialog.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:loftify/Widgets/LottieCupertinoRefresh/lottie_cupertino_refresh.dart';
+import 'package:loftify/Widgets/Window/window_caption.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
+import 'package:tray_manager/tray_manager.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../Api/login_api.dart';
 import '../Api/user_api.dart';
@@ -36,14 +38,13 @@ import '../Utils/utils.dart';
 import '../Widgets/EasyRefresh/easy_refresh.dart';
 import '../Widgets/Scaffold/my_bottom_navigation_bar.dart';
 import '../Widgets/Scaffold/my_scaffold.dart';
+import '../Widgets/Window/window_button.dart';
 import 'Info/dress_screen.dart';
 import 'Info/system_notice_screen.dart';
 import 'Info/user_detail_screen.dart';
 import 'Lock/pin_verify_screen.dart';
 import 'Post/search_result_screen.dart';
-
-final GlobalKey<NavigatorState> desktopNavigatorKey =
-    GlobalKey<NavigatorState>();
+import 'Post/search_screen.dart';
 
 const borderColor = Color(0xFF805306);
 const backgroundStartColor = Color(0xFFFFD500);
@@ -62,6 +63,8 @@ class MainScreenState extends State<MainScreen>
     with
         WidgetsBindingObserver,
         TickerProviderStateMixin,
+        TrayListener,
+        WindowListener,
         AutomaticKeepAliveClientMixin {
   final List<Widget> _pageList = [];
   final List<GlobalKey> _keyList = [];
@@ -77,6 +80,21 @@ class MainScreenState extends State<MainScreen>
   Widget? darkModeWidget;
   FullBlogInfo? blogInfo;
   bool clearNavSelectState = false;
+  bool _isMaximized = false;
+
+  @override
+  void onWindowMaximize() {
+    setState(() {
+      _isMaximized = true;
+    });
+  }
+
+  @override
+  void onWindowUnmaximize() {
+    setState(() {
+      _isMaximized = false;
+    });
+  }
 
   _fetchUserInfo() async {
     if (ProviderManager.globalProvider.token.isNotEmpty) {
@@ -163,6 +181,8 @@ class MainScreenState extends State<MainScreen>
 
   @override
   void initState() {
+    trayManager.addListener(this);
+    windowManager.addListener(this);
     super.initState();
     if (Utils.isDesktop()) {
       _fetchUserInfo();
@@ -204,9 +224,11 @@ class MainScreenState extends State<MainScreen>
     fetchData();
     ProviderManager.globalProvider.addListener(() {
       // initData();
-      setState(() {
-        clearNavSelectState = ProviderManager.globalProvider.desktopCanpop;
-      });
+      if (mounted) {
+        setState(() {
+          clearNavSelectState = ProviderManager.globalProvider.desktopCanpop;
+        });
+      }
     });
   }
 
@@ -247,15 +269,22 @@ class MainScreenState extends State<MainScreen>
   }
 
   void onBottomNavigationBarItemTap(int index) {
-    if (index == _bottomBarSelectedIndex &&
-        _pageList[index] is HomeScreen &&
-        _keyList[index].currentState != null) {
-      (_keyList[index].currentState as HomeScreenState).scrollToTopAndRefresh();
-    } else if (index == _bottomBarSelectedIndex &&
-        _pageList[index] is DynamicScreen &&
-        _keyList[index].currentState != null) {
-      (_keyList[index].currentState as DynamicScreenState)
-          .scrollToTopAndRefresh();
+    bool canRefresh = Utils.isMobile() ||
+        (Utils.isDesktop() &&
+            ProviderManager.globalProvider.desktopCanpop == false &&
+            ProviderManager.globalProvider.bottomBarSelectedIndex == index);
+    if (canRefresh) {
+      if (index == _bottomBarSelectedIndex &&
+          _pageList[index] is HomeScreen &&
+          _keyList[index].currentState != null) {
+        (_keyList[index].currentState as HomeScreenState)
+            .scrollToTopAndRefresh();
+      } else if (index == _bottomBarSelectedIndex &&
+          _pageList[index] is DynamicScreen &&
+          _keyList[index].currentState != null) {
+        (_keyList[index].currentState as DynamicScreenState)
+            .scrollToTopAndRefresh();
+      }
     }
     if (Utils.isMobile()) {
       _pageController.jumpToPage(index);
@@ -364,7 +393,7 @@ class MainScreenState extends State<MainScreen>
         color: Theme.of(context).scaffoldBackgroundColor,
         child: Stack(
           children: [
-            MoveWindow(),
+            const WindowMoveHandle(),
             Column(
               children: [
                 const SizedBox(height: 17),
@@ -377,14 +406,19 @@ class MainScreenState extends State<MainScreen>
                         : SystemMouseCursors.basic,
                     child: GestureDetector(
                       onTap: () {
-                        if (desktopNavigatorKey.currentState != null &&
-                            desktopNavigatorKey.currentState!.canPop()) {
-                          desktopNavigatorKey.currentState?.pop();
+                        if (ProviderManager.desktopNavigatorKey.currentState !=
+                                null &&
+                            ProviderManager.desktopNavigatorKey.currentState!
+                                .canPop()) {
+                          ProviderManager.desktopNavigatorKey.currentState
+                              ?.pop();
                           ProviderManager.globalProvider.desktopCanpop =
-                              desktopNavigatorKey.currentState!.canPop();
+                              ProviderManager.desktopNavigatorKey.currentState!
+                                  .canPop();
                         } else {
                           ProviderManager.globalProvider.desktopCanpop =
-                              desktopNavigatorKey.currentState?.canPop() ??
+                              ProviderManager.desktopNavigatorKey.currentState
+                                      ?.canPop() ??
                                   false;
                         }
                       },
@@ -514,17 +548,11 @@ class MainScreenState extends State<MainScreen>
     );
   }
 
-  void maximizeOrRestore() {
-    setState(() {
-      appWindow.maximizeOrRestore();
-    });
-  }
-
   _desktopMainContent() {
     return Expanded(
       child: Column(
         children: [
-          WindowTitleBarBox(
+          WindowTitleBar(
             titleBarHeightDelta: 40,
             margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
             child: Row(
@@ -540,8 +568,12 @@ class MainScreenState extends State<MainScreen>
                       bottomMargin: 18,
                       hintFontSizeDelta: 1,
                       onSubmitted: (text) {
-                        RouteUtil.pushDesktopFadeRoute(
-                            SearchResultScreen(searchKey: text));
+                        if (Utils.isNotEmpty(text)) {
+                          RouteUtil.pushDesktopFadeRoute(
+                              SearchResultScreen(searchKey: text));
+                        } else {
+                          RouteUtil.pushDesktopFadeRoute(const SearchScreen());
+                        }
                       }),
                 ),
                 const Spacer(),
@@ -551,20 +583,28 @@ class MainScreenState extends State<MainScreen>
                       colors: MyColors.getNormalButtonColors(context),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    appWindow.isMaximized
+                    _isMaximized
                         ? RestoreWindowButton(
                             colors: MyColors.getNormalButtonColors(context),
                             borderRadius: BorderRadius.circular(10),
-                            onPressed: maximizeOrRestore,
+                            onPressed: Utils.maximizeOrRestore,
                           )
                         : MaximizeWindowButton(
                             colors: MyColors.getNormalButtonColors(context),
                             borderRadius: BorderRadius.circular(10),
-                            onPressed: maximizeOrRestore,
+                            onPressed: Utils.maximizeOrRestore,
                           ),
                     CloseWindowButton(
                       colors: MyColors.getNormalButtonColors(context),
                       borderRadius: BorderRadius.circular(10),
+                      onPressed: () {
+                        if (HiveUtil.getBool(
+                            key: HiveUtil.enableCloseToTrayKey)) {
+                          windowManager.hide();
+                        } else {
+                          windowManager.close();
+                        }
+                      },
                     ),
                   ],
                 ),
@@ -580,7 +620,7 @@ class MainScreenState extends State<MainScreen>
                   topRight: Radius.circular(20),
                 ),
                 child: Navigator(
-                  key: desktopNavigatorKey,
+                  key: ProviderManager.desktopNavigatorKey,
                   onGenerateRoute: (settings) {
                     if (settings.name == "/") {
                       return PageRouteBuilder(
@@ -643,9 +683,38 @@ class MainScreenState extends State<MainScreen>
 
   @override
   void dispose() {
+    trayManager.removeListener(this);
     WidgetsBinding.instance.removeObserver(this);
+    windowManager.removeListener(this);
     darkModeController.dispose();
     super.dispose();
+  }
+
+  @override
+  void onTrayIconMouseDown() {
+    windowManager.restore();
+  }
+
+  @override
+  void onTrayIconRightMouseDown() {
+    trayManager.popUpContextMenu();
+  }
+
+  @override
+  void onTrayIconRightMouseUp() {}
+
+  @override
+  void onTrayMenuItemClick(MenuItem menuItem) {
+    if (menuItem.key == 'show_window') {
+      windowManager.restore();
+    } else if (menuItem.key == 'show_official_website') {
+      UriUtil.launchUrlUri(context, "https://apps.cloudchewie.com/loftify");
+    } else if (menuItem.key == 'show_github_repo') {
+      UriUtil.launchUrlUri(
+          context, "https://github.com/Robert-Stackflow/Loftify");
+    } else if (menuItem.key == 'exit_app') {
+      windowManager.close();
+    }
   }
 
   @override

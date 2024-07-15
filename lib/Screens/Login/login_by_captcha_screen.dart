@@ -76,7 +76,9 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
         _refrechPhotoCaptcha();
       } else {
         _isFetchingCaptchaCode = true;
-        _captchaText = "60s后重新发送";
+        setState(() {
+          _captchaText = "60s后重新发送";
+        });
         Timer.periodic(const Duration(seconds: 1), (timer) {
           if (timer.tick == 60) {
             timer.cancel();
@@ -87,9 +89,11 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
               _captchaController.text = "";
             });
           } else {
-            setState(() {
-              _captchaText = "${60 - timer.tick}s后重新发送";
-            });
+            if (mounted) {
+              setState(() {
+                _captchaText = "${60 - timer.tick}s后重新发送";
+              });
+            }
           }
         });
         IToast.showTop(context, text: "验证码发送成功");

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Api/search_api.dart';
 import 'package:loftify/Models/collection_response.dart';
+import 'package:loftify/Models/enums.dart';
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Models/search_response.dart';
 import 'package:loftify/Resources/theme.dart';
@@ -65,6 +66,12 @@ class _SearchResultScreenState extends State<SearchResultScreen>
       EasyRefreshController();
   final EasyRefreshController _userResultRefreshController =
       EasyRefreshController();
+  final ScrollController _allResultScrollController = ScrollController();
+  final ScrollController _tagResultScrollController = ScrollController();
+  final ScrollController _collectionResultScrollController = ScrollController();
+  final ScrollController _postResultScrollController = ScrollController();
+  final ScrollController _grainResultScrollController = ScrollController();
+  final ScrollController _userResultScrollController = ScrollController();
 
   final List<String> _tabLabelList = ["综合", "标签", "合集", "粮单", "文章", "用户"];
   int _allResultOffset = 0;
@@ -80,12 +87,18 @@ class _SearchResultScreenState extends State<SearchResultScreen>
   bool _grainResultLoading = false;
   bool _userResultLoading = false;
   bool _allPostResultLoading = false;
+  bool _tagResultNoMore = false;
+  bool _collectionResultNoMore = false;
+  bool _postResultNoMore = false;
+  bool _grainResultNoMore = false;
+  bool _userResultNoMore = false;
 
   @override
   void initState() {
     super.initState();
     _performSearch(widget.searchKey, init: true);
     initTab();
+    initScrollController();
   }
 
   @override
@@ -120,6 +133,56 @@ class _SearchResultScreenState extends State<SearchResultScreen>
       int index = _tabController.index + indexChange;
       if (index != _currentTabIndex) {
         setState(() => _currentTabIndex = index);
+      }
+    });
+  }
+
+  initScrollController() {
+    _allResultScrollController.addListener(() {
+      if (_allResultScrollController.position.pixels >
+          _allResultScrollController.position.maxScrollExtent -
+              kLoadExtentOffset) {
+        _fetchAllPostResult();
+      }
+    });
+    _tagResultScrollController.addListener(() {
+      if (!_tagResultNoMore &&
+          _tagResultScrollController.position.pixels >
+              _tagResultScrollController.position.maxScrollExtent -
+                  kLoadExtentOffset) {
+        _fetchTagResult();
+      }
+    });
+    _collectionResultScrollController.addListener(() {
+      if (!_collectionResultNoMore &&
+          _collectionResultScrollController.position.pixels >
+              _collectionResultScrollController.position.maxScrollExtent -
+                  200) {
+        _fetchCollectionResult();
+      }
+    });
+    _postResultScrollController.addListener(() {
+      if (!_postResultNoMore &&
+          _postResultScrollController.position.pixels >
+              _postResultScrollController.position.maxScrollExtent -
+                  kLoadExtentOffset) {
+        _fetchPostResult();
+      }
+    });
+    _grainResultScrollController.addListener(() {
+      if (!_grainResultNoMore &&
+          _grainResultScrollController.position.pixels >
+              _grainResultScrollController.position.maxScrollExtent -
+                  kLoadExtentOffset) {
+        _fetchGrainResult();
+      }
+    });
+    _userResultScrollController.addListener(() {
+      if (!_userResultNoMore &&
+          _userResultScrollController.position.pixels >
+              _userResultScrollController.position.maxScrollExtent -
+                  kLoadExtentOffset) {
+        _fetchUserResult();
       }
     });
   }
@@ -189,6 +252,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
 
   _fetchTagResult({bool refresh = false}) async {
     if (_tagResultLoading) return;
+    if (refresh) _tagResultNoMore = false;
     _tagResultLoading = true;
     return await SearchApi.getTagSearchResult(
       key: _searchController!.text,
@@ -219,6 +283,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           }
           if (mounted) setState(() {});
           if (tmp.isEmpty) {
+            _tagResultNoMore = true;
             return IndicatorResult.noMore;
           } else {
             return IndicatorResult.success;
@@ -236,6 +301,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
 
   _fetchCollectionResult({bool refresh = false}) async {
     if (_collectionResultLoading) return;
+    if (refresh) _collectionResultNoMore = false;
     _collectionResultLoading = true;
     return await SearchApi.getCollectionSearchResult(
       key: _searchController!.text,
@@ -263,6 +329,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           }
           if (mounted) setState(() {});
           if (tmp.isEmpty) {
+            _collectionResultNoMore = true;
             return IndicatorResult.noMore;
           } else {
             return IndicatorResult.success;
@@ -280,6 +347,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
 
   _fetchPostResult({bool refresh = false}) async {
     if (_postResultLoading) return;
+    if (refresh) _postResultNoMore = false;
     _postResultLoading = true;
     return await SearchApi.getPostSearchResult(
       key: _searchController!.text,
@@ -307,6 +375,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           }
           if (mounted) setState(() {});
           if (tmp.isEmpty) {
+            _postResultNoMore = true;
             return IndicatorResult.noMore;
           } else {
             return IndicatorResult.success;
@@ -324,6 +393,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
 
   _fetchGrainResult({bool refresh = false}) async {
     if (_grainResultLoading) return;
+    if (refresh) _grainResultNoMore = false;
     _grainResultLoading = true;
     return await SearchApi.getGrainSearchResult(
       key: _searchController!.text,
@@ -351,6 +421,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           }
           if (mounted) setState(() {});
           if (tmp.isEmpty) {
+            _grainResultNoMore = true;
             return IndicatorResult.noMore;
           } else {
             return IndicatorResult.success;
@@ -368,6 +439,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
 
   _fetchUserResult({bool refresh = false}) async {
     if (_userResultLoading) return;
+    if (refresh) _userResultNoMore = false;
     _userResultLoading = true;
     return await SearchApi.getUserSearchResult(
       key: _searchController!.text,
@@ -396,6 +468,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           }
           if (mounted) setState(() {});
           if (tmp.isEmpty) {
+            _userResultNoMore = true;
             return IndicatorResult.noMore;
           } else {
             return IndicatorResult.success;
@@ -517,7 +590,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
               background: AppTheme.getBackground(context),
               tabBar: TabBar(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-                overlayColor:  WidgetStateProperty.all(Colors.transparent),
+                overlayColor: WidgetStateProperty.all(Colors.transparent),
                 controller: _tabController,
                 tabs: _tabLabelList
                     .asMap()
@@ -605,6 +678,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
       childBuilder: (context, physics) => _allResult != null
           ? CustomScrollView(
               physics: physics,
+              controller: _allResultScrollController,
               slivers: [
                 SliverList(
                   delegate: SliverChildListDelegate(
@@ -681,10 +755,10 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                     padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
                     sliver: SliverWaterfallFlow(
                       gridDelegate:
-                          const SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 12,
+                          const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                        mainAxisSpacing: 6,
                         crossAxisSpacing: 6,
+                        maxCrossAxisExtent: 300,
                       ),
                       delegate: SliverChildBuilderDelegate(
                         (BuildContext context, int index) {
@@ -744,6 +818,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
       triggerAxis: Axis.vertical,
       childBuilder: (context, physics) => CustomScrollView(
         physics: physics,
+        controller: _tagResultScrollController,
         slivers: [
           SliverList(
             delegate: SliverChildListDelegate(
@@ -804,6 +879,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
       triggerAxis: Axis.vertical,
       childBuilder: (context, physics) => CustomScrollView(
         physics: physics,
+        controller: _collectionResultScrollController,
         slivers: [
           SliverList(
             delegate: SliverChildListDelegate(
@@ -818,25 +894,33 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                       text: "暂无合集",
                     ),
                   ),
-                ...List<Widget>.generate(_collectionList.length, (index) {
-                  return ItemBuilder.buildCollectionRow(
-                    context,
-                    _collectionList[index],
-                    verticalPadding: 8,
-                    onTap: () {
-                      RouteUtil.pushCupertinoRoute(
-                        context,
-                        CollectionDetailScreen(
-                          collectionId: _collectionList[index].id,
-                          blogId: _collectionList[index].blogId,
-                          blogName: _collectionList[index].blogName,
-                          postId: 0,
-                        ),
-                      );
-                    },
-                  );
-                }),
               ],
+            ),
+          ),
+          SliverWaterfallFlow(
+            gridDelegate:
+                const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+              mainAxisSpacing: 0,
+              crossAxisSpacing: 6,
+              maxCrossAxisExtent: 600,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (BuildContext context, int index) {
+                return ItemBuilder.buildCollectionRow(
+                    context, _collectionList[index], verticalPadding: 8,
+                    onTap: () {
+                  RouteUtil.pushCupertinoRoute(
+                    context,
+                    CollectionDetailScreen(
+                      collectionId: _collectionList[index].id,
+                      blogId: _collectionList[index].blogId,
+                      blogName: _collectionList[index].blogName,
+                      postId: 0,
+                    ),
+                  );
+                });
+              },
+              childCount: _collectionList.length,
             ),
           ),
         ],
@@ -856,6 +940,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
       triggerAxis: Axis.vertical,
       childBuilder: (context, physics) => CustomScrollView(
         physics: physics,
+        controller: _postResultScrollController,
         slivers: [
           SliverList(
             delegate: SliverChildListDelegate(
@@ -878,10 +963,10 @@ class _SearchResultScreenState extends State<SearchResultScreen>
               padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
               sliver: SliverWaterfallFlow(
                 gridDelegate:
-                    const SliverWaterfallFlowDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 12,
+                    const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                  mainAxisSpacing: 6,
                   crossAxisSpacing: 6,
+                  maxCrossAxisExtent: 300,
                 ),
                 delegate: SliverChildBuilderDelegate(
                   (BuildContext context, int index) {
@@ -914,6 +999,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
       triggerAxis: Axis.vertical,
       childBuilder: (context, physics) => CustomScrollView(
         physics: physics,
+        controller: _grainResultScrollController,
         slivers: [
           SliverList(
             delegate: SliverChildListDelegate(
@@ -928,22 +1014,33 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                       text: "暂无粮单",
                     ),
                   ),
-                ...List<Widget>.generate(_grainList.length, (index) {
-                  return ItemBuilder.buildGrainRow(
-                    context,
-                    _grainList[index],
-                    verticalPadding: 8,
-                    onTap: () {
-                      RouteUtil.pushCupertinoRoute(
-                        context,
-                        GrainDetailScreen(
-                            grainId: _grainList[index].id,
-                            blogId: _grainList[index].userId),
-                      );
-                    },
-                  );
-                }),
               ],
+            ),
+          ),
+          SliverWaterfallFlow(
+            gridDelegate:
+                const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+              mainAxisSpacing: 0,
+              crossAxisSpacing: 6,
+              maxCrossAxisExtent: 600,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (BuildContext context, int index) {
+                return ItemBuilder.buildGrainRow(
+                  context,
+                  _grainList[index],
+                  verticalPadding: 8,
+                  onTap: () {
+                    RouteUtil.pushCupertinoRoute(
+                      context,
+                      GrainDetailScreen(
+                          grainId: _grainList[index].id,
+                          blogId: _grainList[index].userId),
+                    );
+                  },
+                );
+              },
+              childCount: _grainList.length,
             ),
           ),
         ],
@@ -963,6 +1060,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
       triggerAxis: Axis.vertical,
       childBuilder: (context, physics) => CustomScrollView(
         physics: physics,
+        controller: _userResultScrollController,
         slivers: [
           SliverList(
             delegate: SliverChildListDelegate(
@@ -977,22 +1075,33 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                       text: "暂无用户",
                     ),
                   ),
-                ...List<Widget>.generate(_userList.length, (index) {
-                  return ItemBuilder.buildUserRow(
-                    context,
-                    _userList[index],
-                    onTap: () {
-                      RouteUtil.pushCupertinoRoute(
-                        context,
-                        UserDetailScreen(
-                          blogId: _userList[index].blogInfo.blogId,
-                          blogName: _userList[index].blogInfo.blogName,
-                        ),
-                      );
-                    },
-                  );
-                }),
               ],
+            ),
+          ),
+          SliverWaterfallFlow(
+            gridDelegate:
+                const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+              mainAxisSpacing: 0,
+              crossAxisSpacing: 6,
+              maxCrossAxisExtent: 400,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (BuildContext context, int index) {
+                return ItemBuilder.buildUserRow(
+                  context,
+                  _userList[index],
+                  onTap: () {
+                    RouteUtil.pushCupertinoRoute(
+                      context,
+                      UserDetailScreen(
+                        blogId: _userList[index].blogInfo.blogId,
+                        blogName: _userList[index].blogInfo.blogName,
+                      ),
+                    );
+                  },
+                );
+              },
+              childCount: _userList.length,
             ),
           ),
         ],

@@ -208,8 +208,7 @@ class _SettingScreenState extends State<SettingScreen>
                 Utils.returnToMainScreen(context);
               });
             },
-            onTapCancel: () {
-            },
+            onTapCancel: () {},
             customDialogType: CustomDialogType.custom,
           );
         },

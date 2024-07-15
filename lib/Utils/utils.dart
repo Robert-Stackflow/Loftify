@@ -27,6 +27,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:restart_app/restart_app.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../Providers/global_provider.dart';
 import '../Providers/provider_manager.dart';
@@ -34,15 +35,33 @@ import '../Screens/main_screen.dart';
 import 'itoast.dart';
 
 class Utils {
-  static void restartApp() {
-    Restart.restartApp();
+  static Future<void> restartApp(BuildContext context) async {
+    if (Utils.isDesktop()) {
+    } else {
+      Restart.restartApp();
+    }
   }
 
-  static void returnToMainScreen(BuildContext context) {
-    Navigator.pushAndRemoveUntil(
-        context,
-        CupertinoPageRoute(builder: (context) => const MainScreen()),
-        (route) => false);
+  static Future<void> returnToMainScreen(BuildContext context) async {
+    if (Utils.isDesktop()) {
+      ProviderManager.globalProvider.desktopCanpop = false;
+      ProviderManager.desktopNavigatorKey = GlobalKey<NavigatorState>();
+      ProviderManager.globalNavigatorKey.currentState
+          ?.pushNamedAndRemoveUntil("/", (route) => false);
+    } else {
+      Navigator.pushAndRemoveUntil(
+          context,
+          CupertinoPageRoute(builder: (context) => const MainScreen()),
+          (route) => false);
+    }
+  }
+
+  static Future<void> maximizeOrRestore() async {
+    if (await windowManager.isMaximized()) {
+      windowManager.restore();
+    } else {
+      windowManager.maximize();
+    }
   }
 
   static String processEmpty(String? str, {String defaultValue = ""}) {

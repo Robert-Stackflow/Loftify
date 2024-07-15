@@ -52,6 +52,8 @@ class _ShareScreenState extends State<ShareScreen>
   HistoryLayoutMode _layoutMode = HistoryLayoutMode.nineGrid;
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
+  final ScrollController _scrollController = ScrollController();
+  bool _noMore = false;
 
   @override
   void initState() {
@@ -65,10 +67,18 @@ class _ShareScreenState extends State<ShareScreen>
     if (widget.infoMode != InfoMode.me) {
       _onRefresh();
     }
+    _scrollController.addListener(() {
+      if (!_noMore &&
+          _scrollController.position.pixels >
+              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
+        _onLoad();
+      }
+    });
   }
 
   _fetchShare({bool refresh = false}) async {
     if (_loading) return;
+    if (refresh) _noMore = false;
     _loading = true;
     int offset = refresh ? 0 : _shareList.length;
     return await HiveUtil.getUserInfo().then((blogInfo) async {
@@ -115,6 +125,7 @@ class _ShareScreenState extends State<ShareScreen>
             }
             if (mounted) setState(() {});
             if (_shareList.length >= _total && !refresh) {
+              _noMore = true;
               return IndicatorResult.noMore;
             } else {
               return IndicatorResult.success;
@@ -189,6 +200,7 @@ class _ShareScreenState extends State<ShareScreen>
       startIndex += e.count;
     }
     return ListView(
+      controller: _scrollController,
       padding: EdgeInsets.zero,
       children: widgets,
     );
@@ -198,7 +210,7 @@ class _ShareScreenState extends State<ShareScreen>
     return GridView.extent(
       padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
       shrinkWrap: true,
-      maxCrossAxisExtent: 200,
+      maxCrossAxisExtent: 160,
       mainAxisSpacing: 6,
       crossAxisSpacing: 6,
       physics: const NeverScrollableScrollPhysics(),
@@ -206,7 +218,7 @@ class _ShareScreenState extends State<ShareScreen>
         int trueIndex = startIndex + index;
         return CommonInfoItemBuilder.buildNineGridPostItem(
             context, _shareList[trueIndex],
-            wh: (MediaQuery.sizeOf(context).width - 22) / 3);
+            wh: 160);
       }),
     );
   }
@@ -214,6 +226,7 @@ class _ShareScreenState extends State<ShareScreen>
   Widget _buildWaterflow() {
     return WaterfallFlow.builder(
       cacheExtent: 9999,
+      controller: _scrollController,
       padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
       gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
         mainAxisSpacing: 6,

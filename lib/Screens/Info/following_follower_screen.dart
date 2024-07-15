@@ -3,17 +3,15 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Api/user_api.dart';
-import 'package:loftify/Resources/colors.dart';
 import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Utils/hive_util.dart';
+import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Models/enums.dart';
 import '../../Models/user_response.dart';
 import '../../Utils/itoast.dart';
-import '../../Utils/route_util.dart';
 import '../../Widgets/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
-import 'user_detail_screen.dart';
 
 class FollowingFollowerScreen extends StatefulWidget {
   FollowingFollowerScreen({
@@ -50,6 +48,8 @@ class _FollowingFollowerScreenState extends State<FollowingFollowerScreen>
   bool _loading = false;
   int total = 0;
   final EasyRefreshController _refreshController = EasyRefreshController();
+  final ScrollController _scrollController = ScrollController();
+  bool _noMore = false;
 
   @override
   void initState() {
@@ -61,6 +61,13 @@ class _FollowingFollowerScreenState extends State<FollowingFollowerScreen>
     }
     total = widget.total;
     super.initState();
+    _scrollController.addListener(() {
+      if (!_noMore &&
+          _scrollController.position.pixels >
+              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
+        _fetchList();
+      }
+    });
   }
 
   _processResult(value, {bool refresh = false}) {
@@ -86,6 +93,7 @@ class _FollowingFollowerScreenState extends State<FollowingFollowerScreen>
         if (mounted) setState(() {});
         if ((_followingList.length >= widget.total || notExist.isEmpty) &&
             !refresh) {
+          _noMore = true;
           return IndicatorResult.noMore;
         } else {
           return IndicatorResult.success;
@@ -102,6 +110,7 @@ class _FollowingFollowerScreenState extends State<FollowingFollowerScreen>
 
   _fetchList({bool refresh = false}) async {
     if (_loading) return;
+    if (refresh) _noMore = false;
     _loading = true;
     int offset = refresh ? 0 : _followingList.length;
     return await HiveUtil.getUserInfo().then((blogInfo) async {
@@ -156,91 +165,17 @@ class _FollowingFollowerScreenState extends State<FollowingFollowerScreen>
   }
 
   Widget _buildBody(ScrollPhysics physics) {
-    return ListView(
+    return WaterfallFlow.extent(
+      maxCrossAxisExtent: 600,
+      controller: _scrollController,
       physics: physics,
       children: List.generate(_followingList.length, (index) {
-        return _buildItem(index, _followingList[index]);
+        return ItemBuilder.buildFollowerOrFollowingItem(
+            context, index, _followingList[index], onFollowOrUnFollow: () {
+          total += _followingList[index].following ? 1 : -1;
+          setState(() {});
+        });
       }),
-    );
-  }
-
-  _buildItem(int index, FollowingUserItem item) {
-    return GestureDetector(
-      onTap: () {
-        RouteUtil.pushCupertinoRoute(
-          context,
-          UserDetailScreen(
-            blogId: item.blogInfo.blogId,
-            blogName: item.blogInfo.blogName,
-          ),
-        );
-      },
-      child: Container(
-        color: Colors.transparent,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-        child: Row(
-          children: [
-            ItemBuilder.buildAvatar(
-              context: context,
-              size: 40,
-              imageUrl: item.blogInfo.bigAvaImg,
-              tagPrefix: "$index",
-              showDetailMode: ShowDetailMode.not,
-            ),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.blogInfo.blogNickName,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  if (item.blogInfo.selfIntro.isNotEmpty)
-                    const SizedBox(height: 5),
-                  if (item.blogInfo.selfIntro.isNotEmpty)
-                    Text(
-                      item.blogInfo.selfIntro,
-                      style: Theme.of(context).textTheme.labelMedium,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                ],
-              ),
-            ),
-            if (item.follower)
-              Container(
-                margin: const EdgeInsets.only(right: 10),
-                child: Icon(
-                  Icons.star_rate_rounded,
-                  size: 22,
-                  color: MyColors.getHotTagTextColor(context),
-                ),
-              ),
-            ItemBuilder.buildFramedButton(
-              context: context,
-              isFollowed: item.following,
-              positiveText: item.follower ? "相互关注" : "已关注",
-              onTap: () {
-                UserApi.followOrUnfollow(
-                  isFollow: !item.following,
-                  blogId: item.blogId,
-                  blogName: item.blogInfo.blogName,
-                ).then((value) {
-                  if (value['meta']['status'] != 200) {
-                    IToast.showTop(context,
-                        text: value['meta']['desc'] ?? value['meta']['msg']);
-                  } else {
-                    item.following = !item.following;
-                    total += item.following ? 1 : -1;
-                    setState(() {});
-                  }
-                });
-              },
-            ),
-          ],
-        ),
-      ),
     );
   }
 

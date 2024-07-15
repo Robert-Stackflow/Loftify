@@ -2,7 +2,9 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Models/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
@@ -68,6 +70,8 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
   late dynamic allDownloadIcon;
   DownloadState downloadState = DownloadState.none;
   DownloadState allDownloadState = DownloadState.none;
+  late PageController _pageController;
+  final List<PhotoViewController> _viewControllers = [];
 
   @override
   void initState() {
@@ -81,14 +85,19 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
     setDownloadState(DownloadState.none);
     setAllDownloadState(DownloadState.none);
     imageUrls = widget.imageUrls;
+    _viewControllers.addAll(List.generate(imageUrls.length, (index) {
+      return PhotoViewController();
+    }));
     captions = widget.captions ?? [];
     minScale = widget.minScale;
     maxScale = widget.maxScale;
     initialScale = widget.initialScale;
     currentIndex = widget.initIndex ?? 0;
     currentIndex = max(0, min(currentIndex, imageUrls.length - 1));
+    _pageController = PageController(initialPage: currentIndex);
     if (widget.mainColors != null &&
-        widget.mainColors!.length >= imageUrls.length) {
+        widget.mainColors!.length >= imageUrls.length &&
+        HiveUtil.getBool(key: HiveUtil.followMainColorKey)) {
       mainColors = widget.mainColors!;
     } else {
       mainColors = List.filled(imageUrls.length, Colors.black);
@@ -115,7 +124,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
       extendBodyBehindAppBar: true,
       backgroundColor: Colors.black,
       body: Stack(
-        alignment: Alignment.bottomCenter,
+        alignment: Alignment.center,
         children: [
           imageUrls.length == 1 ? _buildSinglePage() : _buildMultiplePage(),
           if (getCaption(currentIndex).isNotEmpty)
@@ -133,39 +142,71 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
                 ),
               ),
             ),
+          if (imageUrls.length > 1 && Utils.isDesktop())
+            Positioned(
+              left: 16,
+              child: Container(
+                width: 40,
+                height: 40,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: currentIndex == 0
+                      ? Colors.black.withOpacity(0.1)
+                      : Colors.black.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: GestureDetector(
+                  onTap: () {
+                    _pageController.previousPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut);
+                  },
+                  child: MouseRegion(
+                    cursor: currentIndex == 0
+                        ? SystemMouseCursors.basic
+                        : SystemMouseCursors.click,
+                    child: const Icon(
+                      Icons.keyboard_arrow_left_rounded,
+                      size: 30,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          if (imageUrls.length > 1 && Utils.isDesktop())
+            Positioned(
+              right: 16,
+              child: Container(
+                width: 40,
+                height: 40,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: currentIndex == imageUrls.length - 1
+                      ? Colors.black.withOpacity(0.1)
+                      : Colors.black.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: GestureDetector(
+                  onTap: () {
+                    _pageController.nextPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut);
+                  },
+                  child: MouseRegion(
+                    cursor: currentIndex == imageUrls.length - 1
+                        ? SystemMouseCursors.basic
+                        : SystemMouseCursors.click,
+                    child: const Icon(
+                      Icons.keyboard_arrow_right_rounded,
+                      size: 30,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSinglePage() {
-    return Container(
-      constraints: BoxConstraints.expand(
-        height: MediaQuery.sizeOf(context).height,
-      ),
-      child: PhotoView(
-        imageProvider: CachedNetworkImageProvider(Utils.getUrlByQuality(
-            currentUrl,
-            HiveUtil.getImageQuality(HiveUtil.imageDetailImageQualityKey))),
-        initialScale: getPreferedScale(currentUrl),
-        minScale: minScale,
-        maxScale: maxScale,
-        backgroundDecoration:
-            BoxDecoration(color: Utils.getDarkColor(mainColors[currentIndex])),
-        heroAttributes: PhotoViewHeroAttributes(
-          tag: Utils.getHeroTag(
-            tagSuffix: widget.tagSuffix,
-            tagPrefix: widget.tagPrefix,
-            url: currentUrl,
-          ),
-        ),
-        loadingBuilder: (context, event) => _buildLoading(
-          event,
-          index: currentIndex,
-        ),
-        // onTapDown: (_, __, ___) {
-        //   Navigator.pop(context);
-        // },
       ),
     );
   }
@@ -191,53 +232,106 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
       double preferHeight =
           MediaQuery.sizeOf(context).width * item.oh / item.ow;
       double scale = preferHeight / MediaQuery.sizeOf(context).height;
-      if (scale > 1) preferScale = PhotoViewComputedScale.covered;
+      if (scale > 1 && Utils.isMobile()) {
+        preferScale = PhotoViewComputedScale.covered;
+      }
     }
     return preferScale;
   }
 
-  Widget _buildMultiplePage() {
-    return PhotoViewGallery.builder(
-      scrollPhysics: const ClampingScrollPhysics(),
-      pageController: PageController(initialPage: currentIndex),
-      backgroundDecoration:
-          BoxDecoration(color: Utils.getDarkColor(mainColors[currentIndex])),
-      loadingBuilder: (context, event) => _buildLoading(
-        event,
-        index: currentIndex,
+  PointerSignalEventListener get onPointerSignal => (event) {
+        if (event is PointerScrollEvent &&
+            currentIndex >= 0 &&
+            currentIndex < imageUrls.length) {
+          final delta = event.scrollDelta.dy;
+          final scale = _viewControllers[currentIndex].scale ?? 1.0;
+          final newScale = scale - delta / 1000;
+          _viewControllers[currentIndex].scale = newScale.clamp(0.1, 10.0);
+        }
+      };
+
+  Widget _buildSinglePage() {
+    return Container(
+      constraints: BoxConstraints.expand(
+        height: MediaQuery.sizeOf(context).height,
       ),
-      builder: (BuildContext context, int index) {
-        return PhotoViewGalleryPageOptions(
+      child: Listener(
+        onPointerSignal: onPointerSignal,
+        child: PhotoView(
+          controller: _viewControllers[0],
           imageProvider: CachedNetworkImageProvider(Utils.getUrlByQuality(
-              getUrl(index),
+              currentUrl,
               HiveUtil.getImageQuality(HiveUtil.imageDetailImageQualityKey))),
-          initialScale: getPreferedScale(imageUrls[index]),
+          initialScale: getPreferedScale(currentUrl),
           minScale: minScale,
           maxScale: maxScale,
+          backgroundDecoration: BoxDecoration(
+              color: Utils.getDarkColor(mainColors[currentIndex])),
           heroAttributes: PhotoViewHeroAttributes(
             tag: Utils.getHeroTag(
               tagSuffix: widget.tagSuffix,
               tagPrefix: widget.tagPrefix,
-              url: Utils.removeImageParam(getUrl(index)),
+              url: currentUrl,
             ),
           ),
-          filterQuality: FilterQuality.high,
+          loadingBuilder: (context, event) => _buildLoading(
+            event,
+            index: currentIndex,
+          ),
           // onTapDown: (_, __, ___) {
           //   Navigator.pop(context);
           // },
-        );
-      },
-      itemCount: imageUrls.length,
-      onPageChanged: (index) async {
-        if (widget.onIndexChanged != null) {
-          widget.onIndexChanged!(index);
-        }
-        setState(() {
-          currentIndex = index;
-          updateCurrentUrl();
-        });
-        setDownloadState(DownloadState.none);
-      },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMultiplePage() {
+    return Listener(
+      onPointerSignal: onPointerSignal,
+      child: PhotoViewGallery.builder(
+        scrollPhysics: const ClampingScrollPhysics(),
+        pageController: _pageController,
+        backgroundDecoration:
+            BoxDecoration(color: Utils.getDarkColor(mainColors[currentIndex])),
+        loadingBuilder: (context, event) => _buildLoading(
+          event,
+          index: currentIndex,
+        ),
+        builder: (BuildContext context, int index) {
+          return PhotoViewGalleryPageOptions(
+            controller: _viewControllers[index],
+            imageProvider: CachedNetworkImageProvider(Utils.getUrlByQuality(
+                getUrl(index),
+                HiveUtil.getImageQuality(HiveUtil.imageDetailImageQualityKey))),
+            initialScale: getPreferedScale(imageUrls[index]),
+            minScale: minScale,
+            maxScale: maxScale,
+            heroAttributes: PhotoViewHeroAttributes(
+              tag: Utils.getHeroTag(
+                tagSuffix: widget.tagSuffix,
+                tagPrefix: widget.tagPrefix,
+                url: Utils.removeImageParam(getUrl(index)),
+              ),
+            ),
+            filterQuality: FilterQuality.high,
+            // onTapDown: (_, __, ___) {
+            //   Navigator.pop(context);
+            // },
+          );
+        },
+        itemCount: imageUrls.length,
+        onPageChanged: (index) async {
+          if (widget.onIndexChanged != null) {
+            widget.onIndexChanged!(index);
+          }
+          setState(() {
+            currentIndex = index;
+            updateCurrentUrl();
+          });
+          setDownloadState(DownloadState.none);
+        },
+      ),
     );
   }
 

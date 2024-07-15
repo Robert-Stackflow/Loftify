@@ -392,7 +392,9 @@ class UserApi {
     required FollowingMode followingMode,
   }) async {
     return RequestUtil.get(
-      "/v1.1/${followingMode == FollowingMode.following ? "userfollowing" : "blogfollower"}.api",
+      "/v1.1/${followingMode == FollowingMode.following
+          ? "userfollowing"
+          : "blogfollower"}.api",
       params: {
         // "timestamp": 0,
         "blogdomain": Utils.getBlogDomain(blogName),

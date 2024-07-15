@@ -38,6 +38,8 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
   String latestVersion = "";
   ReleaseItem? latestReleaseItem;
   bool autoCheckUpdate = HiveUtil.getBool(key: HiveUtil.autoCheckUpdateKey);
+  bool enableCloseToTray = HiveUtil.getBool(key: HiveUtil.enableCloseToTrayKey);
+  bool enableCloseNotice = HiveUtil.getBool(key: HiveUtil.enableCloseNoticeKey);
 
   @override
   void initState() {
@@ -165,21 +167,23 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                   },
                 ),
               ),
-              const SizedBox(height: 10),
-              ItemBuilder.buildRadioItem(
-                value: inAppBrowser,
-                context: context,
-                title: "内置浏览器",
-                topRadius: true,
-                bottomRadius: true,
-                onTap: () {
-                  setState(() {
-                    inAppBrowser = !inAppBrowser;
-                    HiveUtil.put(
-                        key: HiveUtil.inappWebviewKey, value: inAppBrowser);
-                  });
-                },
-              ),
+              if (Utils.isMobile()) const SizedBox(height: 10),
+              if (Utils.isMobile())
+                ItemBuilder.buildRadioItem(
+                  value: inAppBrowser,
+                  context: context,
+                  title: "内置浏览器",
+                  topRadius: true,
+                  bottomRadius: true,
+                  onTap: () {
+                    setState(() {
+                      inAppBrowser = !inAppBrowser;
+                      HiveUtil.put(
+                          key: HiveUtil.inappWebviewKey, value: inAppBrowser);
+                    });
+                  },
+                ),
+              ..._traySetting(),
               const SizedBox(height: 10),
               ItemBuilder.buildRadioItem(
                 value: autoCheckUpdate,
@@ -211,19 +215,6 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                 },
               ),
               const SizedBox(height: 10),
-              // ItemBuilder.buildRadioItem(
-              //   value: true,
-              //   context: context,
-              //   title: "记录日志",
-              //   topRadius: true,
-              //   onTap: () {},
-              // ),
-              // ItemBuilder.buildEntryItem(
-              //   context: context,
-              //   title: "清空日志",
-              //   tip: _cacheSize,
-              //   onTap: () {},
-              // ),
               if (Utils.isMobile())
                 ItemBuilder.buildEntryItem(
                   context: context,
@@ -253,5 +244,53 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
         ),
       ),
     );
+  }
+
+  _traySetting() {
+    return [
+      const SizedBox(height: 10),
+      ItemBuilder.buildEntryItem(
+        context: context,
+        title: "关闭主界面时",
+        tip: enableCloseToTray ? "最小化到系统托盘" : "退出Loftify",
+        topRadius: true,
+        bottomRadius: true,
+        onTap: () {
+          List<Tuple2<String, dynamic>> options = [
+            const Tuple2("最小化到系统托盘", 0),
+            const Tuple2("退出Loftify", 1),
+          ];
+          BottomSheetBuilder.showListBottomSheet(
+            context,
+            (sheetContext) => TileList.fromOptions(
+              options,
+              (idx) {
+                Navigator.pop(sheetContext);
+                if (idx == 0) {
+                  setState(() {
+                    enableCloseToTray = true;
+                    HiveUtil.put(
+                        key: HiveUtil.enableCloseToTrayKey,
+                        value: enableCloseToTray);
+                  });
+                } else if (idx == 1) {
+                  setState(() {
+                    enableCloseToTray = false;
+                    HiveUtil.put(
+                        key: HiveUtil.enableCloseToTrayKey,
+                        value: enableCloseToTray);
+                  });
+                }
+              },
+              selected: enableCloseToTray ? 0 : 1,
+              title: "关闭主界面时",
+              context: context,
+              onCloseTap: () => Navigator.pop(sheetContext),
+              crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+          );
+        },
+      ),
+    ];
   }
 }

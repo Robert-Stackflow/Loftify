@@ -53,6 +53,12 @@ class HomeScreenState extends State<HomeScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     super.initState();
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >
+          _scrollController.position.maxScrollExtent - 200) {
+        _onLoad();
+      }
+    });
   }
 
   _fetchData({bool refresh = false}) async {

@@ -16,7 +16,9 @@ import 'package:loftify/Utils/asset_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/lottie_util.dart';
+import 'package:responsive_builder/responsive_builder.dart';
 
+import '../../Models/user_response.dart';
 import '../../Providers/global_provider.dart';
 import '../../Providers/provider_manager.dart';
 import '../../Utils/route_util.dart';
@@ -44,6 +46,8 @@ class _MineScreenState extends State<MineScreen>
   MeInfoData? meInfoData;
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
+  final List<FollowingUserItem> _followingList = [];
+  final List<FollowingUserItem> _followerList = [];
 
   late AnimationController darkModeController;
   Widget? darkModeWidget;
@@ -67,6 +71,10 @@ class _MineScreenState extends State<MineScreen>
       );
     });
     _fetchUserInfo();
+    if (ProviderManager.globalProvider.token.isNotEmpty) {
+      _fetchFollowingOrFolllowerList(FollowingMode.following, refresh: true);
+      _fetchFollowingOrFolllowerList(FollowingMode.follower, refresh: true);
+    }
   }
 
   _fetchUserInfo() async {
@@ -105,7 +113,7 @@ class _MineScreenState extends State<MineScreen>
               }
             });
           }
-        } catch (_, t) {
+        } catch (_) {
           if (mounted) IToast.showTop(context, text: "加载失败");
           return IndicatorResult.fail;
         } finally {
@@ -125,24 +133,240 @@ class _MineScreenState extends State<MineScreen>
     super.build(context);
     return Scaffold(
       appBar: Utils.isDesktop() ? null : _buildAppBar(),
-      body: EasyRefresh(
-        controller: _refreshController,
-        onRefresh: _onRefresh,
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 10),
-          child: ListView(
-            cacheExtent: 9999,
-            children: [
-              const SizedBox(height: 10),
-              _buildUserCard(),
-              if (meInfoData != null) _buildStatsticRow(),
-              if (blogInfo != null) ..._buildContent(),
-              // if (blogInfo != null) ..._buildMessage(),
-              if (blogInfo != null) ..._buildCreation(),
-              const SizedBox(height: 20),
-            ],
+      body: _buildMainBody(),
+    );
+  }
+
+  _buildMainBody() {
+    return ProviderManager.globalProvider.token.isNotEmpty
+        ? ScreenTypeLayout.builder(
+            breakpoints: const ScreenBreakpoints(
+              desktop: 640,
+              tablet: 640,
+              watch: 200,
+            ),
+            mobile: (context) => _buildMobileMainBody(),
+            tablet: (context) => _buildTabletMainBody(),
+          )
+        : ItemBuilder.buildUnLoginMainBody(context);
+  }
+
+  _buildMobileMainBody() {
+    return EasyRefresh(
+      controller: _refreshController,
+      onRefresh: _onRefresh,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 10),
+        child: ListView(
+          cacheExtent: 9999,
+          children: [
+            const SizedBox(height: 10),
+            _buildUserCard(),
+            _buildStatsticRow(),
+            if (blogInfo != null) ..._buildContent(),
+            // if (blogInfo != null) ..._buildMessage(),
+            if (blogInfo != null) ..._buildCreation(),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  _buildTabletMainBody() {
+    return Row(
+      children: [
+        Expanded(
+          flex: 1,
+          child: EasyRefresh(
+            controller: _refreshController,
+            onRefresh: _onRefresh,
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 10),
+              child: ListView(
+                cacheExtent: 9999,
+                children: [
+                  const SizedBox(height: 10),
+                  _buildUserCard(),
+                  if (blogInfo != null) ..._buildContent(),
+                  // if (blogInfo != null) ..._buildMessage(),
+                  if (blogInfo != null) ..._buildCreation(),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
           ),
         ),
+        Container(
+          margin: const EdgeInsets.symmetric(vertical: 16),
+          width: 1,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            color: Theme.of(context).dividerColor,
+          ),
+        ),
+        Expanded(
+          flex: 1,
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 10),
+            child: ListView(
+              cacheExtent: 9999,
+              children: [
+                const SizedBox(height: 10),
+                if (meInfoData != null) _buildFollowingCard(),
+                const SizedBox(height: 10),
+                if (meInfoData != null) _buildFollowerCard(),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  _processResult(value, FollowingMode followingMode, {bool refresh = false}) {
+    try {
+      if (value['meta']['status'] != 200) {
+        IToast.showTop(context,
+            text: value['meta']['desc'] ?? value['meta']['msg']);
+        return IndicatorResult.fail;
+      } else {
+        List<dynamic> t = value['response'];
+        if (followingMode == FollowingMode.following) {
+          if (refresh) _followingList.clear();
+          List<FollowingUserItem> notExist = [];
+          for (var e in t) {
+            if (e != null) {
+              if (_followingList.indexWhere((element) =>
+                      element.blogInfo.blogId == e['blogInfo']['blogId']) ==
+                  -1) {
+                notExist.add(FollowingUserItem.fromJson(e));
+              }
+            }
+          }
+          _followingList.addAll(notExist);
+        } else if (followingMode == FollowingMode.follower) {
+          if (refresh) _followerList.clear();
+          List<FollowingUserItem> notExist = [];
+          for (var e in t) {
+            if (e != null) {
+              if (_followerList.indexWhere((element) =>
+                      element.blogInfo.blogId == e['blogInfo']['blogId']) ==
+                  -1) {
+                notExist.add(FollowingUserItem.fromJson(e));
+              }
+            }
+          }
+          _followerList.addAll(notExist);
+        }
+        if (mounted) setState(() {});
+        return IndicatorResult.success;
+      }
+    } catch (e) {
+      if (mounted) IToast.showTop(context, text: "加载失败");
+      return IndicatorResult.fail;
+    } finally {
+      if (mounted) setState(() {});
+    }
+  }
+
+  _fetchFollowingOrFolllowerList(
+    FollowingMode followingMode, {
+    bool refresh = false,
+  }) async {
+    int offset = refresh ? 0 : _followingList.length;
+    return await HiveUtil.getUserInfo().then((blogInfo) async {
+      String blogName = blogInfo!.blogName;
+      return await UserApi.getFollowingList(
+        blogName: blogName,
+        offset: offset,
+        followingMode: followingMode,
+      ).then((value) {
+        return _processResult(value, followingMode, refresh: refresh);
+      });
+    });
+  }
+
+  Widget _buildFollowingCard() {
+    return ItemBuilder.buildContainerItem(
+      context: context,
+      backgroundColor: Theme.of(context).canvasColor,
+      bottomRadius: true,
+      topRadius: true,
+      child: Column(
+        children: [
+          ItemBuilder.buildTitle(
+            context,
+            title: "我的关注（${meInfoData!.blogInfo.attentionCount}）",
+            icon: Icons.keyboard_arrow_right_rounded,
+            onTap: () {
+              RouteUtil.pushCupertinoRoute(
+                context,
+                FollowingFollowerScreen(
+                  infoMode: InfoMode.me,
+                  followingMode: FollowingMode.following,
+                  blogId: blogInfo!.blogId,
+                  blogName: blogInfo!.blogName,
+                  total: meInfoData!.blogInfo.attentionCount,
+                ),
+              );
+            },
+          ),
+          ListView(
+            shrinkWrap: true,
+            padding: EdgeInsets.zero,
+            children: List.generate(_followingList.length, (index) {
+              return ItemBuilder.buildFollowerOrFollowingItem(
+                  context, index, _followingList[index],
+                  onFollowOrUnFollow: () {
+                setState(() {
+                  meInfoData!.blogInfo.attentionCount +=
+                      _followingList[index].following ? 1 : -1;
+                  setState(() {});
+                });
+              });
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFollowerCard() {
+    return ItemBuilder.buildContainerItem(
+      context: context,
+      backgroundColor: Theme.of(context).canvasColor,
+      bottomRadius: true,
+      topRadius: true,
+      child: Column(
+        children: [
+          ItemBuilder.buildTitle(
+            context,
+            title: "我的粉丝（${meInfoData!.blogInfo.followerCount}）",
+            icon: Icons.keyboard_arrow_right_rounded,
+            onTap: () {
+              RouteUtil.pushCupertinoRoute(
+                context,
+                FollowingFollowerScreen(
+                  infoMode: InfoMode.me,
+                  followingMode: FollowingMode.follower,
+                  blogId: blogInfo!.blogId,
+                  blogName: blogInfo!.blogName,
+                  total: meInfoData!.blogInfo.followerCount,
+                ),
+              );
+            },
+          ),
+          ListView(
+            shrinkWrap: true,
+            padding: EdgeInsets.zero,
+            children: List.generate(_followerList.length, (index) {
+              return ItemBuilder.buildFollowerOrFollowingItem(
+                  context, index, _followerList[index]);
+            }),
+          ),
+        ],
       ),
     );
   }
@@ -220,15 +444,16 @@ class _MineScreenState extends State<MineScreen>
                     ),
                   ),
                   const SizedBox(height: 5),
-                  if (meInfoData != null)
-                    Text(
-                      "${meInfoData!.blogInfo.postCount}篇文章 · ${meInfoData!.collectionCount}个合集",
-                      style: Theme.of(context).textTheme.titleSmall?.apply(
-                            color: Theme.of(context).textTheme.bodySmall?.color,
-                            fontSizeDelta: 0,
-                            fontWeightDelta: 2,
-                          ),
-                    ),
+                  Text(
+                    meInfoData != null
+                        ? "${meInfoData!.blogInfo.postCount}篇文章 · ${meInfoData!.collectionCount}个合集"
+                        : "-篇文章 · -个合集",
+                    style: Theme.of(context).textTheme.titleSmall?.apply(
+                          color: Theme.of(context).textTheme.bodySmall?.color,
+                          fontSizeDelta: 0,
+                          fontWeightDelta: 2,
+                        ),
+                  ),
                 ],
               ),
               const Spacer(),
@@ -254,7 +479,7 @@ class _MineScreenState extends State<MineScreen>
           ItemBuilder.buildStatisticItem(
             context,
             title: '热度',
-            count: meInfoData!.blogInfo.hot.hotCount,
+            count: meInfoData?.blogInfo.hot.hotCount,
             onTap: () {},
             labelFontWeightDelta: 2,
             countColor: Theme.of(context).textTheme.titleLarge?.color,
@@ -263,18 +488,20 @@ class _MineScreenState extends State<MineScreen>
           ItemBuilder.buildStatisticItem(
             context,
             title: '粉丝',
-            count: meInfoData!.blogInfo.followerCount,
+            count: meInfoData?.blogInfo.followerCount,
             onTap: () {
-              RouteUtil.pushCupertinoRoute(
-                context,
-                FollowingFollowerScreen(
-                  infoMode: InfoMode.me,
-                  followingMode: FollowingMode.follower,
-                  blogId: blogInfo!.blogId,
-                  blogName: blogInfo!.blogName,
-                  total: meInfoData!.blogInfo.followerCount,
-                ),
-              );
+              if (blogInfo != null && meInfoData != null) {
+                RouteUtil.pushCupertinoRoute(
+                  context,
+                  FollowingFollowerScreen(
+                    infoMode: InfoMode.me,
+                    followingMode: FollowingMode.follower,
+                    blogId: blogInfo!.blogId,
+                    blogName: blogInfo!.blogName,
+                    total: meInfoData!.blogInfo.followerCount,
+                  ),
+                );
+              }
             },
             countColor: Theme.of(context).textTheme.titleLarge?.color,
             labelColor: Theme.of(context).textTheme.labelSmall?.color,
@@ -283,21 +510,23 @@ class _MineScreenState extends State<MineScreen>
           ItemBuilder.buildStatisticItem(
             context,
             title: '关注',
-            count: meInfoData!.blogInfo.attentionCount,
+            count: meInfoData?.blogInfo.attentionCount,
             countColor: Theme.of(context).textTheme.titleLarge?.color,
             labelColor: Theme.of(context).textTheme.labelSmall?.color,
             labelFontWeightDelta: 2,
             onTap: () {
-              RouteUtil.pushCupertinoRoute(
-                context,
-                FollowingFollowerScreen(
-                  infoMode: InfoMode.me,
-                  followingMode: FollowingMode.following,
-                  blogId: blogInfo!.blogId,
-                  blogName: blogInfo!.blogName,
-                  total: meInfoData!.blogInfo.attentionCount,
-                ),
-              );
+              if (blogInfo != null && meInfoData != null) {
+                RouteUtil.pushCupertinoRoute(
+                  context,
+                  FollowingFollowerScreen(
+                    infoMode: InfoMode.me,
+                    followingMode: FollowingMode.following,
+                    blogId: blogInfo!.blogId,
+                    blogName: blogInfo!.blogName,
+                    total: meInfoData!.blogInfo.attentionCount,
+                  ),
+                );
+              }
             },
           ),
         ],

@@ -1,9 +1,10 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:loftify/Database/create_table_sql.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+
+import '../Utils/utils.dart';
 
 class DatabaseManager {
   static const _dbName = "loftify.db";
@@ -18,10 +19,10 @@ class DatabaseManager {
   }
 
   static Future<void> _initDataBase() async {
-    if (Platform.isWindows || Platform.isLinux) {
+    if (Utils.isDesktop()) {
       sqfliteFfiInit();
+      databaseFactory = databaseFactoryFfi;
     }
-    databaseFactory = databaseFactoryFfi;
     if (_database == null) {
       String path = join(await getDatabasesPath(), _dbName);
       _database =

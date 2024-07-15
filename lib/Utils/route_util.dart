@@ -1,8 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:loftify/Providers/global_provider.dart';
 import 'package:loftify/Providers/provider_manager.dart';
-import 'package:loftify/Screens/main_screen.dart';
 import 'package:loftify/Utils/iprint.dart';
 import 'package:loftify/Utils/utils.dart';
 
@@ -25,10 +23,11 @@ class RouteUtil {
   static pushDesktopFadeRoute(
     Widget page, {
     bool removeUtil = false,
-  }) {
+  }) async {
     if (removeUtil) {
       ProviderManager.globalProvider.desktopCanpop = false;
-      return desktopNavigatorKey.currentState?.pushAndRemoveUntil(
+      return await ProviderManager.desktopNavigatorKey.currentState
+          ?.pushAndRemoveUntil(
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 300),
           pageBuilder: (BuildContext context, Animation<double> animation,
@@ -45,6 +44,7 @@ class RouteUtil {
         (route) {
           if (Utils.isNotEmpty(route.settings.name) &&
               route.settings.name!.startsWith("/nav")) {
+            IPrint.debug("text");
             return true;
           }
           return false;
@@ -52,21 +52,21 @@ class RouteUtil {
       );
     } else {
       ProviderManager.globalProvider.desktopCanpop = true;
-        return desktopNavigatorKey.currentState?.push(
-          PageRouteBuilder(
-            transitionDuration: const Duration(milliseconds: 300),
-            pageBuilder: (BuildContext context, Animation<double> animation,
-                Animation secondaryAnimation) {
-              return FadeTransition(
-                opacity: CurvedAnimation(
-                  parent: animation,
-                  curve: Curves.easeInOut,
-                ),
-                child: page,
-              );
-            },
-          ),
-        );
+      return await ProviderManager.desktopNavigatorKey.currentState?.push(
+        PageRouteBuilder(
+          transitionDuration: const Duration(milliseconds: 300),
+          pageBuilder: (BuildContext context, Animation<double> animation,
+              Animation secondaryAnimation) {
+            return FadeTransition(
+              opacity: CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeInOut,
+              ),
+              child: page,
+            );
+          },
+        ),
+      );
     }
   }
 

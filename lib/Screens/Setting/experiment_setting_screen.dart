@@ -60,7 +60,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             children: [
-             if(Utils.isMobile()) ..._privacySettings(),
+              if (Utils.isMobile()) ..._privacySettings(),
               const SizedBox(height: 10),
               ItemBuilder.buildEntryItem(
                 context: context,

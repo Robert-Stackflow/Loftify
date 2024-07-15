@@ -1,5 +1,5 @@
-import 'package:bitsdojo_window/bitsdojo_window.dart';
-import 'package:desktop_multi_window/desktop_multi_window.dart';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
@@ -31,6 +31,8 @@ import 'package:loftify/Screens/Setting/userdynamicshield_setting_screen.dart';
 import 'package:loftify/Utils/fontsize_util.dart';
 import 'package:loftify/Utils/request_header_util.dart';
 import 'package:provider/provider.dart';
+import 'package:tray_manager/tray_manager.dart';
+import 'package:window_manager/window_manager.dart';
 
 import 'Providers/provider_manager.dart';
 import 'Screens/Info/favorite_folder_detail_screen.dart';
@@ -43,6 +45,7 @@ import 'Screens/Setting/about_setting_screen.dart';
 import 'Screens/main_screen.dart';
 import 'Utils/notification_util.dart';
 import 'Utils/utils.dart';
+import 'Widgets/Custom/restart_widget.dart';
 import 'generated/l10n.dart';
 
 Future<void> main(List<String> args) async {
@@ -52,32 +55,71 @@ Future<void> main(List<String> args) async {
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   await ProviderManager.init();
   NotificationUtil.init();
-  if (Utils.isAndroid()) {
-    await RequestHeaderUtil.initAndroidInfo();
-  }
-  runApp(const MyApp());
-  if (Utils.isAndroid()) {
-    SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark);
-    SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-  }
-  SystemChrome.setPreferredOrientations(
-      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   if (Utils.isMobile()) {
     await initDisplayMode();
+    if (Utils.isAndroid()) {
+      await RequestHeaderUtil.initAndroidInfo();
+      SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark);
+      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
+    }
+    SystemChrome.setPreferredOrientations(
+        [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   }
   if (Utils.isDesktop()) {
-    doWhenWindowReady(() {
-      const minSize = Size(450, 600);
-      const initialSize = Size(1120, 740);
-      appWindow.minSize = minSize;
-      appWindow.size = initialSize;
-      appWindow.alignment = Alignment.center;
-      appWindow.show();
-    });
+    await initWindow();
+    initTray();
   }
+  runApp(const RestartWidget(child: MyApp()));
   FlutterNativeSplash.remove();
+}
+
+Future<void> initWindow() async {
+  await windowManager.ensureInitialized();
+  WindowOptions windowOptions = const WindowOptions(
+    size: Size(1120, 740),
+    minimumSize: Size(450, 600),
+    center: true,
+    backgroundColor: Colors.transparent,
+    skipTaskbar: false,
+    titleBarStyle: TitleBarStyle.hidden,
+  );
+  windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await windowManager.show();
+    await windowManager.focus();
+  });
+}
+
+Future<void> initTray() async {
+  await trayManager.setIcon(
+    Platform.isWindows
+        ? 'assets/logo-transparent-big.ico'
+        : 'assets/logo-transparent-big.png',
+  );
+  Menu menu = Menu(
+    items: [
+      MenuItem(
+        key: 'show_window',
+        label: '显示 Loftify',
+      ),
+      MenuItem.separator(),
+      MenuItem(
+        key: 'show_official_website',
+        label: '官网',
+      ),
+      MenuItem(
+        key: 'show_github_repo',
+        label: 'GitHub',
+      ),
+      MenuItem.separator(),
+      MenuItem(
+        key: 'exit_app',
+        label: '退出 Loftify',
+      ),
+    ],
+  );
+  await trayManager.setContextMenu(menu);
 }
 
 Future<void> initDisplayMode() async {
@@ -96,6 +138,8 @@ class MyApp extends StatelessWidget {
       ],
       child: Consumer<GlobalProvider>(
         builder: (context, globalProvider, child) => MaterialApp(
+          restorationScopeId: "Loftify",
+          navigatorKey: ProviderManager.globalNavigatorKey,
           title: 'Loftify',
           theme: globalProvider.getBrightness() == null ||
                   globalProvider.getBrightness() == Brightness.light
@@ -194,53 +238,6 @@ class MyApp extends StatelessWidget {
             LoginByLofterIDScreen.routeName: (context) =>
                 const LoginByLofterIDScreen(),
           },
-        ),
-      ),
-    );
-  }
-}
-
-class _ExampleSubWindow extends StatelessWidget {
-  const _ExampleSubWindow({
-    required this.windowController,
-    required this.args,
-  });
-
-  final WindowController windowController;
-  final Map? args;
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Plugin example app'),
-        ),
-        body: Column(
-          children: [
-            if (args != null)
-              Text(
-                'Arguments: ${args.toString()}',
-                style: const TextStyle(fontSize: 20),
-              ),
-            // ValueListenableBuilder<bool>(
-            //   valueListenable: DesktopLifecycle.instance.isActive,
-            //   builder: (context, active, child) {
-            //     if (active) {
-            //       return const Text('Window Active');
-            //     } else {
-            //       return const Text('Window Inactive');
-            //     }
-            //   },
-            // ),
-            TextButton(
-              onPressed: () async {
-                windowController.close();
-              },
-              child: const Text('Close this window'),
-            ),
-            // Expanded(child: EventWidget(controller: windowController)),
-          ],
         ),
       ),
     );

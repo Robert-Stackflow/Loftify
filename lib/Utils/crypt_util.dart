@@ -12,20 +12,20 @@ class CryptUtil {
   ) {
     final key = Key.fromUtf8(rawKey);
     final iv = IV.fromUtf8(rawIv);
-    final encrypter = Encrypter(AES(key,mode: AESMode.cbc));
+    final encrypter = Encrypter(AES(key, mode: AESMode.cbc));
     final encrypted = encrypter.encrypt(json.encode(data), iv: iv);
     final decrypted = encrypter.decrypt(encrypted, iv: iv);
     return encrypted.base64;
   }
 
-  static  decryptDataByAES(
+  static decryptDataByAES(
     List<int> encrypted,
     String rawKey,
     String rawIv,
   ) {
     final key = Key.fromUtf8(rawKey);
     final iv = IV.fromUtf8(rawIv);
-    final encrypter = Encrypter(AES(key,mode: AESMode.cbc));
+    final encrypter = Encrypter(AES(key, mode: AESMode.cbc));
     final decrypted =
         encrypter.decrypt(Encrypted(Uint8List.fromList(encrypted)), iv: iv);
     return decrypted;

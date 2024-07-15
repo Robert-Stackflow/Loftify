@@ -286,7 +286,7 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
     return GridView.extent(
       padding: const EdgeInsets.only(top: 12),
       shrinkWrap: true,
-      maxCrossAxisExtent: 200,
+      maxCrossAxisExtent: 160,
       mainAxisSpacing: 6,
       crossAxisSpacing: 6,
       physics: const NeverScrollableScrollPhysics(),

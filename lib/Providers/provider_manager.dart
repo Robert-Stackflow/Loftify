@@ -12,6 +12,10 @@ abstract class ProviderManager {
   static bool _initialized = false;
   static GlobalProvider globalProvider = GlobalProvider();
   static late Database db;
+  static GlobalKey<NavigatorState> desktopNavigatorKey =
+      GlobalKey<NavigatorState>();
+  static GlobalKey<NavigatorState> globalNavigatorKey =
+      GlobalKey<NavigatorState>();
 
   static Future<void> init() async {
     if (_initialized) return;

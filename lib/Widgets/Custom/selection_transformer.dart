@@ -20,10 +20,12 @@ typedef SelectionTransform = String Function(Iterable<String>);
 /// )
 /// ```
 class SelectionTransformer extends StatefulWidget {
-  const SelectionTransformer({super.key, required this.transform, required this.child});
+  const SelectionTransformer(
+      {super.key, required this.transform, required this.child});
 
   /// A [SelectionTransformer] that adds a separator string between each child selections.
-  SelectionTransformer.separated({super.key, String separator = '\n', required this.child})
+  SelectionTransformer.separated(
+      {super.key, String separator = '\n', required this.child})
       : transform = _separatedSelectionTransform(separator);
 
   /// A [SelectionTransformer] that lays out the child selection in a tabular layout.
@@ -39,11 +41,12 @@ class SelectionTransformer extends StatefulWidget {
   /// Status 404
   /// Body   Not Found
   ///
-  SelectionTransformer.tabular({super.key, required int columns, required this.child})
+  SelectionTransformer.tabular(
+      {super.key, required int columns, required this.child})
       : transform = _tabularSelectionTransform(columns);
 
   static SelectionTransform _separatedSelectionTransform(String separator) =>
-          (selections) => selections.join(separator);
+      (selections) => selections.join(separator);
 
   static SelectionTransform _tabularSelectionTransform(int columns) {
     return (selections) {
@@ -105,7 +108,8 @@ class SelectionTransformerState extends State<SelectionTransformer> {
   }
 }
 
-class SeparatedSelectionContainerDelegate extends MultiSelectableSelectionContainerDelegate {
+class SeparatedSelectionContainerDelegate
+    extends MultiSelectableSelectionContainerDelegate {
   SeparatedSelectionContainerDelegate(this.transform);
 
   final SelectionTransform transform;
@@ -149,14 +153,17 @@ class SeparatedSelectionContainerDelegate extends MultiSelectableSelectionContai
     if (currentSelectionStartIndex != -1) {
       final Selectable start = selectables[currentSelectionStartIndex];
       final Offset localStartEdge =
-          start.value.startSelectionPoint!.localPosition + Offset(0, -start.value.startSelectionPoint!.lineHeight / 2);
-      _lastStartEdgeUpdateGlobalPosition = MatrixUtils.transformPoint(start.getTransformTo(null), localStartEdge);
+          start.value.startSelectionPoint!.localPosition +
+              Offset(0, -start.value.startSelectionPoint!.lineHeight / 2);
+      _lastStartEdgeUpdateGlobalPosition = MatrixUtils.transformPoint(
+          start.getTransformTo(null), localStartEdge);
     }
     if (currentSelectionEndIndex != -1) {
       final Selectable end = selectables[currentSelectionEndIndex];
-      final Offset localEndEdge =
-          end.value.endSelectionPoint!.localPosition + Offset(0, -end.value.endSelectionPoint!.lineHeight / 2);
-      _lastEndEdgeUpdateGlobalPosition = MatrixUtils.transformPoint(end.getTransformTo(null), localEndEdge);
+      final Offset localEndEdge = end.value.endSelectionPoint!.localPosition +
+          Offset(0, -end.value.endSelectionPoint!.lineHeight / 2);
+      _lastEndEdgeUpdateGlobalPosition =
+          MatrixUtils.transformPoint(end.getTransformTo(null), localEndEdge);
     }
   }
 
@@ -215,7 +222,8 @@ class SeparatedSelectionContainerDelegate extends MultiSelectableSelectionContai
   }
 
   @override
-  SelectionResult dispatchSelectionEventToChild(Selectable selectable, SelectionEvent event) {
+  SelectionResult dispatchSelectionEventToChild(
+      Selectable selectable, SelectionEvent event) {
     switch (event.type) {
       case SelectionEventType.startEdgeUpdate:
         _hasReceivedStartEvent.add(selectable);
@@ -244,8 +252,10 @@ class SeparatedSelectionContainerDelegate extends MultiSelectableSelectionContai
 
   @override
   void ensureChildUpdated(Selectable selectable) {
-    if (_lastEndEdgeUpdateGlobalPosition != null && _hasReceivedEndEvent.add(selectable)) {
-      final SelectionEdgeUpdateEvent synthesizedEvent = SelectionEdgeUpdateEvent.forEnd(
+    if (_lastEndEdgeUpdateGlobalPosition != null &&
+        _hasReceivedEndEvent.add(selectable)) {
+      final SelectionEdgeUpdateEvent synthesizedEvent =
+          SelectionEdgeUpdateEvent.forEnd(
         globalPosition: _lastEndEdgeUpdateGlobalPosition!,
       );
       if (currentSelectionEndIndex == -1) {
@@ -253,8 +263,10 @@ class SeparatedSelectionContainerDelegate extends MultiSelectableSelectionContai
       }
       selectable.dispatchSelectionEvent(synthesizedEvent);
     }
-    if (_lastStartEdgeUpdateGlobalPosition != null && _hasReceivedStartEvent.add(selectable)) {
-      final SelectionEdgeUpdateEvent synthesizedEvent = SelectionEdgeUpdateEvent.forStart(
+    if (_lastStartEdgeUpdateGlobalPosition != null &&
+        _hasReceivedStartEvent.add(selectable)) {
+      final SelectionEdgeUpdateEvent synthesizedEvent =
+          SelectionEdgeUpdateEvent.forStart(
         globalPosition: _lastStartEdgeUpdateGlobalPosition!,
       );
       if (currentSelectionStartIndex == -1) {
@@ -281,8 +293,10 @@ class SeparatedSelectionContainerDelegate extends MultiSelectableSelectionContai
       );
     }
     final Set<Selectable> selectableSet = selectables.toSet();
-    _hasReceivedEndEvent.removeWhere((Selectable selectable) => !selectableSet.contains(selectable));
-    _hasReceivedStartEvent.removeWhere((Selectable selectable) => !selectableSet.contains(selectable));
+    _hasReceivedEndEvent.removeWhere(
+        (Selectable selectable) => !selectableSet.contains(selectable));
+    _hasReceivedStartEvent.removeWhere(
+        (Selectable selectable) => !selectableSet.contains(selectable));
     super.didChangeSelectables();
   }
 

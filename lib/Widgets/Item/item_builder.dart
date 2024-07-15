@@ -14,11 +14,14 @@ import 'package:loftify/Utils/lottie_util.dart';
 import 'package:provider/provider.dart';
 
 import '../../Api/post_api.dart';
+import '../../Api/user_api.dart';
 import '../../Models/collection_response.dart';
 import '../../Models/post_detail_response.dart';
+import '../../Models/user_response.dart';
 import '../../Providers/global_provider.dart';
 import '../../Resources/colors.dart';
 import '../../Screens/Info/user_detail_screen.dart';
+import '../../Screens/Login/login_by_captcha_screen.dart';
 import '../../Screens/Post/tag_detail_screen.dart';
 import '../../Utils/asset_util.dart';
 import '../../Utils/hive_util.dart';
@@ -841,7 +844,8 @@ class ItemBuilder {
                   defaultTapFunction?.call();
                 }
               },
-              child: tailing,
+              child:
+                  MouseRegion(cursor: SystemMouseCursors.click, child: tailing),
             ),
         ],
       ),
@@ -1023,50 +1027,53 @@ class ItemBuilder {
     AnimationController? animationController,
     String zeroPlaceHolder = "点赞",
   }) {
-    return LikeButton(
-      onTap: onTap,
-      size: size,
-      isLiked: isLiked,
-      likeBuilder: (bool isLiked) {
-        return Icon(
-          isLiked || filled
-              ? Icons.favorite_rounded
-              : Icons.favorite_border_rounded,
-          color: isLiked
-              ? MyColors.likeButtonColor
-              : defaultColor ?? Theme.of(context).iconTheme.color,
-          size: iconSize,
-        );
-        // return LottieUtil.load(
-        //   Utils.isDark(context)
-        //       ? LottieUtil.likeBigNormalDark
-        //       : LottieUtil.likeBigNormalLight,
-        //   size: iconSize,
-        //   controller: animationController,
-        // );
-        // return AssetUtil.loadDouble(
-        //   context,
-        //   isLiked || filled
-        //       ? AssetUtil.likeFilledIcon
-        //       : AssetUtil.likeLightIcon,
-        //   isLiked || filled
-        //       ? AssetUtil.likeFilledIcon
-        //       : AssetUtil.likeLightIcon,
-        //   size: iconSize,
-        // );
-      },
-      likeCount: likeCount,
-      countPostion: position,
-      likeCountAnimationType: LikeCountAnimationType.none,
-      likeCountPadding: likeCountPadding,
-      countBuilder: (int? count, bool isLiked, String text) {
-        return showCount
-            ? Text(
-                count == 0 ? zeroPlaceHolder : text,
-                style: countStyle ?? Theme.of(context).textTheme.labelSmall,
-              )
-            : Container();
-      },
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: LikeButton(
+        onTap: onTap,
+        size: size,
+        isLiked: isLiked,
+        likeBuilder: (bool isLiked) {
+          return Icon(
+            isLiked || filled
+                ? Icons.favorite_rounded
+                : Icons.favorite_border_rounded,
+            color: isLiked
+                ? MyColors.likeButtonColor
+                : defaultColor ?? Theme.of(context).iconTheme.color,
+            size: iconSize,
+          );
+          // return LottieUtil.load(
+          //   Utils.isDark(context)
+          //       ? LottieUtil.likeBigNormalDark
+          //       : LottieUtil.likeBigNormalLight,
+          //   size: iconSize,
+          //   controller: animationController,
+          // );
+          // return AssetUtil.loadDouble(
+          //   context,
+          //   isLiked || filled
+          //       ? AssetUtil.likeFilledIcon
+          //       : AssetUtil.likeLightIcon,
+          //   isLiked || filled
+          //       ? AssetUtil.likeFilledIcon
+          //       : AssetUtil.likeLightIcon,
+          //   size: iconSize,
+          // );
+        },
+        likeCount: likeCount,
+        countPostion: position,
+        likeCountAnimationType: LikeCountAnimationType.none,
+        likeCountPadding: likeCountPadding,
+        countBuilder: (int? count, bool isLiked, String text) {
+          return showCount
+              ? Text(
+                  count == 0 ? zeroPlaceHolder : text,
+                  style: countStyle ?? Theme.of(context).textTheme.labelSmall,
+                )
+              : Container();
+        },
+      ),
     );
   }
 
@@ -1084,34 +1091,37 @@ class ItemBuilder {
     TextStyle? countStyle,
     AnimationController? animationController,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          LottieUtil.load(
-            Utils.isDark(context)
-                ? LottieUtil.likeMediumDark
-                : LottieUtil.likeMediumLight,
-            size: iconSize,
-            fit: BoxFit.cover,
-            controller: animationController,
-            onLoaded: () {
-              animationController?.value = isLiked! ? 1 : 0;
-            },
-          ),
-          if (showCount)
-            Positioned(
-              bottom: -4,
-              right: 0,
-              left: 0,
-              child: Text(
-                likeCount == 0 ? "点赞" : "$likeCount",
-                style: countStyle ?? Theme.of(context).textTheme.labelMedium,
-                textAlign: TextAlign.center,
-              ),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            LottieUtil.load(
+              Utils.isDark(context)
+                  ? LottieUtil.likeMediumDark
+                  : LottieUtil.likeMediumLight,
+              size: iconSize,
+              fit: BoxFit.cover,
+              controller: animationController,
+              onLoaded: () {
+                animationController?.value = isLiked! ? 1 : 0;
+              },
             ),
-        ],
+            if (showCount)
+              Positioned(
+                bottom: -4,
+                right: 0,
+                left: 0,
+                child: Text(
+                  likeCount == 0 ? "点赞" : "$likeCount",
+                  style: countStyle ?? Theme.of(context).textTheme.labelMedium,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -1129,31 +1139,34 @@ class ItemBuilder {
     TextStyle? countStyle,
     AnimationController? animationController,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          LottieUtil.load(
-            Utils.isDark(context)
-                ? LottieUtil.recommendMediumFocusDark
-                : LottieUtil.recommendMediumFocusLight,
-            size: iconSize,
-            fit: BoxFit.fill,
-            controller: animationController,
-          ),
-          if (showCount)
-            Positioned(
-              bottom: -4,
-              right: 0,
-              left: 0,
-              child: Text(
-                shareCount == 0 ? "推荐" : "$shareCount",
-                style: countStyle ?? Theme.of(context).textTheme.labelMedium,
-                textAlign: TextAlign.center,
-              ),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            LottieUtil.load(
+              Utils.isDark(context)
+                  ? LottieUtil.recommendMediumFocusDark
+                  : LottieUtil.recommendMediumFocusLight,
+              size: iconSize,
+              fit: BoxFit.fill,
+              controller: animationController,
             ),
-        ],
+            if (showCount)
+              Positioned(
+                bottom: -4,
+                right: 0,
+                left: 0,
+                child: Text(
+                  shareCount == 0 ? "推荐" : "$shareCount",
+                  style: countStyle ?? Theme.of(context).textTheme.labelMedium,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -1172,37 +1185,42 @@ class ItemBuilder {
     EdgeInsetsGeometry? likeCountPadding,
     TextStyle? countStyle,
   }) {
-    return LikeButton(
-      onTap: onTap,
-      size: size,
-      isLiked: isShared,
-      circleColor: MyColors.shareButtonCircleColor,
-      bubblesColor: MyColors.shareButtonBubblesColor,
-      likeBuilder: (bool isShared) {
-        return Icon(
-          isShared || filled ? Icons.thumb_up_rounded : Icons.thumb_up_outlined,
-          color: isShared
-              ? MyColors.shareButtonColor
-              : defaultColor ?? Theme.of(context).iconTheme.color,
-          size: iconSize,
-        );
-      },
-      likeCount: likeCount,
-      countPostion: position,
-      likeCountPadding:
-          likeCountPadding ?? const EdgeInsets.only(right: 3, bottom: 5),
-      likeCountAnimationType: LikeCountAnimationType.none,
-      countBuilder: (int? count, bool isLiked, String text) {
-        return showCount
-            ? Container(
-                margin: const EdgeInsets.only(top: 5),
-                child: Text(
-                  count == 0 ? "推荐" : text,
-                  style: countStyle ?? Theme.of(context).textTheme.labelSmall,
-                ),
-              )
-            : Container();
-      },
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: LikeButton(
+        onTap: onTap,
+        size: size,
+        isLiked: isShared,
+        circleColor: MyColors.shareButtonCircleColor,
+        bubblesColor: MyColors.shareButtonBubblesColor,
+        likeBuilder: (bool isShared) {
+          return Icon(
+            isShared || filled
+                ? Icons.thumb_up_rounded
+                : Icons.thumb_up_outlined,
+            color: isShared
+                ? MyColors.shareButtonColor
+                : defaultColor ?? Theme.of(context).iconTheme.color,
+            size: iconSize,
+          );
+        },
+        likeCount: likeCount,
+        countPostion: position,
+        likeCountPadding:
+            likeCountPadding ?? const EdgeInsets.only(right: 3, bottom: 5),
+        likeCountAnimationType: LikeCountAnimationType.none,
+        countBuilder: (int? count, bool isLiked, String text) {
+          return showCount
+              ? Container(
+                  margin: const EdgeInsets.only(top: 5),
+                  child: Text(
+                    count == 0 ? "推荐" : text,
+                    style: countStyle ?? Theme.of(context).textTheme.labelSmall,
+                  ),
+                )
+              : Container();
+        },
+      ),
     );
   }
 
@@ -1448,36 +1466,75 @@ class ItemBuilder {
     Color? color,
     double fontSizeDelta = 0,
     TextStyle? textStyle,
+    double? width,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding:
-            padding ?? const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: background ?? Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(radius),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: width,
+          padding: padding ??
+              const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: background ?? Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(radius),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (icon != null) icon,
+              Text(
+                text ?? "",
+                style: textStyle ??
+                    Theme.of(context).textTheme.titleSmall?.apply(
+                          color: color ??
+                              (background != null
+                                  ? Colors.white
+                                  : Theme.of(context)
+                                      .textTheme
+                                      .titleSmall
+                                      ?.color),
+                          fontWeightDelta: 2,
+                          fontSizeDelta: fontSizeDelta,
+                        ),
+              ),
+            ],
+          ),
         ),
-        child: Row(
+      ),
+    );
+  }
+
+  static buildUnLoginMainBody(BuildContext context) {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 10),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (icon != null) icon,
-            Text(
-              text ?? "",
-              style: textStyle ??
-                  Theme.of(context).textTheme.titleSmall?.apply(
-                        color: color ??
-                            (background != null
-                                ? Colors.white
-                                : Theme.of(context)
-                                    .textTheme
-                                    .titleSmall
-                                    ?.color),
-                        fontWeightDelta: 2,
-                        fontSizeDelta: fontSizeDelta,
-                      ),
+            const SizedBox(height: 100),
+            ItemBuilder.buildAvatar(
+              showLoading: false,
+              context: context,
+              useDefaultAvatar: true,
+              size: 72,
+              imageUrl: '',
+            ),
+            const SizedBox(height: 24),
+            ItemBuilder.buildRoundButton(
+              context,
+              width: 230,
+              text: "登录以获得个性化服务",
+              background: Theme.of(context).primaryColor,
+              fontSizeDelta: 2,
+              onTap: () {
+                RouteUtil.pushCupertinoRoute(
+                    context, const LoginByCaptchaScreen());
+              },
             ),
           ],
         ),
@@ -1492,32 +1549,36 @@ class ItemBuilder {
     String? positiveText,
     String? negtiveText,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        decoration: BoxDecoration(
-          color: isFollowed ? Theme.of(context).cardColor : Colors.transparent,
-          borderRadius: BorderRadius.circular(50),
-          border: Border.all(
-            color: isFollowed
-                ? Theme.of(context).dividerColor
-                : Theme.of(context).primaryColor.withAlpha(127),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Text(
-              isFollowed ? positiveText ?? "已关注" : negtiveText ?? "关注",
-              style: TextStyle(
-                color: isFollowed
-                    ? Theme.of(context).textTheme.labelSmall?.color
-                    : Theme.of(context).primaryColor,
-                fontSize: 12,
-              ),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color:
+                isFollowed ? Theme.of(context).cardColor : Colors.transparent,
+            borderRadius: BorderRadius.circular(50),
+            border: Border.all(
+              color: isFollowed
+                  ? Theme.of(context).dividerColor
+                  : Theme.of(context).primaryColor.withAlpha(127),
+              width: 1,
             ),
-          ],
+          ),
+          child: Row(
+            children: [
+              Text(
+                isFollowed ? positiveText ?? "已关注" : negtiveText ?? "关注",
+                style: TextStyle(
+                  color: isFollowed
+                      ? Theme.of(context).textTheme.labelSmall?.color
+                      : Theme.of(context).primaryColor,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1648,18 +1709,22 @@ class ItemBuilder {
           ),
           Expanded(
             child: Center(
-              child: TextField(
-                focusNode: focusNode,
-                controller: controller,
-                textInputAction: TextInputAction.search,
-                onSubmitted: onSubmitted,
-                style: Theme.of(context).textTheme.titleSmall,
-                decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.only(left: 8),
-                  border: const OutlineInputBorder(borderSide: BorderSide.none),
-                  hintText: hintText,
-                  hintStyle: Theme.of(context).textTheme.titleSmall?.apply(
-                      color: Theme.of(context).textTheme.labelSmall?.color),
+              child: Material(
+                color: Colors.transparent,
+                child: TextField(
+                  focusNode: focusNode,
+                  controller: controller,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: onSubmitted,
+                  style: Theme.of(context).textTheme.titleSmall,
+                  decoration: InputDecoration(
+                    contentPadding: const EdgeInsets.only(left: 8),
+                    border:
+                        const OutlineInputBorder(borderSide: BorderSide.none),
+                    hintText: hintText,
+                    hintStyle: Theme.of(context).textTheme.titleSmall?.apply(
+                        color: Theme.of(context).textTheme.labelSmall?.color),
+                  ),
                 ),
               ),
             ),
@@ -2170,32 +2235,40 @@ class ItemBuilder {
     int labelFontWeightDelta = 0,
     int countFontWeightDelta = 0,
     required String title,
-    required int count,
+    required int? count,
     Function()? onTap,
   }) {
-    Map countWithScale = Utils.formatCountToMap(count);
+    Map countWithScale = Utils.formatCountToMap(count ?? 0);
     return GestureDetector(
       onTap: onTap,
       child: Column(
         children: [
-          Row(
-            children: [
-              Text(
-                countWithScale['count'],
-                style: Theme.of(context).textTheme.titleLarge?.apply(
-                    color: countColor, fontWeightDelta: countFontWeightDelta),
-              ),
-              if (countWithScale.containsKey("scale")) const SizedBox(width: 2),
-              if (countWithScale.containsKey("scale"))
-                Text(
-                  countWithScale['scale'],
-                  style: Theme.of(context).textTheme.titleSmall?.apply(
-                      fontSizeDelta: -2,
-                      color: countColor,
-                      fontWeightDelta: countFontWeightDelta),
+          count != null
+              ? Row(
+                  children: [
+                    Text(
+                      countWithScale['count'],
+                      style: Theme.of(context).textTheme.titleLarge?.apply(
+                          color: countColor,
+                          fontWeightDelta: countFontWeightDelta),
+                    ),
+                    if (countWithScale.containsKey("scale"))
+                      const SizedBox(width: 2),
+                    if (countWithScale.containsKey("scale"))
+                      Text(
+                        countWithScale['scale'],
+                        style: Theme.of(context).textTheme.titleSmall?.apply(
+                            fontSizeDelta: -2,
+                            color: countColor,
+                            fontWeightDelta: countFontWeightDelta),
+                      ),
+                  ],
+                )
+              : Text(
+                  "-",
+                  style: Theme.of(context).textTheme.titleLarge?.apply(
+                      color: countColor, fontWeightDelta: countFontWeightDelta),
                 ),
-            ],
-          ),
           const SizedBox(height: 4),
           Text(
             title,
@@ -2223,43 +2296,46 @@ class ItemBuilder {
     Color? color,
     int quarterTurns = 0,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: direction == Axis.horizontal
-          ? Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                if (icon != null && showIcon)
-                  RotatedBox(quarterTurns: quarterTurns, child: icon),
-                if (icon != null && showIcon) SizedBox(width: spacing),
-                Text(
-                  text,
-                  style: Theme.of(context).textTheme.titleSmall?.apply(
-                        fontSizeDelta: fontSizeDelta,
-                        color: color,
-                        fontWeightDelta: fontWeightDelta,
-                      ),
-                ),
-              ],
-            )
-          : Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                if (icon != null && showIcon)
-                  RotatedBox(quarterTurns: quarterTurns, child: icon),
-                if (icon != null && showIcon) SizedBox(height: spacing),
-                Text(
-                  text,
-                  style: Theme.of(context).textTheme.titleSmall?.apply(
-                        fontSizeDelta: fontSizeDelta,
-                        color: color,
-                        fontWeightDelta: fontWeightDelta,
-                      ),
-                ),
-              ],
-            ),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: direction == Axis.horizontal
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (icon != null && showIcon)
+                    RotatedBox(quarterTurns: quarterTurns, child: icon),
+                  if (icon != null && showIcon) SizedBox(width: spacing),
+                  Text(
+                    text,
+                    style: Theme.of(context).textTheme.titleSmall?.apply(
+                          fontSizeDelta: fontSizeDelta,
+                          color: color,
+                          fontWeightDelta: fontWeightDelta,
+                        ),
+                  ),
+                ],
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (icon != null && showIcon)
+                    RotatedBox(quarterTurns: quarterTurns, child: icon),
+                  if (icon != null && showIcon) SizedBox(height: spacing),
+                  Text(
+                    text,
+                    style: Theme.of(context).textTheme.titleSmall?.apply(
+                          fontSizeDelta: fontSizeDelta,
+                          color: color,
+                          fontWeightDelta: fontWeightDelta,
+                        ),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 
@@ -2768,6 +2844,26 @@ class ItemBuilder {
     );
   }
 
+  static Widget buildToolTip(
+      BuildContext context, String message, Widget child) {
+    return Tooltip(
+      message: message,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.all(Radius.circular(4)),
+        boxShadow: [
+          BoxShadow(blurRadius: 2, color: Colors.black.withOpacity(.2))
+        ],
+      ),
+      preferBelow: true,
+      verticalOffset: -15,
+      margin: const EdgeInsets.only(left: 40),
+      textStyle: const TextStyle(color: Colors.black),
+      child: child,
+    );
+  }
+
   static Widget buildL2CommentRow(
     BuildContext context,
     Comment comment, {
@@ -2905,6 +3001,87 @@ class ItemBuilder {
                   }
                 });
                 return Future.sync(() => comment.liked);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static Widget buildFollowerOrFollowingItem(
+      BuildContext context, int index, FollowingUserItem item,
+      {Function()? onFollowOrUnFollow}) {
+    return GestureDetector(
+      onTap: () {
+        RouteUtil.pushCupertinoRoute(
+          context,
+          UserDetailScreen(
+            blogId: item.blogInfo.blogId,
+            blogName: item.blogInfo.blogName,
+          ),
+        );
+      },
+      child: Container(
+        color: Colors.transparent,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+        child: Row(
+          children: [
+            ItemBuilder.buildAvatar(
+              context: context,
+              size: 40,
+              imageUrl: item.blogInfo.bigAvaImg,
+              tagPrefix: "$index",
+              showDetailMode: ShowDetailMode.not,
+            ),
+            const SizedBox(width: 15),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.blogInfo.blogNickName,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  if (item.blogInfo.selfIntro.isNotEmpty)
+                    const SizedBox(height: 5),
+                  if (item.blogInfo.selfIntro.isNotEmpty)
+                    Text(
+                      item.blogInfo.selfIntro,
+                      style: Theme.of(context).textTheme.labelMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+            if (item.follower)
+              Container(
+                margin: const EdgeInsets.only(right: 10),
+                child: Icon(
+                  Icons.star_rate_rounded,
+                  size: 22,
+                  color: MyColors.getHotTagTextColor(context),
+                ),
+              ),
+            ItemBuilder.buildFramedButton(
+              context: context,
+              isFollowed: item.following,
+              positiveText: item.follower ? "相互关注" : "已关注",
+              onTap: () {
+                UserApi.followOrUnfollow(
+                  isFollow: !item.following,
+                  blogId: item.blogId,
+                  blogName: item.blogInfo.blogName,
+                ).then((value) {
+                  if (value['meta']['status'] != 200) {
+                    IToast.showTop(context,
+                        text: value['meta']['desc'] ?? value['meta']['msg']);
+                  } else {
+                    item.following = !item.following;
+                    onFollowOrUnFollow?.call();
+                  }
+                });
               },
             ),
           ],

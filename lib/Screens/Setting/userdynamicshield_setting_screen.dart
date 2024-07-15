@@ -61,19 +61,17 @@ class _UserDynamicShieldSettingScreenState
     return Scaffold(
       backgroundColor: AppTheme.getBackground(context),
       appBar: ItemBuilder.buildAppBar(
-        leading: Icons.arrow_back_rounded,
-        backgroundColor: AppTheme.getBackground(context),
-        onLeadingTap: () {
-          Navigator.pop(context);
-        },
-        title: Text(S.current.userDynamicShieldSetting,
-            style: Theme.of(context).textTheme.titleLarge),
-        center: true,
-        context: context,
-        actions: [
-          ItemBuilder.buildBlankIconButton(context),
-        ]
-      ),
+          leading: Icons.arrow_back_rounded,
+          backgroundColor: AppTheme.getBackground(context),
+          onLeadingTap: () {
+            Navigator.pop(context);
+          },
+          title: Text(S.current.userDynamicShieldSetting,
+              style: Theme.of(context).textTheme.titleLarge),
+          context: context,
+          actions: [
+            ItemBuilder.buildBlankIconButton(context),
+          ]),
       body: EasyRefresh(
         controller: _refreshController,
         refreshOnStart: true,
@@ -148,8 +146,7 @@ class _UserDynamicShieldSettingScreenState
                       }
                     });
                   },
-                  onTapCancel: () {
-                  },
+                  onTapCancel: () {},
                   customDialogType: CustomDialogType.normal,
                 );
               },

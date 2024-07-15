@@ -87,7 +87,7 @@ class RecommendFlowItemBuilder {
   static Widget buildWaterfallFlowPostItem(
     BuildContext context,
     PostListItem item, {
-        Future<int> Function()? onLikeTap,
+    Future<int> Function()? onLikeTap,
     final Function(String tag)? onShieldTag,
     final Function()? onShieldContent,
     final Function()? onShieldUser,

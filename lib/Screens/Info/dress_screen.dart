@@ -210,16 +210,20 @@ class _DressScreenState extends State<DressScreen>
       },
       center: Utils.isNotEmpty(widget.tag) ? true : false,
       title: Utils.isNotEmpty(widget.tag)
-          ? ItemBuilder.buildTagItem(
-              context,
-              widget.tag!,
-              TagType.normal,
-              shownTag: "#${widget.tag}#的相关装扮",
-              backgroundColor: Theme.of(context).primaryColor.withAlpha(30),
-              color: Theme.of(context).primaryColor,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              showRightIcon: true,
-              showTagLabel: false,
+          ? MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: ItemBuilder.buildTagItem(
+                context,
+                widget.tag!,
+                TagType.normal,
+                shownTag: "#${widget.tag}#的相关装扮",
+                backgroundColor: Theme.of(context).primaryColor.withAlpha(30),
+                color: Theme.of(context).primaryColor,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                showRightIcon: true,
+                showTagLabel: false,
+              ),
             )
           : Text(
               "装扮列表",

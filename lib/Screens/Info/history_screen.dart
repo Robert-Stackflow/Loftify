@@ -40,6 +40,8 @@ class _HistoryScreenState extends State<HistoryScreen>
   HistoryLayoutMode _layoutMode = HistoryLayoutMode.nineGrid;
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
+  final ScrollController _scrollController = ScrollController();
+  bool _noMore = false;
 
   @override
   void initState() {
@@ -50,10 +52,18 @@ class _HistoryScreenState extends State<HistoryScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     super.initState();
+    _scrollController.addListener(() {
+      if (!_noMore &&
+          _scrollController.position.pixels >
+              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
+        _onLoad();
+      }
+    });
   }
 
   _fetchHistory({bool refresh = false}) async {
     if (_loading) return;
+    if (refresh) _noMore = false;
     _loading = true;
     int offset = refresh ? 0 : _histories.length;
     return await HiveUtil.getUserInfo().then((blogInfo) async {
@@ -84,6 +94,7 @@ class _HistoryScreenState extends State<HistoryScreen>
             }
             if (mounted) setState(() {});
             if (_histories.length >= _total && !refresh) {
+              _noMore = true;
               return IndicatorResult.noMore;
             } else {
               return IndicatorResult.success;
@@ -156,31 +167,35 @@ class _HistoryScreenState extends State<HistoryScreen>
       startIndex += e.count;
     }
     return ListView(
+      controller: _scrollController,
       padding: EdgeInsets.zero,
       children: widgets,
     );
   }
 
   Widget _buildNineGrid(int startIndex, int count) {
-    return GridView.extent(
+    return GridView.builder(
       padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
       shrinkWrap: true,
-      maxCrossAxisExtent: 200,
-      mainAxisSpacing: 6,
-      crossAxisSpacing: 6,
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        mainAxisSpacing: 6,
+        crossAxisSpacing: 6,
+        maxCrossAxisExtent: 160,
+      ),
       physics: const NeverScrollableScrollPhysics(),
-      children: List.generate(count, (index) {
-        int trueIndex = startIndex + index;
+      itemBuilder: (BuildContext context, int index) {
         return CommonInfoItemBuilder.buildNineGridPostItem(
-            context, _histories[trueIndex],
-            wh: (MediaQuery.sizeOf(context).width - 22) / 3);
-      }),
+            context, _histories[startIndex + index],
+            wh: 160);
+      },
+      itemCount: count,
     );
   }
 
   Widget _buildWaterflow() {
     return WaterfallFlow.builder(
       cacheExtent: 9999,
+      controller: _scrollController,
       padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
       gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
         mainAxisSpacing: 6,

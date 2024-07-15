@@ -1,4 +1,3 @@
-import 'package:card_swiper/card_swiper.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/tag_api.dart';
 import 'package:loftify/Models/tag_response.dart';
@@ -129,14 +128,17 @@ class _TagCollectionGrainScreenState extends State<TagCollectionGrainScreen>
       onLeadingTap: () {
         Navigator.pop(context);
       },
-      title: ItemBuilder.buildTagItem(
-        context,
-        widget.tag,
-        TagType.normal,
-        backgroundColor: Theme.of(context).primaryColor.withAlpha(30),
-        color: Theme.of(context).primaryColor,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        showRightIcon: true,
+      title: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: ItemBuilder.buildTagItem(
+          context,
+          widget.tag,
+          TagType.normal,
+          backgroundColor: Theme.of(context).primaryColor.withAlpha(30),
+          color: Theme.of(context).primaryColor,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          showRightIcon: true,
+        ),
       ),
       center: true,
       actions: [
@@ -177,6 +179,8 @@ class CollectionTabState extends State<CollectionTab>
   final List<SimpleCollectionInfo> _hotCollectionList = [];
   final EasyRefreshController _collectionRefreshController =
       EasyRefreshController();
+  final ScrollController _scrollController = ScrollController();
+  bool _noMore = false;
   int _collectionOffset = 0;
   bool _collectionLoading = false;
 
@@ -186,12 +190,25 @@ class CollectionTabState extends State<CollectionTab>
     return _buildCollectionResultTab();
   }
 
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(() {
+      if (!_noMore &&
+          _scrollController.position.pixels >
+              _scrollController.position.maxScrollExtent - 200) {
+        _fetchCollectionResult();
+      }
+    });
+  }
+
   callRefresh() {
     _collectionRefreshController.callRefresh();
   }
 
   _fetchCollectionResult({bool refresh = false}) async {
     if (_collectionLoading) return;
+    if (refresh) _noMore = false;
     _collectionLoading = true;
     return await TagApi.getCollectionList(
       tag: widget.tag,
@@ -225,6 +242,7 @@ class CollectionTabState extends State<CollectionTab>
           }
           if (mounted) setState(() {});
           if (tmp.isEmpty) {
+            _noMore = true;
             return IndicatorResult.noMore;
           } else {
             return IndicatorResult.success;
@@ -253,6 +271,7 @@ class CollectionTabState extends State<CollectionTab>
       triggerAxis: Axis.vertical,
       childBuilder: (context, physics) => CustomScrollView(
         physics: physics,
+        controller: _scrollController,
         slivers: [
           SliverList(
             delegate: SliverChildListDelegate(
@@ -301,7 +320,7 @@ class CollectionTabState extends State<CollectionTab>
       gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
         mainAxisSpacing: 16,
         crossAxisSpacing: 8,
-        maxCrossAxisExtent: 180,
+        maxCrossAxisExtent: 120,
       ),
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _recommendCollectionList.length,
@@ -333,15 +352,15 @@ class CollectionTabState extends State<CollectionTab>
                 child: ItemBuilder.buildCachedImage(
                   context: context,
                   imageUrl: info.coverUrl,
-                  width: 160,
-                  height: 160,
+                  width: 120,
+                  height: 120,
                   fit: BoxFit.cover,
                   showLoading: false,
                 ),
               ),
               Positioned(
-                top: 2,
-                right: 2,
+                top: 4,
+                right: 4,
                 child: ItemBuilder.buildTransparentTag(
                   context,
                   text: "${info.postCount}",
@@ -350,8 +369,8 @@ class CollectionTabState extends State<CollectionTab>
                 ),
               ),
               Positioned(
-                top: 2,
-                left: 2,
+                top: 4,
+                left: 4,
                 child: ItemBuilder.buildTransparentTag(
                   context,
                   text: "",
@@ -363,8 +382,8 @@ class CollectionTabState extends State<CollectionTab>
                 ),
               ),
               Positioned(
-                bottom: 2,
-                left: 2,
+                bottom: 4,
+                left: 4,
                 child: ItemBuilder.buildTransparentTag(
                   context,
                   text: Utils.formatCount(info.viewCount),
@@ -496,7 +515,7 @@ class CollectionTabState extends State<CollectionTab>
             const SizedBox(width: 12),
             SizedBox(
               width: 180,
-              child:Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
@@ -543,8 +562,22 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
   final List<SimpleGrainInfo> _hotGrainList = [];
   final List<SimpleGrainInfo> _recommendGrainList = [];
   final EasyRefreshController _grainRefreshController = EasyRefreshController();
+  final ScrollController _scrollController = ScrollController();
   int _grainOffset = 0;
   bool _grainLoading = false;
+  bool _noMore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(() {
+      if (!_noMore &&
+          _scrollController.position.pixels >
+              _scrollController.position.maxScrollExtent - 200) {
+        _fetchGrainResult();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -558,6 +591,7 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
 
   _fetchGrainResult({bool refresh = false}) async {
     if (_grainLoading) return;
+    if (refresh) _noMore = false;
     _grainLoading = true;
     return await TagApi.getGrainList(
       tag: widget.tag,
@@ -591,6 +625,7 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
           }
           if (mounted) setState(() {});
           if (tmp.isEmpty) {
+            _noMore = true;
             return IndicatorResult.noMore;
           } else {
             return IndicatorResult.success;
@@ -619,6 +654,7 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
       triggerAxis: Axis.vertical,
       childBuilder: (context, physics) => CustomScrollView(
         physics: physics,
+        controller: _scrollController,
         slivers: [
           SliverList(
             delegate: SliverChildListDelegate(
@@ -664,7 +700,7 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
       gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
         mainAxisSpacing: 16,
         crossAxisSpacing: 8,
-        maxCrossAxisExtent: 180,
+        maxCrossAxisExtent: 120,
       ),
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _recommendGrainList.length,
@@ -703,16 +739,16 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
                   child: ItemBuilder.buildCachedImage(
                     context: context,
                     imageUrl: info.coverUrl,
-                    width: 180,
-                    height: 180,
+                    width: 120,
+                    height: 120,
                     fit: BoxFit.cover,
                     showLoading: false,
                   ),
                 ),
               ),
               Positioned(
-                top: 2,
-                right: 2,
+                top: 4,
+                right: 4,
                 child: ItemBuilder.buildTransparentTag(
                   context,
                   text: "${info.postCount}",
@@ -721,8 +757,8 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
                 ),
               ),
               Positioned(
-                top: 2,
-                left: 2,
+                top: 4,
+                left: 4,
                 child: ItemBuilder.buildTransparentTag(
                   context,
                   text: "",
@@ -734,8 +770,8 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
                 ),
               ),
               Positioned(
-                bottom: 2,
-                left: 2,
+                bottom: 4,
+                left: 4,
                 child: ItemBuilder.buildTransparentTag(
                   context,
                   text: Utils.formatCount(info.viewCount),
@@ -814,7 +850,6 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
     }
   }
 
-
   Widget _buildHotGrainRankItem(int index, SimpleGrainInfo info) {
     String? icon = getIcon(index);
     return GestureDetector(
@@ -840,15 +875,15 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
               alignment: Alignment.center,
               decoration: icon != null
                   ? BoxDecoration(
-                image: AssetUtil.loadDecorationImage(icon),
-              )
+                      image: AssetUtil.loadDecorationImage(icon),
+                    )
                   : null,
               child: Text(
                 "${index + 1}",
                 style: Theme.of(context).textTheme.labelLarge?.apply(
-                  fontWeightDelta: 3,
-                  color: icon != null ? Colors.transparent : null,
-                ),
+                      fontWeightDelta: 3,
+                      color: icon != null ? Colors.transparent : null,
+                    ),
               ),
             ),
             const SizedBox(width: 24),

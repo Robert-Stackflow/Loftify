@@ -6,6 +6,7 @@ import 'package:loftify/Api/user_api.dart';
 import 'package:loftify/Resources/colors.dart';
 import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Utils/hive_util.dart';
+import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Models/enums.dart';
 import '../../Models/user_response.dart';
@@ -42,6 +43,8 @@ class _SupporterScreenState extends State<SupporterScreen>
   final List<SupporterItem> _supporterList = [];
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
+  final ScrollController _scrollController = ScrollController();
+  bool _noMore = false;
 
   @override
   void initState() {
@@ -52,11 +55,19 @@ class _SupporterScreenState extends State<SupporterScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     super.initState();
+    _scrollController.addListener(() {
+      if (!_noMore &&
+          _scrollController.position.pixels >
+              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
+        _fetchList();
+      }
+    });
   }
 
   _fetchList({bool refresh = false}) async {
     if (_supporterList.isNotEmpty && !refresh) return IndicatorResult.noMore;
     if (_loading) return;
+    if (refresh) _noMore = false;
     _loading = true;
     return await HiveUtil.getUserInfo().then((blogInfo) async {
       int blogId = widget.infoMode == InfoMode.me
@@ -81,6 +92,7 @@ class _SupporterScreenState extends State<SupporterScreen>
             if (refresh) {
               return IndicatorResult.success;
             } else {
+              _noMore = true;
               return IndicatorResult.noMore;
             }
           }
@@ -123,7 +135,9 @@ class _SupporterScreenState extends State<SupporterScreen>
   }
 
   Widget _buildBody(ScrollPhysics physics) {
-    return ListView(
+    return WaterfallFlow.extent(
+      maxCrossAxisExtent: 600,
+      controller: _scrollController,
       padding: EdgeInsets.zero,
       physics: physics,
       children: List.generate(_supporterList.length, (index) {

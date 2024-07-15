@@ -511,36 +511,39 @@ class _BottomNavigationTile extends StatelessWidget {
       BottomNavigationBarType.shifting => (flex! * 1000.0).round(),
     };
 
-    Widget result = MultiTapGestureDetector(
-      tapThresholdMilliseconds: 0,
-      onTap: onTap,
-      onDoubleTap: onDoubleTap,
-      // mouseCursor: mouseCursor,
-      // enableFeedback: enableFeedback,
-      child: Padding(
-        padding: EdgeInsets.only(
-            top: customTopPadding ?? topPadding,
-            bottom: customBottomPadding ?? bottomPadding),
-        child: _Tile(
-          layout: layout,
-          icon: _TileIcon(
-            colorTween: iconColorTween!,
-            animation: animation,
-            iconSize: iconSize,
-            selected: selected,
-            item: item,
-            selectedIconTheme: selectedIconTheme,
-            unselectedIconTheme: unselectedIconTheme,
-          ),
-          label: _Label(
-            colorTween: labelColorTween!,
-            animation: animation,
-            item: item,
-            selected: selected,
-            selectedLabelStyle: selectedLabelStyle,
-            unselectedLabelStyle: unselectedLabelStyle,
-            showSelectedLabels: showSelectedLabels,
-            showUnselectedLabels: showUnselectedLabels,
+    Widget result = MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: MultiTapGestureDetector(
+        tapThresholdMilliseconds: 0,
+        onTap: onTap,
+        onDoubleTap: onDoubleTap,
+        // mouseCursor: mouseCursor,
+        // enableFeedback: enableFeedback,
+        child: Padding(
+          padding: EdgeInsets.only(
+              top: customTopPadding ?? topPadding,
+              bottom: customBottomPadding ?? bottomPadding),
+          child: _Tile(
+            layout: layout,
+            icon: _TileIcon(
+              colorTween: iconColorTween!,
+              animation: animation,
+              iconSize: iconSize,
+              selected: selected,
+              item: item,
+              selectedIconTheme: selectedIconTheme,
+              unselectedIconTheme: unselectedIconTheme,
+            ),
+            label: _Label(
+              colorTween: labelColorTween!,
+              animation: animation,
+              item: item,
+              selected: selected,
+              selectedLabelStyle: selectedLabelStyle,
+              unselectedLabelStyle: unselectedLabelStyle,
+              showSelectedLabels: showSelectedLabels,
+              showUnselectedLabels: showUnselectedLabels,
+            ),
           ),
         ),
       ),
@@ -1050,52 +1053,48 @@ class _MyBottomNavigationBarState extends State<MyBottomNavigationBar>
               bottomTheme.mouseCursor?.resolve(states) ??
               WidgetStateMouseCursor.clickable.resolve(states);
 
-      tiles.add(MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: _BottomNavigationTile(
-            _effectiveType,
-            widget.items[i],
-            _animations[i],
-            widget.iconSize,
-            key: widget.items[i].key,
-            selectedIconTheme: widget.useLegacyColorScheme
-                ? widget.selectedIconTheme ?? bottomTheme.selectedIconTheme
-                : effectiveSelectedIconTheme,
-            unselectedIconTheme: widget.useLegacyColorScheme
-                ? widget.unselectedIconTheme ?? bottomTheme.unselectedIconTheme
-                : effectiveUnselectedIconTheme,
-            selectedLabelStyle: effectiveSelectedLabelStyle,
-            unselectedLabelStyle: effectiveUnselectedLabelStyle,
-            enableFeedback:
-                widget.enableFeedback ?? bottomTheme.enableFeedback ?? true,
-            onTap: () {
-              widget.onTap?.call(i);
-            },
-            onDoubleTap: () {
-              widget.onDoubleTap?.call(i);
-            },
-            labelColorTween:
-                widget.useLegacyColorScheme ? colorTween : labelColorTween,
-            iconColorTween:
-                widget.useLegacyColorScheme ? colorTween : iconColorTween,
-            flex: _evaluateFlex(_animations[i]),
-            selected:
-                i == widget.currentIndex && widget.clearNavSelectState == false,
-            showSelectedLabels: widget.showSelectedLabels ??
-                bottomTheme.showSelectedLabels ??
-                true,
-            showUnselectedLabels: widget.showUnselectedLabels ??
-                bottomTheme.showUnselectedLabels ??
-                _defaultShowUnselected,
-            indexLabel: localizations.tabLabel(
-                tabIndex: i + 1, tabCount: widget.items.length),
-            mouseCursor: effectiveMouseCursor,
-            layout: layout,
-            customBottomPadding:
-                widget.direction == Axis.horizontal ? null : 24,
-            customTopPadding: widget.direction == Axis.horizontal ? null : 0,
-            useExpanded: widget.direction == Axis.horizontal,
-          )));
+      tiles.add(_BottomNavigationTile(
+        _effectiveType,
+        widget.items[i],
+        _animations[i],
+        widget.iconSize,
+        key: widget.items[i].key,
+        selectedIconTheme: widget.useLegacyColorScheme
+            ? widget.selectedIconTheme ?? bottomTheme.selectedIconTheme
+            : effectiveSelectedIconTheme,
+        unselectedIconTheme: widget.useLegacyColorScheme
+            ? widget.unselectedIconTheme ?? bottomTheme.unselectedIconTheme
+            : effectiveUnselectedIconTheme,
+        selectedLabelStyle: effectiveSelectedLabelStyle,
+        unselectedLabelStyle: effectiveUnselectedLabelStyle,
+        enableFeedback:
+            widget.enableFeedback ?? bottomTheme.enableFeedback ?? true,
+        onTap: () {
+          widget.onTap?.call(i);
+        },
+        onDoubleTap: () {
+          widget.onDoubleTap?.call(i);
+        },
+        labelColorTween:
+            widget.useLegacyColorScheme ? colorTween : labelColorTween,
+        iconColorTween:
+            widget.useLegacyColorScheme ? colorTween : iconColorTween,
+        flex: _evaluateFlex(_animations[i]),
+        selected:
+            i == widget.currentIndex && widget.clearNavSelectState == false,
+        showSelectedLabels:
+            widget.showSelectedLabels ?? bottomTheme.showSelectedLabels ?? true,
+        showUnselectedLabels: widget.showUnselectedLabels ??
+            bottomTheme.showUnselectedLabels ??
+            _defaultShowUnselected,
+        indexLabel: localizations.tabLabel(
+            tabIndex: i + 1, tabCount: widget.items.length),
+        mouseCursor: effectiveMouseCursor,
+        layout: layout,
+        customBottomPadding: widget.direction == Axis.horizontal ? null : 24,
+        customTopPadding: widget.direction == Axis.horizontal ? null : 0,
+        useExpanded: widget.direction == Axis.horizontal,
+      ));
     }
     return tiles;
   }

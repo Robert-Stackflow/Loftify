@@ -134,6 +134,12 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         initData();
       }
     });
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >
+          _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
+        _onLoad();
+      }
+    });
   }
 
   initLottie() {
@@ -608,7 +614,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     return Row(
       children: [
         SizedBox(
-          width: 400,
+          width: widget.isArticle
+              ? MediaQuery.sizeOf(context).width * 2 / 3
+              : max(MediaQuery.sizeOf(context).width * 1 / 3, 400),
           child: ListView(
             children: [
               Column(
@@ -865,6 +873,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     preferedHeight =
         max(heightMinThreshold, min(preferedHeight, heightMaxThreshold));
     return Stack(
+      alignment: Alignment.center,
       children: [
         SizedBox(
           height: preferedHeight,
@@ -975,6 +984,66 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               context,
               text: '$_currentIndex/${photoLinks.length}',
               opacity: 0.5,
+            ),
+          ),
+        if (photoLinks.length > 1 && Utils.isDesktop())
+          Positioned(
+            left: 16,
+            child: Container(
+              width: 40,
+              height: 40,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: _currentIndex == 1
+                    ? Colors.black.withOpacity(0.1)
+                    : Colors.black.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: GestureDetector(
+                onTap: () {
+                  _swiperController.previous();
+                },
+                child: MouseRegion(
+                  cursor: _currentIndex == 1
+                      ? SystemMouseCursors.basic
+                      : SystemMouseCursors.click,
+                  child: const Icon(
+                    Icons.keyboard_arrow_left_rounded,
+                    size: 30,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        if (photoLinks.length > 1 && Utils.isDesktop())
+          Positioned(
+            right: 16,
+            child: Container(
+              width: 40,
+              height: 40,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: _currentIndex == photoLinks.length
+                    ? Colors.black.withOpacity(0.1)
+                    : Colors.black.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: GestureDetector(
+                onTap: () {
+                  _swiperController.next();
+                },
+                child: MouseRegion(
+                  cursor: _currentIndex == photoLinks.length
+                      ? SystemMouseCursors.basic
+                      : SystemMouseCursors.click,
+                  child: const Icon(
+                    Icons.keyboard_arrow_right_rounded,
+                    size: 30,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
             ),
           ),
       ],
@@ -1193,23 +1262,24 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   _buildButton({String? text, Function()? onTap, bool disabled = false}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: AppTheme.getBackground(context),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          text ?? "",
-          style: disabled
-              ? Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.apply(color: Theme.of(context).textTheme.labelSmall?.color)
-              : Theme.of(context).textTheme.titleSmall,
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppTheme.getBackground(context),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            text ?? "",
+            style: disabled
+                ? Theme.of(context).textTheme.titleSmall?.apply(
+                    color: Theme.of(context).textTheme.labelSmall?.color)
+                : Theme.of(context).textTheme.titleSmall,
+          ),
         ),
       ),
     );
@@ -1235,11 +1305,16 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         runSpacing: 8.0,
         alignment: WrapAlignment.start,
         children: List.generate(sortedTags.length, (index) {
-          return ItemBuilder.buildTagItem(
-            context,
-            sortedTags[index].key,
-            sortedTags[index].value,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          return MouseRegion(
+            cursor: sortedTags[index].value != TagType.egg
+                ? SystemMouseCursors.click
+                : SystemMouseCursors.basic,
+            child: ItemBuilder.buildTagItem(
+              context,
+              sortedTags[index].key,
+              sortedTags[index].value,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            ),
           );
         }),
       ),
@@ -1437,6 +1512,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           triggerAxis: Axis.vertical,
           childBuilder: (context, physics) => CustomScrollView(
             physics: physics,
+            controller: _scrollController,
             slivers: [
               SliverToBoxAdapter(
                 child: ItemBuilder.buildTitle(
@@ -1496,31 +1572,35 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       ),
       actions: [
         if (hasCollection())
-          GestureDetector(
-            onTap: showCollectionBottomSheet,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(50),
-              ),
-              child: Row(
-                children: [
-                  AssetUtil.loadDouble(
-                    context,
-                    AssetUtil.collectionLightIcon,
-                    AssetUtil.collectionDarkIcon,
-                    size: 14,
-                  ),
-                  const SizedBox(width: 3),
-                  Text(
-                    "合集 ${_postDetailData!.post!.pos}/${_postDetailData!.post!.postCollection!.postCount}",
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.apply(fontSizeDelta: -3),
-                  ),
-                ],
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: showCollectionBottomSheet,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                child: Row(
+                  children: [
+                    AssetUtil.loadDouble(
+                      context,
+                      AssetUtil.collectionLightIcon,
+                      AssetUtil.collectionDarkIcon,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 3),
+                    Text(
+                      "合集 ${_postDetailData!.post!.pos}/${_postDetailData!.post!.postCollection!.postCount}",
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.apply(fontSizeDelta: -3),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

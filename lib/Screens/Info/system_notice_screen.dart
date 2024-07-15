@@ -500,7 +500,7 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
       title: TabBar(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
         controller: _tabController,
-        overlayColor:  WidgetStateProperty.all(Colors.transparent),
+        overlayColor: WidgetStateProperty.all(Colors.transparent),
         tabs: _tabLabelList
             .asMap()
             .entries

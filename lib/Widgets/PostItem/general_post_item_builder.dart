@@ -15,6 +15,7 @@ import '../../Utils/hive_util.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
+import '../Custom/floating_modal.dart';
 import '../Item/item_builder.dart';
 
 class GeneralPostItem {
@@ -284,6 +285,10 @@ class GeneralPostItemBuilder {
     double maxHeight = 300,
     double minHeight = 120,
   }) {
+    var height = max(
+      min(item.photoLinks[0].oh * (width / item.photoLinks[0].ow), maxHeight),
+      minHeight,
+    );
     return Column(
       children: [
         Stack(
@@ -297,11 +302,7 @@ class GeneralPostItemBuilder {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: SizedBox(
-                  height: max(
-                    min(item.photoLinks[0].oh * (width / item.photoLinks[0].ow),
-                        maxHeight),
-                    minHeight,
-                  ),
+                  height: height.isNaN ? maxHeight : height,
                   width: width,
                   child: ItemBuilder.buildCachedImage(
                     context: context,
@@ -348,20 +349,23 @@ class GeneralPostItemBuilder {
     showDialog(
       context: context,
       builder: (context) {
-        return ShieldBottomSheet(
-          tags: item.tags,
-          onShieldContent: () {
-            item.onShieldContent?.call();
-            Navigator.pop(context);
-          },
-          onShieldUser: () {
-            item.onShieldUser?.call();
-            Navigator.pop(context);
-          },
-          onShieldTag: (tag) {
-            item.onShieldTag?.call(tag);
-            Navigator.pop(context);
-          },
+        return FloatingModal(
+          preferMinWidth: 400,
+          child: ShieldBottomSheet(
+            tags: item.tags,
+            onShieldContent: () {
+              item.onShieldContent?.call();
+              Navigator.pop(context);
+            },
+            onShieldUser: () {
+              item.onShieldUser?.call();
+              Navigator.pop(context);
+            },
+            onShieldTag: (tag) {
+              item.onShieldTag?.call(tag);
+              Navigator.pop(context);
+            },
+          ),
         );
       },
     );

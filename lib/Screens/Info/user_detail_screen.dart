@@ -389,8 +389,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                                   ],
                                 ),
                                 buttonText: "加油哦",
-                                onTapDismiss: () {
-                                },
+                                onTapDismiss: () {},
                                 customDialogType: CustomDialogType.custom,
                               );
                             },
@@ -613,8 +612,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                 updateFollowStatus();
               });
         },
-        onTapCancel: () {
-        },
+        onTapCancel: () {},
         customDialogType: CustomDialogType.custom,
       );
     } else {

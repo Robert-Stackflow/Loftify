@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.cloudchewie" "\0"
-            VALUE "FileDescription", "loftify" "\0"
+            VALUE "FileDescription", "Loftify" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "loftify" "\0"
+            VALUE "InternalName", "Loftify" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2024 com.cloudchewie. All rights reserved." "\0"
-            VALUE "OriginalFilename", "loftify.exe" "\0"
-            VALUE "ProductName", "loftify" "\0"
+            VALUE "OriginalFilename", "Loftify.exe" "\0"
+            VALUE "ProductName", "Loftify" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

@@ -184,7 +184,9 @@ class PostApi {
       "postId": "$postId",
       "blogId": "$blogId",
       "postType": postType,
-      "time": DateTime.now().millisecondsSinceEpoch,
+      "time": DateTime
+          .now()
+          .millisecondsSinceEpoch,
     };
     if (collectionId != 0) {
       item.addAll({
@@ -195,7 +197,9 @@ class PostApi {
       "/datacollect/v1/upload",
       domainType: DomainType.da,
       data: {
-        "time": DateTime.now().millisecondsSinceEpoch,
+        "time": DateTime
+            .now()
+            .millisecondsSinceEpoch,
         "list": [
           {
             "userId": userId,

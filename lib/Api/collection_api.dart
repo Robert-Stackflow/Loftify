@@ -95,6 +95,7 @@ class CollectionApi {
       },
     );
   }
+
   static Future getIncantation({
     required int collectionId,
   }) async {

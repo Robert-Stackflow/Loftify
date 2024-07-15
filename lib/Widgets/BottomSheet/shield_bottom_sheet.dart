@@ -85,17 +85,20 @@ class ShieldBottomSheetState extends State<ShieldBottomSheet> {
             spacing: 10,
             runSpacing: 10,
             children: tags.map((tag) {
-              return ItemBuilder.buildTagItem(
-                context,
-                tag,
-                TagType.normal,
-                fontWeightDelta: 2,
-                fontSizeDelta: 1,
-                jumpToTag: false,
-                color: Theme.of(context).textTheme.titleMedium?.color,
-                onTap: () {
-                  widget.onShieldTag?.call(tag);
-                },
+              return MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: ItemBuilder.buildTagItem(
+                  context,
+                  tag,
+                  TagType.normal,
+                  fontWeightDelta: 2,
+                  fontSizeDelta: 1,
+                  jumpToTag: false,
+                  color: Theme.of(context).textTheme.titleMedium?.color,
+                  onTap: () {
+                    widget.onShieldTag?.call(tag);
+                  },
+                ),
               );
             }).toList(),
           ),

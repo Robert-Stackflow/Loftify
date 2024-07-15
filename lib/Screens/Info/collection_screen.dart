@@ -48,6 +48,8 @@ class _CollectionScreenState extends State<CollectionScreen>
   final List<FullPostCollection> _collectionList = [];
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
+  final ScrollController _scrollController = ScrollController();
+  bool _noMore = false;
 
   @override
   void initState() {
@@ -61,10 +63,18 @@ class _CollectionScreenState extends State<CollectionScreen>
     if (widget.infoMode != InfoMode.me) {
       _onRefresh();
     }
+    _scrollController.addListener(() {
+      if (!_noMore &&
+          _scrollController.position.pixels >
+              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
+        _onLoad();
+      }
+    });
   }
 
   _fetchGrain({bool refresh = false}) async {
     if (_loading) return;
+    if (refresh) _noMore = false;
     _loading = true;
     int offset = refresh ? 0 : _collectionList.length;
     return await HiveUtil.getUserInfo().then((blogInfo) async {
@@ -95,6 +105,7 @@ class _CollectionScreenState extends State<CollectionScreen>
                         _collectionList.length >= widget.collectionCount!) ||
                     tmp.isEmpty) &&
                 !refresh) {
+              _noMore = true;
               return IndicatorResult.noMore;
             } else {
               return IndicatorResult.success;
@@ -143,6 +154,7 @@ class _CollectionScreenState extends State<CollectionScreen>
   Widget _buildBody(ScrollPhysics physics) {
     return ListView.builder(
       physics: physics,
+      controller: _scrollController,
       padding: EdgeInsets.zero,
       itemCount: _collectionList.length,
       itemBuilder: (context, index) {

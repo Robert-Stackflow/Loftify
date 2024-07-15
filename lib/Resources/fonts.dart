@@ -98,7 +98,7 @@ enum FontEnum {
       onFinished: (value) {
         dialog.dismiss();
         if (autoRestartApp) {
-          Utils.restartApp();
+          Utils.restartApp(context);
         }
       },
       onReceiveProgress: (progress) {

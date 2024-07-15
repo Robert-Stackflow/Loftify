@@ -99,7 +99,7 @@ class LottieMaterialHeader extends Header {
       bezierBackgroundColor: bezierBackgroundColor,
       bezierBackgroundAnimation: bezierBackgroundAnimation,
       bezierBackgroundBounce: bezierBackgroundBounce,
-      indicator:indicator,
+      indicator: indicator,
     );
   }
 }

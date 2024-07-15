@@ -69,7 +69,6 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
           },
           title: Text(S.current.blacklistSetting,
               style: Theme.of(context).textTheme.titleLarge),
-          center: true,
           context: context,
           actions: [
             ItemBuilder.buildBlankIconButton(context),
@@ -153,8 +152,7 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
                       }
                     });
                   },
-                  onTapCancel: () {
-                  },
+                  onTapCancel: () {},
                   customDialogType: CustomDialogType.normal,
                 );
               },

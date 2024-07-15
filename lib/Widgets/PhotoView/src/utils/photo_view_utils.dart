@@ -137,6 +137,7 @@ double _clampSize(double size, ScaleBoundaries scaleBoundaries) {
 /// Simple class to store a min and a max value
 class CornersRange {
   const CornersRange(this.min, this.max);
+
   final double min;
   final double max;
 }

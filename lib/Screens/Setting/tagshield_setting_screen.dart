@@ -63,7 +63,6 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
         },
         title: Text("${S.current.tagShieldSetting}(${tags.length})",
             style: Theme.of(context).textTheme.titleLarge),
-        center: true,
         context: context,
         actions: [
           ItemBuilder.buildIconButton(
@@ -156,8 +155,7 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
                     }
                   });
                 },
-                onTapCancel: () {
-                },
+                onTapCancel: () {},
                 customDialogType: CustomDialogType.normal,
               );
             },

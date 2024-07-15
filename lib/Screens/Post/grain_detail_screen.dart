@@ -552,7 +552,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
     return GridView.extent(
       padding: const EdgeInsets.only(top: 12),
       shrinkWrap: true,
-      maxCrossAxisExtent: 200,
+      maxCrossAxisExtent: 160,
       mainAxisSpacing: 6,
       crossAxisSpacing: 6,
       physics: const NeverScrollableScrollPhysics(),
@@ -561,7 +561,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
         return GrainPostItemBuilder.buildNineGridPostItem(
           context,
           posts[trueIndex],
-          wh: (MediaQuery.sizeOf(context).width - 22) / 3,
+          wh: 160,
         );
       }),
     );

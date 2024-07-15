@@ -555,7 +555,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
     return GridView.extent(
       padding: const EdgeInsets.only(top: 12),
       shrinkWrap: true,
-      maxCrossAxisExtent: 200,
+      maxCrossAxisExtent: 160,
       mainAxisSpacing: 6,
       crossAxisSpacing: 6,
       physics: const NeverScrollableScrollPhysics(),
@@ -564,7 +564,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
         return CommonInfoItemBuilder.buildNineGridPostItem(
           context,
           posts[trueIndex],
-          wh: (MediaQuery.sizeOf(context).width - 22) / 3,
+          wh: 160,
           activePostId: widget.postId,
         );
       }),

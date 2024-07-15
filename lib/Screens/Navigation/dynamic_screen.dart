@@ -16,6 +16,7 @@ import 'package:loftify/Utils/route_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Api/tag_api.dart';
+import '../../Providers/provider_manager.dart';
 import '../../Resources/colors.dart';
 import '../../Resources/theme.dart';
 import '../../Utils/itoast.dart';
@@ -42,11 +43,12 @@ class DynamicScreenState extends State<DynamicScreen>
   int _currentTabIndex = 0;
   final List<String> _tabLabelList = ["标签", "合集", "粮单"];
   int lastRefreshTime = 0;
-  GlobalKey _tagTabKey = GlobalKey();
-  GlobalKey _collectionTabKey = GlobalKey();
-  GlobalKey _grainTabKey = GlobalKey();
+  final GlobalKey _tagTabKey = GlobalKey();
+  final GlobalKey _collectionTabKey = GlobalKey();
+  final GlobalKey _grainTabKey = GlobalKey();
 
   void scrollToTopAndRefresh() {
+    if (ProviderManager.globalProvider.token.isEmpty) return;
     int nowTime = DateTime.now().millisecondsSinceEpoch;
     if (lastRefreshTime == 0 || (nowTime - lastRefreshTime) > krefreshTimeout) {
       lastRefreshTime = nowTime;
@@ -82,15 +84,23 @@ class DynamicScreenState extends State<DynamicScreen>
     super.build(context);
     return Scaffold(
       backgroundColor: AppTheme.getBackground(context),
-      appBar: _buildAppBar(),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          SubscribeTagTab(key: _tagTabKey),
-          SubscribeCollectionTab(key: _collectionTabKey),
-          SubscribeGrainTab(key: _grainTabKey),
-        ],
-      ),
+      appBar: ProviderManager.globalProvider.token.isNotEmpty
+          ? _buildAppBar()
+          : Utils.isDesktop()
+              ? null
+              : ItemBuilder.buildAppBar(
+                  context: context,
+                  backgroundColor: AppTheme.getBackground(context)),
+      body: ProviderManager.globalProvider.token.isNotEmpty
+          ? TabBarView(
+              controller: _tabController,
+              children: [
+                SubscribeTagTab(key: _tagTabKey),
+                SubscribeCollectionTab(key: _collectionTabKey),
+                SubscribeGrainTab(key: _grainTabKey),
+              ],
+            )
+          : ItemBuilder.buildUnLoginMainBody(context),
     );
   }
 
@@ -160,6 +170,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
   int _offset = 0;
   bool _loading = false;
   final ScrollController _scrollController = ScrollController();
+  bool _noMore = false;
 
   callRefresh() {
     if (_scrollController.offset > MediaQuery.sizeOf(context).height) {
@@ -177,6 +188,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
 
   _fetchResult({bool refresh = false}) async {
     if (_loading) return;
+    if (refresh) _noMore = false;
     _loading = true;
     return await TagApi.getFullSubscribdTagList(
       offset: refresh ? 0 : _offset,
@@ -209,6 +221,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
           }
           if (mounted) setState(() {});
           if (tmp.isEmpty && !refresh) {
+            _noMore = true;
             return IndicatorResult.noMore;
           } else {
             return IndicatorResult.success;
@@ -220,6 +233,18 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
       } finally {
         if (mounted) setState(() {});
         _loading = false;
+      }
+    });
+  }
+
+  @override
+  initState() {
+    super.initState();
+    _scrollController.addListener(() {
+      if (!_noMore &&
+          _scrollController.position.pixels >
+              _scrollController.position.maxScrollExtent - 200) {
+        _fetchResult();
       }
     });
   }
@@ -702,6 +727,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
   int _total = 0;
   bool _loading = false;
   final ScrollController _scrollController = ScrollController();
+  bool _noMore = false;
 
   callRefresh() {
     if (_scrollController.offset > MediaQuery.sizeOf(context).height) {
@@ -717,8 +743,21 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
     }
   }
 
+  @override
+  initState() {
+    super.initState();
+    _scrollController.addListener(() {
+      if (!_noMore &&
+          _scrollController.position.pixels >
+              _scrollController.position.maxScrollExtent - 200) {
+        _fetchResult();
+      }
+    });
+  }
+
   _fetchResult({bool refresh = false}) async {
     if (_loading) return;
+    if (refresh) _noMore = false;
     _loading = true;
     return await CollectionApi.getSubscribdCollectionList(
       offset: refresh ? 0 : _subscribeList.length,
@@ -767,6 +806,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
           }
           if (mounted) setState(() {});
           if ((tmp.isEmpty) && !refresh) {
+            _noMore = true;
             return IndicatorResult.noMore;
           } else {
             return IndicatorResult.success;
@@ -1092,14 +1132,14 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
-                          "${item.postCount}篇 · ${Utils.formatCount(item.subscribeCount)}订阅",
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
-                              ?.apply(fontSizeDelta: -1),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        "${item.postCount}篇 · ${Utils.formatCount(item.subscribeCount)}订阅",
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleSmall
+                            ?.apply(fontSizeDelta: -1),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       const Spacer(),
                       ItemBuilder.buildIconTextButton(context,
                           text: item.subscribed ? "取消订阅" : "订阅",
@@ -1158,6 +1198,19 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
   int _total = 0;
   bool _loading = false;
   final ScrollController _scrollController = ScrollController();
+  bool _noMore = false;
+
+  @override
+  initState() {
+    super.initState();
+    _scrollController.addListener(() {
+      if (!_noMore &&
+          _scrollController.position.pixels >
+              _scrollController.position.maxScrollExtent - 200) {
+        _fetchResult();
+      }
+    });
+  }
 
   callRefresh() {
     if (_scrollController.offset > MediaQuery.sizeOf(context).height) {
@@ -1175,6 +1228,7 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
 
   _fetchResult({bool refresh = false}) async {
     if (_loading) return;
+    if (refresh) _noMore = false;
     _loading = true;
     return await GrainApi.listSubscribdGrainList(
       offset: refresh ? 0 : _subscribeList.length,
@@ -1202,6 +1256,7 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
           }
           if (mounted) setState(() {});
           if ((tmp.isEmpty || _subscribeList.length >= _total) && !refresh) {
+            _noMore = true;
             return IndicatorResult.noMore;
           } else {
             return IndicatorResult.success;

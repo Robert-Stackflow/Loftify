@@ -263,16 +263,19 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
       onLeadingTap: () {
         Navigator.pop(context);
       },
-      title: ItemBuilder.buildTagItem(
-        context,
-        widget.tag,
-        TagType.normal,
-        shownTag: "在#${widget.tag}#内搜索",
-        backgroundColor: Theme.of(context).primaryColor.withAlpha(30),
-        color: Theme.of(context).primaryColor,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        showRightIcon: true,
-        showTagLabel: false,
+      title: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: ItemBuilder.buildTagItem(
+          context,
+          widget.tag,
+          TagType.normal,
+          shownTag: "在#${widget.tag}#内搜索",
+          backgroundColor: Theme.of(context).primaryColor.withAlpha(30),
+          color: Theme.of(context).primaryColor,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          showRightIcon: true,
+          showTagLabel: false,
+        ),
       ),
       center: true,
       actions: [

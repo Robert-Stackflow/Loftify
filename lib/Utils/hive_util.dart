@@ -31,6 +31,8 @@ class HiveUtil {
 
   //General
   static const String localeKey = "locale";
+  static const String enableCloseToTrayKey = "enableCloseToTray";
+  static const String enableCloseNoticeKey = "enableCloseNotice";
   static const String autoCheckUpdateKey = "autoCheckUpdate";
   static const String inappWebviewKey = "inappWebview";
 

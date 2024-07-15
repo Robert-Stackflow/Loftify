@@ -132,8 +132,7 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
               UriUtil.launchUrlUri(
                   context, "https://www.lofter.com/theme/${blogInfo.blogName}");
             },
-            onTapCancel: () {
-            },
+            onTapCancel: () {},
             customDialogType: CustomDialogType.normal,
           );
         } else {

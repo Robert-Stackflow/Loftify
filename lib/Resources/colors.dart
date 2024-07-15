@@ -1,8 +1,8 @@
-import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/material.dart';
 import 'package:like_button/like_button.dart';
 
 import '../Providers/provider_manager.dart';
+import '../Widgets/Window/window_button.dart';
 
 class MyColors {
   static const Color defaultPrimaryColor = Color(0xFF009BFF);
