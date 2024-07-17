@@ -188,7 +188,7 @@ class MainScreenState extends State<MainScreen>
     trayManager.addListener(this);
     windowManager.addListener(this);
     super.initState();
-    if (ResponsiveUtil.isDesktop()) {
+    if (ResponsiveUtil.isLandscape()) {
       _fetchUserInfo();
     }
     darkModeController = AnimationController(vsync: this);
@@ -290,7 +290,7 @@ class MainScreenState extends State<MainScreen>
             .scrollToTopAndRefresh();
       }
     }
-    if (ResponsiveUtil.isMobile()) {
+    if (!ResponsiveUtil.isLandscape()) {
       _pageController.jumpToPage(index);
     } else {
       if (ProviderManager.globalProvider.desktopCanpop ||
@@ -341,8 +341,13 @@ class MainScreenState extends State<MainScreen>
   }
 
   _buildBodyByPlatform() {
-    if (ResponsiveUtil.isMobile()) {
+    if (!ResponsiveUtil.isLandscape()) {
       return _buildMobileBody();
+    } else if (ResponsiveUtil.isMobile()) {
+      return Scaffold(
+        resizeToAvoidBottomInset: false,
+        body: SafeArea(child: _buildDesktopBody()),
+      );
     } else {
       return _buildDesktopBody();
     }
@@ -378,6 +383,7 @@ class MainScreenState extends State<MainScreen>
     return FutureBuilder(
       future: Future.sync(() => initData()),
       builder: (_, __) => MyScaffold(
+        resizeToAvoidBottomInset: false,
         body: Row(
           children: [_sideBar(), _desktopMainContent()],
         ),
@@ -402,7 +408,7 @@ class MainScreenState extends State<MainScreen>
         color: Theme.of(context).scaffoldBackgroundColor,
         child: Stack(
           children: [
-            const WindowMoveHandle(),
+            if (ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
             Column(
               children: [
                 const SizedBox(height: 80),
@@ -528,6 +534,7 @@ class MainScreenState extends State<MainScreen>
       child: Column(
         children: [
           WindowTitleBar(
+            useMoveHandle: ResponsiveUtil.isDesktop(),
             titleBarHeightDelta: 34,
             margin: const EdgeInsets.symmetric(vertical: 12),
             child: Row(
@@ -606,53 +613,54 @@ class MainScreenState extends State<MainScreen>
                       }),
                 ),
                 const Spacer(),
-                Row(
-                  children: [
-                    StayOnTopWindowButton(
-                      rotateAngle: _isStayOnTop ? pi / 4 : 0,
-                      colors: _isStayOnTop
-                          ? MyColors.getStayOnTopButtonColors(context)
-                          : MyColors.getNormalButtonColors(context),
-                      borderRadius: BorderRadius.circular(10),
-                      onPressed: () {
-                        setState(() {
-                          _isStayOnTop = !_isStayOnTop;
-                          windowManager.setAlwaysOnTop(_isStayOnTop);
-                        });
-                      },
-                    ),
-                    const SizedBox(width: 3),
-                    MinimizeWindowButton(
-                      colors: MyColors.getNormalButtonColors(context),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    const SizedBox(width: 3),
-                    _isMaximized
-                        ? RestoreWindowButton(
-                            colors: MyColors.getNormalButtonColors(context),
-                            borderRadius: BorderRadius.circular(10),
-                            onPressed: ResponsiveUtil.maximizeOrRestore,
-                          )
-                        : MaximizeWindowButton(
-                            colors: MyColors.getNormalButtonColors(context),
-                            borderRadius: BorderRadius.circular(10),
-                            onPressed: ResponsiveUtil.maximizeOrRestore,
-                          ),
-                    const SizedBox(width: 3),
-                    CloseWindowButton(
-                      colors: MyColors.getNormalButtonColors(context),
-                      borderRadius: BorderRadius.circular(10),
-                      onPressed: () {
-                        if (HiveUtil.getBool(
-                            key: HiveUtil.enableCloseToTrayKey)) {
-                          windowManager.hide();
-                        } else {
-                          windowManager.close();
-                        }
-                      },
-                    ),
-                  ],
-                ),
+                if (ResponsiveUtil.isDesktop())
+                  Row(
+                    children: [
+                      StayOnTopWindowButton(
+                        rotateAngle: _isStayOnTop ? pi / 4 : 0,
+                        colors: _isStayOnTop
+                            ? MyColors.getStayOnTopButtonColors(context)
+                            : MyColors.getNormalButtonColors(context),
+                        borderRadius: BorderRadius.circular(10),
+                        onPressed: () {
+                          setState(() {
+                            _isStayOnTop = !_isStayOnTop;
+                            windowManager.setAlwaysOnTop(_isStayOnTop);
+                          });
+                        },
+                      ),
+                      const SizedBox(width: 3),
+                      MinimizeWindowButton(
+                        colors: MyColors.getNormalButtonColors(context),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      const SizedBox(width: 3),
+                      _isMaximized
+                          ? RestoreWindowButton(
+                              colors: MyColors.getNormalButtonColors(context),
+                              borderRadius: BorderRadius.circular(10),
+                              onPressed: ResponsiveUtil.maximizeOrRestore,
+                            )
+                          : MaximizeWindowButton(
+                              colors: MyColors.getNormalButtonColors(context),
+                              borderRadius: BorderRadius.circular(10),
+                              onPressed: ResponsiveUtil.maximizeOrRestore,
+                            ),
+                      const SizedBox(width: 3),
+                      CloseWindowButton(
+                        colors: MyColors.getNormalButtonColors(context),
+                        borderRadius: BorderRadius.circular(10),
+                        onPressed: () {
+                          if (HiveUtil.getBool(
+                              key: HiveUtil.enableCloseToTrayKey)) {
+                            windowManager.hide();
+                          } else {
+                            windowManager.close();
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                 const SizedBox(width: 10),
               ],
             ),

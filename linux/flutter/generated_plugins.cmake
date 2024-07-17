@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   desktop_multi_window
   gtk
+  isar_flutter_libs
   screen_retriever
   texture_rgba_renderer
   tray_manager

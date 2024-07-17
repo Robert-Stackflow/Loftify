@@ -120,7 +120,7 @@ class HomeScreenState extends State<HomeScreen>
         child: WaterfallFlow.builder(
           controller: _scrollController,
           cacheExtent: 9999,
-          padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+          padding: const EdgeInsets.only(top: 8, left: 8, right: 8),
           gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
             mainAxisSpacing: 6,
             crossAxisSpacing: 6,
@@ -200,7 +200,7 @@ class HomeScreenState extends State<HomeScreen>
       title:
           Text(S.current.home, style: Theme.of(context).textTheme.titleLarge),
       actions: [
-        if (ResponsiveUtil.isMobile())
+        if (!ResponsiveUtil.isLandscape())
           ItemBuilder.buildIconButton(
               context: context,
               icon: AssetUtil.loadDouble(

@@ -84,8 +84,12 @@ Future<void> runMyApp(List<String> args) async {
             statusBarIconBrightness: Brightness.dark);
         SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
       }
-      SystemChrome.setPreferredOrientations(
-          [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+        DeviceOrientation.portraitDown,
+      ]);
     }
     if (ResponsiveUtil.isDesktop()) {
       await initWindow();

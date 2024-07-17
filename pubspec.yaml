@@ -46,6 +46,7 @@ dependencies:
   http: ^1.2.1
   dio: ^5.4.3+1 # 网络请求
   hive: ^4.0.0-dev.2 # 轻量存储
+  isar_flutter_libs: ^4.0.0-dev.13
   path_provider: ^2.0.12
   sqflite: ^2.3.3+1 # SQLite数据库
   file_picker: ^8.0.6 # 文件选择

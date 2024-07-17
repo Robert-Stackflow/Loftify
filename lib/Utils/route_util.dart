@@ -6,6 +6,10 @@ import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Utils/utils.dart';
 
 class RouteUtil {
+  static getRootContext(){
+    return ProviderManager.globalNavigatorKey.currentState?.context;
+  }
+
   static pushMaterialRoute(BuildContext context, Widget page) {
     return Navigator.push(
         context, MaterialPageRoute(builder: (context) => page));
@@ -13,7 +17,7 @@ class RouteUtil {
 
   static pushCupertinoRoute(BuildContext context, Widget page) {
     ProviderManager.globalProvider.desktopCanpop = true;
-    if (ResponsiveUtil.isDesktop()) {
+    if (ResponsiveUtil.isLandscape()) {
       return pushFadeRoute(context, page);
     } else {
       return Navigator.push(

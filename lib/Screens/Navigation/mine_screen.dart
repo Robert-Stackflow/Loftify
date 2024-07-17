@@ -133,7 +133,7 @@ class _MineScreenState extends State<MineScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      appBar: ResponsiveUtil.isDesktop() ? null : _buildAppBar(),
+      appBar: ResponsiveUtil.isLandscape() ? null : _buildAppBar(),
       body: _buildMainBody(),
     );
   }
@@ -321,6 +321,7 @@ class _MineScreenState extends State<MineScreen>
           ListView(
             shrinkWrap: true,
             padding: EdgeInsets.zero,
+            physics: const NeverScrollableScrollPhysics(),
             children: List.generate(_followingList.length, (index) {
               return ItemBuilder.buildFollowerOrFollowingItem(
                   context, index, _followingList[index],
@@ -365,6 +366,7 @@ class _MineScreenState extends State<MineScreen>
           ),
           ListView(
             shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
             padding: EdgeInsets.zero,
             children: List.generate(_followerList.length, (index) {
               return ItemBuilder.buildFollowerOrFollowingItem(
@@ -438,7 +440,7 @@ class _MineScreenState extends State<MineScreen>
                     condition: blogInfo != null,
                     child: Text(
                       blogInfo != null
-                          ? "ID：${blogInfo!.blogName}"
+                          ? "ID: ${blogInfo!.blogName}"
                           : "登录以获得个性化服务",
                       style: Theme.of(context).textTheme.titleSmall?.apply(
                             color:

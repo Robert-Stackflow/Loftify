@@ -172,7 +172,7 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
                   const SizedBox(height: 10),
                   ItemBuilder.buildCopyItem(context,
                       child: Text(
-                        "ID：${item.id}",
+                        "ID: ${item.id}",
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                       copyText: item.id.toString(),

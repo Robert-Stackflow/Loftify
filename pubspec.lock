@@ -836,6 +836,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "4.0.0-dev.14"
+  isar_flutter_libs:
+    dependency: "direct main"
+    description:
+      name: isar_flutter_libs
+      sha256: "04a3f4035e213ddb6e78d0132a7c80296a085c2088c2a761b4a42ee5add36983"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "4.0.0-dev.14"
   js:
     dependency: transitive
     description:

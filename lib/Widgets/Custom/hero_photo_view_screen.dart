@@ -234,9 +234,9 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
       double preferHeight =
           MediaQuery.sizeOf(context).width * item.oh / item.ow;
       double scale = preferHeight / MediaQuery.sizeOf(context).height;
-      if (scale > 1 && ResponsiveUtil.isMobile()) {
-        preferScale = PhotoViewComputedScale.covered;
-      }
+      // if (scale > 1 && ResponsiveUtil.isMobile()) {
+      //   preferScale = PhotoViewComputedScale.covered;
+      // }
     }
     return preferScale;
   }
@@ -519,7 +519,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
             },
           ),
         if (imageUrls.length > 1) const SizedBox(width: 5),
-        if (ResponsiveUtil.isDesktop())
+        if (ResponsiveUtil.isLandscape())
           ItemBuilder.buildIconButton(
             context: context,
             icon:
@@ -528,7 +528,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
               Navigator.pop(context);
             },
           ),
-        if (ResponsiveUtil.isDesktop()) const SizedBox(width: 5),
+        if (ResponsiveUtil.isLandscape()) const SizedBox(width: 5),
       ],
     );
   }

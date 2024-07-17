@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   desktop_multi_window
+  isar_flutter_libs
   local_auth_windows
   permission_handler_windows
   screen_retriever

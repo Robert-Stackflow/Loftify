@@ -45,12 +45,14 @@ class WindowTitleBar extends StatelessWidget {
 
   final EdgeInsets? margin;
   final double? titleBarHeightDelta;
+  final bool useMoveHandle;
 
   const WindowTitleBar({
     super.key,
     this.child,
     this.margin,
     this.titleBarHeightDelta,
+    required this.useMoveHandle,
   });
 
   @override
@@ -63,7 +65,7 @@ class WindowTitleBar extends StatelessWidget {
       height: titlebarHeight + (titleBarHeightDelta ?? 0),
       child: Stack(
         children: [
-          const WindowMoveHandle(),
+          if (useMoveHandle) const WindowMoveHandle(),
           Container(
             margin: margin,
             child: child ?? Container(),

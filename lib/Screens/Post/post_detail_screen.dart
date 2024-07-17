@@ -642,6 +642,16 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     return ResizableContainer(
       direction: Axis.horizontal,
       controller: _resizableController,
+      divider: ResizableDivider(
+        color: Theme.of(context).dividerColor,
+        thickness: ResponsiveUtil.isMobile() ? 2 : 1,
+        size: ResponsiveUtil.isMobile() ? 6 : 1,
+        onHoverEnter: () {
+          if (ResponsiveUtil.isMobile()) {
+            HapticFeedback.lightImpact();
+          }
+        },
+      ),
       children: [
         ResizableChild(
           size: ResizableSize.pixels(
@@ -660,19 +670,6 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             ],
           ),
         ),
-        // ResizableChild(
-        //   size: const ResizableSize.pixels(1),
-        //   maxSize: 1,
-        //   minSize: 1,
-        //   child: Container(
-        //     margin: const EdgeInsets.only(top: 8, bottom: 8, right: 4),
-        //     width: 1,
-        //     decoration: BoxDecoration(
-        //       borderRadius: BorderRadius.circular(10),
-        //       color: Theme.of(context).dividerColor,
-        //     ),
-        //   ),
-        // ),
         ResizableChild(
           minSize: 200,
           size: const ResizableSize.expand(),
@@ -1281,7 +1278,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   _buildButton({String? text, Function()? onTap, bool disabled = false}) {
-    return ItemBuilder.buildClickItem( GestureDetector(
+    return ItemBuilder.buildClickItem(
+      GestureDetector(
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -1463,7 +1461,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
 
   Widget _buildRecommendFlow({bool sliver = true}) {
     Widget list = SliverPadding(
-      padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+      padding: EdgeInsets.only(top: sliver ? 10 : 0, left: 8, right: 8),
       sliver: SliverWaterfallFlow(
         gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
           mainAxisSpacing: 12,
@@ -1522,7 +1520,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       return list;
     } else {
       return Container(
-        padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+        padding: const EdgeInsets.only(left: 8, right: 8),
         child: EasyRefresh.builder(
           onRefresh: _onRefresh,
           onLoad: _onLoad,
@@ -1589,7 +1587,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       ),
       actions: [
         if (hasCollection())
-          ItemBuilder.buildClickItem( GestureDetector(
+          ItemBuilder.buildClickItem(
+            GestureDetector(
               onTap: showCollectionBottomSheet,
               child: Container(
                 padding:

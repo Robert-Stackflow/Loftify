@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:loftify/Utils/iprint.dart';
 import 'package:loftify/Utils/route_util.dart';
 import 'package:restart_app/restart_app.dart';
 import 'package:window_manager/window_manager.dart';
@@ -22,7 +23,7 @@ class ResponsiveUtil {
       ProviderManager.globalProvider.desktopCanpop = false;
       ProviderManager.desktopNavigatorKey = GlobalKey<NavigatorState>();
       ProviderManager.globalNavigatorKey.currentState?.pushAndRemoveUntil(
-        RouteUtil.getFadeRoute(const MainScreen(),duration: Duration.zero),
+        RouteUtil.getFadeRoute(const MainScreen(), duration: Duration.zero),
         (route) => false,
       );
     } else {
@@ -70,7 +71,20 @@ class ResponsiveUtil {
         (Platform.isMacOS || Platform.isWindows || Platform.isLinux);
   }
 
+  static bool isTablet() {
+    double minThreshold = 800;
+    return !kIsWeb &&
+        (Platform.isIOS || Platform.isAndroid) &&
+        ((MediaQuery.sizeOf(RouteUtil.getRootContext()).longestSide >= minThreshold &&
+                MediaQuery.of(RouteUtil.getRootContext()).orientation ==
+                    Orientation.landscape) ||
+            (MediaQuery.sizeOf(RouteUtil.getRootContext()).shortestSide >=
+                minThreshold &&
+                MediaQuery.of(RouteUtil.getRootContext()).orientation ==
+                    Orientation.portrait));
+  }
+
   static bool isLandscape() {
-    return !isWeb() && isDesktop();
+    return isWeb() || isDesktop() || isTablet();
   }
 }

@@ -47,7 +47,7 @@ class ItemBuilder {
     required BuildContext context,
     bool transparent = false,
   }) {
-    bool showLeading = !ResponsiveUtil.isDesktop();
+    bool showLeading = !ResponsiveUtil.isLandscape();
     return MyAppBar(
       key: key,
       backgroundColor: transparent
@@ -109,7 +109,7 @@ class ItemBuilder {
     bool transparent = false,
     Color? backgroundColor,
   }) {
-    bool showLeading = leading != null && !ResponsiveUtil.isDesktop();
+    bool showLeading = leading != null && !ResponsiveUtil.isLandscape();
     // center = ResponsiveUtil.isDesktop() ? false : center;
     return MyAppBar(
       key: key,
@@ -2177,7 +2177,7 @@ class ItemBuilder {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   Text(
-                    "ID：${blog.blogInfo.blogName}${blog.blogCount != null && blog.blogCount!.publicPostCount > 0 ? "   文章：${blog.blogCount!.publicPostCount}" : ""}${blog.blogCount != null && blog.blogCount!.followerCount > 0 ? "   粉丝：${blog.blogCount!.followerCount}" : ""}",
+                    "ID: ${blog.blogInfo.blogName}${blog.blogCount != null && blog.blogCount!.publicPostCount > 0 ? "   文章：${blog.blogCount!.publicPostCount}" : ""}${blog.blogCount != null && blog.blogCount!.followerCount > 0 ? "   粉丝：${blog.blogCount!.followerCount}" : ""}",
                     style: Theme.of(context).textTheme.bodySmall,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
