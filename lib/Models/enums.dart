@@ -93,3 +93,18 @@ class EnumsLabelGetter {
     }
   }
 }
+
+enum MultiWindowType { Main, Setting, Unknown }
+
+extension Index on int {
+  MultiWindowType get windowType {
+    switch (this) {
+      case 0:
+        return MultiWindowType.Main;
+      case 1:
+        return MultiWindowType.Setting;
+      default:
+        return MultiWindowType.Unknown;
+    }
+  }
+}

@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Providers/provider_manager.dart';
 import 'package:loftify/Utils/iprint.dart';
+import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Utils/utils.dart';
 
 class RouteUtil {
@@ -12,7 +13,7 @@ class RouteUtil {
 
   static pushCupertinoRoute(BuildContext context, Widget page) {
     ProviderManager.globalProvider.desktopCanpop = true;
-    if (Utils.isDesktop()) {
+    if (ResponsiveUtil.isDesktop()) {
       return pushFadeRoute(context, page);
     } else {
       return Navigator.push(
@@ -28,19 +29,7 @@ class RouteUtil {
       ProviderManager.globalProvider.desktopCanpop = false;
       return await ProviderManager.desktopNavigatorKey.currentState
           ?.pushAndRemoveUntil(
-        PageRouteBuilder(
-          transitionDuration: const Duration(milliseconds: 300),
-          pageBuilder: (BuildContext context, Animation<double> animation,
-              Animation secondaryAnimation) {
-            return FadeTransition(
-              opacity: CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeInOut,
-              ),
-              child: page,
-            );
-          },
-        ),
+        getFadeRoute(page),
         (route) {
           if (Utils.isNotEmpty(route.settings.name) &&
               route.settings.name!.startsWith("/nav")) {
@@ -53,39 +42,31 @@ class RouteUtil {
     } else {
       ProviderManager.globalProvider.desktopCanpop = true;
       return await ProviderManager.desktopNavigatorKey.currentState?.push(
-        PageRouteBuilder(
-          transitionDuration: const Duration(milliseconds: 300),
-          pageBuilder: (BuildContext context, Animation<double> animation,
-              Animation secondaryAnimation) {
-            return FadeTransition(
-              opacity: CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeInOut,
-              ),
-              child: page,
-            );
-          },
-        ),
+        getFadeRoute(page),
       );
     }
+  }
+
+  static getFadeRoute(Widget page, {Duration? duration}) {
+    return PageRouteBuilder(
+      transitionDuration: duration ?? const Duration(milliseconds: 300),
+      pageBuilder: (BuildContext context, Animation<double> animation,
+          Animation secondaryAnimation) {
+        return FadeTransition(
+          opacity: CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeInOut,
+          ),
+          child: page,
+        );
+      },
+    );
   }
 
   static pushFadeRoute(BuildContext context, Widget page) {
     return Navigator.push(
       context,
-      PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 300),
-        pageBuilder: (BuildContext context, Animation<double> animation,
-            Animation secondaryAnimation) {
-          return FadeTransition(
-            opacity: CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeInOut,
-            ),
-            child: page,
-          );
-        },
-      ),
+      getFadeRoute(page),
     );
   }
 }

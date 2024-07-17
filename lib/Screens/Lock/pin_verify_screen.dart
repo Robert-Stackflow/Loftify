@@ -4,8 +4,8 @@ import 'package:local_auth/error_codes.dart' as auth_error;
 import 'package:local_auth/local_auth.dart';
 import 'package:local_auth_android/local_auth_android.dart';
 import 'package:loftify/Utils/iprint.dart';
-import 'package:loftify/Widgets/Unlock/gesture_notifier.dart';
-import 'package:loftify/Widgets/Unlock/gesture_unlock_view.dart';
+import 'package:loftify/Widgets/General/Unlock/gesture_notifier.dart';
+import 'package:loftify/Widgets/General/Unlock/gesture_unlock_view.dart';
 
 import '../../Utils/hive_util.dart';
 
@@ -84,10 +84,8 @@ class PinVerifyScreenState extends State<PinVerifyScreen> {
     return Scaffold(
       body: SafeArea(
         right: false,
-        child: WillPopScope(
-          onWillPop: () {
-            return Future(() => !widget.isModal);
-          },
+        child: PopScope(
+          canPop: !widget.isModal,
           child: Container(
             margin: const EdgeInsets.symmetric(vertical: 100),
             child: Column(

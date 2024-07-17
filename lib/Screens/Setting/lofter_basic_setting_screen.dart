@@ -8,7 +8,8 @@ import '../../Models/account_response.dart';
 import '../../Providers/provider_manager.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/itoast.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/Dialog/dialog_builder.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../generated/l10n.dart';
 
@@ -122,7 +123,7 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
           setState(() {});
         } else if (copyRightType == CopyRightType.appimagestamp &&
             value['meta']['status'] == 4212) {
-          CustomConfirmDialog.showAnimatedFromBottom(
+          DialogBuilder.showConfirmDialog(
             context,
             title: "版权水印关闭提示",
             message: "由于一些历史遗留问题，你需要先在电脑上关闭版权水印功能（主页设置-版权-版权水印）",

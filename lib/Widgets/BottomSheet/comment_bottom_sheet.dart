@@ -5,7 +5,7 @@ import 'package:loftify/Models/post_detail_response.dart';
 import '../../Api/post_api.dart';
 import '../../Resources/theme.dart';
 import '../../Utils/itoast.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../Custom/sliver_appbar_delegate.dart';
 import '../Item/item_builder.dart';
 
@@ -41,35 +41,6 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
     super.initState();
     Future.delayed(const Duration(milliseconds: 200), () {
       _onRefresh();
-    });
-  }
-
-  _fetchHotComments() async {
-    return await PostApi.getHotComments(
-      postId: widget.postId,
-      blogId: widget.blogId,
-      postPublishTime: widget.publishTime,
-    ).then((value) {
-      try {
-        if (value == null) return IndicatorResult.fail;
-        if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
-          return IndicatorResult.fail;
-        } else {
-          totalHotComments = value['data']['hotTotal'];
-          hotComments.clear();
-          List<dynamic> comments = value['data']['hotList'] as List;
-          for (var comment in comments) {
-            hotComments.add(Comment.fromJson(comment));
-          }
-          return IndicatorResult.success;
-        }
-      } catch (_) {
-        IToast.showTop(context, text: "热门评论加载失败");
-        return IndicatorResult.fail;
-      } finally {
-        if (mounted) setState(() {});
-      }
     });
   }
 

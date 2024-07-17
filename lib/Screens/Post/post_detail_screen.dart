@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:card_swiper/card_swiper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_resizable_container/flutter_resizable_container.dart';
 import 'package:loftify/Api/post_api.dart';
 import 'package:loftify/Api/user_api.dart';
 import 'package:loftify/Models/enums.dart';
@@ -15,6 +16,7 @@ import 'package:loftify/Models/show_case_response.dart';
 import 'package:loftify/Resources/colors.dart';
 import 'package:loftify/Resources/gaps.dart';
 import 'package:loftify/Utils/hive_util.dart';
+import 'package:loftify/Utils/iprint.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Widgets/BottomSheet/collection_bottom_sheet.dart';
 import 'package:loftify/Widgets/BottomSheet/comment_bottom_sheet.dart';
@@ -22,6 +24,7 @@ import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:responsive_builder/responsive_builder.dart';
 import 'package:tuple/tuple.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../../Api/collection_api.dart';
 import '../../Api/recommend_api.dart';
@@ -29,13 +32,14 @@ import '../../Models/search_response.dart';
 import '../../Resources/theme.dart';
 import '../../Utils/asset_util.dart';
 import '../../Utils/lottie_util.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
 import '../../Widgets/Custom/hero_photo_view_screen.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/general_post_item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
@@ -74,7 +78,10 @@ class PostDetailScreen extends StatefulWidget {
 }
 
 class _PostDetailScreenState extends State<PostDetailScreen>
-    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+    with
+        TickerProviderStateMixin,
+        AutomaticKeepAliveClientMixin,
+        WindowListener {
   @override
   bool get wantKeepAlive => true;
   PostDetailData? _postDetailData;
@@ -105,6 +112,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   List<Comment> hotComments = [];
   List<Comment> newComments = [];
   GlobalKey commentKey = GlobalKey();
+  final ResizableController _resizableController = ResizableController();
 
   @override
   void dispose() {
@@ -112,6 +120,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     _doubleTapLikeController.dispose();
     _shareController.dispose();
     _likeController.dispose();
+    windowManager.removeListener(this);
     super.dispose();
   }
 
@@ -124,6 +133,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     _scrollController = ScrollController();
+    windowManager.addListener(this);
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       Future.delayed(const Duration(milliseconds: 300), initLottie);
@@ -141,6 +151,24 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       }
     });
   }
+
+  @override
+  void onWindowMaximize() {
+    IPrint.debug("old: ${_resizableController.ratios}");
+  }
+
+  @override
+  void onWindowUnmaximize() {
+    IPrint.debug("old: ${_resizableController.ratios}");
+  }
+
+  @override
+  void onWindowResize() {
+    IPrint.debug("old: ${_resizableController.ratios}");
+  }
+
+  @override
+  void onWindowResized() {}
 
   initLottie() {
     _doubleTapLikeController =
@@ -611,12 +639,17 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   _buildTabletMainBody() {
-    return Row(
+    return ResizableContainer(
+      direction: Axis.horizontal,
+      controller: _resizableController,
       children: [
-        SizedBox(
-          width: widget.isArticle
-              ? MediaQuery.sizeOf(context).width * 2 / 3
-              : max(MediaQuery.sizeOf(context).width * 1 / 3, 400),
+        ResizableChild(
+          size: ResizableSize.pixels(
+            widget.isArticle
+                ? MediaQuery.sizeOf(context).width * 2 / 3
+                : max(MediaQuery.sizeOf(context).width * 1 / 3, 400),
+          ),
+          minSize: 300,
           child: ListView(
             children: [
               Column(
@@ -627,15 +660,22 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             ],
           ),
         ),
-        Container(
-          margin: const EdgeInsets.only(top: 8, bottom: 8, right: 4),
-          width: 1,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            color: Theme.of(context).dividerColor,
-          ),
-        ),
-        Expanded(
+        // ResizableChild(
+        //   size: const ResizableSize.pixels(1),
+        //   maxSize: 1,
+        //   minSize: 1,
+        //   child: Container(
+        //     margin: const EdgeInsets.only(top: 8, bottom: 8, right: 4),
+        //     width: 1,
+        //     decoration: BoxDecoration(
+        //       borderRadius: BorderRadius.circular(10),
+        //       color: Theme.of(context).dividerColor,
+        //     ),
+        //   ),
+        // ),
+        ResizableChild(
+          minSize: 200,
+          size: const ResizableSize.expand(),
           child: _buildRecommendFlow(sliver: false),
         ),
       ],
@@ -774,33 +814,12 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                   ),
                 ),
                 if (hasAvatarBox) const SizedBox(height: 3),
-                Row(
-                  children: [
-                    Text(
-                      Utils.formatTimestamp(
-                          _postDetailData!.post?.publishTime ?? 0),
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    ItemBuilder.buildDot(
-                      context,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    if (Utils.isNotEmpty(_postDetailData!.post?.ipLocation))
-                      Text(
-                        _postDetailData!.post?.ipLocation ?? "",
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    if (Utils.isNotEmpty(_postDetailData!.post?.ipLocation))
-                      ItemBuilder.buildDot(
-                        context,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    Text(
-                      "${_postDetailData!.post?.postCount?.postHot ?? 0}热度",
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                )
+                Text(
+                  "${Utils.formatTimestamp(_postDetailData!.post?.publishTime ?? 0)} · ${Utils.isNotEmpty(_postDetailData!.post?.ipLocation) ? _postDetailData!.post?.ipLocation : ""} · ${_postDetailData!.post?.postCount?.postHot ?? 0}热度",
+                  style: Theme.of(context).textTheme.bodySmall,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
@@ -905,8 +924,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => HeroPhotoViewScreen(
+                          RouteUtil.getFadeRoute(
+                            HeroPhotoViewScreen(
                               imageUrls: photoLinks,
                               initIndex: index,
                               captions: captions,
@@ -986,7 +1005,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               opacity: 0.5,
             ),
           ),
-        if (photoLinks.length > 1 && Utils.isDesktop())
+        if (photoLinks.length > 1 && ResponsiveUtil.isDesktop())
           Positioned(
             left: 16,
             child: Container(
@@ -1016,7 +1035,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               ),
             ),
           ),
-        if (photoLinks.length > 1 && Utils.isDesktop())
+        if (photoLinks.length > 1 && ResponsiveUtil.isDesktop())
           Positioned(
             right: 16,
             child: Container(
@@ -1262,9 +1281,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   _buildButton({String? text, Function()? onTap, bool disabled = false}) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
+    return ItemBuilder.buildClickItem( GestureDetector(
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -1572,9 +1589,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       ),
       actions: [
         if (hasCollection())
-          MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: GestureDetector(
+          ItemBuilder.buildClickItem( GestureDetector(
               onTap: showCollectionBottomSheet,
               child: Container(
                 padding:

@@ -5,9 +5,9 @@ import 'package:local_auth/local_auth.dart';
 import 'package:local_auth_android/local_auth_android.dart';
 import 'package:loftify/Utils/iprint.dart';
 import 'package:loftify/Utils/itoast.dart';
-import 'package:loftify/Widgets/Unlock/gesture_notifier.dart';
-import 'package:loftify/Widgets/Unlock/gesture_unlock_indicator.dart';
-import 'package:loftify/Widgets/Unlock/gesture_unlock_view.dart';
+import 'package:loftify/Widgets/General/Unlock/gesture_notifier.dart';
+import 'package:loftify/Widgets/General/Unlock/gesture_unlock_indicator.dart';
+import 'package:loftify/Widgets/General/Unlock/gesture_unlock_view.dart';
 
 import '../../Utils/hive_util.dart';
 

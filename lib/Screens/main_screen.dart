@@ -10,12 +10,12 @@ import 'package:loftify/Resources/colors.dart';
 import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
 import 'package:loftify/Screens/Navigation/dynamic_screen.dart';
 import 'package:loftify/Screens/Navigation/home_screen.dart';
-import 'package:loftify/Screens/Setting/setting_screen.dart';
 import 'package:loftify/Utils/asset_util.dart';
+import 'package:loftify/Utils/file_util.dart';
+import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Utils/uri_util.dart';
 import 'package:loftify/Widgets/Dialog/custom_dialog.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
-import 'package:loftify/Widgets/LottieCupertinoRefresh/lottie_cupertino_refresh.dart';
 import 'package:loftify/Widgets/Window/window_caption.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
@@ -35,7 +35,9 @@ import '../Utils/itoast.dart';
 import '../Utils/lottie_util.dart';
 import '../Utils/route_util.dart';
 import '../Utils/utils.dart';
-import '../Widgets/EasyRefresh/easy_refresh.dart';
+import '../Widgets/Dialog/dialog_builder.dart';
+import '../Widgets/General/EasyRefresh/easy_refresh.dart';
+import '../Widgets/General/LottieCupertinoRefresh/lottie_cupertino_refresh.dart';
 import '../Widgets/Scaffold/my_bottom_navigation_bar.dart';
 import '../Widgets/Scaffold/my_scaffold.dart';
 import '../Widgets/Window/window_button.dart';
@@ -45,6 +47,7 @@ import 'Info/user_detail_screen.dart';
 import 'Lock/pin_verify_screen.dart';
 import 'Post/search_result_screen.dart';
 import 'Post/search_screen.dart';
+import 'Setting/setting_screen.dart';
 
 const borderColor = Color(0xFF805306);
 const backgroundStartColor = Color(0xFFFFD500);
@@ -81,6 +84,7 @@ class MainScreenState extends State<MainScreen>
   FullBlogInfo? blogInfo;
   bool clearNavSelectState = false;
   bool _isMaximized = false;
+  bool _isStayOnTop = false;
 
   @override
   void onWindowMaximize() {
@@ -155,7 +159,7 @@ class MainScreenState extends State<MainScreen>
       }
       if (latestVersion.compareTo(currentVersion) > 0 &&
           latestReleaseItem != null) {
-        CustomConfirmDialog.showAnimatedFromBottom(
+        DialogBuilder.showConfirmDialog(
           context,
           title: "发现新版本$latestVersion",
           message:
@@ -163,7 +167,7 @@ class MainScreenState extends State<MainScreen>
           confirmButtonText: "立即下载",
           cancelButtonText: "暂不更新",
           onTapConfirm: () {
-            Utils.downloadAndUpdate(
+            FileUtil.downloadAndUpdate(
               context,
               latestReleaseItem!.assets.isNotEmpty
                   ? latestReleaseItem!.assets[0].browserDownloadUrl
@@ -184,7 +188,7 @@ class MainScreenState extends State<MainScreen>
     trayManager.addListener(this);
     windowManager.addListener(this);
     super.initState();
-    if (Utils.isDesktop()) {
+    if (ResponsiveUtil.isDesktop()) {
       _fetchUserInfo();
     }
     darkModeController = AnimationController(vsync: this);
@@ -209,7 +213,7 @@ class MainScreenState extends State<MainScreen>
     EasyRefresh.defaultFooterBuilder = () => LottieCupertinoFooter(
           indicator: LottieUtil.load(LottieUtil.getLoadingPath(context)),
         );
-    if (Utils.isMobile()) {
+    if (ResponsiveUtil.isMobile()) {
       if (HiveUtil.getBool(
           key: HiveUtil.enableSafeModeKey, defaultValue: false)) {
         FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
@@ -269,8 +273,8 @@ class MainScreenState extends State<MainScreen>
   }
 
   void onBottomNavigationBarItemTap(int index) {
-    bool canRefresh = Utils.isMobile() ||
-        (Utils.isDesktop() &&
+    bool canRefresh = ResponsiveUtil.isMobile() ||
+        (ResponsiveUtil.isDesktop() &&
             ProviderManager.globalProvider.desktopCanpop == false &&
             ProviderManager.globalProvider.bottomBarSelectedIndex == index);
     if (canRefresh) {
@@ -286,7 +290,7 @@ class MainScreenState extends State<MainScreen>
             .scrollToTopAndRefresh();
       }
     }
-    if (Utils.isMobile()) {
+    if (ResponsiveUtil.isMobile()) {
       _pageController.jumpToPage(index);
     } else {
       if (ProviderManager.globalProvider.desktopCanpop ||
@@ -306,10 +310,15 @@ class MainScreenState extends State<MainScreen>
             null) {
       HiveUtil.initConfig();
       HiveUtil.setFirstLogin();
-      RouteUtil.pushCupertinoRoute(
-        context,
-        const LoginByCaptchaScreen(),
-      );
+      if (ResponsiveUtil.isLandscape()) {
+        DialogBuilder.showPageDialog(context,
+            child: const LoginByCaptchaScreen());
+      } else {
+        RouteUtil.pushCupertinoRoute(
+          context,
+          const LoginByCaptchaScreen(),
+        );
+      }
     }
   }
 
@@ -332,7 +341,7 @@ class MainScreenState extends State<MainScreen>
   }
 
   _buildBodyByPlatform() {
-    if (Utils.isMobile()) {
+    if (ResponsiveUtil.isMobile()) {
       return _buildMobileBody();
     } else {
       return _buildDesktopBody();
@@ -396,52 +405,7 @@ class MainScreenState extends State<MainScreen>
             const WindowMoveHandle(),
             Column(
               children: [
-                const SizedBox(height: 17),
-                Selector<GlobalProvider, bool>(
-                  selector: (context, globalProvider) =>
-                      globalProvider.desktopCanpop,
-                  builder: (context, desktopCanpop, child) => MouseRegion(
-                    cursor: desktopCanpop
-                        ? SystemMouseCursors.click
-                        : SystemMouseCursors.basic,
-                    child: GestureDetector(
-                      onTap: () {
-                        if (ProviderManager.desktopNavigatorKey.currentState !=
-                                null &&
-                            ProviderManager.desktopNavigatorKey.currentState!
-                                .canPop()) {
-                          ProviderManager.desktopNavigatorKey.currentState
-                              ?.pop();
-                          ProviderManager.globalProvider.desktopCanpop =
-                              ProviderManager.desktopNavigatorKey.currentState!
-                                  .canPop();
-                        } else {
-                          ProviderManager.globalProvider.desktopCanpop =
-                              ProviderManager.desktopNavigatorKey.currentState
-                                      ?.canPop() ??
-                                  false;
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(9.5),
-                        decoration: BoxDecoration(
-                          color: desktopCanpop
-                              ? Colors.grey.withAlpha(40)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          size: 20,
-                          color: desktopCanpop
-                              ? Theme.of(context).iconTheme.color
-                              : Colors.grey,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 80),
                 MyBottomNavigationBar(
                   currentIndex: _bottomBarSelectedIndex,
                   backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -463,8 +427,10 @@ class MainScreenState extends State<MainScreen>
                     GestureDetector(
                       onTap: () {
                         if (blogInfo == null) {
-                          RouteUtil.pushDesktopFadeRoute(
-                              const LoginByCaptchaScreen());
+                          DialogBuilder.showPageDialog(
+                            context,
+                            child: const LoginByCaptchaScreen(),
+                          );
                         } else {
                           RouteUtil.pushDesktopFadeRoute(
                             UserDetailScreen(
@@ -473,9 +439,8 @@ class MainScreenState extends State<MainScreen>
                           );
                         }
                       },
-                      child: MouseRegion(
-                        cursor: SystemMouseCursors.click,
-                        child: ItemBuilder.buildAvatar(
+                      child: ItemBuilder.buildClickItem(
+                        ItemBuilder.buildAvatar(
                           showLoading: false,
                           context: context,
                           imageUrl: blogInfo?.bigAvaImg ?? "",
@@ -536,6 +501,16 @@ class MainScreenState extends State<MainScreen>
                         ),
                         onTap: () async {
                           RouteUtil.pushDesktopFadeRoute(const SettingScreen());
+                          // final window =
+                          //     await DesktopMultiWindow.createWindow(jsonEncode({
+                          //   'type': 1,
+                          // }));
+                          // window
+                          //   ..setFrame(
+                          //       const Offset(0, 0) & const Size(1280, 720))
+                          //   ..center()
+                          //   ..setTitle('设置 - Loftify')
+                          //   ..show();
                         }),
                     const SizedBox(height: 15),
                   ],
@@ -553,10 +528,64 @@ class MainScreenState extends State<MainScreen>
       child: Column(
         children: [
           WindowTitleBar(
-            titleBarHeightDelta: 40,
-            margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
+            titleBarHeightDelta: 34,
+            margin: const EdgeInsets.symmetric(vertical: 12),
             child: Row(
               children: [
+                Selector<GlobalProvider, bool>(
+                  selector: (context, globalProvider) =>
+                      globalProvider.desktopCanpop,
+                  builder: (context, desktopCanpop, child) => MouseRegion(
+                    cursor: desktopCanpop
+                        ? SystemMouseCursors.click
+                        : SystemMouseCursors.basic,
+                    child: ItemBuilder.buildRoundIconButton(
+                      context: context,
+                      disabled: !desktopCanpop,
+                      normalBackground: Colors.grey.withAlpha(40),
+                      icon: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 20,
+                        color: desktopCanpop
+                            ? Theme.of(context).iconTheme.color
+                            : Colors.grey,
+                      ),
+                      onTap: () {
+                        if (ProviderManager.desktopNavigatorKey.currentState !=
+                                null &&
+                            ProviderManager.desktopNavigatorKey.currentState!
+                                .canPop()) {
+                          ProviderManager.desktopNavigatorKey.currentState
+                              ?.pop();
+                          ProviderManager.globalProvider.desktopCanpop =
+                              ProviderManager.desktopNavigatorKey.currentState!
+                                  .canPop();
+                        } else {
+                          ProviderManager.globalProvider.desktopCanpop =
+                              ProviderManager.desktopNavigatorKey.currentState
+                                      ?.canPop() ??
+                                  false;
+                        }
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ItemBuilder.buildRoundIconButton(
+                  context: context,
+                  normalBackground: Colors.grey.withAlpha(40),
+                  icon: Icon(
+                    Icons.home_filled,
+                    size: 20,
+                    color: Theme.of(context).iconTheme.color,
+                  ),
+                  onTap: () {
+                    ProviderManager.globalProvider.desktopCanpop = false;
+                    ProviderManager.desktopNavigatorKey =
+                        GlobalKey<NavigatorState>();
+                  },
+                ),
+                const SizedBox(width: 8),
                 SizedBox(
                   width: min(300, MediaQuery.sizeOf(context).width - 240),
                   child: ItemBuilder.buildDesktopSearchBar(
@@ -579,21 +608,37 @@ class MainScreenState extends State<MainScreen>
                 const Spacer(),
                 Row(
                   children: [
+                    StayOnTopWindowButton(
+                      rotateAngle: _isStayOnTop ? pi / 4 : 0,
+                      colors: _isStayOnTop
+                          ? MyColors.getStayOnTopButtonColors(context)
+                          : MyColors.getNormalButtonColors(context),
+                      borderRadius: BorderRadius.circular(10),
+                      onPressed: () {
+                        setState(() {
+                          _isStayOnTop = !_isStayOnTop;
+                          windowManager.setAlwaysOnTop(_isStayOnTop);
+                        });
+                      },
+                    ),
+                    const SizedBox(width: 3),
                     MinimizeWindowButton(
                       colors: MyColors.getNormalButtonColors(context),
                       borderRadius: BorderRadius.circular(10),
                     ),
+                    const SizedBox(width: 3),
                     _isMaximized
                         ? RestoreWindowButton(
                             colors: MyColors.getNormalButtonColors(context),
                             borderRadius: BorderRadius.circular(10),
-                            onPressed: Utils.maximizeOrRestore,
+                            onPressed: ResponsiveUtil.maximizeOrRestore,
                           )
                         : MaximizeWindowButton(
                             colors: MyColors.getNormalButtonColors(context),
                             borderRadius: BorderRadius.circular(10),
-                            onPressed: Utils.maximizeOrRestore,
+                            onPressed: ResponsiveUtil.maximizeOrRestore,
                           ),
+                    const SizedBox(width: 3),
                     CloseWindowButton(
                       colors: MyColors.getNormalButtonColors(context),
                       borderRadius: BorderRadius.circular(10),
@@ -608,6 +653,7 @@ class MainScreenState extends State<MainScreen>
                     ),
                   ],
                 ),
+                const SizedBox(width: 10),
               ],
             ),
           ),
@@ -623,20 +669,7 @@ class MainScreenState extends State<MainScreen>
                   key: ProviderManager.desktopNavigatorKey,
                   onGenerateRoute: (settings) {
                     if (settings.name == "/") {
-                      return PageRouteBuilder(
-                        transitionDuration: const Duration(milliseconds: 300),
-                        pageBuilder: (BuildContext context,
-                            Animation<double> animation,
-                            Animation secondaryAnimation) {
-                          return FadeTransition(
-                            opacity: CurvedAnimation(
-                              parent: animation,
-                              curve: Curves.easeInOut,
-                            ),
-                            child: _pageList[0],
-                          );
-                        },
-                      );
+                      return RouteUtil.getFadeRoute(_pageList[0]);
                     }
                     return null;
                   },
@@ -706,6 +739,7 @@ class MainScreenState extends State<MainScreen>
   @override
   void onTrayMenuItemClick(MenuItem menuItem) {
     if (menuItem.key == 'show_window') {
+      windowManager.focus();
       windowManager.restore();
     } else if (menuItem.key == 'show_official_website') {
       UriUtil.launchUrlUri(context, "https://apps.cloudchewie.com/loftify");

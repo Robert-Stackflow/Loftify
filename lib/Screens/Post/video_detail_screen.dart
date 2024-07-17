@@ -12,6 +12,7 @@ import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Models/search_response.dart';
 import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Screens/Post/video_list_controller.dart';
+import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/route_util.dart';
@@ -435,7 +436,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
             downloadProgress: downloadProgress,
             onDownload: () {
               if (downloadProgress == null) {
-                Utils.saveVideo(
+                FileUtil.saveVideo(
                   context,
                   postListItem
                       .postData!.postView.videoPostView!.videoInfo.originUrl,

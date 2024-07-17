@@ -1,5 +1,6 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:install_plugin/install_plugin.dart';
+import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Utils/utils.dart';
 
 class NotificationUtil {
@@ -7,7 +8,7 @@ class NotificationUtil {
       FlutterLocalNotificationsPlugin();
 
   static init() async {
-    if (Utils.isAndroid()) {
+    if (ResponsiveUtil.isAndroid()) {
       await initAndroid();
     }
   }
@@ -29,7 +30,7 @@ class NotificationUtil {
   }
 
   static Future<void> closeNotification(int id) async {
-    if (Utils.isAndroid()) {
+    if (ResponsiveUtil.isAndroid()) {
       return flutterLocalNotificationsPlugin.cancel(id);
     }
   }
@@ -40,7 +41,7 @@ class NotificationUtil {
     String? title,
     String? payload,
   }) async {
-    if (!Utils.isAndroid()) return;
+    if (!ResponsiveUtil.isAndroid()) return;
     AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
       'progress channel',
@@ -69,7 +70,7 @@ class NotificationUtil {
     String body, {
     String? payload,
   }) async {
-    if (!Utils.isAndroid()) return;
+    if (!ResponsiveUtil.isAndroid()) return;
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
       'download complete channel',

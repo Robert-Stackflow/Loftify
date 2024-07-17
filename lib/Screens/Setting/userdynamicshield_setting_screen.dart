@@ -7,7 +7,8 @@ import '../../Resources/theme.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Widgets/Dialog/custom_dialog.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/Dialog/dialog_builder.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../generated/l10n.dart';
 import '../Info/user_detail_screen.dart';
@@ -127,7 +128,7 @@ class _UserDynamicShieldSettingScreenState
               positiveText: "恢复查看",
               negtiveText: "恢复查看",
               onTap: () {
-                CustomConfirmDialog.showAnimatedFromBottom(
+                DialogBuilder.showConfirmDialog(
                   context,
                   title: "恢复查看动态",
                   message: "确认恢复查看「${blogInfo.blogNickName}」的动态？",

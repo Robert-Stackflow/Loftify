@@ -17,12 +17,12 @@ import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
-import '../../Widgets/Animation/animated_fade.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
 import '../../Widgets/Custom/auto_slideup_panel.dart';
 import '../../Widgets/Dialog/custom_dialog.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/General/Animation/animated_fade.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 
 const double minCardHeightFraction = 0.63;
 

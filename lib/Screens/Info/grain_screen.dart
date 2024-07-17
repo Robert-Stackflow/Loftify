@@ -12,7 +12,7 @@ import '../../Models/enums.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 
 class GrainScreen extends StatefulWidget {

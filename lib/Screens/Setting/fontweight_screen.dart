@@ -1,10 +1,9 @@
-import 'package:chinese_font_library/chinese_font_library.dart';
 import 'package:flutter/material.dart';
 
 import '../../Resources/fonts.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 
 class FontWeightScreen extends StatefulWidget {
@@ -77,7 +76,7 @@ class _FontWeightScreenState extends State<FontWeightScreen>
                     style: TextStyle(
                       fontFamily: _currentFont.fontFamily,
                       fontWeight: weight,
-                    ).useSystemChineseFont(),
+                    ),
                   ),
                 ),
               ),

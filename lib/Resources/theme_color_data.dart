@@ -1,4 +1,3 @@
-import 'package:chinese_font_library/chinese_font_library.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Resources/colors.dart';
 
@@ -158,21 +157,21 @@ class ThemeColorData {
       fontSize: 11,
       letterSpacing: 0.1,
       color: tagColor,
-    ).useSystemChineseFont();
+    );
 
     TextStyle labelMedium = TextStyle(
       fontWeight: FontWeight.normal,
       fontSize: 13,
       letterSpacing: 0.1,
       color: tagColor,
-    ).useSystemChineseFont();
+    );
 
     TextStyle labelLarge = TextStyle(
       fontWeight: FontWeight.normal,
       fontSize: 15,
       letterSpacing: 0.1,
       color: tagColor,
-    ).useSystemChineseFont();
+    );
 
     TextStyle titleSmall = TextStyle(
       fontWeight: FontWeight.normal,
@@ -180,40 +179,40 @@ class ThemeColorData {
       letterSpacing: 0.1,
       height: 1.2,
       color: textColor,
-    ).useSystemChineseFont();
+    );
 
     TextStyle titleMedium = TextStyle(
       fontWeight: FontWeight.normal,
       fontSize: 16,
       letterSpacing: 0.1,
       color: textColor,
-    ).useSystemChineseFont();
+    );
 
     TextStyle titleLarge = TextStyle(
       fontWeight: FontWeight.bold,
       fontSize: 17,
       letterSpacing: 0.18,
       color: textColor,
-    ).useSystemChineseFont();
+    );
 
     TextStyle bodySmall = TextStyle(
       fontWeight: FontWeight.normal,
       fontSize: 12,
       letterSpacing: 0.1,
       color: textGrayColor,
-    ).useSystemChineseFont();
+    );
 
     TextStyle bodyMedium = TextStyle(
       fontWeight: FontWeight.normal,
       fontSize: 14,
       letterSpacing: 0.1,
       color: textColor,
-    ).useSystemChineseFont();
+    );
 
     TextStyle bodyLarge = TextStyle(
       fontSize: 16,
       color: textColor,
-    ).useSystemChineseFont();
+    );
 
     return ThemeData(
       fontFamily: FontEnum.getCurrentFont().fontFamily,
@@ -289,7 +288,7 @@ class ThemeColorData {
       tabBarTheme: const TabBarTheme(
         splashFactory: NoSplash.splashFactory,
       ),
-    ).useSystemChineseFont(isDarkMode ? Brightness.dark : Brightness.light);
+    );
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{

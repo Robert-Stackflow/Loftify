@@ -11,8 +11,8 @@ import 'package:loftify/Widgets/Custom/no_shadow_scroll_behavior.dart';
 
 import '../../Providers/provider_manager.dart';
 import '../../Utils/request_util.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
-import '../../Utils/utils.dart';
 import '../../Widgets/Item/item_builder.dart';
 
 class LoginByPasswordScreen extends StatefulWidget {
@@ -63,7 +63,7 @@ class _LoginByPasswordScreenState extends State<LoginByPasswordScreen>
             key: HiveUtil.deviceIdKey, value: loginResponse.deviceid);
         await HiveUtil.put(
             key: HiveUtil.tokenTypeKey, value: TokenType.password.index);
-        Utils.returnToMainScreen(context);
+        ResponsiveUtil.returnToMainScreen(context);
       }
     });
   }

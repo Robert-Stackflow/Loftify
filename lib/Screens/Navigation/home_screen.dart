@@ -14,9 +14,9 @@ import '../../Api/post_api.dart';
 import '../../Models/recommend_response.dart';
 import '../../Utils/asset_util.dart';
 import '../../Utils/iprint.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
-import '../../Utils/utils.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../generated/l10n.dart';
 
@@ -200,7 +200,7 @@ class HomeScreenState extends State<HomeScreen>
       title:
           Text(S.current.home, style: Theme.of(context).textTheme.titleLarge),
       actions: [
-        if (Utils.isMobile())
+        if (ResponsiveUtil.isMobile())
           ItemBuilder.buildIconButton(
               context: context,
               icon: AssetUtil.loadDouble(

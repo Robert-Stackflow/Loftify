@@ -1,11 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
-import 'package:hive_flutter/adapters.dart';
+import 'package:hive/hive.dart';
 import 'package:loftify/Database/database_manager.dart';
+import 'package:loftify/Utils/file_util.dart';
 import 'package:sqflite/sqflite.dart';
 
-import '../Utils/hive_util.dart';
 import 'global_provider.dart';
 
 abstract class ProviderManager {
@@ -25,12 +23,7 @@ abstract class ProviderManager {
   }
 
   static Future<void> initHive() async {
-    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      await Hive.initFlutter(HiveUtil.database);
-    } else {
-      await Hive.initFlutter();
-    }
-    await HiveUtil.openHiveBox(HiveUtil.settingsBox);
+    Hive.defaultDirectory = await FileUtil.getApplicationDir();
   }
 
   static Brightness currentBrightness(BuildContext context) {

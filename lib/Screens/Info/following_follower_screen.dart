@@ -10,7 +10,7 @@ import 'package:waterfall_flow/waterfall_flow.dart';
 import '../../Models/enums.dart';
 import '../../Models/user_response.dart';
 import '../../Utils/itoast.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 
 class FollowingFollowerScreen extends StatefulWidget {

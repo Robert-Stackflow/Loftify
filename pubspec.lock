@@ -241,14 +241,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.8.1"
-  chinese_font_library:
-    dependency: "direct main"
-    description:
-      name: chinese_font_library
-      sha256: f6c18eb58c1514a95e4ed9a7e2f6702be1333b67e4226976b333e5918021c1df
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "1.2.0"
   cli_util:
     dependency: transitive
     description:
@@ -361,6 +353,13 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.7.10"
+  desktop_multi_window:
+    dependency: "direct main"
+    description:
+      path: "third-party/desktop_multi_window"
+      relative: true
+    source: path
+    version: "0.1.0"
   device_info_plus:
     dependency: "direct main"
     description:
@@ -595,6 +594,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.0.20"
+  flutter_resizable_container:
+    dependency: "direct main"
+    description:
+      name: flutter_resizable_container
+      sha256: "8fb437d8609dde1495f63cb8786cb6e69fc1f98442fe3fc2596e5b9398395425"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.0.0"
   flutter_svg:
     dependency: transitive
     description:
@@ -745,18 +752,10 @@ packages:
     dependency: "direct main"
     description:
       name: hive
-      sha256: "8dcf6db979d7933da8217edcec84e9df1bdb4e4edc7fc77dbd5aa74356d6d941"
+      sha256: "10819524df282842ebae12870e2e0e9ebc3e5c4637bec741ad39b919c589cb20"
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "2.2.3"
-  hive_flutter:
-    dependency: "direct main"
-    description:
-      name: hive_flutter
-      sha256: dca1da446b1d808a51689fb5d0c6c9510c0a2ba01e22805d492c73b68e33eecc
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "1.1.0"
+    version: "4.0.0-dev.2"
   html:
     dependency: "direct main"
     description:
@@ -829,6 +828,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.0.4"
+  isar:
+    dependency: transitive
+    description:
+      name: isar
+      sha256: ebf74d87c400bd9f7da14acb31932b50c2407edbbd40930da3a6c2a8143f85a8
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "4.0.0-dev.14"
   js:
     dependency: transitive
     description:
@@ -1395,7 +1402,7 @@ packages:
     source: hosted
     version: "2.5.4"
   sqflite_common_ffi:
-    dependency: "direct main"
+    dependency: "direct dev"
     description:
       name: sqflite_common_ffi
       sha256: "4d6137c29e930d6e4a8ff373989dd9de7bac12e3bc87bce950f6e844e8ad3bb5"
@@ -1466,6 +1473,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.7.0"
+  texture_rgba_renderer:
+    dependency: "direct main"
+    description:
+      name: texture_rgba_renderer
+      sha256: cb048abdd800468ca40749ca10d1db9d1e6a055d1cde6234c05191293f0c7d61
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.0.16"
   timezone:
     dependency: transitive
     description:
@@ -1778,6 +1793,15 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.3.9"
+  window_size:
+    dependency: "direct main"
+    description:
+      path: "plugins/window_size"
+      ref: a738913c8ce2c9f47515382d40827e794a334274
+      resolved-ref: a738913c8ce2c9f47515382d40827e794a334274
+      url: "https://github.com/google/flutter-desktop-embedding.git"
+    source: git
+    version: "0.1.0"
   xdg_directories:
     dependency: transitive
     description:

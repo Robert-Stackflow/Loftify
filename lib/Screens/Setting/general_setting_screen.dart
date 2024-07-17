@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loftify/Models/github_response.dart';
 import 'package:loftify/Utils/cache_util.dart';
+import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
@@ -12,11 +13,13 @@ import '../../Providers/global_provider.dart';
 import '../../Providers/provider_manager.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/locale_util.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
 import '../../Widgets/Dialog/custom_dialog.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/Dialog/dialog_builder.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../generated/l10n.dart';
 
@@ -45,7 +48,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
   void initState() {
     super.initState();
     filterLocale();
-    if (Utils.isMobile()) getCacheSize();
+    if (ResponsiveUtil.isMobile()) getCacheSize();
     fetchReleases(false);
   }
 
@@ -98,7 +101,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
         CustomLoadingDialog.dismissLoading(context);
         if (latestVersion.compareTo(currentVersion) > 0 &&
             latestReleaseItem != null) {
-          CustomConfirmDialog.showAnimatedFromBottom(
+          DialogBuilder.showConfirmDialog(
             context,
             title: "发现新版本$latestVersion",
             message:
@@ -106,7 +109,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
             confirmButtonText: "立即下载",
             cancelButtonText: "暂不更新",
             onTapConfirm: () {
-              Utils.downloadAndUpdate(
+              FileUtil.downloadAndUpdate(
                 context,
                 latestReleaseItem!.assets.isNotEmpty
                     ? latestReleaseItem!.assets[0].browserDownloadUrl
@@ -167,8 +170,8 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                   },
                 ),
               ),
-              if (Utils.isMobile()) const SizedBox(height: 10),
-              if (Utils.isMobile())
+              if (ResponsiveUtil.isMobile()) const SizedBox(height: 10),
+              if (ResponsiveUtil.isMobile())
                 ItemBuilder.buildRadioItem(
                   value: inAppBrowser,
                   context: context,
@@ -215,7 +218,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                 },
               ),
               const SizedBox(height: 10),
-              if (Utils.isMobile())
+              if (ResponsiveUtil.isMobile())
                 ItemBuilder.buildEntryItem(
                   context: context,
                   title: S.current.clearCache,

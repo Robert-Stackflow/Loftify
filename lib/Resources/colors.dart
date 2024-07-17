@@ -92,6 +92,17 @@ class MyColors {
   );
   static const Color likeButtonColor = Color(0xFFF06292);
 
+  static getStayOnTopButtonColors(BuildContext context) {
+    return WindowButtonColors(
+      normal: Theme.of(context).splashColor,
+      mouseOver: Theme.of(context).splashColor,
+      mouseDown: Theme.of(context).splashColor,
+      iconNormal: Theme.of(context).iconTheme.color,
+      iconMouseOver: Theme.of(context).iconTheme.color,
+      iconMouseDown: Theme.of(context).iconTheme.color,
+    );
+  }
+
   static getNormalButtonColors(BuildContext context) {
     return WindowButtonColors(
       mouseOver: Theme.of(context).splashColor,

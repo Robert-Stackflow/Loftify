@@ -13,6 +13,7 @@ import 'package:loftify/Screens/Post/search_result_screen.dart';
 import 'package:loftify/Screens/Post/tag_detail_screen.dart';
 import 'package:loftify/Screens/Post/video_detail_screen.dart';
 import 'package:loftify/Utils/itoast.dart';
+import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Utils/route_util.dart';
 import 'package:provider/provider.dart';
 
@@ -182,7 +183,8 @@ class _SearchScreenState extends State<SearchScreen>
       child: ListView.builder(
         itemCount: _sugList.length,
         itemBuilder: (context, index) {
-          return _buildSuggestItem(index, _sugList[index]);
+          return ItemBuilder.buildClickItem(
+              _buildSuggestItem(index, _sugList[index]));
         },
       ),
     );
@@ -364,13 +366,16 @@ class _SearchScreenState extends State<SearchScreen>
         borderRadius: BorderRadius.circular(10),
         color: Theme.of(context).cardColor.withAlpha(200),
       ),
-      child: ListView.builder(
-        controller: _scrollController,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: item.hotLists.length,
-        itemBuilder: (context, index) {
-          return _buildRankItem(index, item.rankListType, item.hotLists[index]);
-        },
+      child: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+        child: ListView.builder(
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: item.hotLists.length,
+          itemBuilder: (context, index) {
+            return ItemBuilder.buildClickItem(_buildRankItem(
+                index, item.rankListType, item.hotLists[index]));
+          },
+        ),
       ),
     );
   }
@@ -643,16 +648,17 @@ class _SearchScreenState extends State<SearchScreen>
                 controller: _searchController,
               ),
             ),
-            const SizedBox(width: 16),
-            GestureDetector(
-              onTap: () {
-                Navigator.pop(context);
-              },
-              child: Text(
-                "取消",
-                style: Theme.of(context).textTheme.titleMedium,
+            if (!ResponsiveUtil.isLandscape()) const SizedBox(width: 16),
+            if (!ResponsiveUtil.isLandscape())
+              GestureDetector(
+                onTap: () {
+                  Navigator.pop(context);
+                },
+                child: Text(
+                  "取消",
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
               ),
-            )
           ],
         ),
       ),

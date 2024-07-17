@@ -32,7 +32,8 @@ import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
 import '../../Widgets/Custom/auto_slideup_panel.dart';
 import '../../Widgets/Custom/sliver_appbar_delegate.dart';
 import '../../Widgets/Dialog/custom_dialog.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/Dialog/dialog_builder.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../generated/l10n.dart';
 import '../Post/collection_detail_screen.dart';
 
@@ -355,7 +356,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                             title: '热度',
                             count: _fullBlogData!.blogInfo.hot.hotCount,
                             onTap: () {
-                              CustomInfoDialog.showAnimatedFromBottom(
+                              DialogBuilder.showInfoDialog(
                                 context,
                                 title:
                                     "总热度${_fullBlogData!.blogInfo.hot.hotCount}",
@@ -598,7 +599,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
 
   _processFollow() {
     if (_fullBlogData!.isBlackBlog) {
-      CustomConfirmDialog.showAnimatedFromBottom(
+      DialogBuilder.showConfirmDialog(
         context,
         title: "解除黑名单",
         message: "确认解除「${_fullBlogData!.blogInfo.blogNickName}」的黑名单？",

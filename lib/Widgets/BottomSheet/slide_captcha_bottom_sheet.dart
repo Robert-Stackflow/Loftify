@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/login_api.dart';
@@ -26,8 +27,8 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
   String? id;
   double frontLeftOffset = 0;
   double scale = 1.03;
-  var bg64;
-  var front64;
+  Uint8List? bg64;
+  Uint8List? front64;
   String secret =
       "KrHL6WUUlI9mKt+4JApPjwjhn+2UNa8tbe+NzFF31msY94ZXTYjj2trGN3MQMv6yXON9fgpGkesyKgCQ1lBf0hzviueHHjQYNEtEE9tvK8PkrXBOgmChlgFF/khdqpVvPxuEUc9wFu+nx8CX/M9V9RkLG7/x6jO4tuZMs3gscXyFEOSy8htUclnY8Msu6GipKGrAJZGU/Qc18HeHBKRj3cbPvzhBD/p1HOG8d51faoEYHri98dsl/30aXd3BkAIlnNDvlJ8cqKncXP1LDFwZ8VrEZtSaLV8IShZy25/ncHVBQjRxOvojUqY/DQzti/rrQmWSPNLmNDkiR2QiEVZfCQ==";
   String status = "";

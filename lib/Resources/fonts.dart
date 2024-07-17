@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:loftify/Utils/responsive_util.dart';
 import 'package:tuple/tuple.dart';
 
 import '../Utils/font_util.dart';
@@ -98,7 +99,7 @@ enum FontEnum {
       onFinished: (value) {
         dialog.dismiss();
         if (autoRestartApp) {
-          Utils.restartApp(context);
+          ResponsiveUtil.restartApp(context);
         }
       },
       onReceiveProgress: (progress) {

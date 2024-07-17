@@ -5,6 +5,7 @@ import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
 import 'package:loftify/Screens/Login/login_by_password_screen.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/itoast.dart';
+import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Widgets/Custom/no_shadow_scroll_behavior.dart';
 
 import '../../Models/constant.dart';
@@ -12,7 +13,6 @@ import '../../Models/login_lofterid_response.dart';
 import '../../Providers/provider_manager.dart';
 import '../../Utils/request_util.dart';
 import '../../Utils/route_util.dart';
-import '../../Utils/utils.dart';
 import '../../Widgets/Item/item_builder.dart';
 
 class LoginByLofterIDScreen extends StatefulWidget {
@@ -61,7 +61,7 @@ class _LoginByLofterIDScreenState extends State<LoginByLofterIDScreen>
         await HiveUtil.put(key: HiveUtil.tokenKey, value: loginResponse.token);
         await HiveUtil.put(
             key: HiveUtil.tokenTypeKey, value: TokenType.lofterID.index);
-        Utils.returnToMainScreen(context);
+        ResponsiveUtil.returnToMainScreen(context);
       }
     });
   }

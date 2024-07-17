@@ -10,7 +10,7 @@ import '../../Resources/theme.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../General/EasyRefresh/easy_refresh.dart';
 import '../Item/item_builder.dart';
 import '../PostItem/common_info_post_item_builder.dart';
 

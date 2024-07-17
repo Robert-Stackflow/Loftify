@@ -9,7 +9,7 @@ import 'package:waterfall_flow/waterfall_flow.dart';
 import '../../Api/post_api.dart';
 import '../../Models/enums.dart';
 import '../../Utils/utils.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
 
@@ -263,9 +263,7 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
       onLeadingTap: () {
         Navigator.pop(context);
       },
-      title: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: ItemBuilder.buildTagItem(
+      title: ItemBuilder.buildClickItem( ItemBuilder.buildTagItem(
           context,
           widget.tag,
           TagType.normal,

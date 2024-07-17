@@ -4,7 +4,7 @@ import 'package:loftify/Database/create_table_sql.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-import '../Utils/utils.dart';
+import '../Utils/responsive_util.dart';
 
 class DatabaseManager {
   static const _dbName = "loftify.db";
@@ -19,7 +19,7 @@ class DatabaseManager {
   }
 
   static Future<void> _initDataBase() async {
-    if (Utils.isDesktop()) {
+    if (ResponsiveUtil.isDesktop()) {
       sqfliteFfiInit();
       databaseFactory = databaseFactoryFfi;
     }

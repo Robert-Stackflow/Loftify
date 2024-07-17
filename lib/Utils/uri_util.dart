@@ -8,6 +8,7 @@ import 'package:loftify/Screens/Post/tag_detail_screen.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/request_util.dart';
+import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Utils/route_util.dart';
 import 'package:loftify/Utils/utils.dart';
 import 'package:share_plus/share_plus.dart';
@@ -348,7 +349,7 @@ class UriUtil {
     String url, {
     bool processUri = true,
   }) {
-    if (Utils.isMobile()) {
+    if (ResponsiveUtil.isMobile()) {
       RouteUtil.pushCupertinoRoute(
           context, WebviewScreen(url: url, processUri: processUri));
     } else {

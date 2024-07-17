@@ -5,10 +5,12 @@ import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Utils/route_util.dart';
 
 import '../../Api/setting_api.dart';
+import '../../Models/enums.dart';
 import '../../Resources/theme.dart';
 import '../../Utils/itoast.dart';
 import '../../Widgets/Dialog/custom_dialog.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/Dialog/dialog_builder.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../generated/l10n.dart';
 
@@ -26,9 +28,24 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
   bool loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
   List<BlacklistItem> blacklist = [];
+  final ScrollController _scrollController = ScrollController();
+  bool _noMore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(() {
+      if (!_noMore &&
+          _scrollController.position.pixels >
+              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
+        _fetchBlacklist();
+      }
+    });
+  }
 
   _fetchBlacklist({bool refresh = false}) async {
     if (loading) return;
+    if (refresh) _noMore = false;
     loading = true;
     return await SettingApi.getBlacklist(offset: refresh ? 0 : blacklist.length)
         .then((value) {
@@ -44,7 +61,10 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
               .toList();
           if (refresh) blacklist.clear();
           blacklist.addAll(tmp);
-          if (tmp.isEmpty && !refresh) return IndicatorResult.noMore;
+          if (tmp.isEmpty && !refresh) {
+            _noMore = true;
+            return IndicatorResult.noMore;
+          }
           return IndicatorResult.success;
         }
       } catch (_) {
@@ -84,6 +104,7 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
         },
         triggerAxis: Axis.vertical,
         child: ListView.builder(
+          controller: _scrollController,
           itemCount: blacklist.length,
           padding: EdgeInsets.zero,
           itemBuilder: (context, index) => _buildBlacklistRow(blacklist[index]),
@@ -131,7 +152,7 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
               positiveText: "解除黑名单",
               negtiveText: "解除黑名单",
               onTap: () {
-                CustomConfirmDialog.showAnimatedFromBottom(
+                DialogBuilder.showConfirmDialog(
                   context,
                   title: "解除黑名单",
                   message: "确认解除「${blacklistItem.blogInfo.blogNickName}」的黑名单？",

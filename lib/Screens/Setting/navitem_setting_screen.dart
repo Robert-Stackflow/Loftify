@@ -6,7 +6,7 @@ import 'package:loftify/Utils/itoast.dart';
 import 'package:provider/provider.dart';
 
 import '../../Widgets/Custom/no_shadow_scroll_behavior.dart';
-import '../../Widgets/Draggable/drag_and_drop_lists.dart';
+import '../../Widgets/General/Draggable/drag_and_drop_lists.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../generated/l10n.dart';
 

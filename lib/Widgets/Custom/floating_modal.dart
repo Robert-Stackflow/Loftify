@@ -17,7 +17,7 @@ class FloatingModal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.sizeOf(context).width - 60;
-    double preferWidth = min(width, preferMinWidth ?? 500);
+    double preferWidth = min(width, preferMinWidth ?? 540);
     double preferMargin = width > preferWidth ? (width - preferWidth) / 2 : 0;
     return SafeArea(
       child: Padding(

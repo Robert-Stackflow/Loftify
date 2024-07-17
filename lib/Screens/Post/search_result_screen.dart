@@ -17,12 +17,13 @@ import 'package:loftify/Widgets/PostItem/search_post_flow_item_builder.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Api/post_api.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/Custom/custom_tab_indicator.dart';
 import '../../Widgets/Custom/sliver_appbar_delegate.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
 import 'collection_detail_screen.dart';
@@ -1130,16 +1131,17 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                 controller: _searchController,
               ),
             ),
-            const SizedBox(width: 16),
-            GestureDetector(
-              onTap: () {
-                Navigator.pop(context);
-              },
-              child: Text(
-                "取消",
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            )
+            if (!ResponsiveUtil.isLandscape()) const SizedBox(width: 16),
+            if (!ResponsiveUtil.isLandscape())
+              GestureDetector(
+                onTap: () {
+                  Navigator.pop(context);
+                },
+                child: Text(
+                  "取消",
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              )
           ],
         ),
       ),

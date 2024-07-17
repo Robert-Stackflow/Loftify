@@ -4,65 +4,23 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:dio/dio.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
-import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:intl/intl.dart';
 import 'package:loftify/Models/enums.dart';
+import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
-import 'package:loftify/Utils/iprint.dart';
-import 'package:loftify/Utils/notification_util.dart';
-import 'package:loftify/Utils/uri_util.dart';
 import 'package:loftify/Widgets/BottomSheet/slide_captcha_bottom_sheet.dart';
-import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:palette_generator/palette_generator.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:restart_app/restart_app.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:window_manager/window_manager.dart';
 
 import '../Providers/global_provider.dart';
 import '../Providers/provider_manager.dart';
-import '../Screens/main_screen.dart';
 import 'itoast.dart';
 
 class Utils {
-  static Future<void> restartApp(BuildContext context) async {
-    if (Utils.isDesktop()) {
-    } else {
-      Restart.restartApp();
-    }
-  }
-
-  static Future<void> returnToMainScreen(BuildContext context) async {
-    if (Utils.isDesktop()) {
-      ProviderManager.globalProvider.desktopCanpop = false;
-      ProviderManager.desktopNavigatorKey = GlobalKey<NavigatorState>();
-      ProviderManager.globalNavigatorKey.currentState
-          ?.pushNamedAndRemoveUntil("/", (route) => false);
-    } else {
-      Navigator.pushAndRemoveUntil(
-          context,
-          CupertinoPageRoute(builder: (context) => const MainScreen()),
-          (route) => false);
-    }
-  }
-
-  static Future<void> maximizeOrRestore() async {
-    if (await windowManager.isMaximized()) {
-      windowManager.restore();
-    } else {
-      windowManager.maximize();
-    }
-  }
 
   static String processEmpty(String? str, {String defaultValue = ""}) {
     return isEmpty(str) ? defaultValue : str!;
@@ -129,216 +87,8 @@ class Utils {
         Utils.removeImageParam(element) == Utils.removeImageParam(image));
   }
 
-  static String extractFileNameFromUrl(String imageUrl) {
-    return Uri.parse(imageUrl).pathSegments.last;
-  }
-
   static String replaceLineBreak(String str) {
     return str.replaceAll(RegExp(r"\r\n"), "<br/>");
-  }
-
-  static Future<ShareResultStatus> shareImage(
-    BuildContext context,
-    String imageUrl, {
-    bool showToast = true,
-    String? message,
-  }) async {
-    CachedNetworkImage image =
-        ItemBuilder.buildCachedImage(imageUrl: imageUrl, context: context);
-    BaseCacheManager manager = image.cacheManager ?? DefaultCacheManager();
-    Map<String, String> headers = image.httpHeaders ?? {};
-    File file = await manager.getSingleFile(
-      image.imageUrl,
-      headers: headers,
-    );
-    final result = await Share.shareXFiles([XFile(file.path)], text: message);
-    if (result.status == ShareResultStatus.success) {
-      IToast.showTop(context, text: "分享成功");
-    } else if (result.status == ShareResultStatus.dismissed) {
-      IToast.showTop(context, text: "取消分享");
-    } else {
-      IToast.showTop(context, text: "分享失败");
-    }
-    return result.status;
-  }
-
-  static Future<File> getImageFile(
-    BuildContext context,
-    String imageUrl, {
-    bool showToast = true,
-  }) async {
-    CachedNetworkImage image =
-        ItemBuilder.buildCachedImage(imageUrl: imageUrl, context: context);
-    BaseCacheManager manager = image.cacheManager ?? DefaultCacheManager();
-    Map<String, String> headers = image.httpHeaders ?? {};
-    return await manager.getSingleFile(
-      image.imageUrl,
-      headers: headers,
-    );
-  }
-
-  static Future<File> copyAndRenameFile(File file, String newFileName) async {
-    String dir = file.parent.path;
-    String newPath = '$dir/$newFileName';
-    File copiedFile = await file.copy(newPath);
-    await copiedFile.rename(newPath);
-    return copiedFile;
-  }
-
-  static Future<bool> saveImage(
-    BuildContext context,
-    String imageUrl, {
-    bool showToast = true,
-  }) async {
-    try {
-      CachedNetworkImage image =
-          ItemBuilder.buildCachedImage(imageUrl: imageUrl, context: context);
-      BaseCacheManager manager = image.cacheManager ?? DefaultCacheManager();
-      Map<String, String> headers = image.httpHeaders ?? {};
-      File file = await manager.getSingleFile(
-        image.imageUrl,
-        headers: headers,
-      );
-      File copiedFile =
-          await copyAndRenameFile(file, Utils.extractFileNameFromUrl(imageUrl));
-      if (Utils.isMobile()) {
-        var result = await ImageGallerySaver.saveFile(
-          copiedFile.path,
-          name: Utils.extractFileNameFromUrl(imageUrl),
-        );
-        bool success = result != null && result['isSuccess'];
-        if (showToast) {
-          if (success) {
-            IToast.showTop(context, text: "图片已保存至相册");
-          } else {
-            IToast.showTop(context, text: "保存失败，请重试");
-          }
-        }
-        return success;
-      } else {
-        String? saveDirectory = await checkSaveDirectory(context);
-        if (Utils.isNotEmpty(saveDirectory)) {
-          String newPath =
-              '$saveDirectory/${Utils.extractFileNameFromUrl(imageUrl)}';
-          await copiedFile.copy(newPath);
-          if (showToast) {
-            IToast.showTop(context, text: "图片已保存至$saveDirectory");
-          }
-          return true;
-        } else {
-          IToast.showTop(context, text: "保存失败，请设置图片保存路径");
-          return false;
-        }
-      }
-    } catch (e) {
-      if (e is PathNotFoundException) {
-        IToast.showTop(context, text: "保存路径不存在");
-      }
-      IToast.showTop(context, text: "保存失败，请重试");
-      return false;
-    }
-  }
-
-  static Future<bool> saveImages(
-    BuildContext context,
-    List<String> imageUrls, {
-    bool showToast = true,
-  }) async {
-    try {
-      List<bool> statusList = await Future.wait(imageUrls.map((e) async {
-        return await saveImage(context, e, showToast: false);
-      }).toList());
-      bool result = statusList.every((element) => element);
-      if (showToast) {
-        if (result) {
-          if (Utils.isMobile()) {
-            IToast.showTop(context, text: "所有图片已保存至相册");
-          } else {
-            String? saveDirectory = await checkSaveDirectory(context);
-            IToast.showTop(context, text: "所有图片已保存至$saveDirectory");
-          }
-        } else {
-          IToast.showTop(context, text: "保存失败，请重试");
-        }
-      }
-      return result;
-    } catch (e) {
-      IToast.showTop(context, text: "保存失败，请重试");
-      return false;
-    }
-  }
-
-  static Future<String?> checkSaveDirectory(BuildContext context) async {
-    if (Utils.isDesktop()) {
-      String? saveDirectory = HiveUtil.getString(key: HiveUtil.savePathKey);
-      if (Utils.isEmpty(saveDirectory)) {
-        await Future.delayed(const Duration(milliseconds: 300), () async {
-          String? selectedDirectory =
-              await FilePicker.platform.getDirectoryPath(
-            dialogTitle: "选择图片/视频保存路径",
-            lockParentWindow: true,
-          );
-          if (selectedDirectory != null) {
-            saveDirectory = selectedDirectory;
-            HiveUtil.put(key: HiveUtil.savePathKey, value: selectedDirectory);
-          }
-        });
-      }
-      if (Utils.isNotEmpty(saveDirectory)) {
-        Directory(saveDirectory!).createSync(recursive: true);
-      }
-      return saveDirectory;
-    }
-    return null;
-  }
-
-  static Future<bool> saveVideo(
-    BuildContext context,
-    String videoUrl, {
-    bool showToast = true,
-    Function(int, int)? onReceiveProgress,
-  }) async {
-    try {
-      var appDocDir = await getTemporaryDirectory();
-      String savePath = appDocDir.path + extractFileNameFromUrl(videoUrl);
-      await Dio()
-          .download(videoUrl, savePath, onReceiveProgress: onReceiveProgress);
-      if (Utils.isMobile()) {
-        var result = await ImageGallerySaver.saveFile(
-          savePath,
-          name: Utils.extractFileNameFromUrl(videoUrl),
-        );
-        bool success = result != null && result['isSuccess'];
-        if (showToast) {
-          if (success) {
-            IToast.showTop(context, text: "视频已保存");
-          } else {
-            IToast.showTop(context, text: "保存失败，请重试");
-          }
-        }
-        return success;
-      } else {
-        String? saveDirectory = await checkSaveDirectory(context);
-        if (Utils.isNotEmpty(saveDirectory)) {
-          String newPath =
-              '$saveDirectory/demo/${Utils.extractFileNameFromUrl(videoUrl)}';
-          await File(savePath).copy(newPath);
-          if (showToast) {
-            IToast.showTop(context, text: "视频已保存至$saveDirectory");
-          }
-          return true;
-        } else {
-          IToast.showTop(context, text: "保存失败，请设置视频保存路径");
-          return false;
-        }
-      }
-    } catch (e) {
-      if (e is PathNotFoundException) {
-        IToast.showTop(context, text: "保存路径不存在");
-      }
-      IToast.showTop(context, text: "保存失败，请重试");
-      return false;
-    }
   }
 
   static String removeWatermark(String str) {
@@ -448,7 +198,7 @@ class Utils {
   }) async {
     late final EncodedImage encodedImage;
     if (getByFile && context != null) {
-      File file = await getImageFile(context, imageUrl);
+      File file = await FileUtil.getImageFile(context, imageUrl);
       encodedImage = await _getImagePixelsByFile(file);
     } else {
       encodedImage = await _getImagePixelsByUrl(imageUrl);
@@ -586,7 +336,6 @@ class Utils {
     }
   }
 
-  //将json字符串解析为Map对象
   static Map<String, dynamic> parseJson(String jsonStr) {
     return json.decode(jsonStr);
   }
@@ -595,9 +344,6 @@ class Utils {
     return json.decode(jsonStr);
   }
 
-  ///
-  /// 二分查找
-  ///
   static int binarySearch<T>(
       List<T> sortedList, T value, int Function(T, T) compare) {
     var min = 0;
@@ -623,11 +369,6 @@ class Utils {
 
   static bool isUrl(String url) => _urlRegex.hasMatch(url.trim());
 
-  static bool notEmpty(String text) => text.trim().isNotEmpty;
-
-  ///
-  /// 获取某个网站的图标
-  ///
   static Future<String?> fetchFavicon(String url) async {
     try {
       url = url.split("/").getRange(0, 3).join("/");
@@ -683,96 +424,5 @@ class Utils {
         return const SlideCaptchaBottomSheet();
       },
     );
-  }
-
-  static bool isAndroid() {
-    return Platform.isAndroid;
-  }
-
-  static bool isMobile() {
-    return !kIsWeb && (Platform.isIOS || Platform.isAndroid);
-  }
-
-  static bool isDesktop() {
-    return !kIsWeb &&
-        (Platform.isMacOS || Platform.isWindows || Platform.isLinux);
-  }
-
-  static Future<void> downloadAndUpdate(
-    BuildContext context,
-    String apkUrl,
-    String htmlUrl, {
-    String? version,
-    bool isUpdate = true,
-    Function(double)? onReceiveProgress,
-  }) async {
-    await Permission.storage.onDeniedCallback(() {
-      IToast.showTop(context, text: "请授予文件存储权限");
-    }).onGrantedCallback(() async {
-      if (Utils.isNotEmpty(apkUrl)) {
-        double progressValue = 0.0;
-        var appDocDir = await getTemporaryDirectory();
-        String savePath =
-            "${appDocDir.path}/${Utils.extractFileNameFromUrl(apkUrl)}";
-        try {
-          await Dio().download(
-            apkUrl,
-            savePath,
-            onReceiveProgress: (count, total) {
-              final value = count / total;
-              if (progressValue != value) {
-                if (progressValue < 1.0) {
-                  progressValue = count / total;
-                } else {
-                  progressValue = 0.0;
-                }
-                NotificationUtil.sendProgressNotification(
-                  0,
-                  (progressValue * 100).toInt(),
-                  title: isUpdate
-                      ? '正在下载新版本安装包...'
-                      : '正在下载版本${version ?? ""}的安装包...',
-                  payload: version ?? "",
-                );
-                onReceiveProgress?.call(progressValue);
-              }
-            },
-          ).then((response) async {
-            if (response.statusCode == 200) {
-              NotificationUtil.closeNotification(0);
-              NotificationUtil.sendInfoNotification(
-                1,
-                "下载完成",
-                isUpdate
-                    ? "新版本安装包已经下载完成，点击立即安装"
-                    : "版本${version ?? ""}的安装包已经下载完成，点击立即安装",
-                payload: savePath,
-              );
-            } else {
-              UriUtil.openExternal(htmlUrl);
-            }
-          });
-        } catch (e) {
-          IPrint.debug(e);
-          NotificationUtil.closeNotification(0);
-          NotificationUtil.sendInfoNotification(
-            2,
-            "下载失败，请重试",
-            "新版本安装包下载失败，请重试",
-          );
-        }
-      } else {
-        UriUtil.openExternal(htmlUrl);
-      }
-    }).onPermanentlyDeniedCallback(() {
-      IToast.showTop(context, text: "已拒绝文件存储权限，将跳转到浏览器下载");
-      UriUtil.openExternal(apkUrl);
-    }).onRestrictedCallback(() {
-      IToast.showTop(context, text: "请授予文件存储权限");
-    }).onLimitedCallback(() {
-      IToast.showTop(context, text: "请授予文件存储权限");
-    }).onProvisionalCallback(() {
-      IToast.showTop(context, text: "请授予文件存储权限");
-    }).request();
   }
 }

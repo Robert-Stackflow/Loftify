@@ -20,11 +20,11 @@ import '../../Api/post_api.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
-import '../../Widgets/BottomSheet/hottest_bottom_sheet.dart';
 import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
+import '../../Widgets/BottomSheet/newest_filter_bottom_sheet.dart';
 import '../../Widgets/Custom/custom_tab_indicator.dart';
 import '../../Widgets/Custom/sliver_appbar_delegate.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
 
@@ -852,9 +852,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
     required String desc,
     Function()? onTap,
   }) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
+    return ItemBuilder.buildClickItem( GestureDetector(
         onTap: onTap,
         child: Container(
           margin: const EdgeInsets.only(right: 12),

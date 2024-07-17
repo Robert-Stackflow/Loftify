@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 
+import '../../Resources/theme.dart';
+
 class StarBottomSheet extends StatefulWidget {
   const StarBottomSheet({
     super.key,
@@ -26,6 +28,10 @@ class StarBottomSheetState extends State<StarBottomSheet> {
       runAlignment: WrapAlignment.center,
       children: [
         Container(
+          decoration: BoxDecoration(
+            color: AppTheme.getBackground(context),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,

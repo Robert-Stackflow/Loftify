@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:loftify/Screens/Setting/update_log_screen.dart';
 import 'package:loftify/Utils/route_util.dart';
 import 'package:loftify/Utils/uri_util.dart';
+import 'package:loftify/Widgets/BottomSheet/bottom_sheet_builder.dart';
 import 'package:loftify/Widgets/BottomSheet/star_bottom_sheet.dart';
 import 'package:loftify/Widgets/Custom/no_shadow_scroll_behavior.dart';
-import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../Utils/hive_util.dart';
-import '../../Utils/utils.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Utils/responsive_util.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../generated/l10n.dart';
 
@@ -49,7 +49,7 @@ class _AboutSettingScreenState extends State<AboutSettingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: Utils.isDesktop()
+      appBar: ResponsiveUtil.isDesktop()
           ? null
           : ItemBuilder.buildSimpleAppBar(
               transparent: true,
@@ -141,14 +141,14 @@ class _AboutSettingScreenState extends State<AboutSettingScreen>
                       title: S.current.rate,
                       showLeading: true,
                       onTap: () {
-                        showMaterialModalBottomSheet(
-                          context: context,
+                        BottomSheetBuilder.showBottomSheet(
+                          context,
+                          (context) => const StarBottomSheet(),
                           shape: const RoundedRectangleBorder(
                             borderRadius: BorderRadius.vertical(
                               top: Radius.circular(16),
                             ),
                           ),
-                          builder: (context) => const StarBottomSheet(),
                         );
                       },
                       leading: Icons.rate_review_outlined,

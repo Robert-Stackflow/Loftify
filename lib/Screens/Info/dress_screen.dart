@@ -12,7 +12,7 @@ import '../../Models/enums.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 
 class DressScreen extends StatefulWidget {
@@ -39,6 +39,8 @@ class _DressScreenState extends State<DressScreen>
   bool _loading = false;
   int offset = 0;
   final EasyRefreshController _refreshController = EasyRefreshController();
+  final ScrollController _scrollController = ScrollController();
+  bool _noMore = false;
 
   @override
   void initState() {
@@ -49,10 +51,18 @@ class _DressScreenState extends State<DressScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     super.initState();
+    _scrollController.addListener(() {
+      if (!_noMore &&
+          _scrollController.position.pixels >
+              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
+        _onLoad();
+      }
+    });
   }
 
   _fetchList({bool refresh = false}) async {
     if (_loading) return;
+    if (refresh) _noMore = false;
     _loading = true;
     return await DressApi.getDressList(
       offset: refresh ? 0 : offset,
@@ -92,6 +102,7 @@ class _DressScreenState extends State<DressScreen>
           }
           if (mounted) setState(() {});
           if (t.isEmpty) {
+            _noMore = true;
             return IndicatorResult.noMore;
           } else {
             return IndicatorResult.success;
@@ -138,6 +149,7 @@ class _DressScreenState extends State<DressScreen>
     return WaterfallFlow.builder(
       physics: physics,
       cacheExtent: 9999,
+      controller: _scrollController,
       padding: const EdgeInsets.all(10),
       itemCount: _giftDressList.length,
       gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
@@ -192,6 +204,14 @@ class _DressScreenState extends State<DressScreen>
               context,
               text: "查看详情",
               background: Theme.of(context).primaryColor,
+              onTap: () {
+                RouteUtil.pushCupertinoRoute(
+                  context,
+                  DressDetailScreen(
+                    returnGiftDressId: item.returnGiftDressId,
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 4),
           ],
@@ -210,9 +230,8 @@ class _DressScreenState extends State<DressScreen>
       },
       center: Utils.isNotEmpty(widget.tag) ? true : false,
       title: Utils.isNotEmpty(widget.tag)
-          ? MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: ItemBuilder.buildTagItem(
+          ? ItemBuilder.buildClickItem(
+               ItemBuilder.buildTagItem(
                 context,
                 widget.tag!,
                 TagType.normal,

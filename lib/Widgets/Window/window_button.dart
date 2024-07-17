@@ -1,11 +1,12 @@
 import 'dart:io' show Platform;
 import 'dart:math';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../Utils/utils.dart';
+import '../../Utils/responsive_util.dart';
 import './mouse_state_builder.dart';
 
 typedef WindowButtonIconBuilder = Widget Function(
@@ -68,6 +69,7 @@ class WindowButton extends StatelessWidget {
   final EdgeInsets? padding;
   final VoidCallback? onPressed;
   final BorderRadius? borderRadius;
+  final double rotateAngle;
 
   WindowButton({
     super.key,
@@ -78,6 +80,7 @@ class WindowButton extends StatelessWidget {
     this.onPressed,
     this.borderRadius,
     this.animate = false,
+    this.rotateAngle = 0,
   }) {
     this.colors = colors ?? _defaultButtonColors;
   }
@@ -123,7 +126,12 @@ class WindowButton extends StatelessWidget {
         var padding = this.padding ?? EdgeInsets.all(defaultPadding);
         var animationMs =
             mouseState.isMouseOver ? (animate ? 100 : 0) : (animate ? 200 : 0);
-        Widget iconWithPadding = Padding(padding: padding, child: icon);
+        Widget iconWithPadding = Padding(
+            padding: padding,
+            child: Transform.rotate(
+              angle: rotateAngle,
+              child: icon,
+            ));
         iconWithPadding = AnimatedContainer(
             curve: Curves.easeOut,
             duration: Duration(milliseconds: animationMs),
@@ -148,6 +156,24 @@ class WindowButton extends StatelessWidget {
       },
     );
   }
+}
+
+class StayOnTopWindowButton extends WindowButton {
+  StayOnTopWindowButton({
+    super.key,
+    super.colors,
+    super.onPressed,
+    super.borderRadius,
+    bool? animate,
+    double? rotateAngle,
+  }) : super(
+            animate: animate ?? false,
+            padding: EdgeInsets.zero,
+            rotateAngle: rotateAngle ?? 0,
+            iconBuilder: (buttonContext) => Icon(
+                CupertinoIcons.pin,
+                size: 20,
+                color: buttonContext.iconColor));
 }
 
 class MinimizeWindowButton extends WindowButton {
@@ -179,7 +205,7 @@ class MaximizeWindowButton extends WindowButton {
                 Icons.check_box_outline_blank_rounded,
                 size: 19,
                 color: buttonContext.iconColor),
-            onPressed: onPressed ?? () => Utils.maximizeOrRestore());
+            onPressed: onPressed ?? () => ResponsiveUtil.maximizeOrRestore());
 }
 
 class RestoreWindowButton extends WindowButton {
@@ -194,7 +220,7 @@ class RestoreWindowButton extends WindowButton {
             animate: animate ?? false,
             iconBuilder: (buttonContext) => Icon(Icons.fullscreen_exit_rounded,
                 color: buttonContext.iconColor),
-            onPressed: onPressed ?? () => Utils.maximizeOrRestore());
+            onPressed: onPressed ?? () => ResponsiveUtil.maximizeOrRestore());
 }
 
 final _defaultCloseButtonColors = WindowButtonColors(

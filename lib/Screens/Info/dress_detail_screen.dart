@@ -11,7 +11,7 @@ import 'package:waterfall_flow/waterfall_flow.dart';
 import '../../Models/enums.dart';
 import '../../Utils/itoast.dart';
 import '../../Widgets/Custom/hero_photo_view_screen.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 
 class DressDetailScreen extends StatefulWidget {
@@ -123,6 +123,21 @@ class _DressDetailScreenState extends State<DressDetailScreen>
     );
   }
 
+  _dressOrUnDress(GiftPartItem item) async {
+    HapticFeedback.mediumImpact();
+    if (currentAvatarImg == item.partUrl) {
+      await HiveUtil.put(key: HiveUtil.customAvatarBoxKey, value: "");
+      currentAvatarImg = "";
+      setState(() {});
+      IToast.showTop(context, text: "取消佩戴成功");
+    } else {
+      await HiveUtil.put(key: HiveUtil.customAvatarBoxKey, value: item.partUrl);
+      currentAvatarImg = item.partUrl;
+      setState(() {});
+      IToast.showTop(context, text: "佩戴成功");
+    }
+  }
+
   _buildItem(GiftPartItem item) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
@@ -180,31 +195,15 @@ class _DressDetailScreenState extends State<DressDetailScreen>
           ),
           const SizedBox(height: 10),
           item.partType == 1
-              ? GestureDetector(
-                  onTap: () async {
-                    HapticFeedback.mediumImpact();
-                    if (currentAvatarImg == item.partUrl) {
-                      await HiveUtil.put(
-                          key: HiveUtil.customAvatarBoxKey, value: "");
-                      currentAvatarImg = "";
-                      setState(() {});
-                      IToast.showTop(context, text: "取消佩戴成功");
-                    } else {
-                      await HiveUtil.put(
-                          key: HiveUtil.customAvatarBoxKey,
-                          value: item.partUrl);
-                      currentAvatarImg = item.partUrl;
-                      setState(() {});
-                      IToast.showTop(context, text: "佩戴成功");
-                    }
+              ? ItemBuilder.buildRoundButton(
+                  context,
+                  text: currentAvatarImg == item.partUrl ? "正在佩戴" : "立即佩戴",
+                  background: currentAvatarImg == item.partUrl
+                      ? null
+                      : Theme.of(context).primaryColor,
+                  onTap: () {
+                    _dressOrUnDress(item);
                   },
-                  child: ItemBuilder.buildRoundButton(
-                    context,
-                    text: currentAvatarImg == item.partUrl ? "正在佩戴" : "立即佩戴",
-                    background: currentAvatarImg == item.partUrl
-                        ? null
-                        : Theme.of(context).primaryColor,
-                  ),
                 )
               : ItemBuilder.buildRoundButton(
                   context,

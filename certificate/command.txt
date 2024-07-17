@@ -1,0 +1,4 @@
+openssl genrsa -des3 -out loftify.key 2048
+openssl req -new -key loftify.key -out loftify.csr -config "D:\Program Files\Git\usr\ssl\openssl.cnf"
+openssl x509 -in loftify.csr -out loftify.crt -req -signkey loftify.key -days 9999 -config "D:\Program Files\Git\usr\ssl\openssl.cnf"
+openssl pkcs12 -export -out loftify.pfx -inkey loftify.key -in loftify.crt

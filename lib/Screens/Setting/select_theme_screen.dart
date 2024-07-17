@@ -3,7 +3,7 @@ import 'package:loftify/Providers/provider_manager.dart';
 import 'package:loftify/Resources/theme_color_data.dart';
 import 'package:loftify/Utils/hive_util.dart';
 
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../generated/l10n.dart';
 

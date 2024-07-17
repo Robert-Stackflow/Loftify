@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/widgets.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../Utils/utils.dart';
+import '../../Utils/responsive_util.dart';
 
 class _MoveWindow extends StatelessWidget {
   const _MoveWindow({this.child, this.onDoubleTap});
@@ -17,7 +17,7 @@ class _MoveWindow extends StatelessWidget {
         onPanStart: (details) {
           windowManager.startDragging();
         },
-        onDoubleTap: onDoubleTap ?? () => Utils.maximizeOrRestore(),
+        onDoubleTap: onDoubleTap ?? () => ResponsiveUtil.maximizeOrRestore(),
         child: child ?? Container());
   }
 }

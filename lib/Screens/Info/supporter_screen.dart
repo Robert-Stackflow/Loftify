@@ -12,7 +12,7 @@ import '../../Models/enums.dart';
 import '../../Models/user_response.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import 'user_detail_screen.dart';
 

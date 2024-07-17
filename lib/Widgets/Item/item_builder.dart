@@ -26,11 +26,13 @@ import '../../Screens/Post/tag_detail_screen.dart';
 import '../../Utils/asset_util.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/itoast.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../Custom/hero_photo_view_screen.dart';
 import '../Custom/selection_transformer.dart';
+import '../Dialog/dialog_builder.dart';
 import '../Scaffold/my_appbar.dart';
 import '../Scaffold/my_selection_toolbar.dart';
 
@@ -45,7 +47,7 @@ class ItemBuilder {
     required BuildContext context,
     bool transparent = false,
   }) {
-    bool showLeading = !Utils.isDesktop();
+    bool showLeading = !ResponsiveUtil.isDesktop();
     return MyAppBar(
       key: key,
       backgroundColor: transparent
@@ -80,7 +82,7 @@ class ItemBuilder {
           : Container(),
       actions: [
         ...?actions,
-        // if (Utils.isDesktop())
+        // if (ResponsiveUtil.isDesktop())
         //   Row(
         //     children: [
         //       MinimizeWindowButton(
@@ -107,8 +109,8 @@ class ItemBuilder {
     bool transparent = false,
     Color? backgroundColor,
   }) {
-    bool showLeading = leading != null && !Utils.isDesktop();
-    // center = Utils.isDesktop() ? false : center;
+    bool showLeading = leading != null && !ResponsiveUtil.isDesktop();
+    // center = ResponsiveUtil.isDesktop() ? false : center;
     return MyAppBar(
       key: key,
       backgroundColor: transparent
@@ -146,7 +148,7 @@ class ItemBuilder {
                 ),
       actions: [
         ...?actions,
-        // if (Utils.isDesktop())
+        // if (ResponsiveUtil.isDesktop())
         //   Row(
         //     children: [
         //       MinimizeWindowButton(
@@ -185,14 +187,40 @@ class ItemBuilder {
       color: Colors.transparent,
       shape: const CircleBorder(),
       clipBehavior: Clip.hardEdge,
-      child: Ink(
-        child: InkWell(
-          onTap: onTap,
-          onLongPress: onLongPress,
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            child: icon ?? Container(),
-          ),
+      child: InkWell(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          child: icon ?? Container(),
+        ),
+      ),
+    );
+  }
+
+  static Widget buildRoundIconButton({
+    required BuildContext context,
+    required dynamic icon,
+    required Function()? onTap,
+    Function()? onLongPress,
+    Color? normalBackground,
+    double radius = 8,
+    EdgeInsets? padding,
+    bool disabled = false,
+  }) {
+    return Material(
+      color: disabled
+          ? Colors.transparent
+          : normalBackground ?? Colors.transparent,
+      shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),
+      clipBehavior: Clip.hardEdge,
+      child: InkWell(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        child: Container(
+          padding: padding ?? const EdgeInsets.all(10),
+          child: icon ?? Container(),
         ),
       ),
     );
@@ -1468,40 +1496,44 @@ class ItemBuilder {
     TextStyle? textStyle,
     double? width,
   }) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
+    return Material(
+      color: background ?? Theme.of(context).cardColor,
+      borderRadius: BorderRadius.circular(radius),
+      child: InkWell(
         onTap: onTap,
-        child: Container(
-          width: width,
-          padding: padding ??
-              const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: background ?? Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(radius),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (icon != null) icon,
-              Text(
-                text ?? "",
-                style: textStyle ??
-                    Theme.of(context).textTheme.titleSmall?.apply(
-                          color: color ??
-                              (background != null
-                                  ? Colors.white
-                                  : Theme.of(context)
-                                      .textTheme
-                                      .titleSmall
-                                      ?.color),
-                          fontWeightDelta: 2,
-                          fontSizeDelta: fontSizeDelta,
-                        ),
-              ),
-            ],
+        borderRadius: BorderRadius.circular(radius),
+        child: ItemBuilder.buildClickItem(
+          Container(
+            width: width,
+            padding: padding ??
+                const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(radius),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (icon != null) icon,
+                Text(
+                  text ?? "",
+                  style: textStyle ??
+                      Theme.of(context).textTheme.titleSmall?.apply(
+                            color: color ??
+                                (background != null
+                                    ? Colors.white
+                                    : Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.color),
+                            fontWeightDelta: 2,
+                            fontSizeDelta: fontSizeDelta,
+                          ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1532,8 +1564,15 @@ class ItemBuilder {
               background: Theme.of(context).primaryColor,
               fontSizeDelta: 2,
               onTap: () {
-                RouteUtil.pushCupertinoRoute(
-                    context, const LoginByCaptchaScreen());
+                if (ResponsiveUtil.isLandscape()) {
+                  DialogBuilder.showPageDialog(
+                    context,
+                    child: const LoginByCaptchaScreen(),
+                  );
+                } else {
+                  RouteUtil.pushCupertinoRoute(
+                      context, const LoginByCaptchaScreen());
+                }
               },
             ),
           ],
@@ -1548,36 +1587,40 @@ class ItemBuilder {
     required Function() onTap,
     String? positiveText,
     String? negtiveText,
+    double radius = 50,
+    Color? outline,
   }) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
+    return Material(
+      color: isFollowed ? Theme.of(context).cardColor : Colors.transparent,
+      borderRadius: BorderRadius.circular(radius),
+      child: InkWell(
         onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            color:
-                isFollowed ? Theme.of(context).cardColor : Colors.transparent,
-            borderRadius: BorderRadius.circular(50),
-            border: Border.all(
-              color: isFollowed
-                  ? Theme.of(context).dividerColor
-                  : Theme.of(context).primaryColor.withAlpha(127),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Text(
-                isFollowed ? positiveText ?? "已关注" : negtiveText ?? "关注",
-                style: TextStyle(
-                  color: isFollowed
-                      ? Theme.of(context).textTheme.labelSmall?.color
-                      : Theme.of(context).primaryColor,
-                  fontSize: 12,
-                ),
+        borderRadius: BorderRadius.circular(radius),
+        child: ItemBuilder.buildClickItem(
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(radius),
+              border: Border.all(
+                color: isFollowed
+                    ? Theme.of(context).dividerColor
+                    : outline ?? Theme.of(context).primaryColor.withAlpha(127),
+                width: 1,
               ),
-            ],
+            ),
+            child: Row(
+              children: [
+                Text(
+                  isFollowed ? positiveText ?? "已关注" : negtiveText ?? "关注",
+                  style: TextStyle(
+                    color: isFollowed
+                        ? Theme.of(context).textTheme.labelSmall?.color
+                        : Theme.of(context).primaryColor,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -2239,46 +2282,51 @@ class ItemBuilder {
     Function()? onTap,
   }) {
     Map countWithScale = Utils.formatCountToMap(count ?? 0);
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          count != null
-              ? Row(
-                  children: [
-                    Text(
-                      countWithScale['count'],
-                      style: Theme.of(context).textTheme.titleLarge?.apply(
-                          color: countColor,
-                          fontWeightDelta: countFontWeightDelta),
-                    ),
-                    if (countWithScale.containsKey("scale"))
-                      const SizedBox(width: 2),
-                    if (countWithScale.containsKey("scale"))
+    return MouseRegion(
+      cursor:
+          onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Column(
+          children: [
+            count != null
+                ? Row(
+                    children: [
                       Text(
-                        countWithScale['scale'],
-                        style: Theme.of(context).textTheme.titleSmall?.apply(
-                            fontSizeDelta: -2,
+                        countWithScale['count'],
+                        style: Theme.of(context).textTheme.titleLarge?.apply(
                             color: countColor,
                             fontWeightDelta: countFontWeightDelta),
                       ),
-                  ],
-                )
-              : Text(
-                  "-",
-                  style: Theme.of(context).textTheme.titleLarge?.apply(
-                      color: countColor, fontWeightDelta: countFontWeightDelta),
-                ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.labelMedium?.apply(
-                  fontSizeDelta: -1,
-                  color: labelColor,
-                  fontWeightDelta: labelFontWeightDelta,
-                ),
-          ),
-        ],
+                      if (countWithScale.containsKey("scale"))
+                        const SizedBox(width: 2),
+                      if (countWithScale.containsKey("scale"))
+                        Text(
+                          countWithScale['scale'],
+                          style: Theme.of(context).textTheme.titleSmall?.apply(
+                              fontSizeDelta: -2,
+                              color: countColor,
+                              fontWeightDelta: countFontWeightDelta),
+                        ),
+                    ],
+                  )
+                : Text(
+                    "-",
+                    style: Theme.of(context).textTheme.titleLarge?.apply(
+                        color: countColor,
+                        fontWeightDelta: countFontWeightDelta),
+                  ),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.labelMedium?.apply(
+                    fontSizeDelta: -1,
+                    color: labelColor,
+                    fontWeightDelta: labelFontWeightDelta,
+                  ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2395,23 +2443,26 @@ class ItemBuilder {
     String str, {
     Function(String)? onTap,
   }) {
-    return GestureDetector(
-      onTap: () {
-        onTap?.call(str);
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(50),
-          border: Border.all(
-            color: Theme.of(context).dividerColor,
-            width: 0.5,
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () {
+          onTap?.call(str);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(50),
+            border: Border.all(
+              color: Theme.of(context).dividerColor,
+              width: 0.5,
+            ),
           ),
-        ),
-        child: Text(
-          str,
-          style: Theme.of(context).textTheme.titleSmall,
+          child: Text(
+            str,
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
         ),
       ),
     );
@@ -3088,6 +3139,10 @@ class ItemBuilder {
         ),
       ),
     );
+  }
+
+  static buildClickItem(Widget child) {
+    return MouseRegion(cursor: SystemMouseCursors.click, child: child);
   }
 }
 

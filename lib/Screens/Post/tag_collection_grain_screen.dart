@@ -12,7 +12,7 @@ import '../../Models/enums.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/Custom/custom_tab_indicator.dart';
 import '../../Widgets/Custom/sliver_appbar_delegate.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import 'grain_detail_screen.dart';
 
@@ -128,9 +128,7 @@ class _TagCollectionGrainScreenState extends State<TagCollectionGrainScreen>
       onLeadingTap: () {
         Navigator.pop(context);
       },
-      title: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: ItemBuilder.buildTagItem(
+      title: ItemBuilder.buildClickItem( ItemBuilder.buildTagItem(
           context,
           widget.tag,
           TagType.normal,

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:loftify/Utils/file_util.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../Api/github_api.dart';
 import '../../Models/github_response.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../generated/l10n.dart';
 
@@ -137,7 +138,7 @@ class _UpdateLogScreenState extends State<UpdateLogScreen>
                         color: Theme.of(context).textTheme.labelMedium?.color,
                       ),
                       onTap: () {
-                        Utils.downloadAndUpdate(
+                        FileUtil.downloadAndUpdate(
                           context,
                           item.assets.isNotEmpty
                               ? item.assets[0].browserDownloadUrl

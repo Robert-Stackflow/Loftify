@@ -11,16 +11,18 @@ import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/iprint.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Widgets/Custom/no_shadow_scroll_behavior.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../../Models/constant.dart';
 import '../../Models/simple_response.dart';
 import '../../Utils/request_util.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
-import '../../Utils/utils.dart';
 import '../../Widgets/Item/item_builder.dart';
 
 class LoginByCaptchaScreen extends StatefulWidget {
-  const LoginByCaptchaScreen({super.key, this.initPhone});
+  const LoginByCaptchaScreen(
+      {super.key, this.initPhone});
 
   static const String routeName = "/login/captcha";
 
@@ -31,7 +33,7 @@ class LoginByCaptchaScreen extends StatefulWidget {
 }
 
 class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WindowListener {
   late TextEditingController _mobileController;
   late TextEditingController _captchaController;
   late TextEditingController _captchaCodeController;
@@ -41,6 +43,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
 
   @override
   void initState() {
+    WindowManager.instance.addListener(this);
     super.initState();
     _mobileController = TextEditingController();
     _captchaController = TextEditingController();
@@ -82,12 +85,14 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
         Timer.periodic(const Duration(seconds: 1), (timer) {
           if (timer.tick == 60) {
             timer.cancel();
-            setState(() {
-              _isFetchingCaptchaCode = false;
-              _captchaText = "获取验证码";
-              _refrechPhotoCaptcha();
-              _captchaController.text = "";
-            });
+            if(mounted){
+              setState(() {
+                _isFetchingCaptchaCode = false;
+                _captchaText = "获取验证码";
+                _refrechPhotoCaptcha();
+                _captchaController.text = "";
+              });
+            }
           } else {
             if (mounted) {
               setState(() {
@@ -124,7 +129,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
             key: HiveUtil.deviceIdKey, value: loginResponse.deviceid);
         await HiveUtil.put(
             key: HiveUtil.tokenTypeKey, value: TokenType.captchCode.index);
-        Utils.returnToMainScreen(context);
+        ResponsiveUtil.returnToMainScreen(context);
       }
     });
   }

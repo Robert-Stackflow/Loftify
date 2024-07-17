@@ -20,9 +20,10 @@ import '../../Providers/provider_manager.dart';
 import '../../Resources/colors.dart';
 import '../../Resources/theme.dart';
 import '../../Utils/itoast.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/Custom/custom_tab_indicator.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import 'home_screen.dart';
 
@@ -86,7 +87,7 @@ class DynamicScreenState extends State<DynamicScreen>
       backgroundColor: AppTheme.getBackground(context),
       appBar: ProviderManager.globalProvider.token.isNotEmpty
           ? _buildAppBar()
-          : Utils.isDesktop()
+          : ResponsiveUtil.isDesktop()
               ? null
               : ItemBuilder.buildAppBar(
                   context: context,

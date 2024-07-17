@@ -21,9 +21,10 @@ import 'package:responsive_builder/responsive_builder.dart';
 import '../../Models/user_response.dart';
 import '../../Providers/global_provider.dart';
 import '../../Providers/provider_manager.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../Info/following_follower_screen.dart';
 import '../Info/system_notice_screen.dart';
@@ -132,7 +133,7 @@ class _MineScreenState extends State<MineScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      appBar: Utils.isDesktop() ? null : _buildAppBar(),
+      appBar: ResponsiveUtil.isDesktop() ? null : _buildAppBar(),
       body: _buildMainBody(),
     );
   }
@@ -209,15 +210,19 @@ class _MineScreenState extends State<MineScreen>
           flex: 1,
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 10),
-            child: ListView(
-              cacheExtent: 9999,
-              children: [
-                const SizedBox(height: 10),
-                if (meInfoData != null) _buildFollowingCard(),
-                const SizedBox(height: 10),
-                if (meInfoData != null) _buildFollowerCard(),
-                const SizedBox(height: 20),
-              ],
+            child: ScrollConfiguration(
+              behavior:
+                  ScrollConfiguration.of(context).copyWith(scrollbars: false),
+              child: ListView(
+                cacheExtent: 9999,
+                children: [
+                  const SizedBox(height: 10),
+                  if (meInfoData != null) _buildFollowingCard(),
+                  const SizedBox(height: 10),
+                  if (meInfoData != null) _buildFollowerCard(),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         ),

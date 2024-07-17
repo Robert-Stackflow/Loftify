@@ -20,7 +20,6 @@ class CustomDialogButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
     return Material(
       color: isOutlined ? Colors.transparent : bgColor,
       borderRadius: BorderRadius.circular(borderRadius),

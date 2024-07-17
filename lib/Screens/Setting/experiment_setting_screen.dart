@@ -8,11 +8,11 @@ import '../../Providers/global_provider.dart';
 import '../../Providers/provider_manager.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/itoast.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
-import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../generated/l10n.dart';
 import '../Lock/pin_change_screen.dart';
@@ -60,7 +60,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             children: [
-              if (Utils.isMobile()) ..._privacySettings(),
+              if (ResponsiveUtil.isMobile()) ..._privacySettings(),
               const SizedBox(height: 10),
               ItemBuilder.buildEntryItem(
                 context: context,
@@ -251,7 +251,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
   onSafeModeTapped() {
     setState(() {
       _enableSafeMode = !_enableSafeMode;
-      if (Utils.isMobile()) {
+      if (ResponsiveUtil.isMobile()) {
         if (_enableSafeMode) {
           FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
         } else {

@@ -12,9 +12,10 @@ import 'package:loftify/Utils/request_util.dart';
 import 'package:loftify/Widgets/Dialog/custom_dialog.dart';
 
 import '../../Utils/hive_util.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
-import '../../Utils/utils.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/Dialog/dialog_builder.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../generated/l10n.dart';
 import 'about_setting_screen.dart';
@@ -191,7 +192,7 @@ class _SettingScreenState extends State<SettingScreen>
         bottomRadius: true,
         title: "退出登录",
         onTap: () async {
-          CustomConfirmDialog.showAnimatedFromBottom(
+          DialogBuilder.showConfirmDialog(
             context,
             title: "退出登录",
             message: "确认退出登录？退出后本地的设置项不会被删除",
@@ -205,7 +206,7 @@ class _SettingScreenState extends State<SettingScreen>
               await RequestUtil.getInstance().clearCookie();
               HiveUtil.delete(key: HiveUtil.tokenTypeKey).then((value) {
                 IToast.showTop(context, text: "退出成功");
-                Utils.returnToMainScreen(context);
+                ResponsiveUtil.returnToMainScreen(context);
               });
             },
             onTapCancel: () {},

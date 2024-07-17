@@ -12,7 +12,7 @@ import '../../Api/post_api.dart';
 import '../../Models/enums.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Utils/itoast.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
 

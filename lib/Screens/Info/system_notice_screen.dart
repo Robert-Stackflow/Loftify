@@ -10,10 +10,11 @@ import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/route_util.dart';
 
+import '../../Models/enums.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/Custom/custom_tab_indicator.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 
 class SystemNoticeScreen extends StatefulWidget {
@@ -49,6 +50,22 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
   final EasyRefreshController _collectionRefreshController =
       EasyRefreshController();
   final EasyRefreshController _otherRefreshController = EasyRefreshController();
+  final ScrollController _allScrollController = ScrollController();
+  final ScrollController _likeScrollController = ScrollController();
+  final ScrollController _recommendScrollController = ScrollController();
+  final ScrollController _giftScrollController = ScrollController();
+  final ScrollController _atScrollController = ScrollController();
+  final ScrollController _subscribeScrollController = ScrollController();
+  final ScrollController _collectionScrollController = ScrollController();
+  final ScrollController _otherScrollController = ScrollController();
+  bool _allNoMore = false;
+  bool _likeNoMore = false;
+  bool _recommendNoMore = false;
+  bool _giftNoMore = false;
+  bool _atNoMore = false;
+  bool _subscribeNoMore = false;
+  bool _collectionNoMore = false;
+  bool _otherNoMore = false;
   final List<String> _tabLabelList = [
     "全部",
     "喜欢",
@@ -71,7 +88,89 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     super.initState();
+    initScrollController();
     initTab();
+  }
+
+  initScrollController() {
+    _allScrollController.addListener(() {
+      if (!_allNoMore &&
+          _allScrollController.position.pixels >
+              _allScrollController.position.maxScrollExtent -
+                  kLoadExtentOffset) {
+        _fetchSystemNotices(MessageType.all, _allMessages,
+            resetNoMore: () => _allNoMore = false,
+            onNoMore: () => _allNoMore = true);
+      }
+    });
+    _likeScrollController.addListener(() {
+      if (!_likeNoMore &&
+          _likeScrollController.position.pixels >
+              _likeScrollController.position.maxScrollExtent -
+                  kLoadExtentOffset) {
+        _fetchLikeMessages();
+      }
+    });
+    _recommendScrollController.addListener(() {
+      if (!_recommendNoMore &&
+          _recommendScrollController.position.pixels >
+              _recommendScrollController.position.maxScrollExtent -
+                  kLoadExtentOffset) {
+        _fetchSystemNotices(MessageType.recommend, _recommendMessages,
+            resetNoMore: () => _recommendNoMore = false,
+            onNoMore: () => _recommendNoMore = true);
+      }
+    });
+    _giftScrollController.addListener(() {
+      if (!_giftNoMore &&
+          _giftScrollController.position.pixels >
+              _giftScrollController.position.maxScrollExtent -
+                  kLoadExtentOffset) {
+        _fetchSystemNotices(MessageType.gift, _giftMessages,
+            resetNoMore: () => _giftNoMore = false,
+            onNoMore: () => _giftNoMore = true);
+      }
+    });
+    _atScrollController.addListener(() {
+      if (!_atNoMore &&
+          _atScrollController.position.pixels >
+              _atScrollController.position.maxScrollExtent -
+                  kLoadExtentOffset) {
+        _fetchSystemNotices(MessageType.at, _atMessages,
+            resetNoMore: () => _atNoMore = false,
+            onNoMore: () => _atNoMore = true);
+      }
+    });
+    _subscribeScrollController.addListener(() {
+      if (!_subscribeNoMore &&
+          _subscribeScrollController.position.pixels >
+              _subscribeScrollController.position.maxScrollExtent -
+                  kLoadExtentOffset) {
+        _fetchSystemNotices(MessageType.subscribe, _subscribeMessages,
+            resetNoMore: () => _subscribeNoMore = false,
+            onNoMore: () => _subscribeNoMore = true);
+      }
+    });
+    _collectionScrollController.addListener(() {
+      if (!_collectionNoMore &&
+          _collectionScrollController.position.pixels >
+              _collectionScrollController.position.maxScrollExtent -
+                  kLoadExtentOffset) {
+        _fetchSystemNotices(MessageType.collection, _collectionMessages,
+            resetNoMore: () => _collectionNoMore = false,
+            onNoMore: () => _collectionNoMore = true);
+      }
+    });
+    _otherScrollController.addListener(() {
+      if (!_otherNoMore &&
+          _otherScrollController.position.pixels >
+              _otherScrollController.position.maxScrollExtent -
+                  kLoadExtentOffset) {
+        _fetchSystemNotices(MessageType.other, _otherMessages,
+            resetNoMore: () => _otherNoMore = false,
+            onNoMore: () => _otherNoMore = true);
+      }
+    });
   }
 
   initTab() {
@@ -88,6 +187,7 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
 
   _fetchLikeMessages({bool refresh = false}) async {
     if (_loading) return;
+    if (refresh) _likeNoMore = false;
     _loading = true;
     int offset = refresh ? 0 : _likeMessages.length;
     return await HiveUtil.getUserInfo().then((blogInfo) async {
@@ -108,6 +208,7 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
             _likeMessages.addAll(t);
             if (mounted) setState(() {});
             if (t.isEmpty && !refresh) {
+              _likeNoMore = true;
               return IndicatorResult.noMore;
             } else {
               return IndicatorResult.success;
@@ -124,9 +225,15 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
     });
   }
 
-  _fetchSystemNotices(MessageType type, List list,
-      {bool refresh = false}) async {
+  _fetchSystemNotices(
+    MessageType type,
+    List list, {
+    bool refresh = false,
+    Function()? resetNoMore,
+    Function()? onNoMore,
+  }) async {
     if (_loading) return;
+    if (refresh) resetNoMore?.call();
     _loading = true;
     int offset = refresh ? 0 : _allMessages.length;
     return await HiveUtil.getUserInfo().then((blogInfo) async {
@@ -149,6 +256,7 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
             list.addAll(t);
             if (mounted) setState(() {});
             if (t.isEmpty && !refresh) {
+              onNoMore?.call();
               return IndicatorResult.noMore;
             } else {
               return IndicatorResult.success;
@@ -199,14 +307,22 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
           MessageType.all,
           _allMessages,
           refresh: true,
+          resetNoMore: () => _allNoMore = false,
+          onNoMore: () => _allNoMore = true,
         );
       },
       refreshOnStart: true,
       onLoad: () async {
-        return await _fetchSystemNotices(MessageType.all, _allMessages);
+        return await _fetchSystemNotices(
+          MessageType.all,
+          _allMessages,
+          resetNoMore: () => _allNoMore = false,
+          onNoMore: () => _allNoMore = true,
+        );
       },
       triggerAxis: Axis.vertical,
       child: ListView.builder(
+        controller: _allScrollController,
         padding: const EdgeInsets.only(top: 10),
         itemBuilder: (context, index) => _buildItem(_allMessages[index]),
         itemCount: _allMessages.length,
@@ -226,6 +342,7 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
       },
       triggerAxis: Axis.vertical,
       child: ListView.builder(
+        controller: _likeScrollController,
         padding: const EdgeInsets.only(top: 10),
         itemBuilder: (context, index) => _buildItem(_likeMessages[index]),
         itemCount: _likeMessages.length,
@@ -241,15 +358,22 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
           MessageType.recommend,
           _recommendMessages,
           refresh: true,
+          resetNoMore: () => _recommendNoMore = false,
+          onNoMore: () => _recommendNoMore = true,
         );
       },
       refreshOnStart: true,
       onLoad: () async {
         return await _fetchSystemNotices(
-            MessageType.recommend, _recommendMessages);
+          MessageType.recommend,
+          _recommendMessages,
+          resetNoMore: () => _recommendNoMore = false,
+          onNoMore: () => _recommendNoMore = true,
+        );
       },
       triggerAxis: Axis.vertical,
       child: ListView.builder(
+        controller: _recommendScrollController,
         padding: const EdgeInsets.only(top: 10),
         itemBuilder: (context, index) => _buildItem(_recommendMessages[index]),
         itemCount: _recommendMessages.length,
@@ -265,14 +389,22 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
           MessageType.gift,
           _giftMessages,
           refresh: true,
+          resetNoMore: () => _giftNoMore = false,
+          onNoMore: () => _giftNoMore = true,
         );
       },
       refreshOnStart: true,
       onLoad: () async {
-        return await _fetchSystemNotices(MessageType.gift, _giftMessages);
+        return await _fetchSystemNotices(
+          MessageType.gift,
+          _giftMessages,
+          resetNoMore: () => _giftNoMore = false,
+          onNoMore: () => _giftNoMore = true,
+        );
       },
       triggerAxis: Axis.vertical,
       child: ListView.builder(
+        controller: _giftScrollController,
         padding: const EdgeInsets.only(top: 10),
         itemBuilder: (context, index) => _buildItem(_giftMessages[index]),
         itemCount: _giftMessages.length,
@@ -288,14 +420,22 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
           MessageType.at,
           _atMessages,
           refresh: true,
+          resetNoMore: () => _atNoMore = false,
+          onNoMore: () => _atNoMore = true,
         );
       },
       refreshOnStart: true,
       onLoad: () async {
-        return await _fetchSystemNotices(MessageType.at, _atMessages);
+        return await _fetchSystemNotices(
+          MessageType.at,
+          _atMessages,
+          resetNoMore: () => _atNoMore = false,
+          onNoMore: () => _atNoMore = true,
+        );
       },
       triggerAxis: Axis.vertical,
       child: ListView.builder(
+        controller: _atScrollController,
         padding: const EdgeInsets.only(top: 10),
         itemBuilder: (context, index) => _buildItem(_atMessages[index]),
         itemCount: _atMessages.length,
@@ -311,15 +451,22 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
           MessageType.subscribe,
           _subscribeMessages,
           refresh: true,
+          resetNoMore: () => _subscribeNoMore = false,
+          onNoMore: () => _subscribeNoMore = true,
         );
       },
       refreshOnStart: true,
       onLoad: () async {
         return await _fetchSystemNotices(
-            MessageType.subscribe, _subscribeMessages);
+          MessageType.subscribe,
+          _subscribeMessages,
+          resetNoMore: () => _subscribeNoMore = false,
+          onNoMore: () => _subscribeNoMore = true,
+        );
       },
       triggerAxis: Axis.vertical,
       child: ListView.builder(
+        controller: _subscribeScrollController,
         padding: const EdgeInsets.only(top: 10),
         itemBuilder: (context, index) => _buildItem(_subscribeMessages[index]),
         itemCount: _subscribeMessages.length,
@@ -335,15 +482,22 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
           MessageType.collection,
           _collectionMessages,
           refresh: true,
+          resetNoMore: () => _collectionNoMore = false,
+          onNoMore: () => _collectionNoMore = true,
         );
       },
       refreshOnStart: true,
       onLoad: () async {
         return await _fetchSystemNotices(
-            MessageType.collection, _collectionMessages);
+          MessageType.collection,
+          _collectionMessages,
+          resetNoMore: () => _collectionNoMore = false,
+          onNoMore: () => _collectionNoMore = true,
+        );
       },
       triggerAxis: Axis.vertical,
       child: ListView.builder(
+        controller: _collectionScrollController,
         padding: const EdgeInsets.only(top: 10),
         itemBuilder: (context, index) => _buildItem(_collectionMessages[index]),
         itemCount: _collectionMessages.length,
@@ -359,14 +513,22 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
           MessageType.other,
           _otherMessages,
           refresh: true,
+          resetNoMore: () => _otherNoMore = false,
+          onNoMore: () => _otherNoMore = true,
         );
       },
       refreshOnStart: true,
       onLoad: () async {
-        return await _fetchSystemNotices(MessageType.other, _otherMessages);
+        return await _fetchSystemNotices(
+          MessageType.other,
+          _otherMessages,
+          resetNoMore: () => _otherNoMore = false,
+          onNoMore: () => _otherNoMore = true,
+        );
       },
       triggerAxis: Axis.vertical,
       child: ListView.builder(
+        controller: _otherScrollController,
         padding: const EdgeInsets.only(top: 10),
         itemBuilder: (context, index) => _buildItem(_otherMessages[index]),
         itemCount: _otherMessages.length,

@@ -6,7 +6,8 @@ import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
 import '../../Resources/theme.dart';
 import '../../Utils/itoast.dart';
-import '../../Widgets/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/Dialog/dialog_builder.dart';
+import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../generated/l10n.dart';
 
@@ -138,7 +139,7 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
             positiveText: "解除屏蔽",
             negtiveText: "解除屏蔽",
             onTap: () {
-              CustomConfirmDialog.showAnimatedFromBottom(
+              DialogBuilder.showConfirmDialog(
                 context,
                 title: "解除屏蔽标签",
                 message: "确认解除屏蔽「$tag」？",

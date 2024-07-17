@@ -1,5 +1,5 @@
 name: loftify
-version: 1.7.0
+version: 1.8.0
 description: An third-party application for LOFTER
 
 environment:
@@ -22,10 +22,10 @@ dependencies:
   like_button: ^2.0.5 # 点赞按钮
   sliding_up_panel: ^2.0.0+1 # 滑动面板
   blur: ^3.1.0 # 模糊
-  path_drawing: ^1.0.1 # 路径绘制
+  path_drawing: ^1.0.1
   group_button: ^5.3.4 # 分组按钮
   custom_sliding_segmented_control: ^1.8.3 # 分段控制器
-  flutter_inappwebview: ^6.0.0
+  flutter_inappwebview: ^6.0.0 # Webview
   # 系统
   provider: ^6.0.5 # 状态管理
   local_auth: ^2.2.0 # 指纹验证
@@ -34,24 +34,21 @@ dependencies:
   device_info_plus: ^10.1.0 # 设备信息
   flutter_windowmanager: ^0.2.0 # 窗口管理
   share_plus: ^9.0.0 # 分享
-  url_launcher: ^6.3.0 # ULR跳转
+  url_launcher: ^6.3.0 # URL跳转
+  app_links: ^6.1.4 # 应用URI
   flutter_displaymode: ^0.6.0 # 设置刷新率
   image_gallery_saver: ^2.0.3 # 保存图片
-  permission_handler: ^11.3.1
-  install_plugin: ^2.1.0
-  flutter_local_notifications: ^17.2.1+2
+  permission_handler: ^11.3.1 # 权限管理
+  install_plugin: ^2.1.0 # 安装APP
+  flutter_local_notifications: ^17.2.1+2 # 通知
   # 存储/网络
   path:
-  sqflite: ^2.3.3+1 # SQLite数据库
-  sqflite_common_ffi: ^2.3.3 # SQLite数据库
   http: ^1.2.1
-  dio: ^5.4.3+1
-  hive: ^2.2.3 # Hive
-  hive_flutter: ^1.1.0 # Hive
+  dio: ^5.4.3+1 # 网络请求
+  hive: ^4.0.0-dev.2 # 轻量存储
   path_provider: ^2.0.12
-  file_picker: ^8.0.6
-  crypto: ^3.0.3 # 加密
-  encrypt: ^5.0.3 # 加密
+  sqflite: ^2.3.3+1 # SQLite数据库
+  file_picker: ^8.0.6 # 文件选择
   pointycastle: 3.9.1
   dio_cache_interceptor: ^3.5.0 # dio缓存
   dio_cookie_manager: ^3.1.1 # dio cookie管理
@@ -61,15 +58,25 @@ dependencies:
   intl:
   html: ^0.15.0
   tuple: ^2.0.0 # 元组
+  crypto: ^3.0.3 # 加密
+  encrypt: ^5.0.3 # 加密
+  flutter_native_splash: ^2.4.1 # Splash屏
   palette_generator: ^0.3.3+3 # 获取主色调
-  flutter_native_splash: ^2.4.1
   vector_math: ^2.1.4
-  app_links: ^6.1.4
-  chinese_font_library: ^1.2.0
-  restart_app: ^1.2.1
-  responsive_builder: ^0.7.1
-  tray_manager: ^0.2.3
-  window_manager: ^0.3.9
+  restart_app: ^1.2.1 # 重启APP
+  # 平台适配
+  responsive_builder: ^0.7.1 # 响应式布局
+  tray_manager: ^0.2.3 # 托盘图标
+  flutter_resizable_container: ^2.0.0 # 可调整大小的容器
+  window_manager: ^0.3.9 # 窗口管理
+  desktop_multi_window: # 多窗口
+    path: third-party/desktop_multi_window
+  window_size: # 窗口大小
+    git:
+      url: https://github.com/google/flutter-desktop-embedding.git
+      path: plugins/window_size
+      ref: a738913c8ce2c9f47515382d40827e794a334274
+  texture_rgba_renderer: ^0.0.16 # 纹理渲染
 
 dev_dependencies:
   flutter_test:
@@ -78,14 +85,21 @@ dev_dependencies:
   flutter_lints: ^4.0.0
   json_serializable: ^6.7.1
   msix: ^3.16.7
+  sqflite_common_ffi: ^2.3.3
 
 msix_config:
   display_name: Loftify
   publisher_display_name: Cloudchewie
   identity_name: com.cloudchewie.loftify
-  msix_version: 1.7.0.0
-  logo_path: D:\Repositories\Loftify\assets\logo-transparent-big.png
+  msix_version: 1.8.0.0
+  logo_path: D:\Repositories\Loftify\assets\logo-transparent-big.ico
+#  trim_logo: false
+  output_path: D:\Ruida\Downloads
+  output_name: Loftify
+  build_windows: false
   capabilities: internetClient
+  certificate_path: D:\Repositories\Loftify\certificate\loftify.pfx
+  certificate_password: CLOUDCHEWIEloftify@123
 
 flutter_native_splash:
   color: "#FFFFFF"

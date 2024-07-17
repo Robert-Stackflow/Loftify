@@ -7,13 +7,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Models/enums.dart';
+import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
-import 'package:loftify/Widgets/PhotoView/photo_view.dart';
-import 'package:loftify/Widgets/PhotoView/photo_view_gallery.dart';
 
 import '../../Models/post_detail_response.dart';
 import '../../Utils/asset_util.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Utils/utils.dart';
+import '../General/PhotoView/photo_view.dart';
+import '../General/PhotoView/photo_view_gallery.dart';
 import '../Item/item_builder.dart';
 
 enum DownloadState { none, loading, succeed, failed }
@@ -142,7 +144,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
                 ),
               ),
             ),
-          if (imageUrls.length > 1 && Utils.isDesktop())
+          if (imageUrls.length > 1 && ResponsiveUtil.isDesktop())
             Positioned(
               left: 16,
               child: Container(
@@ -174,7 +176,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
                 ),
               ),
             ),
-          if (imageUrls.length > 1 && Utils.isDesktop())
+          if (imageUrls.length > 1 && ResponsiveUtil.isDesktop())
             Positioned(
               right: 16,
               child: Container(
@@ -232,7 +234,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
       double preferHeight =
           MediaQuery.sizeOf(context).width * item.oh / item.ow;
       double scale = preferHeight / MediaQuery.sizeOf(context).height;
-      if (scale > 1 && Utils.isMobile()) {
+      if (scale > 1 && ResponsiveUtil.isMobile()) {
         preferScale = PhotoViewComputedScale.covered;
       }
     }
@@ -456,7 +458,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
           context: context,
           icon: const Icon(Icons.share_rounded, color: Colors.white, size: 22),
           onTap: () {
-            Utils.shareImage(
+            FileUtil.shareImage(
               context,
               Utils.getUrlByQuality(
                 currentUrl,
@@ -472,7 +474,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
           onTap: () {
             if (downloadState == DownloadState.none) {
               setDownloadState(DownloadState.loading);
-              Utils.saveImage(
+              FileUtil.saveImage(
                 context,
                 Utils.getUrlByQuality(
                   currentUrl,
@@ -496,7 +498,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
             onTap: () {
               if (allDownloadState == DownloadState.none) {
                 setAllDownloadState(DownloadState.loading);
-                Utils.saveImages(
+                FileUtil.saveImages(
                   context,
                   imageUrls
                       .map(
@@ -517,7 +519,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
             },
           ),
         if (imageUrls.length > 1) const SizedBox(width: 5),
-        if (Utils.isDesktop())
+        if (ResponsiveUtil.isDesktop())
           ItemBuilder.buildIconButton(
             context: context,
             icon:
@@ -526,7 +528,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
               Navigator.pop(context);
             },
           ),
-        if (Utils.isDesktop()) const SizedBox(width: 5),
+        if (ResponsiveUtil.isDesktop()) const SizedBox(width: 5),
       ],
     );
   }

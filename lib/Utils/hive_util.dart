@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
@@ -7,7 +6,6 @@ import 'package:loftify/Models/account_response.dart';
 import 'package:loftify/Models/enums.dart';
 import 'package:loftify/Resources/theme_color_data.dart';
 import 'package:loftify/Utils/utils.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../Models/nav_entry.dart';
 import '../Providers/global_provider.dart';
@@ -307,7 +305,7 @@ class HiveUtil {
       required String key,
       bool autoCreate = true,
       int defaultValue = 0}) {
-    final Box box = Hive.box(boxName);
+    final Box box = Hive.box(name: boxName);
     if (!box.containsKey(key)) {
       put(boxName: boxName, key: key, value: defaultValue);
     }
@@ -319,7 +317,7 @@ class HiveUtil {
       required String key,
       bool autoCreate = true,
       bool defaultValue = true}) {
-    final Box box = Hive.box(boxName);
+    final Box box = Hive.box(name: boxName);
     if (!box.containsKey(key)) {
       put(boxName: boxName, key: key, value: defaultValue);
     }
@@ -346,7 +344,7 @@ class HiveUtil {
       required String key,
       bool autoCreate = true,
       String? defaultValue}) {
-    final Box box = Hive.box(boxName);
+    final Box box = Hive.box(name: boxName);
     if (!box.containsKey(key)) {
       if (!autoCreate) {
         return null;
@@ -360,7 +358,7 @@ class HiveUtil {
     String boxName = HiveUtil.settingsBox,
     required String key,
   }) {
-    final Box box = Hive.box(boxName);
+    final Box box = Hive.box(name: boxName);
     Map<String, dynamic>? res;
     if (box.get(key) != null) {
       res = Map<String, dynamic>.from(box.get(key));
@@ -373,7 +371,7 @@ class HiveUtil {
       required String key,
       bool autoCreate = true,
       List<dynamic>? defaultValue}) {
-    final Box box = Hive.box(boxName);
+    final Box box = Hive.box(name: boxName);
     if (!box.containsKey(key)) {
       if (!autoCreate) {
         return null;
@@ -402,39 +400,19 @@ class HiveUtil {
       {String boxName = HiveUtil.settingsBox,
       required String key,
       required dynamic value}) async {
-    final Box box = Hive.box(boxName);
+    final Box box = Hive.box(name: boxName);
     return box.put(key, value);
   }
 
   static Future<void> delete(
       {String boxName = HiveUtil.settingsBox, required String key}) async {
-    final Box box = Hive.box(boxName);
-    await box.delete(key);
+    final Box box = Hive.box(name: boxName);
+    box.delete(key);
   }
 
   static bool contains(
       {String boxName = HiveUtil.settingsBox, required String key}) {
-    final Box box = Hive.box(boxName);
+    final Box box = Hive.box(name: boxName);
     return box.containsKey(key);
-  }
-
-  static Future<void> openHiveBox(String boxName, {bool limit = false}) async {
-    final box = await Hive.openBox(boxName).onError((error, stackTrace) async {
-      final Directory dir = await getApplicationDocumentsDirectory();
-      final String dirPath = dir.path;
-      File dbFile = File('$dirPath/$boxName.hive');
-      File lockFile = File('$dirPath/$boxName.lock');
-      if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-        dbFile = File('$dirPath/${HiveUtil.database}/$boxName.hive');
-        lockFile = File('$dirPath/${HiveUtil.database}/$boxName.lock');
-      }
-      await dbFile.delete();
-      await lockFile.delete();
-      await Hive.openBox(boxName);
-      throw 'Failed to open $boxName Box\nError: $error';
-    });
-    if (limit && box.length > 500) {
-      box.clear();
-    }
   }
 }
