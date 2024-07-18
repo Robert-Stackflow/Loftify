@@ -85,8 +85,7 @@ class _MineScreenState extends State<MineScreen>
       return await UserApi.getUserInfo().then((value) async {
         try {
           if (value['meta']['status'] != 200) {
-            IToast.showTop(context,
-                text: value['meta']['desc'] ?? value['meta']['msg']);
+            IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
             return IndicatorResult.fail;
           } else {
             AccountResponse accountResponse =
@@ -99,8 +98,7 @@ class _MineScreenState extends State<MineScreen>
                 .then((value) async {
               try {
                 if (value['meta']['status'] != 200) {
-                  IToast.showTop(context,
-                      text: value['meta']['desc'] ?? value['meta']['msg']);
+                  IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
                   return IndicatorResult.fail;
                 } else {
                   setState(() {
@@ -109,13 +107,13 @@ class _MineScreenState extends State<MineScreen>
                   return IndicatorResult.success;
                 }
               } catch (_) {
-                if (mounted) IToast.showTop(context, text: "加载失败");
+                if (mounted) IToast.showTop( "加载失败");
                 return IndicatorResult.fail;
               }
             });
           }
         } catch (_) {
-          if (mounted) IToast.showTop(context, text: "加载失败");
+          if (mounted) IToast.showTop( "加载失败");
           return IndicatorResult.fail;
         } finally {
           _loading = false;
@@ -233,8 +231,7 @@ class _MineScreenState extends State<MineScreen>
   _processResult(value, FollowingMode followingMode, {bool refresh = false}) {
     try {
       if (value['meta']['status'] != 200) {
-        IToast.showTop(context,
-            text: value['meta']['desc'] ?? value['meta']['msg']);
+IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
         return IndicatorResult.fail;
       } else {
         List<dynamic> t = value['response'];
@@ -269,7 +266,7 @@ class _MineScreenState extends State<MineScreen>
         return IndicatorResult.success;
       }
     } catch (e) {
-      if (mounted) IToast.showTop(context, text: "加载失败");
+      if (mounted) IToast.showTop( "加载失败");
       return IndicatorResult.fail;
     } finally {
       if (mounted) setState(() {});

@@ -39,7 +39,7 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
       try {
         if (value == null) return IndicatorResult.fail;
         if (value['code'] != 200) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop( value['msg']);
           return IndicatorResult.fail;
         } else {
           acceptGiftFlag = value['data']['acceptGiftFlag'] == 1 ? true : false;
@@ -48,7 +48,7 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
           return IndicatorResult.success;
         }
       } catch (_) {
-        IToast.showTop(context, text: "礼物设置加载失败");
+        IToast.showTop( "礼物设置加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -61,8 +61,7 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
       return await UserApi.getUserInfo().then((value) async {
         try {
           if (value['meta']['status'] != 200) {
-            IToast.showTop(context,
-                text: value['meta']['desc'] ?? value['meta']['msg']);
+            IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
             return IndicatorResult.fail;
           } else {
             AccountResponse accountResponse =
@@ -73,7 +72,7 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
             return IndicatorResult.success;
           }
         } catch (_) {
-          if (mounted) IToast.showTop(context, text: "加载失败");
+          if (mounted) IToast.showTop( "加载失败");
           return IndicatorResult.fail;
         } finally {
           setState(() {});
@@ -88,8 +87,7 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
       return await UserApi.getMiscInfo().then((value) async {
         try {
           if (value['meta']['status'] != 200) {
-            IToast.showTop(context,
-                text: value['meta']['desc'] ?? value['meta']['msg']);
+            IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
             return IndicatorResult.fail;
           } else {
             personalRecommend =
@@ -97,7 +95,7 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
             return IndicatorResult.success;
           }
         } catch (_) {
-          if (mounted) IToast.showTop(context, text: "加载失败");
+          if (mounted) IToast.showTop( "加载失败");
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
@@ -137,8 +135,7 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
             customDialogType: CustomDialogType.normal,
           );
         } else {
-          IToast.showTop(context,
-              text: value['meta']['desc'] ?? value['meta']['msg']);
+          IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
         }
       });
     });
@@ -186,8 +183,7 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
                       personalRecommend = !personalRecommend;
                       setState(() {});
                     } else {
-                      IToast.showTop(context,
-                          text: value['meta']['desc'] ?? value['meta']['msg']);
+                      IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
                     }
                   });
                 },
@@ -255,7 +251,7 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
                       acceptGiftFlag = !acceptGiftFlag;
                       setState(() {});
                     } else {
-                      IToast.showTop(context, text: value['msg']);
+                      IToast.showTop( value['msg']);
                     }
                   });
                 },
@@ -274,7 +270,7 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
                       showReturnGiftPreviewImg = !showReturnGiftPreviewImg;
                       setState(() {});
                     } else {
-                      IToast.showTop(context, text: value['msg']);
+                      IToast.showTop( value['msg']);
                     }
                   });
                 },

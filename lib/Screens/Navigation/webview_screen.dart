@@ -182,7 +182,7 @@ class _WebviewScreenState extends State<WebviewScreen>
                     action: PermissionResponseAction.GRANT);
               },
               onDownloadStartRequest: (controller, url) async {
-                IToast.showTop(context, text: "即将跳转到浏览器下载");
+                IToast.showTop( "即将跳转到浏览器下载");
                 Future.delayed(const Duration(milliseconds: 300), () {
                   UriUtil.openExternalUri(url.url);
                 });

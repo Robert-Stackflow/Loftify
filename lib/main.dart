@@ -84,12 +84,6 @@ Future<void> runMyApp(List<String> args) async {
             statusBarIconBrightness: Brightness.dark);
         SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
       }
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp,
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-        DeviceOrientation.portraitDown,
-      ]);
     }
     if (ResponsiveUtil.isDesktop()) {
       await initWindow();
@@ -244,13 +238,21 @@ class MyApp extends StatelessWidget {
           },
           home: home,
           builder: (context, widget) {
-            return MediaQuery(
-              data: MediaQuery.of(context).copyWith(
-                textScaler: TextScaler.linear(
-                  FontSizeUtil.getTextFactor(globalProvider.fontSize),
-                ),
-              ),
-              child: widget!,
+            return Overlay(
+              initialEntries: [
+                if (widget != null) ...[
+                  OverlayEntry(
+                    builder: (context) => MediaQuery(
+                      data: MediaQuery.of(context).copyWith(
+                        textScaler: TextScaler.linear(
+                          FontSizeUtil.getTextFactor(globalProvider.fontSize),
+                        ),
+                      ),
+                      child: widget,
+                    ),
+                  ),
+                ],
+              ],
             );
           },
           routes: {

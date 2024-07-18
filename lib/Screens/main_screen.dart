@@ -105,8 +105,7 @@ class MainScreenState extends State<MainScreen>
       return await UserApi.getUserInfo().then((value) async {
         try {
           if (value['meta']['status'] != 200) {
-            IToast.showTop(context,
-                text: value['meta']['desc'] ?? value['meta']['msg']);
+            IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
             return IndicatorResult.fail;
           } else {
             AccountResponse accountResponse =
@@ -118,7 +117,7 @@ class MainScreenState extends State<MainScreen>
             return IndicatorResult.success;
           }
         } catch (_) {
-          if (mounted) IToast.showTop(context, text: "加载失败");
+          if (mounted) IToast.showTop( "加载失败");
           return IndicatorResult.fail;
         } finally {}
       });
@@ -188,11 +187,15 @@ class MainScreenState extends State<MainScreen>
     trayManager.addListener(this);
     windowManager.addListener(this);
     super.initState();
-    if (ResponsiveUtil.isLandscape()) {
-      _fetchUserInfo();
-    }
+    WidgetsBinding.instance.addObserver(this);
+    initDeepLinks();
+    FontEnum.downloadFont(showToast: false);
+    if (ResponsiveUtil.isLandscape()) _fetchUserInfo();
+    if (HiveUtil.getBool(key: HiveUtil.autoCheckUpdateKey)) fetchReleases();
     darkModeController = AnimationController(vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      goLogin();
+      goPinVerify();
       darkModeWidget = LottieUtil.load(
         LottieUtil.sunLight,
         size: 25,
@@ -200,10 +203,19 @@ class MainScreenState extends State<MainScreen>
         controller: darkModeController,
       );
     });
-    FontEnum.downloadFont(showToast: false);
-    initDeepLinks();
-    if (HiveUtil.getBool(key: HiveUtil.autoCheckUpdateKey)) fetchReleases();
-    WidgetsBinding.instance.addObserver(this);
+    initGlobalConfig();
+    fetchData();
+    ProviderManager.globalProvider.addListener(() {
+      if (mounted) {
+        setState(() {
+          clearNavSelectState = ProviderManager.globalProvider.desktopCanpop;
+        });
+      }
+    });
+  }
+
+  initGlobalConfig() {
+    ResponsiveUtil.checkSizeCondition();
     EasyRefresh.defaultHeaderBuilder = () => LottieCupertinoHeader(
           backgroundColor: Theme.of(context).canvasColor,
           indicator: LottieUtil.load(LottieUtil.getLoadingPath(context)),
@@ -221,19 +233,6 @@ class MainScreenState extends State<MainScreen>
         FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
       }
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      goLogin();
-      goPinVerify();
-    });
-    fetchData();
-    ProviderManager.globalProvider.addListener(() {
-      // initData();
-      if (mounted) {
-        setState(() {
-          clearNavSelectState = ProviderManager.globalProvider.desktopCanpop;
-        });
-      }
-    });
   }
 
   Future<void> fetchData() async {

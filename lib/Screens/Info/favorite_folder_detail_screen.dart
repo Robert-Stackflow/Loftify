@@ -52,7 +52,7 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
     _scrollController.addListener(() {
       if (!_noMore &&
           _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - 200) {
+              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
         _fetchDetail();
       }
     });
@@ -70,7 +70,7 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
       ).then((value) {
         try {
           if (value['code'] != 0) {
-            IToast.showTop(context, text: value['msg']);
+            IToast.showTop( value['msg']);
             return IndicatorResult.fail;
           } else {
             _follow = value['data']['followStatus'];
@@ -109,7 +109,7 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
             }
           }
         } catch (e) {
-          if (mounted) IToast.showTop(context, text: "加载失败");
+          if (mounted) IToast.showTop( "加载失败");
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
@@ -199,7 +199,7 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
               wh: 160),
           onTap: () {
             if (FavoriteFolderPostItemBuilder.isInvalid(_posts[trueIndex])) {
-              IToast.showTop(context, text: "无效内容");
+              IToast.showTop( "无效内容");
             } else {
               RouteUtil.pushCupertinoRoute(
                 context,

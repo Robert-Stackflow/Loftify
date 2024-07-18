@@ -72,8 +72,7 @@ class _HistoryScreenState extends State<HistoryScreen>
           .then((value) {
         try {
           if (value['meta']['status'] != 200) {
-            IToast.showTop(context,
-                text: value['meta']['desc'] ?? value['meta']['msg']);
+            IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
             return IndicatorResult.fail;
           } else {
             _total = value['response']['count'];
@@ -101,7 +100,7 @@ class _HistoryScreenState extends State<HistoryScreen>
             }
           }
         } catch (e) {
-          if (mounted) IToast.showTop(context, text: "加载失败");
+          if (mounted) IToast.showTop( "加载失败");
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
@@ -214,8 +213,7 @@ class _HistoryScreenState extends State<HistoryScreen>
           ).then((value) {
             setState(() {
               if (value['meta']['status'] != 200) {
-                IToast.showTop(context,
-                    text: value['meta']['desc'] ?? value['meta']['msg']);
+                IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
               } else {
                 item.liked = !(item.liked == true);
                 item.post!.postCount?.favoriteCount +=
@@ -276,15 +274,14 @@ class _HistoryScreenState extends State<HistoryScreen>
                     if (idx == 0) {
                       UserApi.clearHistory().then((value) {
                         if (value['meta']['status'] != 200) {
-                          IToast.showTop(context,
-                              text: value['meta']['desc'] ??
+                          IToast.showTop( value['meta']['desc'] ??
                                   value['meta']['msg']);
                         } else {
                           _histories.clear();
                           _archiveDataList.clear();
                           _total = 0;
                           setState(() {});
-                          IToast.showTop(context, text: "清空成功");
+                          IToast.showTop( "清空成功");
                         }
                       });
                     } else if (idx == 1) {
@@ -292,13 +289,12 @@ class _HistoryScreenState extends State<HistoryScreen>
                               blogId: HiveUtil.getInt(key: HiveUtil.userIdKey))
                           .then((value) {
                         if (value['meta']['status'] != 200) {
-                          IToast.showTop(context,
-                              text: value['meta']['desc'] ??
+                          IToast.showTop( value['meta']['desc'] ??
                                   value['meta']['msg']);
                         } else {
                           clearInvalidHistory();
                           setState(() {});
-                          IToast.showTop(context, text: "清空成功");
+                          IToast.showTop( "清空成功");
                         }
                       });
                     } else if (idx == 2) {
@@ -308,16 +304,14 @@ class _HistoryScreenState extends State<HistoryScreen>
                           blogName: blogInfo!.blogName,
                         ).then((value) {
                           if (value['meta']['status'] != 200) {
-                            IToast.showTop(context,
-                                text: value['meta']['desc'] ??
+                            IToast.showTop( value['meta']['desc'] ??
                                     value['meta']['msg']);
                           } else {
                             _histories.clear();
                             _archiveDataList.clear();
                             _total = 0;
                             _recordHistory = _recordHistory == 1 ? 0 : 1;
-                            IToast.showTop(context,
-                                text: _recordHistory == 1 ? "打开成功" : "关闭成功");
+                            IToast.showTop( _recordHistory == 1 ? "打开成功" : "关闭成功");
                             setState(() {});
                           }
                         });

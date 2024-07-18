@@ -70,7 +70,7 @@ class _DressScreenState extends State<DressScreen>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop( value['msg']);
           return IndicatorResult.fail;
         } else {
           offset = value['data']['offset'];
@@ -109,7 +109,7 @@ class _DressScreenState extends State<DressScreen>
           }
         }
       } catch (e) {
-        if (mounted) IToast.showTop(context, text: "加载失败");
+        if (mounted) IToast.showTop( "加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});

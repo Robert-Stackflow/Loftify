@@ -1,34 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:loftify/Utils/route_util.dart';
+import 'package:loftify/Utils/utils.dart';
 
 class IToast {
   static FToast show(
-    BuildContext context, {
-    required String text,
+    String text, {
     Icon? icon,
     int seconds = 2,
     ToastGravity gravity = ToastGravity.TOP,
   }) {
-    FToast toast = FToast().init(context);
+    FToast toast = FToast().init(RouteUtil.getRootContext());
     toast.showToast(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(25),
-          color: Theme.of(context).scaffoldBackgroundColor.withAlpha(240),
+          borderRadius: BorderRadius.circular(10),
+          color: Theme.of(RouteUtil.getRootContext()).canvasColor,
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).shadowColor,
+              color: Theme.of(RouteUtil.getRootContext()).shadowColor,
               offset: const Offset(0, 4),
               blurRadius: 10,
-              spreadRadius: 0,
-            )
+              spreadRadius: 1,
+            ).scale(2)
           ],
         ),
         child: Text(
           text,
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyMedium,
+          style: Theme.of(RouteUtil.getRootContext()).textTheme.bodyMedium,
         ),
       ),
       gravity: gravity,
@@ -38,18 +39,16 @@ class IToast {
   }
 
   static FToast showTop(
-    BuildContext context, {
-    required String text,
+    String text, {
     Icon? icon,
   }) {
-    return show(context, text: text, icon: icon);
+    return show(text, icon: icon);
   }
 
   static FToast showBottom(
-    BuildContext context, {
-    required String text,
+    String text, {
     Icon? icon,
   }) {
-    return show(context, text: text, icon: icon, gravity: ToastGravity.BOTTOM);
+    return show(text, icon: icon, gravity: ToastGravity.BOTTOM);
   }
 }

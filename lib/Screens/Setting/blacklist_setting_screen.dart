@@ -52,8 +52,7 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
       try {
         if (value == null) return IndicatorResult.fail;
         if (value['meta']['status'] != 200) {
-          IToast.showTop(context,
-              text: value['meta']['desc'] ?? value['meta']['msg']);
+          IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
           return IndicatorResult.fail;
         } else {
           var tmp = (value['response']['blogs'] as List)
@@ -68,7 +67,7 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
           return IndicatorResult.success;
         }
       } catch (_) {
-        IToast.showTop(context, text: "黑名单加载失败");
+        IToast.showTop( "黑名单加载失败");
         return IndicatorResult.fail;
       } finally {
         loading = false;
@@ -164,8 +163,7 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
                       isBlock: false,
                     ).then((value) {
                       if (value['meta']['status'] != 200) {
-                        IToast.showTop(context,
-                            text:
+                        IToast.showTop(
                                 value['meta']['desc'] ?? value['meta']['msg']);
                       } else {
                         blacklist.remove(blacklistItem);

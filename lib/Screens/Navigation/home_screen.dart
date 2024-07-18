@@ -11,6 +11,7 @@ import 'package:loftify/Widgets/PostItem/recommend_flow_item_builder.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Api/post_api.dart';
+import '../../Models/enums.dart';
 import '../../Models/recommend_response.dart';
 import '../../Utils/asset_util.dart';
 import '../../Utils/iprint.dart';
@@ -55,7 +56,7 @@ class HomeScreenState extends State<HomeScreen>
     super.initState();
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >
-          _scrollController.position.maxScrollExtent - 200) {
+          _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
         _onLoad();
       }
     });
@@ -74,7 +75,7 @@ class HomeScreenState extends State<HomeScreen>
       try {
         if (value['code'] != 0) {
           if (value['code'] != 4009) {
-            IToast.showTop(context, text: value['msg']);
+            IToast.showTop( value['msg']);
           }
           return IndicatorResult.fail;
         } else {
@@ -88,7 +89,7 @@ class HomeScreenState extends State<HomeScreen>
       } catch (e, t) {
         IPrint.debug(e);
         IPrint.debug(t);
-        if (mounted) IToast.showTop(context, text: "加载失败");
+        if (mounted) IToast.showTop( "加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -142,8 +143,7 @@ class HomeScreenState extends State<HomeScreen>
                       .then((value) {
                     setState(() {
                       if (value['meta']['status'] != 200) {
-                        IToast.showTop(context,
-                            text:
+                        IToast.showTop(
                                 value['meta']['desc'] ?? value['meta']['msg']);
                       } else {
                         item.favorite = !item.favorite;

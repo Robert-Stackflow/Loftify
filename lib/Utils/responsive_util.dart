@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import 'package:loftify/Utils/iprint.dart';
+import 'package:flutter/services.dart';
 import 'package:loftify/Utils/route_util.dart';
 import 'package:restart_app/restart_app.dart';
 import 'package:window_manager/window_manager.dart';
@@ -71,17 +71,38 @@ class ResponsiveUtil {
         (Platform.isMacOS || Platform.isWindows || Platform.isLinux);
   }
 
+  static checkSizeCondition() {
+    double shortestThreshold = 600;
+    double longestThreshold = 900;
+    double longestSide =
+        MediaQuery.sizeOf(RouteUtil.getRootContext()).longestSide;
+    double shortestSide =
+        MediaQuery.sizeOf(RouteUtil.getRootContext()).shortestSide;
+    bool sizeCondition =
+        longestSide >= longestThreshold && shortestSide >= shortestThreshold;
+    if (!sizeCondition) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+    }
+  }
+
   static bool isTablet() {
-    double minThreshold = 800;
+    double shortestThreshold = 600;
+    double longestThreshold = 900;
+    double longestSide =
+        MediaQuery.sizeOf(RouteUtil.getRootContext()).longestSide;
+    double shortestSide =
+        MediaQuery.sizeOf(RouteUtil.getRootContext()).shortestSide;
+    Orientation orientation =
+        MediaQuery.of(RouteUtil.getRootContext()).orientation;
+    bool sizeCondition =
+        longestSide >= longestThreshold && shortestSide >= shortestThreshold;
     return !kIsWeb &&
         (Platform.isIOS || Platform.isAndroid) &&
-        ((MediaQuery.sizeOf(RouteUtil.getRootContext()).longestSide >= minThreshold &&
-                MediaQuery.of(RouteUtil.getRootContext()).orientation ==
-                    Orientation.landscape) ||
-            (MediaQuery.sizeOf(RouteUtil.getRootContext()).shortestSide >=
-                minThreshold &&
-                MediaQuery.of(RouteUtil.getRootContext()).orientation ==
-                    Orientation.portrait));
+        sizeCondition &&
+        orientation == Orientation.portrait;
   }
 
   static bool isLandscape() {

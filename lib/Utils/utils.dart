@@ -305,7 +305,7 @@ class Utils {
   }) {
     Clipboard.setData(ClipboardData(text: data.toString())).then((value) {
       if (Utils.isNotEmpty(toastText)) {
-        IToast.showTop(context, text: toastText ?? "");
+        IToast.showTop( toastText ?? "");
       }
     });
     HapticFeedback.mediumImpact();

@@ -62,7 +62,7 @@ class _DressDetailScreenState extends State<DressDetailScreen>
     ).then((value) {
       try {
         if (value['code'] != 200) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop( value['msg']);
           return IndicatorResult.fail;
         } else {
           _giftDress = GiftDress.fromJson(value['data']['returnGiftDress']);
@@ -71,7 +71,7 @@ class _DressDetailScreenState extends State<DressDetailScreen>
           return IndicatorResult.success;
         }
       } catch (e) {
-        if (mounted) IToast.showTop(context, text: "加载失败");
+        if (mounted) IToast.showTop( "加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -129,12 +129,12 @@ class _DressDetailScreenState extends State<DressDetailScreen>
       await HiveUtil.put(key: HiveUtil.customAvatarBoxKey, value: "");
       currentAvatarImg = "";
       setState(() {});
-      IToast.showTop(context, text: "取消佩戴成功");
+      IToast.showTop( "取消佩戴成功");
     } else {
       await HiveUtil.put(key: HiveUtil.customAvatarBoxKey, value: item.partUrl);
       currentAvatarImg = item.partUrl;
       setState(() {});
-      IToast.showTop(context, text: "佩戴成功");
+      IToast.showTop( "佩戴成功");
     }
   }
 

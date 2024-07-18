@@ -105,7 +105,7 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop( value['msg']);
         } else {
           List<String> tmp = [];
           if (value['data'] != null) {
@@ -133,7 +133,7 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop( value['msg']);
         } else {
           List<PostListItem> tmp = [];
           if (value['data'] != null) {
@@ -159,7 +159,7 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
           }
         }
       } catch (_) {
-        IToast.showTop(context, text: "加载失败");
+        IToast.showTop( "加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -202,8 +202,7 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
                     .then((value) {
                   setState(() {
                     if (value['meta']['status'] != 200) {
-                      IToast.showTop(context,
-                          text: value['meta']['desc'] ?? value['meta']['msg']);
+                      IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
                     } else {
                       item.favorite = !item.favorite;
                       item.postData!.postCount!.favoriteCount +=

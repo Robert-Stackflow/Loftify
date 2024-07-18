@@ -128,7 +128,8 @@ class _TagCollectionGrainScreenState extends State<TagCollectionGrainScreen>
       onLeadingTap: () {
         Navigator.pop(context);
       },
-      title: ItemBuilder.buildClickItem( ItemBuilder.buildTagItem(
+      title: ItemBuilder.buildClickItem(
+        ItemBuilder.buildTagItem(
           context,
           widget.tag,
           TagType.normal,
@@ -194,7 +195,7 @@ class CollectionTabState extends State<CollectionTab>
     _scrollController.addListener(() {
       if (!_noMore &&
           _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - 200) {
+              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
         _fetchCollectionResult();
       }
     });
@@ -214,7 +215,7 @@ class CollectionTabState extends State<CollectionTab>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop(value['msg']);
         } else {
           List<SimpleCollectionInfo> tmp = [];
           if (value['data'] != null) {
@@ -247,7 +248,7 @@ class CollectionTabState extends State<CollectionTab>
           }
         }
       } catch (_) {
-        IToast.showTop(context, text: "加载失败");
+        IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -328,85 +329,87 @@ class CollectionTabState extends State<CollectionTab>
   }
 
   Widget _buildRecommendCollectionItem(SimpleCollectionInfo info) {
-    return GestureDetector(
-      onTap: () {
-        RouteUtil.pushCupertinoRoute(
-          context,
-          CollectionDetailScreen(
-              collectionId: info.id,
-              postId: 0,
-              blogId: info.blogId,
-              blogName: ""),
-        );
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.max,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: ItemBuilder.buildCachedImage(
-                  context: context,
-                  imageUrl: info.coverUrl,
-                  width: 120,
-                  height: 120,
-                  fit: BoxFit.cover,
-                  showLoading: false,
-                ),
-              ),
-              Positioned(
-                top: 4,
-                right: 4,
-                child: ItemBuilder.buildTransparentTag(
-                  context,
-                  text: "${info.postCount}",
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                ),
-              ),
-              Positioned(
-                top: 4,
-                left: 4,
-                child: ItemBuilder.buildTransparentTag(
-                  context,
-                  text: "",
-                  icon: AssetUtil.load(
-                    AssetUtil.collectionWhiteIcon,
-                    size: 12,
+    return ItemBuilder.buildClickItem(
+      GestureDetector(
+        onTap: () {
+          RouteUtil.pushCupertinoRoute(
+            context,
+            CollectionDetailScreen(
+                collectionId: info.id,
+                postId: 0,
+                blogId: info.blogId,
+                blogName: ""),
+          );
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.max,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: ItemBuilder.buildCachedImage(
+                    context: context,
+                    imageUrl: info.coverUrl,
+                    width: 120,
+                    height: 120,
+                    fit: BoxFit.cover,
+                    showLoading: false,
                   ),
-                  isCircle: true,
                 ),
-              ),
-              Positioned(
-                bottom: 4,
-                left: 4,
-                child: ItemBuilder.buildTransparentTag(
-                  context,
-                  text: Utils.formatCount(info.viewCount),
-                  icon: const Icon(
-                    Icons.local_fire_department_rounded,
-                    color: Colors.white,
-                    size: 12,
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: ItemBuilder.buildTransparentTag(
+                    context,
+                    text: "${info.postCount}",
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 ),
-              ),
-            ],
-          ),
-          Container(
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
-            child: Text(
-              info.name,
-              style: Theme.of(context).textTheme.titleSmall,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+                Positioned(
+                  top: 4,
+                  left: 4,
+                  child: ItemBuilder.buildTransparentTag(
+                    context,
+                    text: "",
+                    icon: AssetUtil.load(
+                      AssetUtil.collectionWhiteIcon,
+                      size: 12,
+                    ),
+                    isCircle: true,
+                  ),
+                ),
+                Positioned(
+                  bottom: 4,
+                  left: 4,
+                  child: ItemBuilder.buildTransparentTag(
+                    context,
+                    text: Utils.formatCount(info.viewCount),
+                    icon: const Icon(
+                      Icons.local_fire_department_rounded,
+                      color: Colors.white,
+                      size: 12,
+                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
+            Container(
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+              child: Text(
+                info.name,
+                style: Theme.of(context).textTheme.titleSmall,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -571,7 +574,7 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
     _scrollController.addListener(() {
       if (!_noMore &&
           _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - 200) {
+              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
         _fetchGrainResult();
       }
     });
@@ -597,7 +600,7 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop(value['msg']);
         } else {
           List<SimpleGrainInfo> tmp = [];
           if (value['data'] != null) {
@@ -630,7 +633,7 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
           }
         }
       } catch (_) {
-        IToast.showTop(context, text: "加载失败");
+        IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -708,93 +711,95 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
   }
 
   Widget _buildRecommendGrainItem(SimpleGrainInfo info) {
-    return GestureDetector(
-      onTap: () {
-        RouteUtil.pushCupertinoRoute(
-          context,
-          GrainDetailScreen(
-            grainId: info.id,
-            blogId: info.userId,
-          ),
-        );
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.max,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: Theme.of(context).dividerColor,
-                    width: 0.5,
-                  ),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: ItemBuilder.buildCachedImage(
-                    context: context,
-                    imageUrl: info.coverUrl,
-                    width: 120,
-                    height: 120,
-                    fit: BoxFit.cover,
-                    showLoading: false,
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 4,
-                right: 4,
-                child: ItemBuilder.buildTransparentTag(
-                  context,
-                  text: "${info.postCount}",
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                ),
-              ),
-              Positioned(
-                top: 4,
-                left: 4,
-                child: ItemBuilder.buildTransparentTag(
-                  context,
-                  text: "",
-                  icon: AssetUtil.load(
-                    AssetUtil.grainWhiteIcon,
-                    size: 12,
-                  ),
-                  isCircle: true,
-                ),
-              ),
-              Positioned(
-                bottom: 4,
-                left: 4,
-                child: ItemBuilder.buildTransparentTag(
-                  context,
-                  text: Utils.formatCount(info.viewCount),
-                  icon: const Icon(
-                    Icons.local_fire_department_rounded,
-                    color: Colors.white,
-                    size: 12,
-                  ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                ),
-              ),
-            ],
-          ),
-          Container(
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
-            child: Text(
-              info.name,
-              style: Theme.of(context).textTheme.titleSmall,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+    return ItemBuilder.buildClickItem(
+      GestureDetector(
+        onTap: () {
+          RouteUtil.pushCupertinoRoute(
+            context,
+            GrainDetailScreen(
+              grainId: info.id,
+              blogId: info.userId,
             ),
-          ),
-        ],
+          );
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.max,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Theme.of(context).dividerColor,
+                      width: 0.5,
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: ItemBuilder.buildCachedImage(
+                      context: context,
+                      imageUrl: info.coverUrl,
+                      width: 120,
+                      height: 120,
+                      fit: BoxFit.cover,
+                      showLoading: false,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: ItemBuilder.buildTransparentTag(
+                    context,
+                    text: "${info.postCount}",
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  ),
+                ),
+                Positioned(
+                  top: 4,
+                  left: 4,
+                  child: ItemBuilder.buildTransparentTag(
+                    context,
+                    text: "",
+                    icon: AssetUtil.load(
+                      AssetUtil.grainWhiteIcon,
+                      size: 12,
+                    ),
+                    isCircle: true,
+                  ),
+                ),
+                Positioned(
+                  bottom: 4,
+                  left: 4,
+                  child: ItemBuilder.buildTransparentTag(
+                    context,
+                    text: Utils.formatCount(info.viewCount),
+                    icon: const Icon(
+                      Icons.local_fire_department_rounded,
+                      color: Colors.white,
+                      size: 12,
+                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  ),
+                ),
+              ],
+            ),
+            Container(
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+              child: Text(
+                info.name,
+                style: Theme.of(context).textTheme.titleSmall,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

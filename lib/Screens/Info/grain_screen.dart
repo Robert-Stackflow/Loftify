@@ -84,7 +84,7 @@ class _GrainScreenState extends State<GrainScreen>
           .then((value) {
         try {
           if (value['code'] != 0) {
-            IToast.showTop(context, text: value['desc'] ?? value['msg']);
+            IToast.showTop( value['desc'] ?? value['msg']);
             return IndicatorResult.fail;
           } else {
             _total = value['data']['total'];
@@ -105,7 +105,7 @@ class _GrainScreenState extends State<GrainScreen>
             }
           }
         } catch (e) {
-          if (mounted) IToast.showTop(context, text: "加载失败");
+          if (mounted) IToast.showTop( "加载失败");
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});

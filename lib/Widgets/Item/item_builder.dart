@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -59,7 +61,7 @@ class ItemBuilder {
       automaticallyImplyLeading: false,
       leading: showLeading
           ? Container(
-              margin: const EdgeInsets.only(left: 8),
+              margin: const EdgeInsets.only(left: 5),
               child: buildIconButton(
                 context: context,
                 icon: Icon(leading, color: Theme.of(context).iconTheme.color),
@@ -80,20 +82,7 @@ class ItemBuilder {
               ),
             )
           : Container(),
-      actions: [
-        ...?actions,
-        // if (ResponsiveUtil.isDesktop())
-        //   Row(
-        //     children: [
-        //       MinimizeWindowButton(
-        //           colors: MyColors.getNormalButtonColors(context)),
-        //       MaximizeWindowButton(
-        //           colors: MyColors.getNormalButtonColors(context)),
-        //       CloseWindowButton(colors: MyColors.getCloseButtonColors(context)),
-        //       const SizedBox(width: 10),
-        //     ],
-        //   ),
-      ],
+      actions: actions,
     );
   }
 
@@ -122,7 +111,7 @@ class ItemBuilder {
       leadingWidth: showLeading ? 56.0 : 0.0,
       leading: showLeading
           ? Container(
-              margin: const EdgeInsets.only(left: 4),
+              margin: const EdgeInsets.only(left: 5),
               child: buildIconButton(
                 context: context,
                 icon: Icon(leading,
@@ -146,20 +135,88 @@ class ItemBuilder {
                   margin: const EdgeInsets.only(left: 20),
                   child: title,
                 ),
-      actions: [
-        ...?actions,
-        // if (ResponsiveUtil.isDesktop())
-        //   Row(
-        //     children: [
-        //       MinimizeWindowButton(
-        //           colors: MyColors.getNormalButtonColors(context)),
-        //       MaximizeWindowButton(
-        //           colors: MyColors.getNormalButtonColors(context)),
-        //       CloseWindowButton(colors: MyColors.getCloseButtonColors(context)),
-        //       const SizedBox(width: 10),
-        //     ],
-        //   ),
-      ],
+      actions: actions,
+    );
+  }
+
+  static buildSliverAppBar({
+    required BuildContext context,
+    Widget? backgroundWidget,
+    List<Widget>? actions,
+    Widget? flexibleSpace,
+    PreferredSizeWidget? bottom,
+    Widget? title,
+    bool center = false,
+    double expandedHeight = 310,
+    double? collapsedHeight,
+  }) {
+    bool showLeading = !ResponsiveUtil.isLandscape();
+    center = ResponsiveUtil.isLandscape() ? false : center;
+    return MySliverAppBar(
+      expandedHeight: expandedHeight,
+      collapsedHeight:
+          max(100, kToolbarHeight + MediaQuery.of(context).padding.top),
+      pinned: true,
+      leadingWidth: showLeading ? 56 : 0,
+      leading: showLeading
+          ? Container(
+              margin: const EdgeInsets.only(left: 5),
+              child: ItemBuilder.buildIconButton(
+                context: context,
+                icon: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: Colors.white,
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                },
+              ),
+            )
+          : null,
+      automaticallyImplyLeading: false,
+      backgroundWidget: backgroundWidget,
+      actions: actions,
+      title: showLeading
+          ? center
+              ? Center(child: title)
+              : title ?? Container()
+          : center
+              ? Center(
+                  child: Container(
+                    margin: const EdgeInsets.only(left: 20),
+                    child: title,
+                  ),
+                )
+              : Container(
+                  margin: const EdgeInsets.only(left: 20),
+                  child: title,
+                ),
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+      flexibleSpace: flexibleSpace,
+      bottom: bottom,
+    );
+  }
+
+  static buildLoadMoreNotification({
+    Function()? onLoad,
+    required Widget child,
+    required bool noMore,
+  }) {
+    return NotificationListener<ScrollNotification>(
+      onNotification: (ScrollNotification notification) {
+        if (notification.depth != 0) {
+          return false;
+        }
+        if (!noMore &&
+            notification.metrics.pixels >=
+                notification.metrics.maxScrollExtent - kLoadExtentOffset) {
+          onLoad?.call();
+        }
+        return false;
+      },
+      child: child,
     );
   }
 
@@ -1652,53 +1709,56 @@ class ItemBuilder {
         }
         onTap?.call();
       },
-      child: Container(
-        padding: padding,
-        decoration: BoxDecoration(
-          color: tagType != TagType.normal
-              ? MyColors.getHotTagBackground(context)
-              : backgroundColor ?? Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(50),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // if (tagType == TagType.normal && showIcon)
-            //   AssetUtil.load(
-            //     AssetUtil.tagDarkIcon,
-            //     size: 15,
-            //   ),
-            if (tagType == TagType.hot && showIcon)
-              AssetUtil.load(AssetUtil.hotIcon, size: 12),
-            if (tagType == TagType.hot && showIcon) const SizedBox(width: 2),
-            // Icon(Icons.local_fire_department_rounded,
-            //     size: 15, color: MyColors.getHotTagTextColor(context)),
-            if (tagType == TagType.egg && showIcon)
-              Icon(Icons.egg_rounded,
-                  size: 15, color: MyColors.getHotTagTextColor(context)),
-            Text(
-              ((tagType == TagType.normal || !showIcon) && showTagLabel)
-                  ? "#$str"
-                  : str,
-              style: tagType != TagType.normal
-                  ? Theme.of(context).textTheme.labelMedium?.apply(
-                        color: color ?? MyColors.hotTagTextColor,
-                        fontSizeDelta: fontSizeDelta,
-                        fontWeightDelta: fontWeightDelta,
-                      )
-                  : Theme.of(context).textTheme.labelMedium?.apply(
-                        color: color,
-                        fontSizeDelta: fontSizeDelta,
-                        fontWeightDelta: fontWeightDelta,
-                      ),
-            ),
-            if (showRightIcon)
-              Icon(
-                Icons.keyboard_arrow_right_rounded,
-                size: 16,
-                color: color,
+      child: ItemBuilder.buildClickItem(
+        clickable: (tagType != TagType.egg && jumpToTag) || onTap != null,
+        Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            color: tagType != TagType.normal
+                ? MyColors.getHotTagBackground(context)
+                : backgroundColor ?? Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(50),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // if (tagType == TagType.normal && showIcon)
+              //   AssetUtil.load(
+              //     AssetUtil.tagDarkIcon,
+              //     size: 15,
+              //   ),
+              if (tagType == TagType.hot && showIcon)
+                AssetUtil.load(AssetUtil.hotIcon, size: 12),
+              if (tagType == TagType.hot && showIcon) const SizedBox(width: 2),
+              // Icon(Icons.local_fire_department_rounded,
+              //     size: 15, color: MyColors.getHotTagTextColor(context)),
+              if (tagType == TagType.egg && showIcon)
+                Icon(Icons.egg_rounded,
+                    size: 15, color: MyColors.getHotTagTextColor(context)),
+              Text(
+                ((tagType == TagType.normal || !showIcon) && showTagLabel)
+                    ? "#$str"
+                    : str,
+                style: tagType != TagType.normal
+                    ? Theme.of(context).textTheme.labelMedium?.apply(
+                          color: color ?? MyColors.hotTagTextColor,
+                          fontSizeDelta: fontSizeDelta,
+                          fontWeightDelta: fontWeightDelta,
+                        )
+                    : Theme.of(context).textTheme.labelMedium?.apply(
+                          color: color,
+                          fontSizeDelta: fontSizeDelta,
+                          fontWeightDelta: fontWeightDelta,
+                        ),
               ),
-          ],
+              if (showRightIcon)
+                Icon(
+                  Icons.keyboard_arrow_right_rounded,
+                  size: 16,
+                  color: color,
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -2812,9 +2872,8 @@ class ItemBuilder {
                             commentId: comment.id,
                           ).then((value) {
                             if (value['meta']['status'] != 200) {
-                              IToast.showTop(context,
-                                  text: value['meta']['desc'] ??
-                                      value['meta']['msg']);
+                              IToast.showTop(value['meta']['desc'] ??
+                                  value['meta']['msg']);
                             } else {
                               comment.liked = !comment.liked;
                               comment.likeCount += comment.liked ? 1 : -1;
@@ -3044,8 +3103,8 @@ class ItemBuilder {
                   commentId: comment.id,
                 ).then((value) {
                   if (value['meta']['status'] != 200) {
-                    IToast.showTop(context,
-                        text: value['meta']['desc'] ?? value['meta']['msg']);
+                    IToast.showTop(
+                        value['meta']['desc'] ?? value['meta']['msg']);
                   } else {
                     comment.liked = !comment.liked;
                     comment.likeCount += comment.liked ? 1 : -1;
@@ -3126,8 +3185,8 @@ class ItemBuilder {
                   blogName: item.blogInfo.blogName,
                 ).then((value) {
                   if (value['meta']['status'] != 200) {
-                    IToast.showTop(context,
-                        text: value['meta']['desc'] ?? value['meta']['msg']);
+                    IToast.showTop(
+                        value['meta']['desc'] ?? value['meta']['msg']);
                   } else {
                     item.following = !item.following;
                     onFollowOrUnFollow?.call();
@@ -3141,8 +3200,14 @@ class ItemBuilder {
     );
   }
 
-  static buildClickItem(Widget child) {
-    return MouseRegion(cursor: SystemMouseCursors.click, child: child);
+  static buildClickItem(
+    Widget child, {
+    bool clickable = true,
+  }) {
+    return MouseRegion(
+      cursor: clickable ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: child,
+    );
   }
 }
 

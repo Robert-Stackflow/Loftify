@@ -122,7 +122,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
             customDialogType: CustomDialogType.normal,
           );
         } else {
-          IToast.showTop(context, text: S.current.checkUpdatesAlreadyLatest);
+          IToast.showTop( S.current.checkUpdatesAlreadyLatest);
         }
       }
     });
@@ -233,8 +233,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                           setState(() {
                             _cacheSize = value;
                             CustomLoadingDialog.dismissLoading(context);
-                            IToast.showTop(context,
-                                text: S.current.clearCacheSuccess);
+                            IToast.showTop( S.current.clearCacheSuccess);
                           });
                         });
                       });

@@ -247,7 +247,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       collectionId: _postDetailData!.post!.collectionId,
     ).then((value) {
       if (value['code'] != 200) {
-        IToast.showTop(context, text: value['msg']);
+        IToast.showTop(value['msg']);
       }
     });
   }
@@ -261,8 +261,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       blogName: blogName,
     ).then((value) {
       if (value['meta']['status'] != 200) {
-        IToast.showTop(context,
-            text: value['meta']['desc'] ?? value['meta']['msg']);
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
         return IndicatorResult.fail;
       } else {
         _postDetailData =
@@ -288,7 +287,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     ).then((value) {
       if (value == null) return IndicatorResult.fail;
       if (value['code'] != 200 || value['ok'] != true) {
-        IToast.showTop(context, text: value['msg']);
+        IToast.showTop(value['msg']);
         return IndicatorResult.fail;
       } else {
         List<dynamic> gifts = value['data']['returnGifts'] as List;
@@ -317,7 +316,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       try {
         if (value == null) return IndicatorResult.fail;
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop(value['msg']);
           return IndicatorResult.fail;
         } else {
           totalHotOrNewComments = value['data']['hotTotal'];
@@ -334,7 +333,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           return IndicatorResult.success;
         }
       } catch (_) {
-        IToast.showTop(context, text: "评论加载失败");
+        IToast.showTop("评论加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -354,7 +353,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       try {
         if (value == null) return IndicatorResult.fail;
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop(value['msg']);
           return IndicatorResult.fail;
         } else {
           currentComment.l2CommentOffset = value['data']['offset'];
@@ -365,7 +364,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           return IndicatorResult.success;
         }
       } catch (_) {
-        IToast.showTop(context, text: "评论加载失败");
+        IToast.showTop("评论加载失败");
         return IndicatorResult.fail;
       } finally {
         currentComment.l2CommentLoading = false;
@@ -385,8 +384,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       collectionId: collectionId,
     ).then((value) {
       if (value['meta']['status'] != 200) {
-        IToast.showTop(context,
-            text: value['meta']['desc'] ?? value['meta']['msg']);
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
         return IndicatorResult.fail;
       } else {
         _postDetailData = PostDetailData.fromJson(value['response'][0]);
@@ -476,7 +474,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       try {
         if (value['code'] != 0) {
           if (value['code'] != 4009) {
-            IToast.showTop(context, text: value['msg']);
+            IToast.showTop(value['msg']);
           }
           return IndicatorResult.fail;
         } else {
@@ -487,7 +485,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           return IndicatorResult.success;
         }
       } catch (e) {
-        if (mounted) IToast.showTop(context, text: "加载失败");
+        if (mounted) IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -589,8 +587,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           .then((value) {
         setState(() {
           if (value['meta']['status'] != 200) {
-            IToast.showTop(context,
-                text: value['meta']['desc'] ?? value['meta']['msg']);
+            IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
             if (value['meta']['status'] == 4071) {
               Utils.validSlideCaptcha(context);
             }
@@ -645,7 +642,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       divider: ResizableDivider(
         color: Theme.of(context).dividerColor,
         thickness: ResponsiveUtil.isMobile() ? 2 : 1,
-        size: ResponsiveUtil.isMobile() ? 6 : 1,
+        size: 6,
         onHoverEnter: () {
           if (ResponsiveUtil.isMobile()) {
             HapticFeedback.lightImpact();
@@ -833,8 +830,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                           blogName: _postDetailData!.post!.blogInfo!.blogName)
                       .then((value) {
                     if (value['meta']['status'] != 200) {
-                      IToast.showTop(context,
-                          text: value['meta']['desc'] ?? value['meta']['msg']);
+                      IToast.showTop(
+                          value['meta']['desc'] ?? value['meta']['msg']);
                     } else {
                       _postDetailData!.followed =
                           !(_postDetailData!.followed == 1) ? 1 : 0;
@@ -1201,8 +1198,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                         !(_postDetailData!.post!.postCollection!.subscribed),
                   ).then((value) {
                     if (value['meta']['status'] != 200) {
-                      IToast.showTop(context,
-                          text: value['meta']['desc'] ?? value['meta']['msg']);
+                      IToast.showTop(
+                          value['meta']['desc'] ?? value['meta']['msg']);
                     } else {
                       _postDetailData!.post!.postCollection!.subscribed =
                           !(_postDetailData!.post!.postCollection!.subscribed);
@@ -1210,19 +1207,22 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                     }
                   });
                 },
-                child: Text(
-                  _postDetailData!.post!.postCollection!.subscribed
-                      ? "已订阅"
-                      : "订阅合集",
-                  style: Theme.of(context).textTheme.titleSmall?.apply(
-                        fontSizeDelta: -2,
-                        fontWeightDelta: 2,
-                        color: _postDetailData!.post!.postCollection!.subscribed
-                            ? Theme.of(context).textTheme.labelSmall?.color
-                            : Theme.of(context).primaryColor,
-                      ),
+                child: ItemBuilder.buildClickItem(
+                  Text(
+                    _postDetailData!.post!.postCollection!.subscribed
+                        ? "已订阅"
+                        : "订阅合集",
+                    style: Theme.of(context).textTheme.titleSmall?.apply(
+                          fontSizeDelta: -2,
+                          fontWeightDelta: 2,
+                          color: _postDetailData!
+                                  .post!.postCollection!.subscribed
+                              ? Theme.of(context).textTheme.labelSmall?.color
+                              : Theme.of(context).primaryColor,
+                        ),
+                  ),
                 ),
-              )
+              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -1238,7 +1238,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                       setState(() {});
                       _fetchPreOrNextPost(isPre: true);
                     } else {
-                      IToast.showTop(context, text: "已经是第一篇了");
+                      IToast.showTop("已经是第一篇了");
                     }
                   },
                 ),
@@ -1265,7 +1265,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                       setState(() {});
                       _fetchPreOrNextPost(isPre: false);
                     } else {
-                      IToast.showTop(context, text: "已经是最后一篇了");
+                      IToast.showTop("已经是最后一篇了");
                     }
                   },
                 ),
@@ -1359,9 +1359,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                       .then((value) {
                     setState(() {
                       if (value['meta']['status'] != 200) {
-                        IToast.showTop(context,
-                            text:
-                                value['meta']['desc'] ?? value['meta']['msg']);
+                        IToast.showTop(
+                            value['meta']['desc'] ?? value['meta']['msg']);
                         if (value['meta']['status'] == 4071) {
                           Utils.validSlideCaptcha(context);
                         }
@@ -1403,9 +1402,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                         .then((value) {
                       setState(() {
                         if (value['meta']['status'] != 200) {
-                          IToast.showTop(context,
-                              text: value['meta']['desc'] ??
-                                  value['meta']['msg']);
+                          IToast.showTop(
+                              value['meta']['desc'] ?? value['meta']['msg']);
                           if (value['meta']['status'] == 4071) {
                             Utils.validSlideCaptcha(context);
                           }
@@ -1461,7 +1459,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
 
   Widget _buildRecommendFlow({bool sliver = true}) {
     Widget list = SliverPadding(
-      padding: EdgeInsets.only(top: sliver ? 10 : 0, left: 8, right: 8),
+      padding:
+          EdgeInsets.only(top: sliver ? 10 : 0, left: sliver ? 8 : 5, right: 8),
       sliver: SliverWaterfallFlow(
         gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
           mainAxisSpacing: 12,
@@ -1485,9 +1484,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                       .then((value) {
                     setState(() {
                       if (value['meta']['status'] != 200) {
-                        IToast.showTop(context,
-                            text:
-                                value['meta']['desc'] ?? value['meta']['msg']);
+                        IToast.showTop(
+                            value['meta']['desc'] ?? value['meta']['msg']);
                       } else {
                         item.favorite = !item.favorite;
                         item.postData!.postCount!.favoriteCount +=

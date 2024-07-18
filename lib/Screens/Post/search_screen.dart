@@ -89,7 +89,7 @@ class _SearchScreenState extends State<SearchScreen>
   fetchGuessList() {
     SearchApi.getGuessList().then((value) {
       if (value['code'] != 0) {
-        IToast.showTop(context, text: value['msg']);
+        IToast.showTop( value['msg']);
       } else {
         if (value['data']['guessKeywords'] != null) {
           _guessList = (value['data']['guessKeywords'] as List)
@@ -104,7 +104,7 @@ class _SearchScreenState extends State<SearchScreen>
   fetchRankList() {
     SearchApi.getRankList().then((value) {
       if (value['code'] != 0) {
-        IToast.showTop(context, text: value['msg']);
+        IToast.showTop( value['msg']);
       } else {
         if (value['data']['rankList'] != null) {
           _rankList = (value['data']['rankList'] as List)
@@ -163,7 +163,7 @@ class _SearchScreenState extends State<SearchScreen>
   _performSuggest(String str) {
     SearchApi.getSuggestList(key: str).then((value) {
       if (value['code'] != 0) {
-        IToast.showTop(context, text: value['msg']);
+        IToast.showTop( value['msg']);
       } else {
         if (value['data']['items'] != null &&
             _searchController.text.isNotEmpty) {

@@ -89,8 +89,7 @@ class _ShareScreenState extends State<ShareScreen>
           .then((value) {
         try {
           if (value['meta']['status'] != 200) {
-            IToast.showTop(context,
-                text: value['meta']['desc'] ?? value['meta']['msg']);
+            IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
             return IndicatorResult.fail;
           } else {
             _total = value['response']['count'];
@@ -132,7 +131,7 @@ class _ShareScreenState extends State<ShareScreen>
             }
           }
         } catch (e) {
-          if (mounted) IToast.showTop(context, text: "加载失败");
+          if (mounted) IToast.showTop( "加载失败");
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
@@ -245,8 +244,7 @@ class _ShareScreenState extends State<ShareScreen>
               .then((value) {
             setState(() {
               if (value['meta']['status'] != 200) {
-                IToast.showTop(context,
-                    text: value['meta']['desc'] ?? value['meta']['msg']);
+                IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
               } else {
                 item.liked = !(item.liked == true);
                 item.post!.postCount?.favoriteCount +=
@@ -307,14 +305,13 @@ class _ShareScreenState extends State<ShareScreen>
                               blogId: HiveUtil.getInt(key: HiveUtil.userIdKey))
                           .then((value) {
                         if (value['meta']['status'] != 200) {
-                          IToast.showTop(context,
-                              text: value['meta']['desc'] ??
+                          IToast.showTop( value['meta']['desc'] ??
                                   value['meta']['msg']);
                         } else {
                           _shareList.removeWhere(
                               (e) => CommonInfoItemBuilder.isInvalid(e));
                           setState(() {});
-                          IToast.showTop(context, text: "清空成功");
+                          IToast.showTop( "清空成功");
                         }
                       });
                     }

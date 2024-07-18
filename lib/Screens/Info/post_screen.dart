@@ -99,8 +99,7 @@ class _PostScreenState extends State<PostScreen>
       ).then((value) {
         try {
           if (value['meta']['status'] != 200) {
-            IToast.showTop(context,
-                text: value['meta']['desc'] ?? value['meta']['msg']);
+            IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
             return IndicatorResult.fail;
           } else {
             if (value['response']['archives'] != null) {
@@ -163,7 +162,7 @@ class _PostScreenState extends State<PostScreen>
             }
           }
         } catch (e) {
-          if (mounted) IToast.showTop(context, text: "加载失败");
+          if (mounted) IToast.showTop( "加载失败");
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
@@ -280,8 +279,7 @@ class _PostScreenState extends State<PostScreen>
               .then((value) {
             setState(() {
               if (value['meta']['status'] != 200) {
-                IToast.showTop(context,
-                    text: value['meta']['desc'] ?? value['meta']['msg']);
+                IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
               } else {
                 item.liked = !(item.liked == true);
                 item.post!.postCount?.favoriteCount +=

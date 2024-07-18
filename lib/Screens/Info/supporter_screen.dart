@@ -78,7 +78,7 @@ class _SupporterScreenState extends State<SupporterScreen>
       ).then((value) {
         try {
           if (value['code'] != 200) {
-            IToast.showTop(context, text: value['msg']);
+            IToast.showTop( value['msg']);
             return IndicatorResult.fail;
           } else {
             List<dynamic> t = value['data']['ranks'];
@@ -97,7 +97,7 @@ class _SupporterScreenState extends State<SupporterScreen>
             }
           }
         } catch (e) {
-          if (mounted) IToast.showTop(context, text: "加载失败");
+          if (mounted) IToast.showTop( "加载失败");
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});

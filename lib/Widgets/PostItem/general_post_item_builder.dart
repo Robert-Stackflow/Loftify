@@ -119,16 +119,13 @@ class GeneralPostItemBuilder {
               showMoreSheet(context, item);
             }
           : null,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: main,
-      ),
+      child: ItemBuilder.buildClickItem(main),
     );
   }
 
   static onTapItem(BuildContext context, GeneralPostItem item) {
     if (item.type == PostType.invalid) {
-      IToast.showTop(context, text: "无效内容");
+      IToast.showTop("无效内容");
     } else if (item.type == PostType.video) {
       RouteUtil.pushCupertinoRoute(
         context,
@@ -542,7 +539,7 @@ class GeneralPostItemBuilder {
         onTap?.call();
         onTapItem(context, item);
       },
-      child: main,
+      child: ItemBuilder.buildClickItem(main),
     );
   }
 

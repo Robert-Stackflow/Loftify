@@ -170,7 +170,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
       collectionId: _currentPostItem!.postCollection?.grainId,
     ).then((value) {
       if (value['code'] != 200) {
-        IToast.showTop(context, text: value['msg']);
+        IToast.showTop( value['msg']);
       }
     });
   }
@@ -184,7 +184,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop( value['msg']);
         } else {
           page++;
           offset = value['data']['offset'];
@@ -201,7 +201,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
           setState(() {});
         }
       } catch (e) {
-        if (mounted) IToast.showTop(context, text: "加载失败");
+        if (mounted) IToast.showTop( "加载失败");
       }
       if (mounted) setState(() {});
     });
@@ -366,8 +366,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
                       blogId: postListItem.blogInfo!.blogId)
                   .then((value) {
                 if (value['meta']['status'] != 200) {
-                  IToast.showTop(context,
-                      text: value['meta']['desc'] ?? value['meta']['msg']);
+                  IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
                 } else {
                   postListItem.favorite = !(postListItem.favorite == true);
                   postListItem.postData!.postCount!.favoriteCount +=
@@ -408,8 +407,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
                 blogName: postListItem.blogInfo!.blogName,
               ).then((value) {
                 if (value['meta']['status'] != 200) {
-                  IToast.showTop(context,
-                      text: value['meta']['desc'] ?? value['meta']['msg']);
+                  IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
                 }
                 postListItem.following = !postListItem.following;
                 setState(() {});
@@ -423,8 +421,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
                       blogId: postListItem.blogInfo!.blogId)
                   .then((value) {
                 if (value['meta']['status'] != 200) {
-                  IToast.showTop(context,
-                      text: value['meta']['desc'] ?? value['meta']['msg']);
+                  IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
                 } else {
                   postListItem.share = !(postListItem.share == true);
                   postListItem.postData!.postCount!.shareCount +=

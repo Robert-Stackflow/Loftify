@@ -44,7 +44,7 @@ class UriUtil {
         Clipboard.setData(ClipboardData(text: email));
       }
     } on PlatformException catch (_) {
-      IToast.showTop(context, text: "尚未安装邮箱程序，已复制Email地址到剪贴板");
+      IToast.showTop( "尚未安装邮箱程序，已复制Email地址到剪贴板");
     }
     return true;
   }
@@ -52,11 +52,11 @@ class UriUtil {
   static share(BuildContext context, String str) {
     Share.share(str).then((shareResult) {
       if (shareResult.status == ShareResultStatus.success) {
-        IToast.showTop(context, text: "分享成功");
+        IToast.showTop( "分享成功");
       } else if (shareResult.status == ShareResultStatus.dismissed) {
-        IToast.showTop(context, text: "取消分享");
+        IToast.showTop( "取消分享");
       } else {
-        IToast.showTop(context, text: "分享失败");
+        IToast.showTop( "分享失败");
       }
     });
   }
@@ -318,7 +318,7 @@ class UriUtil {
         return true;
       } else if (isLiveUrl(url)) {
         if (!quiet) await CustomLoadingDialog.dismissLoading(context);
-        IToast.showTop(context, text: "直播功能已下线");
+        IToast.showTop( "直播功能已下线");
         return false;
       } else {
         if (!quiet) await CustomLoadingDialog.dismissLoading(context);
@@ -331,7 +331,7 @@ class UriUtil {
               UriUtil.openExternal(url);
             }
           } else {
-            IToast.showTop(context, text: "不支持的URI：$url");
+            IToast.showTop( "不支持的URI：$url");
             IPrint.debug("不支持的URI：$url");
           }
         }

@@ -45,15 +45,15 @@ class _LoginByPasswordScreenState extends State<LoginByPasswordScreen>
     String mobile = _mobileController.text;
     String password = _passwordController.text;
     if (mobile.isEmpty || password.isEmpty) {
-      IToast.showTop(context, text: "手机号或密码不能为空");
+      IToast.showTop( "手机号或密码不能为空");
       return;
     }
     LoginApi.loginByPassword(mobile, password).then((value) async {
       LoginResponse loginResponse = LoginResponse.fromJson(value);
       if (loginResponse.result != 0) {
-        IToast.showTop(context, text: loginResponse.desc);
+        IToast.showTop( loginResponse.desc);
       } else {
-        IToast.showTop(context, text: "登录成功");
+        IToast.showTop( "登录成功");
         ProviderManager.globalProvider.token = loginResponse.token ?? "";
         await RequestUtil.getInstance().clearCookie();
         await HiveUtil.put(

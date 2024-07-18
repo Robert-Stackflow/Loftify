@@ -33,8 +33,7 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
       try {
         if (value == null) return IndicatorResult.fail;
         if (value['meta']['status'] != 200) {
-          IToast.showTop(context,
-              text: value['meta']['desc'] ?? value['meta']['msg']);
+          IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
           return IndicatorResult.fail;
         } else {
           tags = (value['response']['list'] as List)
@@ -43,7 +42,7 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
           return IndicatorResult.success;
         }
       } catch (_) {
-        IToast.showTop(context, text: "屏蔽标签加载失败");
+        IToast.showTop( "屏蔽标签加载失败");
         return IndicatorResult.fail;
       } finally {
         loading = false;
@@ -86,8 +85,7 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
                   onConfirm: (text) {
                     SettingApi.shieldOrUnshieldTag(tag: text, isShield: true)
                         .then((value) {
-                      IToast.showTop(context,
-                          text: value['meta']['desc'] ?? value['meta']['msg']);
+                      IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
                       if (value['meta']['status'] == 200) {
                         tags.insert(0, text);
                         setState(() {});
@@ -148,8 +146,7 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
                 onTapConfirm: () {
                   SettingApi.shieldOrUnshieldTag(tag: tag, isShield: false)
                       .then((value) {
-                    IToast.showTop(context,
-                        text: value['meta']['desc'] ?? value['meta']['msg']);
+                    IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
                     if (value['meta']['status'] == 200) {
                       tags.remove(tag);
                       setState(() {});

@@ -45,7 +45,7 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
     await LoginApi.getSlideCaptcha().then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop( value['msg']);
         } else {
           frontLeftOffset = 0;
           bg = value['data']['bg'];
@@ -56,7 +56,7 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
         }
         IPrint.debug(id);
       } catch (_) {
-        IToast.showTop(context, text: "滑块验证码获取失败");
+        IToast.showTop( "滑块验证码获取失败");
       } finally {
         if (mounted) setState(() {});
       }
@@ -265,13 +265,13 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
                   rawIv: rawIv,
                 ).then((value) {
                   if (value == null) {
-                    IToast.showTop(context, text: "发送验证失败");
+                    IToast.showTop( "发送验证失败");
                   } else {
                     var res = CryptUtil.decryptDataByAES(value, rawKey, rawIv);
                     res = json.decode(res);
                     if (res['code'] != 0) {
                       updateState(false);
-                      IToast.showTop(context, text: res['msg']);
+                      IToast.showTop( res['msg']);
                       _fetchCaptcha();
                     } else if (!res['data']['success']) {
                       updateState(false);

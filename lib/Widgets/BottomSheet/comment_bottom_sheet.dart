@@ -55,7 +55,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
       try {
         if (value == null) return IndicatorResult.fail;
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop( value['msg']);
           return IndicatorResult.fail;
         } else {
           l1CommentOffset = value['data']['offset'];
@@ -70,7 +70,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
           return IndicatorResult.success;
         }
       } catch (_) {
-        IToast.showTop(context, text: "最新评论加载失败");
+        IToast.showTop( "最新评论加载失败");
         return IndicatorResult.fail;
       } finally {
         loading = false;
@@ -92,7 +92,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
       try {
         if (value == null) return IndicatorResult.fail;
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop( value['msg']);
           return IndicatorResult.fail;
         } else {
           currentComment.l2CommentOffset = value['data']['offset'];
@@ -103,7 +103,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
           return IndicatorResult.success;
         }
       } catch (_) {
-        IToast.showTop(context, text: "回复加载失败");
+        IToast.showTop( "回复加载失败");
         return IndicatorResult.fail;
       } finally {
         currentComment.l2CommentLoading = false;

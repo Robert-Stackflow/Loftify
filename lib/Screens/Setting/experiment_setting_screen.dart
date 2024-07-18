@@ -172,7 +172,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
           context,
           PinVerifyScreen(
             onSuccess: () {
-              IToast.showTop(context, text: "手势密码关闭成功");
+              IToast.showTop( "手势密码关闭成功");
               setState(() {
                 _enableGuesturePasswd = !_enableGuesturePasswd;
                 HiveUtil.put(
@@ -209,7 +209,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
         context,
         PinVerifyScreen(
           onSuccess: () {
-            IToast.showTop(context, text: "生物识别开启成功");
+            IToast.showTop( "生物识别开启成功");
             setState(() {
               _enableBiometric = !_enableBiometric;
               HiveUtil.put(

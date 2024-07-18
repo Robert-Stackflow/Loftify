@@ -2,6 +2,7 @@ import 'package:blur/blur.dart';
 import 'package:flutter/material.dart' hide AnimatedSlide;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Widgets/Dialog/custom_dialog.dart';
@@ -13,19 +14,14 @@ import '../../Models/enums.dart';
 import '../../Models/history_response.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Models/recommend_response.dart';
-import '../../Resources/theme.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
-import '../../Widgets/Custom/auto_slideup_panel.dart';
-import '../../Widgets/General/Animation/animated_fade.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
-
-const double minCardHeightFraction = 0.63;
 
 class CollectionDetailScreen extends StatefulWidget {
   const CollectionDetailScreen({
@@ -49,12 +45,8 @@ class CollectionDetailScreen extends StatefulWidget {
 
 class CollectionDetailScreenState extends State<CollectionDetailScreen>
     with TickerProviderStateMixin {
-  late AnimationController _slideController;
-  late AnimationController _rotateController;
   final EasyRefreshController _refreshController = EasyRefreshController();
 
-  Animation<double> get textFadeAnimation =>
-      Tween(begin: 1.0, end: 0.0).animate(_slideController);
   bool subscribed = false;
   SimpleBlogInfo? blogInfo;
   FullPostCollection? postCollection;
@@ -63,6 +55,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
   List<PostDetailData> posts = [];
   bool isOldest = false;
   final List<ArchiveData> _archiveDataList = [];
+  bool noMore = false;
 
   _fetchIncantation() {
     CollectionApi.getIncantation(
@@ -70,7 +63,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop(value['msg']);
           return IndicatorResult.fail;
         } else {
           if (value['data']['collectionLink'] != null) {
@@ -78,7 +71,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
           }
         }
       } catch (e) {
-        if (mounted) IToast.showTop(context, text: "获取链接失败");
+        if (mounted) IToast.showTop("获取链接失败");
         return IndicatorResult.fail;
       }
     });
@@ -86,6 +79,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
 
   _fetchData({bool refresh = false, bool showLoading = false}) async {
     if (loading) return;
+    if (refresh) noMore = false;
     if (showLoading) CustomLoadingDialog.showLoading(context, title: "加载中...");
     loading = true;
     int offset = refresh ? 0 : posts.length;
@@ -97,8 +91,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
     ).then((value) {
       try {
         if (value['meta']['status'] != 200) {
-          IToast.showTop(context,
-              text: value['meta']['desc'] ?? value['meta']['msg']);
+          IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
           return IndicatorResult.fail;
         } else {
           subscribed = value['response']['subscribed'];
@@ -139,13 +132,14 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
           }
           if (mounted) setState(() {});
           if (posts.length >= postCollection!.postCount || newPosts.isEmpty) {
+            noMore = true;
             return IndicatorResult.noMore;
           } else {
             return IndicatorResult.success;
           }
         }
       } catch (e) {
-        if (mounted) IToast.showTop(context, text: "加载失败");
+        if (mounted) IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
         if (showLoading) CustomLoadingDialog.dismissLoading(context);
@@ -165,24 +159,9 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
 
   @override
   void initState() {
-    _slideController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _rotateController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 5000),
-    )..repeat();
     super.initState();
     _fetchData(refresh: true);
     _fetchIncantation();
-  }
-
-  @override
-  void dispose() {
-    _slideController.dispose();
-    _rotateController.dispose();
-    super.dispose();
   }
 
   @override
@@ -191,35 +170,149 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
       bottomNavigationBar:
           blogInfo != null && postCollection != null ? _buildFooter() : null,
       body: blogInfo != null && postCollection != null
-          ? Stack(
-              children: [
-                _buildBackground(),
-                _buildInfoCard(),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildAppBar(),
-                    AnimatedFade(
-                      animation: textFadeAnimation,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildInfoRow(),
-                          const SizedBox(height: 10),
-                          _buildStatsticRow(),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            )
+          ? NestedScrollView(
+              headerSliverBuilder: (_, __) => _buildHeaderSlivers(),
+              body: _buildNineGridGroup())
           : ItemBuilder.buildLoadingDialog(
               context,
               background: Colors.transparent,
             ),
     );
+  }
+
+  _buildHeaderSlivers() {
+    bool hasDesc = Utils.isNotEmpty(postCollection!.description);
+    return <Widget>[
+      ItemBuilder.buildSliverAppBar(
+        context: context,
+        backgroundWidget: _buildBackground(),
+        actions: [
+          ItemBuilder.buildIconButton(
+            context: context,
+            onTap: () {
+              List<Tuple2<String, dynamic>> options = [
+                const Tuple2("复制链接", 0),
+                const Tuple2("在浏览器打开", 1),
+                const Tuple2("分享到其他应用", 2),
+              ];
+              BottomSheetBuilder.showListBottomSheet(
+                context,
+                (sheetContext) => TileList.fromOptions(
+                  options,
+                  (idx) {
+                    if (idx == 0) {
+                      Utils.copy(context, collectionUrl);
+                    } else if (idx == 1) {
+                      UriUtil.openExternal(collectionUrl);
+                    } else if (idx == 2) {
+                      UriUtil.share(context, collectionUrl);
+                    }
+                    Navigator.pop(sheetContext);
+                  },
+                  showCancel: true,
+                  context: context,
+                  showTitle: false,
+                  onCloseTap: () => Navigator.pop(sheetContext),
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                ),
+              );
+            },
+            icon: const Icon(
+              Icons.more_vert_rounded,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 5),
+        ],
+        center: true,
+        title: Text(
+          "合集",
+          style: Theme.of(context).textTheme.titleMedium?.apply(
+                color: Colors.white,
+                fontWeightDelta: 2,
+              ),
+        ),
+        flexibleSpace: FlexibleSpaceBar(
+          background: Stack(
+            children: [
+              _buildBackground(),
+              Column(
+                children: [
+                  SizedBox(
+                      height:
+                          kToolbarHeight + MediaQuery.of(context).padding.top),
+                  _buildInfoRow(),
+                  _buildStatsticRow(),
+                ],
+              ),
+            ],
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(40),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              color: AppTheme.getBackground(context),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+            ),
+            width: MediaQuery.sizeOf(context).width,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        hasDesc ? postCollection!.description : "暂无简介",
+                        style: Theme.of(context).textTheme.labelLarge?.apply(
+                              color:
+                                  Theme.of(context).textTheme.bodySmall?.color,
+                            ),
+                      ),
+                    ),
+                    ItemBuilder.buildIconTextButton(
+                      context,
+                      text: isOldest ? "最旧" : "最新",
+                      quarterTurns: 3,
+                      icon: Icon(
+                        isOldest
+                            ? Icons.switch_right_rounded
+                            : Icons.switch_left_rounded,
+                        color: Theme.of(context).textTheme.labelMedium?.color,
+                        size: 18,
+                      ),
+                      fontSizeDelta: 1,
+                      color: Theme.of(context).textTheme.labelMedium?.color,
+                      onTap: () {
+                        setState(() {
+                          isOldest = !isOldest;
+                        });
+                        _fetchData(refresh: true, showLoading: true);
+                      },
+                    ),
+                  ],
+                ),
+                if (Utils.isNotEmpty(postCollection!.tags)) _buildTagList(),
+                const SizedBox(height: 8),
+                ItemBuilder.buildDivider(
+                  context,
+                  horizontal: 0,
+                  vertical: 0,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ];
   }
 
   Widget _buildFooter() {
@@ -248,8 +341,8 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
                   isSubscribe: !subscribed,
                 ).then((value) {
                   if (value['meta']['status'] != 200) {
-                    IToast.showTop(context,
-                        text: value['meta']['desc'] ?? value['meta']['msg']);
+                    IToast.showTop(
+                        value['meta']['desc'] ?? value['meta']['msg']);
                   } else {
                     subscribed = !subscribed;
                     setState(() {});
@@ -277,7 +370,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
                     ),
                   );
                 } else {
-                  IToast.showTop(context, text: "合集中暂无文章");
+                  IToast.showTop("合集中暂无文章");
                 }
               },
               fontSizeDelta: 2,
@@ -285,92 +378,6 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildInfoCard() {
-    bool hasDesc = Utils.isNotEmpty(postCollection!.description);
-    return AutoSlideUpPanel(
-      minHeight: MediaQuery.sizeOf(context).height - 335,
-      maxHeight: Utils.getMaxHeight(context) - 65,
-      onPanelSlide: (position) => _slideController.value = position,
-      panelBuilder: (ScrollController controller) {
-        return Container(
-          height: MediaQuery.sizeOf(context).height,
-          width: MediaQuery.sizeOf(context).width,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: AppTheme.getBackground(context),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-          ),
-          child: NestedScrollView(
-            controller: controller,
-            headerSliverBuilder: (context, innerBoxIsScrolled) => [
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  width: MediaQuery.sizeOf(context).width,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisSize: MainAxisSize.max,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              hasDesc ? postCollection!.description : "暂无简介",
-                              style:
-                                  Theme.of(context).textTheme.labelLarge?.apply(
-                                        color: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.color,
-                                      ),
-                            ),
-                          ),
-                          ItemBuilder.buildIconTextButton(
-                            context,
-                            text: isOldest ? "最旧" : "最新",
-                            quarterTurns: 3,
-                            icon: Icon(
-                              isOldest
-                                  ? Icons.switch_right_rounded
-                                  : Icons.switch_left_rounded,
-                              color: Theme.of(context)
-                                  .textTheme
-                                  .labelMedium
-                                  ?.color,
-                              size: 18,
-                            ),
-                            fontSizeDelta: 1,
-                            color:
-                                Theme.of(context).textTheme.labelMedium?.color,
-                            onTap: () {
-                              setState(() {
-                                isOldest = !isOldest;
-                              });
-                              _fetchData(refresh: true, showLoading: true);
-                            },
-                          ),
-                        ],
-                      ),
-                      if (Utils.isNotEmpty(postCollection!.tags))
-                        _buildTagList(),
-                      ItemBuilder.buildDivider(
-                        context,
-                        horizontal: 0,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-            body: _buildNineGridGroup(controller),
-          ),
-        );
-      },
     );
   }
 
@@ -460,7 +467,6 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
           context,
           title: '文章数',
           count: postCollection!.postCount,
-          onTap: () {},
           countColor: Colors.white,
           labelColor: Colors.white.withOpacity(0.6),
         ),
@@ -470,13 +476,11 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
           count: postCollection!.subscribedCount,
           countColor: Colors.white,
           labelColor: Colors.white.withOpacity(0.6),
-          onTap: () {},
         ),
         ItemBuilder.buildStatisticItem(
           context,
           title: '总热度',
           count: postCollection!.postCollectionHot,
-          onTap: () {},
           countColor: Colors.white,
           labelColor: Colors.white.withOpacity(0.6),
         ),
@@ -484,7 +488,6 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
           context,
           title: '浏览量',
           count: postCollection!.viewCount,
-          onTap: () {},
           countColor: Colors.white,
           labelColor: Colors.white.withOpacity(0.6),
         ),
@@ -519,7 +522,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
     );
   }
 
-  Widget _buildNineGridGroup(ScrollController controller) {
+  Widget _buildNineGridGroup() {
     List<Widget> widgets = [];
     int startIndex = 0;
     for (var e in _archiveDataList) {
@@ -540,14 +543,25 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
       widgets.add(_buildNineGrid(startIndex, count));
       startIndex += e.count;
     }
-    return EasyRefresh(
+    return EasyRefresh.builder(
       controller: _refreshController,
       onRefresh: _onRefresh,
       onLoad: _onLoad,
-      child: ListView(
-        padding: const EdgeInsets.only(bottom: 20),
-        children: widgets,
-      ),
+      childBuilder: (context, physics) {
+        return Container(
+          color: AppTheme.getBackground(context),
+          child: ItemBuilder.buildLoadMoreNotification(
+            child: ListView(
+              physics: physics,
+              shrinkWrap: true,
+              padding: const EdgeInsets.only(left: 10, right: 10, bottom: 20),
+              children: widgets,
+            ),
+            noMore: noMore,
+            onLoad: _onLoad,
+          ),
+        );
+      },
     );
   }
 
@@ -652,8 +666,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
         showLoading: false,
         fit: BoxFit.cover,
         width: MediaQuery.sizeOf(context).width * 2,
-        height:
-            MediaQuery.sizeOf(context).height * (1.1 - minCardHeightFraction),
+        height: MediaQuery.sizeOf(context).height * 0.7,
         placeholderBackground: Theme.of(context).textTheme.labelSmall?.color,
         bottomPadding: 50,
       ),

@@ -45,7 +45,7 @@ class FileUtil {
     Function(double)? onReceiveProgress,
   }) async {
     await Permission.storage.onDeniedCallback(() {
-      IToast.showTop(context, text: "请授予文件存储权限");
+      IToast.showTop( "请授予文件存储权限");
     }).onGrantedCallback(() async {
       if (Utils.isNotEmpty(apkUrl)) {
         double progressValue = 0.0;
@@ -103,14 +103,14 @@ class FileUtil {
         UriUtil.openExternal(htmlUrl);
       }
     }).onPermanentlyDeniedCallback(() {
-      IToast.showTop(context, text: "已拒绝文件存储权限，将跳转到浏览器下载");
+      IToast.showTop( "已拒绝文件存储权限，将跳转到浏览器下载");
       UriUtil.openExternal(apkUrl);
     }).onRestrictedCallback(() {
-      IToast.showTop(context, text: "请授予文件存储权限");
+      IToast.showTop( "请授予文件存储权限");
     }).onLimitedCallback(() {
-      IToast.showTop(context, text: "请授予文件存储权限");
+      IToast.showTop( "请授予文件存储权限");
     }).onProvisionalCallback(() {
-      IToast.showTop(context, text: "请授予文件存储权限");
+      IToast.showTop( "请授予文件存储权限");
     }).request();
   }
 
@@ -130,11 +130,11 @@ class FileUtil {
     );
     final result = await Share.shareXFiles([XFile(file.path)], text: message);
     if (result.status == ShareResultStatus.success) {
-      IToast.showTop(context, text: "分享成功");
+      IToast.showTop( "分享成功");
     } else if (result.status == ShareResultStatus.dismissed) {
-      IToast.showTop(context, text: "取消分享");
+      IToast.showTop( "取消分享");
     } else {
-      IToast.showTop(context, text: "分享失败");
+      IToast.showTop( "分享失败");
     }
     return result.status;
   }
@@ -186,9 +186,9 @@ class FileUtil {
         bool success = result != null && result['isSuccess'];
         if (showToast) {
           if (success) {
-            IToast.showTop(context, text: "图片已保存至相册");
+            IToast.showTop( "图片已保存至相册");
           } else {
-            IToast.showTop(context, text: "保存失败，请重试");
+            IToast.showTop( "保存失败，请重试");
           }
         }
         return success;
@@ -199,19 +199,19 @@ class FileUtil {
               '$saveDirectory/${FileUtil.extractFileNameFromUrl(imageUrl)}';
           await copiedFile.copy(newPath);
           if (showToast) {
-            IToast.showTop(context, text: "图片已保存至$saveDirectory");
+            IToast.showTop( "图片已保存至$saveDirectory");
           }
           return true;
         } else {
-          IToast.showTop(context, text: "保存失败，请设置图片保存路径");
+          IToast.showTop( "保存失败，请设置图片保存路径");
           return false;
         }
       }
     } catch (e) {
       if (e is PathNotFoundException) {
-        IToast.showTop(context, text: "保存路径不存在");
+        IToast.showTop( "保存路径不存在");
       }
-      IToast.showTop(context, text: "保存失败，请重试");
+      IToast.showTop( "保存失败，请重试");
       return false;
     }
   }
@@ -229,18 +229,18 @@ class FileUtil {
       if (showToast) {
         if (result) {
           if (ResponsiveUtil.isMobile()) {
-            IToast.showTop(context, text: "所有图片已保存至相册");
+            IToast.showTop( "所有图片已保存至相册");
           } else {
             String? saveDirectory = await checkSaveDirectory(context);
-            IToast.showTop(context, text: "所有图片已保存至$saveDirectory");
+            IToast.showTop( "所有图片已保存至$saveDirectory");
           }
         } else {
-          IToast.showTop(context, text: "保存失败，请重试");
+          IToast.showTop( "保存失败，请重试");
         }
       }
       return result;
     } catch (e) {
-      IToast.showTop(context, text: "保存失败，请重试");
+      IToast.showTop( "保存失败，请重试");
       return false;
     }
   }
@@ -288,9 +288,9 @@ class FileUtil {
         bool success = result != null && result['isSuccess'];
         if (showToast) {
           if (success) {
-            IToast.showTop(context, text: "视频已保存");
+            IToast.showTop( "视频已保存");
           } else {
-            IToast.showTop(context, text: "保存失败，请重试");
+            IToast.showTop( "保存失败，请重试");
           }
         }
         return success;
@@ -301,19 +301,19 @@ class FileUtil {
               '$saveDirectory/${FileUtil.extractFileNameFromUrl(videoUrl)}';
           await File(savePath).copy(newPath);
           if (showToast) {
-            IToast.showTop(context, text: "视频已保存至$saveDirectory");
+            IToast.showTop( "视频已保存至$saveDirectory");
           }
           return true;
         } else {
-          IToast.showTop(context, text: "保存失败，请设置视频保存路径");
+          IToast.showTop( "保存失败，请设置视频保存路径");
           return false;
         }
       }
     } catch (e) {
       if (e is PathNotFoundException) {
-        IToast.showTop(context, text: "保存路径不存在");
+        IToast.showTop( "保存路径不存在");
       }
-      IToast.showTop(context, text: "保存失败，请重试");
+      IToast.showTop( "保存失败，请重试");
       return false;
     }
   }

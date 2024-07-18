@@ -44,16 +44,16 @@ class _LoginByLofterIDScreenState extends State<LoginByLofterIDScreen>
     String lofterID = _lofterIDController.text;
     String password = _passwordController.text;
     if (lofterID.isEmpty || password.isEmpty) {
-      IToast.showTop(context, text: "LofterID或密码不能为空");
+      IToast.showTop( "LofterID或密码不能为空");
       return;
     }
     LoginApi.loginByLofterID(lofterID, password).then((value) async {
       LoginLofterIDResponse loginResponse =
           LoginLofterIDResponse.fromJson(value);
       if (loginResponse.status != 200) {
-        IToast.showTop(context, text: loginResponse.desc);
+        IToast.showTop( loginResponse.desc);
       } else {
-        IToast.showTop(context, text: "登录成功");
+        IToast.showTop( "登录成功");
         ProviderManager.globalProvider.token = loginResponse.token ?? "";
         await RequestUtil.getInstance().clearCookie();
         await HiveUtil.put(

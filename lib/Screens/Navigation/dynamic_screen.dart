@@ -196,7 +196,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop( value['msg']);
         } else {
           List<FullSubscribeTagItem> tmp = [];
           if (value['data'] != null) {
@@ -229,7 +229,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
           }
         }
       } catch (_) {
-        IToast.showTop(context, text: "加载失败");
+        IToast.showTop( "加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -244,7 +244,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
     _scrollController.addListener(() {
       if (!_noMore &&
           _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - 200) {
+              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
         _fetchResult();
       }
     });
@@ -750,7 +750,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
     _scrollController.addListener(() {
       if (!_noMore &&
           _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - 200) {
+              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
         _fetchResult();
       }
     });
@@ -765,7 +765,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop( value['msg']);
         } else {
           List<TimelineCollection> tmp = [];
           if (value['data'] != null) {
@@ -814,7 +814,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
           }
         }
       } catch (_) {
-        IToast.showTop(context, text: "加载失败");
+        IToast.showTop( "加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -1159,8 +1159,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
                           collectionId: item.collectionId,
                         ).then((value) {
                           if (value['meta']['status'] != 200) {
-                            IToast.showTop(context,
-                                text: value['meta']['desc'] ??
+                            IToast.showTop( value['meta']['desc'] ??
                                     value['meta']['msg']);
                           } else {
                             item.subscribed = !item.subscribed;
@@ -1207,7 +1206,7 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
     _scrollController.addListener(() {
       if (!_noMore &&
           _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - 200) {
+              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
         _fetchResult();
       }
     });
@@ -1236,7 +1235,7 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop( value['msg']);
         } else {
           List<SubscribeGrainItem> tmp = [];
           if (value['data'] != null) {
@@ -1264,7 +1263,7 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
           }
         }
       } catch (_) {
-        IToast.showTop(context, text: "加载失败");
+        IToast.showTop( "加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});

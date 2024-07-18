@@ -65,17 +65,17 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
     String mobile = _mobileController.text;
     String captcha = _captchaController.text;
     if (mobile.isEmpty) {
-      IToast.showTop(context, text: "手机号不能为空");
+      IToast.showTop( "手机号不能为空");
       return;
     }
     if (captcha.isEmpty) {
-      IToast.showTop(context, text: "图片验证码不能为空");
+      IToast.showTop( "图片验证码不能为空");
       return;
     }
     LoginApi.getCaptchaCode(mobile, captcha).then((value) {
       SimpleResponse simpleResponse = SimpleResponse.fromJson(value);
       if (simpleResponse.result != 0) {
-        IToast.showTop(context, text: simpleResponse.desc);
+        IToast.showTop( simpleResponse.desc);
         _refrechPhotoCaptcha();
       } else {
         _isFetchingCaptchaCode = true;
@@ -101,7 +101,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
             }
           }
         });
-        IToast.showTop(context, text: "验证码发送成功");
+        IToast.showTop( "验证码发送成功");
       }
     });
   }
@@ -110,16 +110,16 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
     String mobile = _mobileController.text;
     String password = _captchaCodeController.text;
     if (mobile.isEmpty || password.isEmpty) {
-      IToast.showTop(context, text: "手机号或短信验证码不能为空");
+      IToast.showTop( "手机号或短信验证码不能为空");
       return;
     }
     LoginApi.loginByCaptchaCode(mobile, password).then((value) async {
       LoginResponse loginResponse = LoginResponse.fromJson(value);
       if (loginResponse.result != 0) {
-        IToast.showTop(context, text: loginResponse.desc);
+        IToast.showTop( loginResponse.desc);
         _refrechPhotoCaptcha();
       } else {
-        IToast.showTop(context, text: "登录成功");
+        IToast.showTop( "登录成功");
         ProviderManager.globalProvider.token = loginResponse.token ?? "";
         await RequestUtil.getInstance().clearCookie();
         await HiveUtil.put(

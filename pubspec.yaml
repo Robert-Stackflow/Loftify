@@ -26,6 +26,7 @@ dependencies:
   group_button: ^5.3.4 # 分组按钮
   custom_sliding_segmented_control: ^1.8.3 # 分段控制器
   flutter_inappwebview: ^6.0.0 # Webview
+  extended_nested_scroll_view: ^6.2.1 # 嵌套滚动
   # 系统
   provider: ^6.0.5 # 状态管理
   local_auth: ^2.2.0 # 指纹验证

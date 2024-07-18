@@ -201,7 +201,7 @@ class HiveUtil {
         }
       }
     } else {
-      return index;
+      return Utils.patchEnum(index, ThemeColorData.defaultLightThemes.length);
     }
   }
 
@@ -223,7 +223,7 @@ class HiveUtil {
         }
       }
     } else {
-      return index;
+      return Utils.patchEnum(index, ThemeColorData.defaultDarkThemes.length);
     }
   }
 
@@ -246,7 +246,7 @@ class HiveUtil {
         }
       }
     } else {
-      return ThemeColorData.defaultLightThemes[index];
+      return ThemeColorData.defaultLightThemes[Utils.patchEnum(index, ThemeColorData.defaultLightThemes.length)];
     }
   }
 
@@ -269,7 +269,7 @@ class HiveUtil {
         }
       }
     } else {
-      return ThemeColorData.defaultDarkThemes[index];
+      return ThemeColorData.defaultDarkThemes[Utils.patchEnum(index, ThemeColorData.defaultDarkThemes.length)];
     }
   }
 

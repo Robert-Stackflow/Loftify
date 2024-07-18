@@ -204,7 +204,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
         .then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop( value['msg']);
         } else {
           if (value['data'] != null) {
             _allResult = SearchAllResult.fromJson(value['data']);
@@ -214,7 +214,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           return IndicatorResult.success;
         }
       } catch (_) {
-        IToast.showTop(context, text: "加载失败");
+        IToast.showTop( "加载失败");
         return IndicatorResult.fail;
       } finally {
         _allResultLoading = false;
@@ -231,7 +231,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop( value['msg']);
         } else {
           if (value['data'] != null) {
             var tmp = SearchAllResult.fromJson(value['data']);
@@ -242,7 +242,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           return IndicatorResult.success;
         }
       } catch (_) {
-        IToast.showTop(context, text: "加载失败");
+        IToast.showTop( "加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -261,7 +261,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop( value['msg']);
         } else {
           List<TagInfo> tmp = [];
           if (value['data'] != null) {
@@ -291,7 +291,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           }
         }
       } catch (_) {
-        IToast.showTop(context, text: "加载失败");
+        IToast.showTop( "加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -310,7 +310,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop( value['msg']);
         } else {
           List<Collection> tmp = [];
           if (value['data'] != null) {
@@ -337,7 +337,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           }
         }
       } catch (_) {
-        IToast.showTop(context, text: "加载失败");
+        IToast.showTop( "加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -356,7 +356,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop( value['msg']);
         } else {
           List<SearchPost> tmp = [];
           if (value['data'] != null) {
@@ -383,7 +383,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           }
         }
       } catch (_) {
-        IToast.showTop(context, text: "加载失败");
+        IToast.showTop( "加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -402,7 +402,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop( value['msg']);
         } else {
           List<GrainInfo> tmp = [];
           if (value['data'] != null) {
@@ -429,7 +429,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           }
         }
       } catch (_) {
-        IToast.showTop(context, text: "加载失败");
+        IToast.showTop( "加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -448,7 +448,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop( value['msg']);
         } else {
           List<SearchBlogData> tmp = [];
           if (value['data'] != null) {
@@ -476,7 +476,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           }
         }
       } catch (_) {
-        IToast.showTop(context, text: "加载失败");
+        IToast.showTop( "加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -517,7 +517,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
   _performSuggest(String str) {
     SearchApi.getSuggestList(key: str).then((value) {
       if (value['code'] != 0) {
-        IToast.showTop(context, text: value['msg']);
+        IToast.showTop( value['msg']);
       } else {
         if (value['data']['items'] != null &&
             _searchController!.text.isNotEmpty) {
@@ -778,8 +778,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                                   .then((value) {
                                 setState(() {
                                   if (value['meta']['status'] != 200) {
-                                    IToast.showTop(context,
-                                        text: value['meta']['desc'] ??
+                                    IToast.showTop( value['meta']['desc'] ??
                                             value['meta']['msg']);
                                   } else {
                                     item.favorite = !item.favorite;

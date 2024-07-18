@@ -85,8 +85,7 @@ class _CollectionScreenState extends State<CollectionScreen>
           .then((value) {
         try {
           if (value['meta']['status'] != 200) {
-            IToast.showTop(context,
-                text: value['meta']['desc'] ?? value['meta']['msg']);
+            IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
             return IndicatorResult.fail;
           } else {
             List<FullPostCollection> tmp = [];
@@ -112,7 +111,7 @@ class _CollectionScreenState extends State<CollectionScreen>
             }
           }
         } catch (e) {
-          if (mounted) IToast.showTop(context, text: "加载失败");
+          if (mounted) IToast.showTop( "加载失败");
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});

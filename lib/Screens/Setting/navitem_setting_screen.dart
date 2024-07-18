@@ -197,7 +197,7 @@ class _NavItemSettingScreenState extends State<NavItemSettingScreen>
     setState(() {
       SortableItem data = _contents[oldListIndex].children[oldItemIndex].data;
       if (!data.canBeHidden && newListIndex == 1) {
-        IToast.show(context, text: "不可隐藏");
+        IToast.show("不可隐藏");
       } else {
         var movedItem = _contents[oldListIndex].children.removeAt(oldItemIndex);
         _contents[newListIndex].children.insert(newItemIndex, movedItem);

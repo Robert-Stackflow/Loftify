@@ -1,4 +1,5 @@
 import 'package:custom_sliding_segmented_control/custom_sliding_segmented_control.dart';
+import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Api/tag_api.dart';
@@ -24,6 +25,7 @@ import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
 import '../../Widgets/BottomSheet/newest_filter_bottom_sheet.dart';
 import '../../Widgets/Custom/custom_tab_indicator.dart';
 import '../../Widgets/Custom/sliver_appbar_delegate.dart';
+import '../../Widgets/Custom/subordinate_scroll_controller.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
@@ -45,49 +47,41 @@ class _TagDetailScreenState extends State<TagDetailScreen>
   bool get wantKeepAlive => true;
 
   TagDetailData? _tagDetailData;
-  final List<PostListItem> _recommendList = [];
-  final List<PostListItem> _newestList = [];
-  final List<PostListItem> _hottestList = [];
   late TabController _tabController;
-  final EasyRefreshController _recommendResultRefreshController =
-      EasyRefreshController();
-  final EasyRefreshController _newestResultRefreshController =
-      EasyRefreshController();
-  final EasyRefreshController _hottestResultRefreshController =
-      EasyRefreshController();
   final ScrollController _scrollController = ScrollController();
-  late GetTagPostListParams _hottestParams;
-  late GetTagPostListParams _newestParams;
+  final GlobalKey<RecommendTabState> _recommendKey = GlobalKey();
+  final GlobalKey<NewestTabState> _newestKey = GlobalKey();
+  final GlobalKey<HottestTabState> _hottestKey = GlobalKey();
+  final List<SubordinateScrollController?> scrollControllers =
+      List.filled(3, null);
 
   int _currentTabIndex = 0;
-  int _currentHottestIndex = 0;
-  int _currentNewestIndex = 0;
   final List<String> _tabLabelList = ["发现", "最新", "最热"];
-  int _recommendResultOffset = 0;
-  int _newestResultOffset = 0;
-  int _hottestResultOffset = 0;
-  bool _recommendResultLoading = false;
-  bool _newestResultLoading = false;
-  bool _hottestResultLoading = false;
+
+  late GetTagPostListParams _hottestParams;
+  int _currentHottestIndex = 0;
+  late GetTagPostListParams _newestParams;
+  int _currentNewestIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    initTab();
+    _fetchTagDetail();
+    initFilter();
+  }
+
+  initFilter() {
     _hottestParams = GetTagPostListParams(
       tag: widget.tag,
       tagPostResultType: TagPostResultType.week,
     );
+    _currentHottestIndex = _hottestParams.tagPostResultType.index - 2;
     _newestParams = GetTagPostListParams(
       tag: widget.tag,
       tagPostResultType: TagPostResultType.newPost,
     );
-    _currentHottestIndex = _hottestParams.tagPostResultType.index - 2;
     _currentNewestIndex = _newestParams.tagPostResultType.index;
-    initTab();
-    _fetchTagDetail();
-    _fetchRecommendResult(refresh: true);
-    _fetchHottestResult(refresh: true);
-    _fetchNewestResult(refresh: true);
   }
 
   @override
@@ -119,8 +113,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
     TagApi.getTagDetail(tag: widget.tag).then((value) {
       try {
         if (value['meta']['status'] != 200) {
-          IToast.showTop(context,
-              text: value['meta']['desc'] ?? value['meta']['msg']);
+          IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
         } else {
           if (value['response'] != null) {
             _tagDetailData = TagDetailData.fromJson(value['response']);
@@ -128,120 +121,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
           if (mounted) setState(() {});
         }
       } catch (_) {
-        IToast.showTop(context, text: "加载失败");
-      }
-    });
-  }
-
-  _fetchRecommendResult({bool refresh = false}) async {
-    if (_recommendResultLoading) return;
-    _recommendResultLoading = true;
-    return await TagApi.getRecommendList(
-      tag: widget.tag,
-      offset: refresh ? 0 : _recommendResultOffset,
-    ).then((value) {
-      try {
-        if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
-          return IndicatorResult.fail;
-        } else {
-          List t = [];
-          if (value['data'] != null) {
-            _recommendResultOffset = value['data']['offset'];
-            if (refresh) _recommendList.clear();
-            t = value['data']['list'] as List;
-            _recommendList
-                .addAll(t.map((e) => PostListItem.fromJson(e)).toList());
-            _recommendList
-                .removeWhere((e) => RecommendFlowItemBuilder.isInvalid(e));
-          }
-          if (mounted) setState(() {});
-          if (t.isEmpty) {
-            return IndicatorResult.success;
-          } else {
-            return IndicatorResult.success;
-          }
-        }
-      } catch (_) {
-        IToast.showTop(context, text: "加载失败");
-        return IndicatorResult.fail;
-      } finally {
-        _recommendResultLoading = false;
-      }
-    });
-  }
-
-  _fetchHottestResult({bool refresh = false}) async {
-    if (_hottestResultLoading) return;
-    _hottestResultLoading = true;
-    return await TagApi.getPostList(
-      _hottestParams.copyWith(offset: refresh ? 0 : _hottestResultOffset),
-    ).then((value) {
-      try {
-        if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
-          return IndicatorResult.fail;
-        } else {
-          List t = [];
-          if (value['data'] != null) {
-            _hottestResultOffset = value['data']['offset'];
-            if (refresh) _hottestList.clear();
-            t = value['data']['list'] as List;
-            _hottestList
-                .addAll(t.map((e) => PostListItem.fromJson(e)).toList());
-            _hottestList
-                .removeWhere((e) => RecommendFlowItemBuilder.isInvalid(e));
-          }
-          if (mounted) setState(() {});
-          if (t.isEmpty) {
-            return IndicatorResult.success;
-          } else {
-            return IndicatorResult.success;
-          }
-        }
-      } catch (_) {
-        IToast.showTop(context, text: "加载失败");
-        return IndicatorResult.fail;
-      } finally {
-        if (mounted) setState(() {});
-        _hottestResultLoading = false;
-      }
-    });
-  }
-
-  _fetchNewestResult({bool refresh = false}) async {
-    if (_newestResultLoading) return;
-    _newestResultLoading = true;
-    return await TagApi.getPostList(
-      _newestParams.copyWith(offset: refresh ? 0 : _newestResultOffset),
-    ).then((value) {
-      try {
-        if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
-          return IndicatorResult.fail;
-        } else {
-          List t = [];
-          if (value['data'] != null) {
-            _newestResultOffset = value['data']['offset'];
-            if (refresh) _newestList.clear();
-            t = value['data']['list'] as List;
-            _newestList.addAll(t.map((e) => PostListItem.fromJson(e)).toList());
-            _newestList
-                .removeWhere((e) => RecommendFlowItemBuilder.isInvalid(e));
-          }
-          if (mounted) setState(() {});
-          if (t.isEmpty) {
-            return IndicatorResult.success;
-          } else {
-            return IndicatorResult.success;
-          }
-        }
-      } catch (_) {
-        IToast.showTop(context, text: "加载失败");
-        return IndicatorResult.fail;
-      } finally {
-        if (mounted) setState(() {});
-        _newestResultLoading = false;
+        IToast.showTop("加载失败");
       }
     });
   }
@@ -251,8 +131,9 @@ class _TagDetailScreenState extends State<TagDetailScreen>
       decoration: BoxDecoration(
         color: AppTheme.getBackground(context),
       ),
-      child: NestedScrollView(
+      child: ExtendedNestedScrollView(
         controller: _scrollController,
+        onlyOneScrollInBody: true,
         headerSliverBuilder: (_, __) => [
           SliverToBoxAdapter(
             child: Container(
@@ -307,9 +188,8 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                                 _tagDetailData!.favoritedTagId),
                           ).then((value) {
                             if (value['meta']['status'] != 200) {
-                              IToast.showTop(context,
-                                  text: value['meta']['desc'] ??
-                                      value['meta']['msg']);
+                              IToast.showTop(value['meta']['desc'] ??
+                                  value['meta']['msg']);
                             } else {
                               _tagDetailData!.favorited =
                                   !_tagDetailData!.favorited;
@@ -398,118 +278,23 @@ class _TagDetailScreenState extends State<TagDetailScreen>
             borderColor: Theme.of(context).primaryColor,
           ),
           onTap: (index) {
+            if (_currentTabIndex == index) {
+              switch (index) {
+                case 0:
+                  _recommendKey.currentState?.callRefresh();
+                  break;
+                case 1:
+                  _newestKey.currentState?.filterData(_newestParams);
+                  break;
+                case 2:
+                  _hottestKey.currentState?.filterData(_hottestParams);
+                  break;
+              }
+            }
             setState(() {
               _currentTabIndex = index;
             });
-            switch (index) {
-              case 0:
-                // _recommendResultRefreshController.callRefresh(
-                //     scrollController: _recommendResultScrollController);
-                // _fetchRecommendResult(refresh: true);
-                // scrollToTop();
-                break;
-              case 1:
-                // _newestResultRefreshController.callRefresh(
-                //     scrollController: _newestResultScrollController);
-                // _fetchNewestResult(refresh: true);
-                // scrollToTop();
-                break;
-              case 2:
-                // _hottestResultRefreshController.callRefresh(
-                //     scrollController: _hottestResultScrollController);
-                // _fetchHottestResult(refresh: true);
-                // scrollToTop();
-                break;
-            }
           },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNewestFilterBar() {
-    return SliverPersistentHeader(
-      // key: ValueKey(Utils.getRandomString()),
-      key: ValueKey("$_currentTabIndex"),
-      pinned: true,
-      delegate: SliverHeaderDelegate.fixedHeight(
-        height: 50,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppTheme.getBackground(context),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              Expanded(
-                child: CustomSlidingSegmentedControl(
-                  isStretch: true,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(50),
-                  ),
-                  thumbDecoration: BoxDecoration(
-                    color: Theme.of(context).canvasColor,
-                    borderRadius: BorderRadius.circular(50),
-                  ),
-                  height: 50,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                  children: const <int, Widget>{
-                    0: Text("最新发布"),
-                    1: Text("最新评论"),
-                  },
-                  initialValue: _currentNewestIndex,
-                  onValueChanged: (index) {
-                    setState(() {
-                      _currentNewestIndex = index;
-                      switch (_currentNewestIndex) {
-                        case 0:
-                          _newestParams = _newestParams.copyWith(
-                            tagPostResultType: TagPostResultType.newPost,
-                          );
-                          break;
-                        case 1:
-                          _newestParams = _newestParams.copyWith(
-                            tagPostResultType: TagPostResultType.newComment,
-                          );
-                          break;
-                      }
-                      // _newestResultRefreshController.callRefresh(
-                      //     scrollController: _newestResultScrollController);
-                      _fetchNewestResult(refresh: true);
-                      scrollToTop();
-                    });
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              ItemBuilder.buildIconTextButton(
-                context,
-                icon: const Icon(
-                  Icons.filter_alt_rounded,
-                  size: 16,
-                ),
-                text: "筛选",
-                onTap: () {
-                  BottomSheetBuilder.showBottomSheet(
-                    context,
-                    (context) => NewestFilterBottomSheet(
-                      params: _newestParams.clone(),
-                      onConfirm: (params) {
-                        _newestParams = params;
-                        // _newestResultRefreshController.callRefresh(
-                        //     scrollController: _newestResultScrollController);
-                        _fetchNewestResult(refresh: true);
-                        scrollToTop();
-                      },
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -520,278 +305,36 @@ class _TagDetailScreenState extends State<TagDetailScreen>
         duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
   }
 
-  Widget _buildHottestFilterBar() {
-    return SliverPersistentHeader(
-      // key: ValueKey(Utils.getRandomString()),
-      key: ValueKey("$_currentTabIndex"),
-      pinned: true,
-      delegate: SliverHeaderDelegate.fixedHeight(
-        height: 50,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppTheme.getBackground(context),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: CustomSlidingSegmentedControl(
-                  isStretch: true,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(50),
-                  ),
-                  height: 50,
-                  thumbDecoration: BoxDecoration(
-                    color: Theme.of(context).canvasColor,
-                    borderRadius: BorderRadius.circular(50),
-                  ),
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                  children: const <int, Widget>{
-                    0: Text("全部"),
-                    1: Text("日榜"),
-                    2: Text("周榜"),
-                    3: Text("月榜"),
-                  },
-                  initialValue: _currentHottestIndex,
-                  onValueChanged: (index) {
-                    setState(() {
-                      _currentHottestIndex = index;
-                      switch (_currentHottestIndex) {
-                        case 0:
-                          _hottestParams = _hottestParams.copyWith(
-                            tagPostResultType: TagPostResultType.total,
-                          );
-                          break;
-                        case 1:
-                          _hottestParams = _hottestParams.copyWith(
-                            tagPostResultType: TagPostResultType.date,
-                          );
-                          break;
-                        case 2:
-                          _hottestParams = _hottestParams.copyWith(
-                            tagPostResultType: TagPostResultType.week,
-                          );
-                          break;
-                        case 3:
-                          _hottestParams = _hottestParams.copyWith(
-                            tagPostResultType: TagPostResultType.month,
-                          );
-                          break;
-                      }
-                      // _hottestResultRefreshController.callRefresh(
-                      //     scrollController: _scrollController);
-                      _fetchHottestResult(refresh: true);
-                      scrollToTop();
-                    });
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              ItemBuilder.buildIconTextButton(
-                context,
-                icon: const Icon(
-                  Icons.filter_alt_rounded,
-                  size: 16,
-                ),
-                text: "筛选",
-                onTap: () {
-                  BottomSheetBuilder.showBottomSheet(
-                    context,
-                    (context) => NewestFilterBottomSheet(
-                      params: _hottestParams.clone(),
-                      onConfirm: (params) {
-                        _hottestParams = params;
-                        // _hottestResultRefreshController.callRefresh(
-                        //     scrollController: _hottestResultScrollController);
-                        _fetchHottestResult(refresh: true);
-                        scrollToTop();
-                      },
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildTabView() {
     List<Widget> children = [];
-    children.add(_buildRecommendResultTab());
-    children.add(_buildNewestResultTab());
-    children.add(_buildHottestResultTab());
+    children.add(RecommendTab(key: _recommendKey, tag: widget.tag));
+    children.add(Builder(builder: (BuildContext context) {
+      final parentController = PrimaryScrollController.of(context);
+      if (scrollControllers[0]?.parent != parentController) {
+        scrollControllers[0]?.dispose();
+        scrollControllers[0] = SubordinateScrollController(parentController);
+      }
+      return NewestTab(
+        key: _newestKey,
+        tag: widget.tag,
+        scrollController: scrollControllers[0],
+      );
+    }));
+    children.add(Builder(builder: (BuildContext context) {
+      final parentController = PrimaryScrollController.of(context);
+      if (scrollControllers[1]?.parent != parentController) {
+        scrollControllers[1]?.dispose();
+        scrollControllers[1] = SubordinateScrollController(parentController);
+      }
+      return HottestTab(
+        key: _hottestKey,
+        tag: widget.tag,
+        scrollController: scrollControllers[1],
+      );
+    }));
     return TabBarView(
       controller: _tabController,
       children: children,
-    );
-  }
-
-  Widget _buildRecommendResultTab() {
-    return EasyRefresh.builder(
-      controller: _recommendResultRefreshController,
-      onRefresh: () async {
-        return await _fetchRecommendResult(refresh: true);
-      },
-      onLoad: () async {
-        return await _fetchRecommendResult();
-      },
-      triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => WaterfallFlow.builder(
-        // controller: _recommendResultScrollController,
-        cacheExtent: 9999,
-        physics: physics,
-        padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-        gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-          mainAxisSpacing: 6,
-          crossAxisSpacing: 6,
-          maxCrossAxisExtent: 300,
-        ),
-        itemBuilder: (BuildContext context, int index) {
-          return GestureDetector(
-            child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
-              context,
-              _recommendList[index],
-              onLikeTap: () async {
-                var item = _recommendList[index];
-                HapticFeedback.mediumImpact();
-                return await PostApi.likeOrUnLike(
-                        isLike: !item.favorite,
-                        postId: item.itemId,
-                        blogId: item.blogInfo!.blogId)
-                    .then((value) {
-                  setState(() {
-                    if (value['meta']['status'] != 200) {
-                      IToast.showTop(context,
-                          text: value['meta']['desc'] ?? value['meta']['msg']);
-                    } else {
-                      item.favorite = !item.favorite;
-                      item.postData!.postCount!.favoriteCount +=
-                          item.favorite ? 1 : -1;
-                    }
-                  });
-                  return value['meta']['status'];
-                });
-              },
-              excludeTag: widget.tag,
-            ),
-          );
-        },
-        itemCount: _recommendList.length,
-      ),
-    );
-  }
-
-  Widget _buildNewestResultTab() {
-    return EasyRefresh.builder(
-      controller: _newestResultRefreshController,
-      onRefresh: () async {
-        return await _fetchNewestResult(refresh: true);
-      },
-      onLoad: () async {
-        return await _fetchNewestResult();
-      },
-      triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => WaterfallFlow.builder(
-        // controller: _newestResultScrollController,
-        cacheExtent: 9999,
-        physics: physics,
-        padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-        gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-          mainAxisSpacing: 6,
-          crossAxisSpacing: 6,
-          maxCrossAxisExtent: 300,
-        ),
-        itemBuilder: (BuildContext context, int index) {
-          return GestureDetector(
-            child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
-              context,
-              _newestList[index],
-              onLikeTap: () async {
-                var item = _newestList[index];
-                HapticFeedback.mediumImpact();
-                return await PostApi.likeOrUnLike(
-                        isLike: !item.favorite,
-                        postId: item.itemId,
-                        blogId: item.blogInfo!.blogId)
-                    .then((value) {
-                  setState(() {
-                    if (value['meta']['status'] != 200) {
-                      IToast.showTop(context,
-                          text: value['meta']['desc'] ?? value['meta']['msg']);
-                    } else {
-                      item.favorite = !item.favorite;
-                      item.postData!.postCount!.favoriteCount +=
-                          item.favorite ? 1 : -1;
-                    }
-                  });
-                  return value['meta']['status'];
-                });
-              },
-              excludeTag: widget.tag,
-            ),
-          );
-        },
-        itemCount: _newestList.length,
-      ),
-    );
-  }
-
-  Widget _buildHottestResultTab() {
-    return EasyRefresh.builder(
-      controller: _hottestResultRefreshController,
-      onRefresh: () async {
-        return await _fetchHottestResult(refresh: true);
-      },
-      onLoad: () async {
-        return await _fetchHottestResult();
-      },
-      triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => WaterfallFlow.builder(
-        // controller: _hottestResultScrollController,
-        cacheExtent: 9999,
-        physics: physics,
-        padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-        gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-          mainAxisSpacing: 6,
-          crossAxisSpacing: 6,
-          maxCrossAxisExtent: 300,
-        ),
-        itemBuilder: (BuildContext context, int index) {
-          return GestureDetector(
-            child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
-              context,
-              _hottestList[index],
-              onLikeTap: () async {
-                var item = _hottestList[index];
-                HapticFeedback.mediumImpact();
-                return await PostApi.likeOrUnLike(
-                        isLike: !item.favorite,
-                        postId: item.itemId,
-                        blogId: item.blogInfo!.blogId)
-                    .then((value) {
-                  setState(() {
-                    if (value['meta']['status'] != 200) {
-                      IToast.showTop(context,
-                          text: value['meta']['desc'] ?? value['meta']['msg']);
-                    } else {
-                      item.favorite = !item.favorite;
-                      item.postData!.postCount!.favoriteCount +=
-                          item.favorite ? 1 : -1;
-                    }
-                  });
-                  return value['meta']['status'];
-                });
-              },
-              excludeTag: widget.tag,
-            ),
-          );
-        },
-        itemCount: _hottestList.length,
-      ),
     );
   }
 
@@ -852,7 +395,8 @@ class _TagDetailScreenState extends State<TagDetailScreen>
     required String desc,
     Function()? onTap,
   }) {
-    return ItemBuilder.buildClickItem( GestureDetector(
+    return ItemBuilder.buildClickItem(
+      GestureDetector(
         onTap: onTap,
         child: Container(
           margin: const EdgeInsets.only(right: 12),
@@ -894,6 +438,180 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                     ),
                   ],
                 ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNewestFilterBar() {
+    return SliverPersistentHeader(
+      key: ValueKey("$_currentTabIndex"),
+      pinned: true,
+      delegate: SliverHeaderDelegate.fixedHeight(
+        height: 50,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppTheme.getBackground(context),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              Expanded(
+                child: CustomSlidingSegmentedControl(
+                  isStretch: true,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                  thumbDecoration: BoxDecoration(
+                    color: Theme.of(context).canvasColor,
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                  height: 50,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  children: const <int, Widget>{
+                    0: Text("最新发布"),
+                    1: Text("最新评论"),
+                  },
+                  initialValue: _currentNewestIndex,
+                  onValueChanged: (index) {
+                    setState(() {
+                      _currentNewestIndex = index;
+                      switch (_currentNewestIndex) {
+                        case 0:
+                          _newestParams = _newestParams.copyWith(
+                            tagPostResultType: TagPostResultType.newPost,
+                          );
+                          break;
+                        case 1:
+                          _newestParams = _newestParams.copyWith(
+                            tagPostResultType: TagPostResultType.newComment,
+                          );
+                          break;
+                      }
+                      _newestKey.currentState?.filterData(_newestParams);
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              ItemBuilder.buildIconTextButton(
+                context,
+                icon: const Icon(
+                  Icons.filter_alt_rounded,
+                  size: 16,
+                ),
+                text: "筛选",
+                onTap: () {
+                  BottomSheetBuilder.showBottomSheet(
+                    context,
+                    (context) => NewestFilterBottomSheet(
+                      params: _newestParams.clone(),
+                      onConfirm: (params) {
+                        _newestParams = params;
+                        _newestKey.currentState?.filterData(_newestParams);
+                      },
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHottestFilterBar() {
+    return SliverPersistentHeader(
+      key: ValueKey("$_currentTabIndex"),
+      pinned: true,
+      delegate: SliverHeaderDelegate.fixedHeight(
+        height: 50,
+        child: Container(
+          height: 50,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppTheme.getBackground(context),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: CustomSlidingSegmentedControl(
+                  isStretch: true,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                  height: 50,
+                  thumbDecoration: BoxDecoration(
+                    color: Theme.of(context).canvasColor,
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  children: const <int, Widget>{
+                    0: Text("全部"),
+                    1: Text("日榜"),
+                    2: Text("周榜"),
+                    3: Text("月榜"),
+                  },
+                  initialValue: _currentHottestIndex,
+                  onValueChanged: (index) {
+                    setState(() {
+                      _currentHottestIndex = index;
+                      switch (_currentHottestIndex) {
+                        case 0:
+                          _hottestParams = _hottestParams.copyWith(
+                            tagPostResultType: TagPostResultType.total,
+                          );
+                          break;
+                        case 1:
+                          _hottestParams = _hottestParams.copyWith(
+                            tagPostResultType: TagPostResultType.date,
+                          );
+                          break;
+                        case 2:
+                          _hottestParams = _hottestParams.copyWith(
+                            tagPostResultType: TagPostResultType.week,
+                          );
+                          break;
+                        case 3:
+                          _hottestParams = _hottestParams.copyWith(
+                            tagPostResultType: TagPostResultType.month,
+                          );
+                          break;
+                      }
+                      _hottestKey.currentState?.filterData(_hottestParams);
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              ItemBuilder.buildIconTextButton(
+                context,
+                icon: const Icon(
+                  Icons.filter_alt_rounded,
+                  size: 16,
+                ),
+                text: "筛选",
+                onTap: () {
+                  BottomSheetBuilder.showBottomSheet(
+                    context,
+                    (context) => NewestFilterBottomSheet(
+                      params: _hottestParams.clone(),
+                      onConfirm: (params) {
+                        _hottestParams = params;
+                        _hottestKey.currentState?.filterData(_hottestParams);
+                      },
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -964,6 +682,421 @@ class _TagDetailScreenState extends State<TagDetailScreen>
             }),
         const SizedBox(width: 5),
       ],
+    );
+  }
+}
+
+class RecommendTab extends StatefulWidget {
+  const RecommendTab({
+    super.key,
+    required this.tag,
+  });
+
+  final String tag;
+
+  @override
+  State<StatefulWidget> createState() => RecommendTabState();
+}
+
+class RecommendTabState extends State<RecommendTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+  final List<PostListItem> _recommendList = [];
+  final EasyRefreshController _recommendResultRefreshController =
+      EasyRefreshController();
+  int _recommendResultOffset = 0;
+  bool _recommendResultLoading = false;
+  bool _recommendNoMore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    callRefresh();
+  }
+
+  callRefresh() {
+    _fetchRecommendResult(refresh: true);
+    _recommendResultRefreshController.callRefresh();
+  }
+
+  _fetchRecommendResult({bool refresh = false}) async {
+    if (_recommendResultLoading) return;
+    if (refresh) _recommendNoMore = false;
+    _recommendResultLoading = true;
+    return await TagApi.getRecommendList(
+      tag: widget.tag,
+      offset: refresh ? 0 : _recommendResultOffset,
+    ).then((value) {
+      try {
+        if (value['code'] != 0) {
+          IToast.showTop(value['msg']);
+          return IndicatorResult.fail;
+        } else {
+          List t = [];
+          if (value['data'] != null) {
+            _recommendResultOffset = value['data']['offset'];
+            if (refresh) _recommendList.clear();
+            t = value['data']['list'] as List;
+            _recommendList
+                .addAll(t.map((e) => PostListItem.fromJson(e)).toList());
+            _recommendList
+                .removeWhere((e) => RecommendFlowItemBuilder.isInvalid(e));
+          }
+          if (mounted) setState(() {});
+          if (t.isEmpty) {
+            _recommendNoMore = true;
+            return IndicatorResult.noMore;
+          } else {
+            return IndicatorResult.success;
+          }
+        }
+      } catch (_) {
+        IToast.showTop("加载失败");
+        return IndicatorResult.fail;
+      } finally {
+        _recommendResultLoading = false;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return EasyRefresh.builder(
+      controller: _recommendResultRefreshController,
+      refreshOnStart: true,
+      onRefresh: () async {
+        return await _fetchRecommendResult(refresh: true);
+      },
+      onLoad: () async {
+        return await _fetchRecommendResult();
+      },
+      triggerAxis: Axis.vertical,
+      childBuilder: (context, physics) => ItemBuilder.buildLoadMoreNotification(
+        onLoad: _fetchRecommendResult,
+        noMore: _recommendNoMore,
+        child: WaterfallFlow.builder(
+          cacheExtent: 9999,
+          physics: physics,
+          padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+          gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+            mainAxisSpacing: 6,
+            crossAxisSpacing: 6,
+            maxCrossAxisExtent: 300,
+          ),
+          itemBuilder: (BuildContext context, int index) {
+            return GestureDetector(
+              child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
+                context,
+                _recommendList[index],
+                onLikeTap: () async {
+                  var item = _recommendList[index];
+                  HapticFeedback.mediumImpact();
+                  return await PostApi.likeOrUnLike(
+                          isLike: !item.favorite,
+                          postId: item.itemId,
+                          blogId: item.blogInfo!.blogId)
+                      .then((value) {
+                    setState(() {
+                      if (value['meta']['status'] != 200) {
+                        IToast.showTop(
+                            value['meta']['desc'] ?? value['meta']['msg']);
+                      } else {
+                        item.favorite = !item.favorite;
+                        item.postData!.postCount!.favoriteCount +=
+                            item.favorite ? 1 : -1;
+                      }
+                    });
+                    return value['meta']['status'];
+                  });
+                },
+                excludeTag: widget.tag,
+              ),
+            );
+          },
+          itemCount: _recommendList.length,
+        ),
+      ),
+    );
+  }
+}
+
+class HottestTab extends StatefulWidget {
+  const HottestTab({super.key, required this.tag, this.scrollController});
+
+  final String tag;
+  final ScrollController? scrollController;
+
+  @override
+  State<StatefulWidget> createState() => HottestTabState();
+}
+
+class HottestTabState extends State<HottestTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+  final List<PostListItem> _hottestList = [];
+  final EasyRefreshController _hottestResultRefreshController =
+      EasyRefreshController();
+
+  GetTagPostListParams? _hottestParams;
+  int _hottestResultOffset = 0;
+  bool _hottestNoMore = false;
+  bool _hottestResultLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    filterData(GetTagPostListParams(
+      tag: widget.tag,
+      tagPostResultType: TagPostResultType.week,
+    ));
+  }
+
+  filterData(GetTagPostListParams newParam) {
+    _hottestParams = newParam;
+    _fetchHottestResult(refresh: true);
+    _hottestResultRefreshController.callRefresh();
+  }
+
+  _fetchHottestResult({bool refresh = false}) async {
+    if (_hottestResultLoading) return;
+    if (refresh) _hottestNoMore = false;
+    _hottestResultLoading = true;
+    return await TagApi.getPostList(
+      _hottestParams!.copyWith(offset: refresh ? 0 : _hottestResultOffset),
+    ).then((value) {
+      try {
+        if (value['code'] != 0) {
+          IToast.showTop(value['msg']);
+          return IndicatorResult.fail;
+        } else {
+          List t = [];
+          if (value['data'] != null) {
+            _hottestResultOffset = value['data']['offset'];
+            if (refresh) _hottestList.clear();
+            t = value['data']['list'] as List;
+            _hottestList
+                .addAll(t.map((e) => PostListItem.fromJson(e)).toList());
+            _hottestList
+                .removeWhere((e) => RecommendFlowItemBuilder.isInvalid(e));
+          }
+          if (mounted) setState(() {});
+          if (t.isEmpty) {
+            _hottestNoMore = false;
+            return IndicatorResult.noMore;
+          } else {
+            return IndicatorResult.success;
+          }
+        }
+      } catch (_) {
+        IToast.showTop("加载失败");
+        return IndicatorResult.fail;
+      } finally {
+        if (mounted) setState(() {});
+        _hottestResultLoading = false;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return EasyRefresh.builder(
+      controller: _hottestResultRefreshController,
+      refreshOnStart: true,
+      onRefresh: () async {
+        return await _fetchHottestResult(refresh: true);
+      },
+      onLoad: () async {
+        return await _fetchHottestResult();
+      },
+      triggerAxis: Axis.vertical,
+      childBuilder: (context, physics) => ItemBuilder.buildLoadMoreNotification(
+        onLoad: _fetchHottestResult,
+        noMore: _hottestNoMore,
+        child: WaterfallFlow.builder(
+          cacheExtent: 9999,
+          physics: physics,
+          padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+          gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+            mainAxisSpacing: 6,
+            crossAxisSpacing: 6,
+            maxCrossAxisExtent: 300,
+          ),
+          itemBuilder: (BuildContext context, int index) {
+            return GestureDetector(
+              child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
+                context,
+                _hottestList[index],
+                onLikeTap: () async {
+                  var item = _hottestList[index];
+                  HapticFeedback.mediumImpact();
+                  return await PostApi.likeOrUnLike(
+                          isLike: !item.favorite,
+                          postId: item.itemId,
+                          blogId: item.blogInfo!.blogId)
+                      .then((value) {
+                    setState(() {
+                      if (value['meta']['status'] != 200) {
+                        IToast.showTop(
+                            value['meta']['desc'] ?? value['meta']['msg']);
+                      } else {
+                        item.favorite = !item.favorite;
+                        item.postData!.postCount!.favoriteCount +=
+                            item.favorite ? 1 : -1;
+                      }
+                    });
+                    return value['meta']['status'];
+                  });
+                },
+                excludeTag: widget.tag,
+              ),
+            );
+          },
+          itemCount: _hottestList.length,
+        ),
+      ),
+    );
+  }
+}
+
+class NewestTab extends StatefulWidget {
+  const NewestTab({super.key, required this.tag, this.scrollController});
+
+  final String tag;
+
+  final ScrollController? scrollController;
+
+  @override
+  State<StatefulWidget> createState() => NewestTabState();
+}
+
+class NewestTabState extends State<NewestTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+  final List<PostListItem> _newestList = [];
+  final EasyRefreshController _newestResultRefreshController =
+      EasyRefreshController();
+  GetTagPostListParams? _newestParams;
+  int _newestResultOffset = 0;
+  bool _newestResultLoading = false;
+  bool _newestNoMore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    filterData(GetTagPostListParams(
+      tag: widget.tag,
+      tagPostResultType: TagPostResultType.newPost,
+    ));
+  }
+
+  filterData(GetTagPostListParams newParam) {
+    _newestParams = newParam;
+    _fetchNewestResult(refresh: true);
+    _newestResultRefreshController.callRefresh();
+  }
+
+  _fetchNewestResult({bool refresh = false}) async {
+    if (_newestResultLoading) return;
+    if (refresh) _newestNoMore = false;
+    _newestResultLoading = true;
+    return await TagApi.getPostList(
+      _newestParams!.copyWith(offset: refresh ? 0 : _newestResultOffset),
+    ).then((value) {
+      try {
+        if (value['code'] != 0) {
+          IToast.showTop(value['msg']);
+          return IndicatorResult.fail;
+        } else {
+          List t = [];
+          if (value['data'] != null) {
+            _newestResultOffset = value['data']['offset'];
+            if (refresh) _newestList.clear();
+            t = value['data']['list'] as List;
+            _newestList.addAll(t.map((e) => PostListItem.fromJson(e)).toList());
+            _newestList
+                .removeWhere((e) => RecommendFlowItemBuilder.isInvalid(e));
+          }
+          if (mounted) setState(() {});
+          if (t.isEmpty) {
+            _newestNoMore = false;
+            return IndicatorResult.noMore;
+          } else {
+            return IndicatorResult.success;
+          }
+        }
+      } catch (_) {
+        IToast.showTop("加载失败");
+        return IndicatorResult.fail;
+      } finally {
+        if (mounted) setState(() {});
+        _newestResultLoading = false;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return EasyRefresh.builder(
+      controller: _newestResultRefreshController,
+      refreshOnStart: true,
+      onRefresh: () async {
+        return await _fetchNewestResult(refresh: true);
+      },
+      onLoad: () async {
+        return await _fetchNewestResult();
+      },
+      triggerAxis: Axis.vertical,
+      childBuilder: (context, physics) => ItemBuilder.buildLoadMoreNotification(
+        onLoad: _fetchNewestResult,
+        noMore: _newestNoMore,
+        child: WaterfallFlow.builder(
+          cacheExtent: 9999,
+          physics: physics,
+          padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+          gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+            mainAxisSpacing: 6,
+            crossAxisSpacing: 6,
+            maxCrossAxisExtent: 300,
+          ),
+          itemBuilder: (BuildContext context, int index) {
+            return GestureDetector(
+              child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
+                context,
+                _newestList[index],
+                onLikeTap: () async {
+                  var item = _newestList[index];
+                  HapticFeedback.mediumImpact();
+                  return await PostApi.likeOrUnLike(
+                          isLike: !item.favorite,
+                          postId: item.itemId,
+                          blogId: item.blogInfo!.blogId)
+                      .then((value) {
+                    setState(() {
+                      if (value['meta']['status'] != 200) {
+                        IToast.showTop(
+                            value['meta']['desc'] ?? value['meta']['msg']);
+                      } else {
+                        item.favorite = !item.favorite;
+                        item.postData!.postCount!.favoriteCount +=
+                            item.favorite ? 1 : -1;
+                      }
+                    });
+                    return value['meta']['status'];
+                  });
+                },
+                excludeTag: widget.tag,
+              ),
+            );
+          },
+          itemCount: _newestList.length,
+        ),
+      ),
     );
   }
 }

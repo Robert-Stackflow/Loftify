@@ -51,7 +51,7 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
     return await UserApi.getFavoriteFolderList(offset: offset).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop(context, text: value['msg']);
+          IToast.showTop( value['msg']);
           return IndicatorResult.fail;
         } else {
           _createCount = value['data']['createCount'];
@@ -67,7 +67,7 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
           }
         }
       } catch (e) {
-        if (mounted) IToast.showTop(context, text: "加载失败");
+        if (mounted) IToast.showTop( "加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
