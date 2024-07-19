@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:tuple/tuple.dart';
 
 import '../../Api/github_api.dart';
+import '../../Models/enums.dart';
 import '../../Providers/global_provider.dart';
 import '../../Providers/provider_manager.dart';
 import '../../Utils/hive_util.dart';
@@ -43,6 +44,12 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
   bool autoCheckUpdate = HiveUtil.getBool(key: HiveUtil.autoCheckUpdateKey);
   bool enableCloseToTray = HiveUtil.getBool(key: HiveUtil.enableCloseToTrayKey);
   bool enableCloseNotice = HiveUtil.getBool(key: HiveUtil.enableCloseNoticeKey);
+  int doubleTapAction = Utils.patchEnum(
+      HiveUtil.getInt(key: HiveUtil.doubleTapActionKey, defaultValue: 1),
+      DoubleTapAction.values.length);
+  int downloadSuccessAction = Utils.patchEnum(
+      HiveUtil.getInt(key: HiveUtil.downloadSuccessActionKey),
+      DownloadSuccessAction.values.length);
 
   @override
   void initState() {
@@ -122,7 +129,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
             customDialogType: CustomDialogType.normal,
           );
         } else {
-          IToast.showTop( S.current.checkUpdatesAlreadyLatest);
+          IToast.showTop(S.current.checkUpdatesAlreadyLatest);
         }
       }
     });
@@ -218,6 +225,66 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                 },
               ),
               const SizedBox(height: 10),
+              ItemBuilder.buildCaptionItem(context: context, title: "操作设置"),
+              ItemBuilder.buildEntryItem(
+                context: context,
+                title: "详情页双击页面",
+                tip: DoubleTapAction.values[doubleTapAction].label,
+                onTap: () {
+                  BottomSheetBuilder.showListBottomSheet(
+                    context,
+                    (sheetContext) => TileList.fromOptions(
+                      DoubleTapAction.like.tuples,
+                      (newAction) {
+                        Navigator.pop(sheetContext);
+                        setState(() {
+                          doubleTapAction = newAction.index;
+                          HiveUtil.put(
+                              key: HiveUtil.doubleTapActionKey,
+                              value: doubleTapAction);
+                        });
+                      },
+                      selected: DoubleTapAction.values[doubleTapAction],
+                      title: "选择详情页双击页面操作",
+                      context: context,
+                      onCloseTap: () => Navigator.pop(sheetContext),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                    ),
+                  );
+                },
+              ),
+              ItemBuilder.buildEntryItem(
+                context: context,
+                title: "下载成功后",
+                description:
+                    "下载成功后（点击详情页的下载全部按钮、双击详情页面下载、点击图片详情页的下载或下载全部按钮）执行的操作",
+                bottomRadius: true,
+                tip: DownloadSuccessAction.values[downloadSuccessAction].label,
+                onTap: () {
+                  BottomSheetBuilder.showListBottomSheet(
+                    context,
+                    (sheetContext) => TileList.fromOptions(
+                      DownloadSuccessAction.unlike.tuples,
+                      (newAction) {
+                        Navigator.pop(sheetContext);
+                        setState(() {
+                          downloadSuccessAction = newAction.index;
+                          HiveUtil.put(
+                              key: HiveUtil.downloadSuccessActionKey,
+                              value: downloadSuccessAction);
+                        });
+                      },
+                      selected:
+                          DownloadSuccessAction.values[downloadSuccessAction],
+                      title: "选择下载成功后操作",
+                      context: context,
+                      onCloseTap: () => Navigator.pop(sheetContext),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
               if (ResponsiveUtil.isMobile())
                 ItemBuilder.buildEntryItem(
                   context: context,
@@ -233,7 +300,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                           setState(() {
                             _cacheSize = value;
                             CustomLoadingDialog.dismissLoading(context);
-                            IToast.showTop( S.current.clearCacheSuccess);
+                            IToast.showTop(S.current.clearCacheSuccess);
                           });
                         });
                       });

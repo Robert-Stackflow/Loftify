@@ -44,19 +44,28 @@ class PostApi {
     required String blogName,
   }) async {
     String blogDomain = Utils.getBlogDomain(blogName);
+    Map<String, dynamic> data = {
+      "supportposttypes": "1,2,3,4,5,6",
+      "postid": postId,
+      "requestType": 0,
+      "offset": 0,
+      "postdigestnew": 1,
+      "checkpwd": 1,
+      "needgetpoststat": 1,
+    };
+    if (Utils.isNotEmpty(blogDomain)) {
+      data.addAll({
+        "blogdomain": blogDomain,
+        "blogId": blogId,
+      });
+    } else {
+      data.addAll({
+        "targetblogid": blogId,
+      });
+    }
     return RequestUtil.post(
       "/oldapi/post/detail.api",
-      data: {
-        "supportposttypes": "supportposttypes",
-        "blogdomain": blogDomain,
-        "postid": postId,
-        "blogId": blogId,
-        "requestType": 0,
-        "offset": 0,
-        "postdigestnew": 1,
-        "checkpwd": 1,
-        "needgetpoststat": 1,
-      },
+      data: data,
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
   }
@@ -184,9 +193,7 @@ class PostApi {
       "postId": "$postId",
       "blogId": "$blogId",
       "postType": postType,
-      "time": DateTime
-          .now()
-          .millisecondsSinceEpoch,
+      "time": DateTime.now().millisecondsSinceEpoch,
     };
     if (collectionId != 0) {
       item.addAll({
@@ -197,9 +204,7 @@ class PostApi {
       "/datacollect/v1/upload",
       domainType: DomainType.da,
       data: {
-        "time": DateTime
-            .now()
-            .millisecondsSinceEpoch,
+        "time": DateTime.now().millisecondsSinceEpoch,
         "list": [
           {
             "userId": userId,

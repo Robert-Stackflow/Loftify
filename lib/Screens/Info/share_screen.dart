@@ -52,7 +52,6 @@ class _ShareScreenState extends State<ShareScreen>
   HistoryLayoutMode _layoutMode = HistoryLayoutMode.nineGrid;
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
-  final ScrollController _scrollController = ScrollController();
   bool _noMore = false;
 
   @override
@@ -67,13 +66,6 @@ class _ShareScreenState extends State<ShareScreen>
     if (widget.infoMode != InfoMode.me) {
       _onRefresh();
     }
-    _scrollController.addListener(() {
-      if (!_noMore &&
-          _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
-        _onLoad();
-      }
-    });
   }
 
   _fetchShare({bool refresh = false}) async {
@@ -89,7 +81,7 @@ class _ShareScreenState extends State<ShareScreen>
           .then((value) {
         try {
           if (value['meta']['status'] != 200) {
-            IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
+            IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
             return IndicatorResult.fail;
           } else {
             _total = value['response']['count'];
@@ -131,7 +123,7 @@ class _ShareScreenState extends State<ShareScreen>
             }
           }
         } catch (e) {
-          if (mounted) IToast.showTop( "加载失败");
+          if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
@@ -198,10 +190,13 @@ class _ShareScreenState extends State<ShareScreen>
       widgets.add(_buildNineGrid(startIndex, count));
       startIndex += e.count;
     }
-    return ListView(
-      controller: _scrollController,
-      padding: EdgeInsets.zero,
-      children: widgets,
+    return ItemBuilder.buildLoadMoreNotification(
+      noMore: _noMore,
+      onLoad: _onLoad,
+      child: ListView(
+        padding: const EdgeInsets.only(bottom: 20),
+        children: widgets,
+      ),
     );
   }
 
@@ -223,39 +218,42 @@ class _ShareScreenState extends State<ShareScreen>
   }
 
   Widget _buildWaterflow() {
-    return WaterfallFlow.builder(
-      cacheExtent: 9999,
-      controller: _scrollController,
-      padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-      gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-        mainAxisSpacing: 6,
-        crossAxisSpacing: 6,
-        maxCrossAxisExtent: 300,
-      ),
-      itemBuilder: (BuildContext context, int index) {
-        return CommonInfoItemBuilder.buildWaterfallFlowPostItem(
-            context, _shareList[index], onLikeTap: () async {
-          var item = _shareList[index];
-          HapticFeedback.mediumImpact();
-          return await PostApi.likeOrUnLike(
-                  isLike: !(item.liked == true),
-                  postId: item.post!.id,
-                  blogId: item.post!.blogId)
-              .then((value) {
-            setState(() {
-              if (value['meta']['status'] != 200) {
-                IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
-              } else {
-                item.liked = !(item.liked == true);
-                item.post!.postCount?.favoriteCount +=
-                    item.liked == true ? 1 : -1;
-              }
+    return ItemBuilder.buildLoadMoreNotification(
+      noMore: _noMore,
+      onLoad: _onLoad,
+      child: WaterfallFlow.builder(
+        cacheExtent: 9999,
+        padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+        gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+          mainAxisSpacing: 6,
+          crossAxisSpacing: 6,
+          maxCrossAxisExtent: 300,
+        ),
+        itemBuilder: (BuildContext context, int index) {
+          return CommonInfoItemBuilder.buildWaterfallFlowPostItem(
+              context, _shareList[index], onLikeTap: () async {
+            var item = _shareList[index];
+            HapticFeedback.mediumImpact();
+            return await PostApi.likeOrUnLike(
+                    isLike: !(item.liked == true),
+                    postId: item.post!.id,
+                    blogId: item.post!.blogId)
+                .then((value) {
+              setState(() {
+                if (value['meta']['status'] != 200) {
+                  IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+                } else {
+                  item.liked = !(item.liked == true);
+                  item.post!.postCount?.favoriteCount +=
+                      item.liked == true ? 1 : -1;
+                }
+              });
+              return value['meta']['status'];
             });
-            return value['meta']['status'];
           });
-        });
-      },
-      itemCount: _shareList.length,
+        },
+        itemCount: _shareList.length,
+      ),
     );
   }
 
@@ -305,13 +303,13 @@ class _ShareScreenState extends State<ShareScreen>
                               blogId: HiveUtil.getInt(key: HiveUtil.userIdKey))
                           .then((value) {
                         if (value['meta']['status'] != 200) {
-                          IToast.showTop( value['meta']['desc'] ??
-                                  value['meta']['msg']);
+                          IToast.showTop(
+                              value['meta']['desc'] ?? value['meta']['msg']);
                         } else {
                           _shareList.removeWhere(
                               (e) => CommonInfoItemBuilder.isInvalid(e));
                           setState(() {});
-                          IToast.showTop( "清空成功");
+                          IToast.showTop("清空成功");
                         }
                       });
                     }

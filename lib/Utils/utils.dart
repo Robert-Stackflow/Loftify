@@ -21,7 +21,6 @@ import '../Providers/provider_manager.dart';
 import 'itoast.dart';
 
 class Utils {
-
   static String processEmpty(String? str, {String defaultValue = ""}) {
     return isEmpty(str) ? defaultValue : str!;
   }
@@ -234,7 +233,7 @@ class Utils {
   }
 
   static String getBlogDomain(String? blogName) {
-    return "$blogName.lofter.com";
+    return Utils.isNotEmpty(blogName) ? "$blogName.lofter.com" : "";
   }
 
   static addSearchHistory(String str) {
@@ -305,7 +304,7 @@ class Utils {
   }) {
     Clipboard.setData(ClipboardData(text: data.toString())).then((value) {
       if (Utils.isNotEmpty(toastText)) {
-        IToast.showTop( toastText ?? "");
+        IToast.showTop(toastText ?? "");
       }
     });
     HapticFeedback.mediumImpact();
@@ -424,5 +423,24 @@ class Utils {
         return const SlideCaptchaBottomSheet();
       },
     );
+  }
+
+  static handleDownloadSuccessAction({
+    Function()? onUnlike,
+    Function()? onUnrecommend,
+  }) {
+    DownloadSuccessAction action = DownloadSuccessAction.values[Utils.patchEnum(
+        HiveUtil.getInt(key: HiveUtil.downloadSuccessActionKey),
+        DownloadSuccessAction.values.length)];
+    switch (action) {
+      case DownloadSuccessAction.none:
+        break;
+      case DownloadSuccessAction.unlike:
+        onUnlike?.call();
+        break;
+      case DownloadSuccessAction.unrecommend:
+        onUnrecommend?.call();
+        break;
+    }
   }
 }

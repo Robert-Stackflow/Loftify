@@ -4,12 +4,14 @@ import 'package:loftify/Api/collection_api.dart';
 import 'package:loftify/Models/post_detail_response.dart';
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Screens/Post/collection_detail_screen.dart';
+import 'package:loftify/Utils/asset_util.dart';
 
 import '../../Models/history_response.dart';
 import '../../Resources/theme.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
+import '../Dialog/custom_dialog.dart';
 import '../General/EasyRefresh/easy_refresh.dart';
 import '../Item/item_builder.dart';
 import '../PostItem/common_info_post_item_builder.dart';
@@ -43,17 +45,25 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
   List<PostDetailData> posts = [];
   final List<ArchiveData> _archiveDataList = [];
   final EasyRefreshController _refreshController = EasyRefreshController();
+  final ScrollController _scrollController = ScrollController();
+  bool bottomNoMore = false;
+  bool isOldest = false;
 
   @override
   void initState() {
+    setState(() {
+      subscribed = widget.postCollection.subscribed;
+    });
     super.initState();
   }
 
   _fetchData({
     int upDown = -1,
     int startPostId = 0,
+    bool showLoading = false,
   }) async {
-    if (loading) return;
+    if (loading || (upDown != -1 && startPostId == 0)) return;
+    if (showLoading) CustomLoadingDialog.showLoading(context, title: "加载中...");
     loading = true;
     return await CollectionApi.getCollection(
       postId: widget.postId,
@@ -62,10 +72,11 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
       blogName: widget.blogName,
       startPostId: startPostId,
       upDown: upDown,
+      order: isOldest ? 1 : 0,
     ).then((value) {
       try {
         if (value['meta']['status'] != 200) {
-          IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
+          IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
           return IndicatorResult.fail;
         } else {
           subscribed = value['response']['subscribed'];
@@ -114,29 +125,41 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
           if (mounted) setState(() {});
           if (posts.length >= widget.postCollection.postCount ||
               newPosts.isEmpty) {
+            if (upDown == 1) {
+              bottomNoMore = true;
+            }
             return IndicatorResult.noMore;
           } else {
             return IndicatorResult.success;
           }
         }
       } catch (e) {
-        if (mounted) IToast.showTop( "加载失败");
+        if (mounted) IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
+        if (showLoading) CustomLoadingDialog.dismissLoading(context);
         if (mounted) setState(() {});
         loading = false;
       }
     });
   }
 
-  _onRefresh() async {
+  _onRefresh({
+    bool showLoading = false,
+  }) async {
     if (!isInited) {
       isInited = true;
       return await _fetchData(
-          upDown: -1, startPostId: posts.length > 1 ? posts.first.post!.id : 0);
+        upDown: -1,
+        startPostId: posts.length > 1 ? posts.first.post!.id : 0,
+        showLoading: showLoading,
+      );
     } else {
       return await _fetchData(
-          upDown: 0, startPostId: posts.length > 1 ? posts.first.post!.id : 0);
+        upDown: 0,
+        startPostId: posts.length > 1 ? posts.first.post!.id : 0,
+        showLoading: showLoading,
+      );
     }
   }
 
@@ -175,79 +198,119 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
   }
 
   _buildHeader() {
-    return GestureDetector(
-      onTap: () {
-        RouteUtil.pushCupertinoRoute(
-          context,
-          CollectionDetailScreen(
-            blogId: widget.blogId,
-            blogName: widget.blogName,
-            collectionId: widget.collectionId,
-            postId: widget.postId,
-          ),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: ItemBuilder.buildCachedImage(
-                context: context,
-                imageUrl: widget.postCollection.coverUrl,
-                width: 50,
-                height: 50,
-                showLoading: false,
-                fit: BoxFit.cover,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            onTap: () {
+              RouteUtil.pushCupertinoRoute(
+                context,
+                CollectionDetailScreen(
+                  blogId: widget.blogId,
+                  blogName: widget.blogName,
+                  collectionId: widget.collectionId,
+                  postId: widget.postId,
+                ),
+              );
+            },
+            child: ItemBuilder.buildClickItem(
+              Row(
                 children: [
-                  Text(
-                    "${widget.postCollection.name}（${widget.postCollection.postCount}篇）",
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.apply(fontWeightDelta: 2),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (widget.postCollection.description.isNotEmpty)
-                    Text(
-                      widget.postCollection.description,
-                      style: Theme.of(context).textTheme.labelMedium,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: ItemBuilder.buildCachedImage(
+                      context: context,
+                      imageUrl: widget.postCollection.coverUrl,
+                      width: 50,
+                      height: 50,
+                      showLoading: false,
+                      fit: BoxFit.cover,
                     ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "${widget.postCollection.name}（${widget.postCollection.postCount}篇）",
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.apply(fontWeightDelta: 2),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (widget.postCollection.description.isNotEmpty)
+                          Text(
+                            widget.postCollection.description,
+                            style: Theme.of(context).textTheme.labelMedium,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: subscribed ? 8 : 20),
+                  ItemBuilder.buildFramedButton(
+                      context: context,
+                      isFollowed: subscribed,
+                      positiveText: "已订阅",
+                      negtiveText: "订阅",
+                      onTap: () {
+                        HapticFeedback.mediumImpact();
+                        CollectionApi.subscribeOrUnSubscribe(
+                          collectionId: widget.collectionId,
+                          isSubscribe: !subscribed,
+                        ).then((value) {
+                          if (value['meta']['status'] != 200) {
+                            IToast.showTop(
+                                value['meta']['desc'] ?? value['meta']['msg']);
+                          } else {
+                            subscribed = !subscribed;
+                            setState(() {});
+                          }
+                        });
+                      }),
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            ItemBuilder.buildFramedButton(
-                context: context,
-                isFollowed: subscribed,
-                positiveText: "已订阅",
-                negtiveText: "订阅",
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              ItemBuilder.buildIconTextButton(
+                context,
+                text: isOldest ? "正序" : "倒序",
+                icon: AssetUtil.load(
+                  isOldest
+                      ? AssetUtil.orderDownDarkIcon
+                      : AssetUtil.orderUpDarkIcon,
+                  size: 15,
+                ),
+                fontSizeDelta: 1,
+                color: Theme.of(context).textTheme.labelMedium?.color,
                 onTap: () {
                   HapticFeedback.mediumImpact();
-                  CollectionApi.subscribeOrUnSubscribe(
-                    collectionId: widget.collectionId,
-                    isSubscribe: !subscribed,
-                  ).then((value) {
-                    if (value['meta']['status'] != 200) {
-                      IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
-                    } else {
-                      subscribed = !subscribed;
-                      setState(() {});
-                    }
+                  setState(() {
+                    isOldest = !isOldest;
                   });
-                }),
-          ],
-        ),
+                  _scrollController.animateTo(0,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut);
+                  bottomNoMore = false;
+                  isInited = false;
+                  _refreshController.resetHeader();
+                  _refreshController.resetFooter();
+                  _onRefresh(showLoading: true);
+                },
+              ),
+              const Spacer(),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -274,9 +337,14 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
       widgets.add(_buildNineGrid(startIndex, count));
       startIndex += e.count;
     }
-    return ListView(
-      padding: EdgeInsets.zero,
-      children: widgets,
+    return ItemBuilder.buildLoadMoreNotification(
+      child: ListView(
+        controller: _scrollController,
+        padding: EdgeInsets.zero,
+        children: widgets,
+      ),
+      noMore: bottomNoMore,
+      onLoad: _onLoad,
     );
   }
 

@@ -48,7 +48,6 @@ class _GrainScreenState extends State<GrainScreen>
   int _total = 0;
   int _offset = 0;
   final EasyRefreshController _refreshController = EasyRefreshController();
-  final ScrollController _scrollController = ScrollController();
   bool _noMore = false;
 
   @override
@@ -63,13 +62,6 @@ class _GrainScreenState extends State<GrainScreen>
     if (widget.infoMode != InfoMode.me) {
       _onRefresh();
     }
-    _scrollController.addListener(() {
-      if (!_noMore &&
-          _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
-        _onLoad();
-      }
-    });
   }
 
   _fetchGrain({bool refresh = false}) async {
@@ -84,7 +76,7 @@ class _GrainScreenState extends State<GrainScreen>
           .then((value) {
         try {
           if (value['code'] != 0) {
-            IToast.showTop( value['desc'] ?? value['msg']);
+            IToast.showTop(value['desc'] ?? value['msg']);
             return IndicatorResult.fail;
           } else {
             _total = value['data']['total'];
@@ -105,7 +97,7 @@ class _GrainScreenState extends State<GrainScreen>
             }
           }
         } catch (e) {
-          if (mounted) IToast.showTop( "加载失败");
+          if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
@@ -145,26 +137,29 @@ class _GrainScreenState extends State<GrainScreen>
   }
 
   Widget _buildBody(ScrollPhysics physics) {
-    return ListView.builder(
-      physics: physics,
-      controller: _scrollController,
-      padding: EdgeInsets.zero,
-      itemCount: _grainList.length,
-      itemBuilder: (context, index) {
-        return _buildGrainRow(
-          _grainList[index],
-          verticalPadding: 8,
-          onTap: () {
-            RouteUtil.pushCupertinoRoute(
-              context,
-              GrainDetailScreen(
-                grainId: _grainList[index].id,
-                blogId: _grainList[index].userId,
-              ),
-            );
-          },
-        );
-      },
+    return ItemBuilder.buildLoadMoreNotification(
+      noMore: _noMore,
+      onLoad: _onLoad,
+      child: ListView.builder(
+        physics: physics,
+        padding: EdgeInsets.zero,
+        itemCount: _grainList.length,
+        itemBuilder: (context, index) {
+          return _buildGrainRow(
+            _grainList[index],
+            verticalPadding: 8,
+            onTap: () {
+              RouteUtil.pushCupertinoRoute(
+                context,
+                GrainDetailScreen(
+                  grainId: _grainList[index].id,
+                  blogId: _grainList[index].userId,
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 

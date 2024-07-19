@@ -39,7 +39,8 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
       HiveUtil.getBool(key: HiveUtil.showSearchRankKey, defaultValue: true);
   bool _showCollectionPreNext = HiveUtil.getBool(
       key: HiveUtil.showCollectionPreNextKey, defaultValue: true);
-
+  bool _showDownload =
+      HiveUtil.getBool(key: HiveUtil.showDownloadKey, defaultValue: true);
   FontEnum _currentFont = FontEnum.getCurrentFont();
 
   @override
@@ -223,13 +224,26 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                 context: context,
                 title: "上下篇",
                 description: "取消勾选将不显示上一篇、下一篇等入口",
-                bottomRadius: true,
                 onTap: () {
                   setState(() {
                     _showCollectionPreNext = !_showCollectionPreNext;
                     HiveUtil.put(
                         key: HiveUtil.showCollectionPreNextKey,
                         value: _showCollectionPreNext);
+                  });
+                },
+              ),
+              ItemBuilder.buildRadioItem(
+                value: _showDownload,
+                context: context,
+                title: "下载按钮",
+                description: "取消勾选将不显示下载全部图片按钮",
+                bottomRadius: true,
+                onTap: () {
+                  setState(() {
+                    _showDownload = !_showDownload;
+                    HiveUtil.put(
+                        key: HiveUtil.showDownloadKey, value: _showDownload);
                   });
                 },
               ),

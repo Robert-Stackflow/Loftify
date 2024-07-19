@@ -12,6 +12,7 @@ import 'package:loftify/Screens/Post/grain_detail_screen.dart';
 import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Screens/Post/tag_detail_screen.dart';
 import 'package:loftify/Utils/asset_util.dart';
+import 'package:loftify/Utils/iprint.dart';
 import 'package:loftify/Utils/route_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
@@ -196,7 +197,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop( value['msg']);
+          IToast.showTop(value['msg']);
         } else {
           List<FullSubscribeTagItem> tmp = [];
           if (value['data'] != null) {
@@ -229,7 +230,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
           }
         }
       } catch (_) {
-        IToast.showTop( "加载失败");
+        IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -311,7 +312,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
         scrollDirection: Axis.horizontal,
         itemCount: _recentVisitList.length,
         itemBuilder: (context, index) {
-          return _buildRecentVisitTagItem(_recentVisitList[index]);
+          return ItemBuilder.buildClickItem(_buildRecentVisitTagItem(_recentVisitList[index]));
         },
       ),
     );
@@ -378,7 +379,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
       mainAxisSpacing: 12,
       crossAxisSpacing: 6,
       children: List.generate(_subscribeList.length, (int index) {
-        return _buildSubscribeTagItem(_subscribeList[index]);
+        return ItemBuilder.buildClickItem(_buildSubscribeTagItem(_subscribeList[index]));
       }),
     );
   }
@@ -567,17 +568,18 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
                 ],
               ),
             ),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: ItemBuilder.buildCachedImage(
-                context: context,
-                imageUrl: item.cardInfo!.postCard!.postInfo.image,
-                width: 50,
-                height: 50,
-                fit: BoxFit.cover,
-                showLoading: false,
+            if (Utils.isNotEmpty(item.cardInfo!.postCard!.postInfo.image))
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: ItemBuilder.buildCachedImage(
+                  context: context,
+                  imageUrl: item.cardInfo!.postCard!.postInfo.image,
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
+                  showLoading: false,
+                ),
               ),
-            ),
           ],
         ),
       );
@@ -729,6 +731,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
   bool _loading = false;
   final ScrollController _scrollController = ScrollController();
   bool _noMore = false;
+  bool _noMoreSubscribeItem = false;
 
   callRefresh() {
     if (_scrollController.offset > MediaQuery.sizeOf(context).height) {
@@ -758,16 +761,21 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
 
   _fetchResult({bool refresh = false}) async {
     if (_loading) return;
-    if (refresh) _noMore = false;
+    if (refresh) {
+      _noMore = false;
+      _noMoreSubscribeItem = false;
+    }
     _loading = true;
     return await CollectionApi.getSubscribdCollectionList(
       offset: refresh ? 0 : _subscribeList.length,
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop( value['msg']);
+          IToast.showTop(value['msg']);
         } else {
+          if (refresh) _guessLikeList.clear();
           List<TimelineCollection> tmp = [];
+          List<TimelineCollection> uniqueSubscribeList = [];
           if (value['data'] != null) {
             if (value['data']['total'] != null) {
               _total = value['data']['subscribeCollectionCount'];
@@ -783,8 +791,9 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
               }
               _subscribeList.addAll(tmp);
             }
-            //移除_subcribeList中collectionId重复的项目
-            List<TimelineCollection> uniqueSubscribeList = [];
+            if (tmp.isEmpty) {
+              _noMoreSubscribeItem = true;
+            }
             Set<int> seenIds = {};
             for (var item in _subscribeList) {
               if (!seenIds.contains(item.collectionId)) {
@@ -794,8 +803,8 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
             }
             _subscribeList.clear();
             _subscribeList.addAll(uniqueSubscribeList);
-            if (value['data']['guessLikeList'] != null) {
-              if (refresh) _guessLikeList.clear();
+            if (_noMoreSubscribeItem &&
+                value['data']['guessLikeList'] != null) {
               List<TimelineGuessCollection> tmp =
                   (value['data']['guessLikeList'] as List)
                       .map((e) => TimelineGuessCollection.fromJson(e))
@@ -814,7 +823,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
           }
         }
       } catch (_) {
-        IToast.showTop( "加载失败");
+        IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -885,12 +894,13 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
     return SliverWaterfallFlow.extent(
       maxCrossAxisExtent: 560,
       children: List.generate(_subscribeList.length, (index) {
-        return _buildSubscribeCollectionItem(_subscribeList[index]);
+        return ItemBuilder.buildClickItem(_buildSubscribeCollectionItem(_subscribeList[index]));
       }),
     );
   }
 
   _buildSubscribeCollectionItem(TimelineCollection item) {
+    bool hasLastRead = item.lastReadBlogId != 0 && item.lastReadPostId != 0;
     return GestureDetector(
       onTap: () {
         RouteUtil.pushCupertinoRoute(
@@ -904,7 +914,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
         );
       },
       child: Container(
-        height: 110,
+        height: 118,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         color: Colors.transparent,
         child: Row(
@@ -924,8 +934,8 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
                     child: ItemBuilder.buildCachedImage(
                       imageUrl: item.coverUrl,
                       context: context,
-                      width: 90,
-                      height: 90,
+                      width: 100,
+                      height: 100,
                       fit: BoxFit.cover,
                       showLoading: false,
                     ),
@@ -994,7 +1004,36 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
                           ?.apply(fontSizeDelta: 1),
                       maxLines: 3,
                     ),
-                  const Spacer(),
+                  const SizedBox(height: 6),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Spacer(),
+                      ItemBuilder.buildIconTextButton(
+                        context,
+                        text: hasLastRead ? "继续阅读" : "开始阅读",
+                        color: Theme.of(context).primaryColor,
+                        fontWeightDelta: 2,
+                        onTap: !hasLastRead
+                            ? null
+                            : () {
+                                RouteUtil.pushCupertinoRoute(
+                                  context,
+                                  PostDetailScreen(
+                                    meta: {
+                                      "postId":
+                                          Utils.intToHex(item.lastReadPostId),
+                                      "blogId":
+                                          Utils.intToHex(item.lastReadBlogId),
+                                      "blogName": "",
+                                    },
+                                    isArticle: false,
+                                  ),
+                                );
+                              },
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -1008,7 +1047,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
     return SliverWaterfallFlow.extent(
       maxCrossAxisExtent: 560,
       children: List.generate(_guessLikeList.length, (index) {
-        return _buildGuessLikeCollectionItem(_guessLikeList[index]);
+        return ItemBuilder.buildClickItem(_buildGuessLikeCollectionItem(_guessLikeList[index]));
       }),
     );
   }
@@ -1049,8 +1088,8 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
                     child: ItemBuilder.buildCachedImage(
                       imageUrl: item.coverUrl,
                       context: context,
-                      width: 90,
-                      height: 90,
+                      width: 100,
+                      height: 100,
                       fit: BoxFit.cover,
                       showLoading: false,
                     ),
@@ -1061,7 +1100,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
             const SizedBox(width: 12),
             Expanded(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1098,7 +1137,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
                   const SizedBox(height: 3),
                   Text(
                     item.latestPost,
-                    style: Theme.of(context).textTheme.labelMedium,
+                    style: Theme.of(context).textTheme.bodySmall,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1142,34 +1181,36 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
                         overflow: TextOverflow.ellipsis,
                       ),
                       const Spacer(),
-                      ItemBuilder.buildIconTextButton(context,
-                          text: item.subscribed ? "取消订阅" : "订阅",
-                          icon: Icon(
-                            item.subscribed
-                                ? Icons.bookmark_added_rounded
-                                : Icons.bookmark_add_outlined,
-                            size: 15,
-                            color: Theme.of(context).primaryColor,
-                          ),
+                      ItemBuilder.buildIconTextButton(
+                        context,
+                        text: item.subscribed ? "取消订阅" : "订阅",
+                        icon: Icon(
+                          item.subscribed
+                              ? Icons.bookmark_added_rounded
+                              : Icons.bookmark_add_outlined,
+                          size: 15,
                           color: Theme.of(context).primaryColor,
-                          fontWeightDelta: 1, onTap: () {
-                        HapticFeedback.mediumImpact();
-                        CollectionApi.subscribeOrUnSubscribe(
-                          isSubscribe: !item.subscribed,
-                          collectionId: item.collectionId,
-                        ).then((value) {
-                          if (value['meta']['status'] != 200) {
-                            IToast.showTop( value['meta']['desc'] ??
-                                    value['meta']['msg']);
-                          } else {
-                            item.subscribed = !item.subscribed;
-                            setState(() {});
-                          }
-                        });
-                      }),
+                        ),
+                        color: Theme.of(context).primaryColor,
+                        fontWeightDelta: 2,
+                        onTap: () {
+                          HapticFeedback.mediumImpact();
+                          CollectionApi.subscribeOrUnSubscribe(
+                            isSubscribe: !item.subscribed,
+                            collectionId: item.collectionId,
+                          ).then((value) {
+                            if (value['meta']['status'] != 200) {
+                              IToast.showTop(value['meta']['desc'] ??
+                                  value['meta']['msg']);
+                            } else {
+                              item.subscribed = !item.subscribed;
+                              setState(() {});
+                            }
+                          });
+                        },
+                      ),
                     ],
                   ),
-                  const Spacer(),
                 ],
               ),
             ),
@@ -1235,7 +1276,7 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop( value['msg']);
+          IToast.showTop(value['msg']);
         } else {
           List<SubscribeGrainItem> tmp = [];
           if (value['data'] != null) {
@@ -1263,7 +1304,7 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
           }
         }
       } catch (_) {
-        IToast.showTop( "加载失败");
+        IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -1314,7 +1355,7 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
     return SliverWaterfallFlow.extent(
       maxCrossAxisExtent: 560,
       children: List.generate(_subscribeList.length, (index) {
-        return _buildSubscribeGrainItem(_subscribeList[index]);
+        return ItemBuilder.buildClickItem(_buildSubscribeGrainItem(_subscribeList[index]));
       }),
     );
   }

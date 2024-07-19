@@ -13,6 +13,7 @@ import 'package:tuple/tuple.dart';
 import '../../Models/enums.dart';
 import '../../Models/history_response.dart';
 import '../../Resources/theme.dart';
+import '../../Utils/asset_util.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/uri_util.dart';
@@ -159,6 +160,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.getBackground(context),
       bottomNavigationBar: grainDetailData != null ? _buildFooter() : null,
       body: grainDetailData != null
           ? NestedScrollView(
@@ -271,22 +273,24 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
                               color:
                                   Theme.of(context).textTheme.bodySmall?.color,
                             ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 5),
                     ItemBuilder.buildIconTextButton(
                       context,
-                      text: isOldest ? "最旧" : "最新",
-                      quarterTurns: 3,
-                      icon: Icon(
+                      text: isOldest ? "正序" : "倒序",
+                      icon: AssetUtil.load(
                         isOldest
-                            ? Icons.switch_right_rounded
-                            : Icons.switch_left_rounded,
-                        color: Theme.of(context).textTheme.labelMedium?.color,
-                        size: 18,
+                            ? AssetUtil.orderDownDarkIcon
+                            : AssetUtil.orderUpDarkIcon,
+                        size: 15,
                       ),
                       fontSizeDelta: 1,
                       color: Theme.of(context).textTheme.labelMedium?.color,
                       onTap: () {
+                        HapticFeedback.mediumImpact();
                         setState(() {
                           isOldest = !isOldest;
                         });
@@ -410,40 +414,42 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
                       ),
                 ),
                 const SizedBox(height: 6),
-                GestureDetector(
-                  onTap: () {
-                    RouteUtil.pushCupertinoRoute(
-                      context,
-                      UserDetailScreen(
-                        blogId: widget.blogId,
-                        blogName: grainDetailData!.blogInfo.blogName,
-                      ),
-                    );
-                  },
-                  child: Row(
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.only(right: 5),
-                        child: ItemBuilder.buildAvatar(
-                          context: context,
-                          imageUrl: grainDetailData!.blogInfo.bigAvaImg,
-                          size: 20,
-                          showBorder: false,
-                          showLoading: false,
+                ItemBuilder.buildClickItem(
+                  GestureDetector(
+                    onTap: () {
+                      RouteUtil.pushCupertinoRoute(
+                        context,
+                        UserDetailScreen(
+                          blogId: widget.blogId,
+                          blogName: grainDetailData!.blogInfo.blogName,
                         ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          "${grainDetailData!.blogInfo.blogNickName} · 更新于${Utils.formatTimestamp(grainDetailData!.grainInfo.updateTime)}",
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelMedium
-                              ?.apply(color: Colors.white, fontSizeDelta: -1),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      );
+                    },
+                    child: Row(
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.only(right: 5),
+                          child: ItemBuilder.buildAvatar(
+                            context: context,
+                            imageUrl: grainDetailData!.blogInfo.bigAvaImg,
+                            size: 20,
+                            showBorder: false,
+                            showLoading: false,
+                          ),
                         ),
-                      ),
-                    ],
+                        Expanded(
+                          child: Text(
+                            "${grainDetailData!.blogInfo.blogNickName} · 更新于${Utils.formatTimestamp(grainDetailData!.grainInfo.updateTime)}",
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.apply(color: Colors.white, fontSizeDelta: -1),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -545,6 +551,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
       onLoad: _onLoad,
       childBuilder: (context, physics) {
         return Container(
+          height: MediaQuery.sizeOf(context).height,
           color: AppTheme.getBackground(context),
           child: ItemBuilder.buildLoadMoreNotification(
             child: ListView(

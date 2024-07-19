@@ -147,14 +147,14 @@ class ItemBuilder {
     PreferredSizeWidget? bottom,
     Widget? title,
     bool center = false,
-    double expandedHeight = 310,
+    double expandedHeight = 320,
     double? collapsedHeight,
   }) {
     bool showLeading = !ResponsiveUtil.isLandscape();
     center = ResponsiveUtil.isLandscape() ? false : center;
     return MySliverAppBar(
       expandedHeight: expandedHeight,
-      collapsedHeight:
+      collapsedHeight: collapsedHeight ??
           max(100, kToolbarHeight + MediaQuery.of(context).padding.top),
       pinned: true,
       leadingWidth: showLeading ? 56 : 0,
@@ -1426,67 +1426,69 @@ class ItemBuilder {
                 height: size,
               ),
             )
-          : GestureDetector(
-              onTap: showDetailMode != ShowDetailMode.not
-                  ? () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => HeroPhotoViewScreen(
-                            tagPrefix: tagPrefix,
-                            tagSuffix: tagSuffix,
-                            imageUrls: [tagUrl],
-                            useMainColor: false,
-                            title: title,
-                            captions: [caption ?? ""],
+          : ItemBuilder.buildClickItem(
+              GestureDetector(
+                onTap: showDetailMode != ShowDetailMode.not
+                    ? () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => HeroPhotoViewScreen(
+                              tagPrefix: tagPrefix,
+                              tagSuffix: tagSuffix,
+                              imageUrls: [tagUrl],
+                              useMainColor: false,
+                              title: title,
+                              captions: [caption ?? ""],
+                            ),
                           ),
-                        ),
-                      );
-                    }
-                  : null,
-              child: hasAvatarBox
-                  ? Stack(
-                      children: [
-                        Positioned(
-                          top: avatarBoxDeltaSize / 2,
-                          left: avatarBoxDeltaSize / 2,
-                          child: Hero(
-                            tag: avatarTag,
-                            child: ClipOval(
-                              child: ItemBuilder.buildCachedImage(
-                                context: context,
-                                imageUrl: imageUrl,
-                                width: size,
-                                showLoading: showLoading,
-                                height: size,
+                        );
+                      }
+                    : null,
+                child: hasAvatarBox
+                    ? Stack(
+                        children: [
+                          Positioned(
+                            top: avatarBoxDeltaSize / 2,
+                            left: avatarBoxDeltaSize / 2,
+                            child: Hero(
+                              tag: avatarTag,
+                              child: ClipOval(
+                                child: ItemBuilder.buildCachedImage(
+                                  context: context,
+                                  imageUrl: imageUrl,
+                                  width: size,
+                                  showLoading: showLoading,
+                                  height: size,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        Hero(
-                          tag: avatarBoxTag,
-                          child: ItemBuilder.buildCachedImage(
-                            context: context,
-                            imageUrl: avatarBoxImageUrl!,
-                            width: size + avatarBoxDeltaSize,
-                            showLoading: false,
-                            placeholderBackground: Colors.transparent,
-                            topPadding: 0,
-                            bottomPadding: 0,
-                            height: size + avatarBoxDeltaSize,
+                          Hero(
+                            tag: avatarBoxTag,
+                            child: ItemBuilder.buildCachedImage(
+                              context: context,
+                              imageUrl: avatarBoxImageUrl!,
+                              width: size + avatarBoxDeltaSize,
+                              showLoading: false,
+                              placeholderBackground: Colors.transparent,
+                              topPadding: 0,
+                              bottomPadding: 0,
+                              height: size + avatarBoxDeltaSize,
+                            ),
                           ),
+                        ],
+                      )
+                    : ClipOval(
+                        child: ItemBuilder.buildCachedImage(
+                          context: context,
+                          imageUrl: tagUrl,
+                          width: size,
+                          showLoading: showLoading,
+                          height: size,
                         ),
-                      ],
-                    )
-                  : ClipOval(
-                      child: ItemBuilder.buildCachedImage(
-                        context: context,
-                        imageUrl: tagUrl,
-                        width: size,
-                        showLoading: showLoading,
-                        height: size,
                       ),
-                    ),
+              ),
             ),
     );
   }
@@ -1506,35 +1508,37 @@ class ItemBuilder {
     String? tagPrefix,
     String? tagSuffix,
   }) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => HeroPhotoViewScreen(
-              tagPrefix: tagPrefix,
-              tagSuffix: tagSuffix,
-              imageUrls: [imageUrl],
-              useMainColor: false,
-              title: title,
-              captions: [caption ?? ""],
+    return ItemBuilder.buildClickItem(
+      GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => HeroPhotoViewScreen(
+                tagPrefix: tagPrefix,
+                tagSuffix: tagSuffix,
+                imageUrls: [imageUrl],
+                useMainColor: false,
+                title: title,
+                captions: [caption ?? ""],
+              ),
             ),
+          );
+        },
+        child: Hero(
+          tag: Utils.getHeroTag(
+              tagSuffix: tagSuffix, tagPrefix: tagPrefix, url: imageUrl),
+          child: ItemBuilder.buildCachedImage(
+            context: context,
+            imageUrl: imageUrl,
+            width: width,
+            height: height,
+            showLoading: showLoading,
+            bottomPadding: bottomPadding,
+            topPadding: topPadding,
+            placeholderBackground: placeholderBackground,
+            fit: fit,
           ),
-        );
-      },
-      child: Hero(
-        tag: Utils.getHeroTag(
-            tagSuffix: tagSuffix, tagPrefix: tagPrefix, url: imageUrl),
-        child: ItemBuilder.buildCachedImage(
-          context: context,
-          imageUrl: imageUrl,
-          width: width,
-          height: height,
-          showLoading: showLoading,
-          bottomPadding: bottomPadding,
-          topPadding: topPadding,
-          placeholderBackground: placeholderBackground,
-          fit: fit,
         ),
       ),
     );
@@ -2395,7 +2399,7 @@ class ItemBuilder {
     BuildContext context, {
     Axis direction = Axis.horizontal,
     double spacing = 2,
-    Icon? icon,
+    Widget? icon,
     required String text,
     double fontSizeDelta = 0,
     int fontWeightDelta = 0,
@@ -2612,6 +2616,7 @@ class ItemBuilder {
     bool enableImageDetail = true,
     bool parseImage = true,
     bool showLoading = true,
+    Function()? onDownloadSuccess,
   }) {
     return ItemBuilder.buildSelectableArea(
       context: context,
@@ -2661,6 +2666,7 @@ class ItemBuilder {
                               imageUrl,
                               imageUrls ?? [],
                             ),
+                            onDownloadSuccess: onDownloadSuccess,
                           ),
                         );
                       }
@@ -2735,19 +2741,21 @@ class ItemBuilder {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            GestureDetector(
-              onTap: () {
-                RouteUtil.pushCupertinoRoute(
-                  context,
-                  UserDetailScreen(
-                      blogId: comment.publisherBlogInfo.blogId,
-                      blogName: comment.publisherBlogInfo.blogName),
-                );
-              },
-              child: ItemBuilder.buildAvatar(
-                context: context,
-                imageUrl: comment.publisherBlogInfo.bigAvaImg,
-                showBorder: true,
+            ItemBuilder.buildClickItem(
+              GestureDetector(
+                onTap: () {
+                  RouteUtil.pushCupertinoRoute(
+                    context,
+                    UserDetailScreen(
+                        blogId: comment.publisherBlogInfo.blogId,
+                        blogName: comment.publisherBlogInfo.blogName),
+                  );
+                },
+                child: ItemBuilder.buildAvatar(
+                  context: context,
+                  imageUrl: comment.publisherBlogInfo.bigAvaImg,
+                  showBorder: true,
+                ),
               ),
             ),
             const SizedBox(width: 8),
@@ -2762,52 +2770,56 @@ class ItemBuilder {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            GestureDetector(
-                              onTap: () {
-                                RouteUtil.pushCupertinoRoute(
-                                  context,
-                                  UserDetailScreen(
-                                      blogId: comment.publisherBlogInfo.blogId,
-                                      blogName:
-                                          comment.publisherBlogInfo.blogName),
-                                );
-                              },
-                              child: Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      comment.publisherBlogInfo.blogNickName,
-                                      style:
-                                          Theme.of(context).textTheme.bodySmall,
+                            ItemBuilder.buildClickItem(
+                              GestureDetector(
+                                onTap: () {
+                                  RouteUtil.pushCupertinoRoute(
+                                    context,
+                                    UserDetailScreen(
+                                        blogId:
+                                            comment.publisherBlogInfo.blogId,
+                                        blogName:
+                                            comment.publisherBlogInfo.blogName),
+                                  );
+                                },
+                                child: Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        comment.publisherBlogInfo.blogNickName,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
+                                      ),
                                     ),
-                                  ),
-                                  if (writerId ==
-                                      comment.publisherBlogInfo.blogId)
-                                    const SizedBox(width: 3),
-                                  if (writerId ==
-                                      comment.publisherBlogInfo.blogId)
-                                    ItemBuilder.buildRoundButton(
-                                      context,
-                                      text: "作者",
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 3, vertical: 2),
-                                      radius: 3,
-                                      color: Theme.of(context).primaryColor,
-                                      fontSizeDelta: -2,
-                                    ),
-                                  if (comment.top == 1)
-                                    const SizedBox(width: 3),
-                                  if (comment.top == 1)
-                                    ItemBuilder.buildRoundButton(
-                                      context,
-                                      text: "置顶",
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 3, vertical: 2),
-                                      radius: 3,
-                                      color: MyColors.likeButtonColor,
-                                      fontSizeDelta: -2,
-                                    ),
-                                ],
+                                    if (writerId ==
+                                        comment.publisherBlogInfo.blogId)
+                                      const SizedBox(width: 3),
+                                    if (writerId ==
+                                        comment.publisherBlogInfo.blogId)
+                                      ItemBuilder.buildRoundButton(
+                                        context,
+                                        text: "作者",
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 3, vertical: 2),
+                                        radius: 3,
+                                        color: Theme.of(context).primaryColor,
+                                        fontSizeDelta: -2,
+                                      ),
+                                    if (comment.top == 1)
+                                      const SizedBox(width: 3),
+                                    if (comment.top == 1)
+                                      ItemBuilder.buildRoundButton(
+                                        context,
+                                        text: "置顶",
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 3, vertical: 2),
+                                        radius: 3,
+                                        color: MyColors.likeButtonColor,
+                                        fontSizeDelta: -2,
+                                      ),
+                                  ],
+                                ),
                               ),
                             ),
                             const SizedBox(height: 5),
@@ -2923,25 +2935,27 @@ class ItemBuilder {
                       !comment.l2CommentLoading)
                     GestureDetector(
                       onTap: () => onL2CommentTap?.call(comment),
-                      child: Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text:
-                                  "—— 更多${comment.l2Count - comment.l2Comments.length}条回复",
-                              style: Theme.of(context).textTheme.labelMedium,
-                            ),
-                            WidgetSpan(
-                              child: Icon(
-                                Icons.keyboard_arrow_down_rounded,
-                                size: 16,
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .labelMedium
-                                    ?.color,
+                      child: ItemBuilder.buildClickItem(
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text:
+                                    "—— 更多${comment.l2Count - comment.l2Comments.length}条回复",
+                                style: Theme.of(context).textTheme.labelMedium,
                               ),
-                            ),
-                          ],
+                              WidgetSpan(
+                                child: Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  size: 16,
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .labelMedium
+                                      ?.color,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -2998,52 +3012,54 @@ class ItemBuilder {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  GestureDetector(
-                    onTap: () {
-                      RouteUtil.pushCupertinoRoute(
-                        context,
-                        UserDetailScreen(
-                            blogId: comment.publisherBlogInfo.blogId,
-                            blogName: comment.publisherBlogInfo.blogName),
-                      );
-                    },
-                    child: Row(
-                      children: [
-                        ItemBuilder.buildAvatar(
-                          context: context,
-                          imageUrl: comment.publisherBlogInfo.bigAvaImg,
-                          showBorder: true,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          comment.publisherBlogInfo.blogNickName,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        if (writerId == comment.publisherBlogInfo.blogId)
-                          const SizedBox(width: 3),
-                        if (writerId == comment.publisherBlogInfo.blogId)
-                          ItemBuilder.buildRoundButton(
-                            context,
-                            text: "作者",
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 3, vertical: 2),
-                            radius: 3,
-                            color: Theme.of(context).primaryColor,
-                            fontSizeDelta: -2,
+                  ItemBuilder.buildClickItem(
+                    GestureDetector(
+                      onTap: () {
+                        RouteUtil.pushCupertinoRoute(
+                          context,
+                          UserDetailScreen(
+                              blogId: comment.publisherBlogInfo.blogId,
+                              blogName: comment.publisherBlogInfo.blogName),
+                        );
+                      },
+                      child: Row(
+                        children: [
+                          ItemBuilder.buildAvatar(
+                            context: context,
+                            imageUrl: comment.publisherBlogInfo.bigAvaImg,
+                            showBorder: true,
+                            size: 24,
                           ),
-                        if (comment.top == 1) const SizedBox(width: 3),
-                        if (comment.top == 1)
-                          ItemBuilder.buildRoundButton(
-                            context,
-                            text: "置顶",
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 3, vertical: 2),
-                            radius: 3,
-                            color: MyColors.likeButtonColor,
-                            fontSizeDelta: -2,
+                          const SizedBox(width: 8),
+                          Text(
+                            comment.publisherBlogInfo.blogNickName,
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
-                      ],
+                          if (writerId == comment.publisherBlogInfo.blogId)
+                            const SizedBox(width: 3),
+                          if (writerId == comment.publisherBlogInfo.blogId)
+                            ItemBuilder.buildRoundButton(
+                              context,
+                              text: "作者",
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 3, vertical: 2),
+                              radius: 3,
+                              color: Theme.of(context).primaryColor,
+                              fontSizeDelta: -2,
+                            ),
+                          if (comment.top == 1) const SizedBox(width: 3),
+                          if (comment.top == 1)
+                            ItemBuilder.buildRoundButton(
+                              context,
+                              text: "置顶",
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 3, vertical: 2),
+                              radius: 3,
+                              color: MyColors.likeButtonColor,
+                              fontSizeDelta: -2,
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 5),
@@ -3122,79 +3138,81 @@ class ItemBuilder {
   static Widget buildFollowerOrFollowingItem(
       BuildContext context, int index, FollowingUserItem item,
       {Function()? onFollowOrUnFollow}) {
-    return GestureDetector(
-      onTap: () {
-        RouteUtil.pushCupertinoRoute(
-          context,
-          UserDetailScreen(
-            blogId: item.blogInfo.blogId,
-            blogName: item.blogInfo.blogName,
-          ),
-        );
-      },
-      child: Container(
-        color: Colors.transparent,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-        child: Row(
-          children: [
-            ItemBuilder.buildAvatar(
-              context: context,
-              size: 40,
-              imageUrl: item.blogInfo.bigAvaImg,
-              tagPrefix: "$index",
-              showDetailMode: ShowDetailMode.not,
+    return ItemBuilder.buildClickItem(
+      GestureDetector(
+        onTap: () {
+          RouteUtil.pushCupertinoRoute(
+            context,
+            UserDetailScreen(
+              blogId: item.blogInfo.blogId,
+              blogName: item.blogInfo.blogName,
             ),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.blogInfo.blogNickName,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  if (item.blogInfo.selfIntro.isNotEmpty)
-                    const SizedBox(height: 5),
-                  if (item.blogInfo.selfIntro.isNotEmpty)
-                    Text(
-                      item.blogInfo.selfIntro,
-                      style: Theme.of(context).textTheme.labelMedium,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                ],
+          );
+        },
+        child: Container(
+          color: Colors.transparent,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+          child: Row(
+            children: [
+              ItemBuilder.buildAvatar(
+                context: context,
+                size: 40,
+                imageUrl: item.blogInfo.bigAvaImg,
+                tagPrefix: "$index",
+                showDetailMode: ShowDetailMode.not,
               ),
-            ),
-            if (item.follower)
-              Container(
-                margin: const EdgeInsets.only(right: 10),
-                child: Icon(
-                  Icons.star_rate_rounded,
-                  size: 22,
-                  color: MyColors.getHotTagTextColor(context),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.blogInfo.blogNickName,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    if (item.blogInfo.selfIntro.isNotEmpty)
+                      const SizedBox(height: 5),
+                    if (item.blogInfo.selfIntro.isNotEmpty)
+                      Text(
+                        item.blogInfo.selfIntro,
+                        style: Theme.of(context).textTheme.labelMedium,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
                 ),
               ),
-            ItemBuilder.buildFramedButton(
-              context: context,
-              isFollowed: item.following,
-              positiveText: item.follower ? "相互关注" : "已关注",
-              onTap: () {
-                UserApi.followOrUnfollow(
-                  isFollow: !item.following,
-                  blogId: item.blogId,
-                  blogName: item.blogInfo.blogName,
-                ).then((value) {
-                  if (value['meta']['status'] != 200) {
-                    IToast.showTop(
-                        value['meta']['desc'] ?? value['meta']['msg']);
-                  } else {
-                    item.following = !item.following;
-                    onFollowOrUnFollow?.call();
-                  }
-                });
-              },
-            ),
-          ],
+              if (item.follower)
+                Container(
+                  margin: const EdgeInsets.only(right: 10),
+                  child: Icon(
+                    Icons.star_rate_rounded,
+                    size: 22,
+                    color: MyColors.getHotTagTextColor(context),
+                  ),
+                ),
+              ItemBuilder.buildFramedButton(
+                context: context,
+                isFollowed: item.following,
+                positiveText: item.follower ? "相互关注" : "已关注",
+                onTap: () {
+                  UserApi.followOrUnfollow(
+                    isFollow: !item.following,
+                    blogId: item.blogId,
+                    blogName: item.blogInfo.blogName,
+                  ).then((value) {
+                    if (value['meta']['status'] != 200) {
+                      IToast.showTop(
+                          value['meta']['desc'] ?? value['meta']['msg']);
+                    } else {
+                      item.following = !item.following;
+                      onFollowOrUnFollow?.call();
+                    }
+                  });
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

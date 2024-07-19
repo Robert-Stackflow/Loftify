@@ -52,9 +52,9 @@ class TileList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return ListView(
+      shrinkWrap: true,
+      physics: const ClampingScrollPhysics(),
       children: [
         if (showTitle)
           Container(

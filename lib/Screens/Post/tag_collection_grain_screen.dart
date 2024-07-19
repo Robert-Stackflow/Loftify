@@ -465,80 +465,82 @@ class CollectionTabState extends State<CollectionTab>
 
   Widget _buildHotCollectionRankItem(int index, SimpleCollectionInfo info) {
     String? icon = getIcon(index);
-    return GestureDetector(
-      onTap: () {
-        RouteUtil.pushCupertinoRoute(
-          context,
-          CollectionDetailScreen(
-            collectionId: info.id,
-            postId: 0,
-            blogId: info.blogId,
-            blogName: "",
-          ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8),
-        padding: const EdgeInsets.all(8),
-        color: Colors.transparent,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              height: 24,
-              width: 24,
-              alignment: Alignment.center,
-              decoration: icon != null
-                  ? BoxDecoration(
-                      image: AssetUtil.loadDecorationImage(icon),
-                    )
-                  : null,
-              child: Text(
-                "${index + 1}",
-                style: Theme.of(context).textTheme.labelLarge?.apply(
-                      fontWeightDelta: 3,
-                      color: icon != null ? Colors.transparent : null,
+    return ItemBuilder.buildClickItem(
+      GestureDetector(
+        onTap: () {
+          RouteUtil.pushCupertinoRoute(
+            context,
+            CollectionDetailScreen(
+              collectionId: info.id,
+              postId: 0,
+              blogId: info.blogId,
+              blogName: "",
+            ),
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.all(8),
+          color: Colors.transparent,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                height: 24,
+                width: 24,
+                alignment: Alignment.center,
+                decoration: icon != null
+                    ? BoxDecoration(
+                        image: AssetUtil.loadDecorationImage(icon),
+                      )
+                    : null,
+                child: Text(
+                  "${index + 1}",
+                  style: Theme.of(context).textTheme.labelLarge?.apply(
+                        fontWeightDelta: 3,
+                        color: icon != null ? Colors.transparent : null,
+                      ),
+                ),
+              ),
+              const SizedBox(width: 24),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: ItemBuilder.buildCachedImage(
+                  context: context,
+                  imageUrl: info.coverUrl,
+                  width: 60,
+                  height: 60,
+                  fit: BoxFit.cover,
+                  showLoading: false,
+                ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 180,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      info.name,
+                      style: Theme.of(context).textTheme.titleMedium?.apply(
+                            fontSizeDelta: -1,
+                            fontWeightDelta: 2,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "${Utils.formatCount(info.subscribedCount)}订阅 · ${Utils.formatCount(info.viewCount)}浏览",
+                      style: Theme.of(context).textTheme.labelMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 24),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: ItemBuilder.buildCachedImage(
-                context: context,
-                imageUrl: info.coverUrl,
-                width: 60,
-                height: 60,
-                fit: BoxFit.cover,
-                showLoading: false,
-              ),
-            ),
-            const SizedBox(width: 12),
-            SizedBox(
-              width: 180,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    info.name,
-                    style: Theme.of(context).textTheme.titleMedium?.apply(
-                          fontSizeDelta: -1,
-                          fontWeightDelta: 2,
-                        ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "${Utils.formatCount(info.subscribedCount)}订阅 · ${Utils.formatCount(info.viewCount)}浏览",
-                    style: Theme.of(context).textTheme.labelMedium,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -855,78 +857,80 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
 
   Widget _buildHotGrainRankItem(int index, SimpleGrainInfo info) {
     String? icon = getIcon(index);
-    return GestureDetector(
-      onTap: () {
-        RouteUtil.pushCupertinoRoute(
-          context,
-          GrainDetailScreen(
-            grainId: info.id,
-            blogId: info.userId,
-          ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8),
-        padding: const EdgeInsets.all(8),
-        color: Colors.transparent,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              height: 24,
-              width: 24,
-              alignment: Alignment.center,
-              decoration: icon != null
-                  ? BoxDecoration(
-                      image: AssetUtil.loadDecorationImage(icon),
-                    )
-                  : null,
-              child: Text(
-                "${index + 1}",
-                style: Theme.of(context).textTheme.labelLarge?.apply(
-                      fontWeightDelta: 3,
-                      color: icon != null ? Colors.transparent : null,
+    return ItemBuilder.buildClickItem(
+      GestureDetector(
+        onTap: () {
+          RouteUtil.pushCupertinoRoute(
+            context,
+            GrainDetailScreen(
+              grainId: info.id,
+              blogId: info.userId,
+            ),
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.all(8),
+          color: Colors.transparent,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                height: 24,
+                width: 24,
+                alignment: Alignment.center,
+                decoration: icon != null
+                    ? BoxDecoration(
+                        image: AssetUtil.loadDecorationImage(icon),
+                      )
+                    : null,
+                child: Text(
+                  "${index + 1}",
+                  style: Theme.of(context).textTheme.labelLarge?.apply(
+                        fontWeightDelta: 3,
+                        color: icon != null ? Colors.transparent : null,
+                      ),
+                ),
+              ),
+              const SizedBox(width: 24),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: ItemBuilder.buildCachedImage(
+                  context: context,
+                  imageUrl: info.coverUrl,
+                  width: 60,
+                  height: 60,
+                  fit: BoxFit.cover,
+                  showLoading: false,
+                ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                width: 180,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      info.name,
+                      style: Theme.of(context).textTheme.titleMedium?.apply(
+                            fontSizeDelta: -1,
+                            fontWeightDelta: 2,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "${Utils.formatCount(info.subscribedCount)}订阅 · ${Utils.formatCount(info.viewCount)}浏览",
+                      style: Theme.of(context).textTheme.labelMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 24),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: ItemBuilder.buildCachedImage(
-                context: context,
-                imageUrl: info.coverUrl,
-                width: 60,
-                height: 60,
-                fit: BoxFit.cover,
-                showLoading: false,
-              ),
-            ),
-            const SizedBox(width: 12),
-            SizedBox(
-              width: 180,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    info.name,
-                    style: Theme.of(context).textTheme.titleMedium?.apply(
-                          fontSizeDelta: -1,
-                          fontWeightDelta: 2,
-                        ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "${Utils.formatCount(info.subscribedCount)}订阅 · ${Utils.formatCount(info.viewCount)}浏览",
-                    style: Theme.of(context).textTheme.labelMedium,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

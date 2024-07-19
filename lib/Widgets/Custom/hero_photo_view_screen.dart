@@ -36,6 +36,7 @@ class HeroPhotoViewScreen extends StatefulWidget {
     this.tagPrefix,
     this.tagSuffix,
     this.mainColors,
+    this.onDownloadSuccess,
   });
 
   final String? title;
@@ -51,6 +52,7 @@ class HeroPhotoViewScreen extends StatefulWidget {
   final List<Color>? mainColors;
   final bool transparentBar;
   final Function(int)? onIndexChanged;
+  final Function()? onDownloadSuccess;
 
   @override
   State<HeroPhotoViewScreen> createState() => HeroPhotoViewScreenState();
@@ -69,8 +71,8 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
   int currentIndex = 0;
   List<Color> mainColors = [];
   late dynamic downloadIcon;
-  late dynamic allDownloadIcon;
   DownloadState downloadState = DownloadState.none;
+  late dynamic allDownloadIcon;
   DownloadState allDownloadState = DownloadState.none;
   late PageController _pageController;
   final List<PhotoViewController> _viewControllers = [];
@@ -84,8 +86,8 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     super.initState();
-    setDownloadState(DownloadState.none);
-    setAllDownloadState(DownloadState.none);
+    setDownloadState(DownloadState.none, recover: false);
+    setAllDownloadState(DownloadState.none, recover: false);
     imageUrls = widget.imageUrls;
     _viewControllers.addAll(List.generate(imageUrls.length, (index) {
       return PhotoViewController();
@@ -331,7 +333,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
             currentIndex = index;
             updateCurrentUrl();
           });
-          setDownloadState(DownloadState.none);
+          setDownloadState(DownloadState.none, recover: false);
         },
       ),
     );
@@ -343,10 +345,11 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
         downloadIcon = AssetUtil.load(AssetUtil.downloadWhiteIcon);
         break;
       case DownloadState.loading:
-        downloadIcon = const SizedBox(
+        downloadIcon = Container(
           width: 20,
           height: 20,
-          child: CircularProgressIndicator(
+          padding: const EdgeInsets.all(2),
+          child: const CircularProgressIndicator(
             color: Colors.white,
             strokeWidth: 2,
           ),
@@ -376,10 +379,11 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
             const Icon(Icons.done_all_rounded, color: Colors.white, size: 22);
         break;
       case DownloadState.loading:
-        allDownloadIcon = const SizedBox(
+        allDownloadIcon = Container(
           width: 20,
           height: 20,
-          child: CircularProgressIndicator(
+          padding: const EdgeInsets.all(2),
+          child: const CircularProgressIndicator(
             color: Colors.white,
             strokeWidth: 2,
           ),
@@ -473,7 +477,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
           icon: downloadIcon,
           onTap: () {
             if (downloadState == DownloadState.none) {
-              setDownloadState(DownloadState.loading);
+              setDownloadState(DownloadState.loading, recover: false);
               FileUtil.saveImage(
                 context,
                 Utils.getUrlByQuality(
@@ -482,6 +486,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
                 ),
               ).then((res) {
                 if (res) {
+                  widget.onDownloadSuccess?.call();
                   setDownloadState(DownloadState.succeed);
                 } else {
                   setDownloadState(DownloadState.failed);
@@ -497,7 +502,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
             icon: allDownloadIcon,
             onTap: () {
               if (allDownloadState == DownloadState.none) {
-                setAllDownloadState(DownloadState.loading);
+                setAllDownloadState(DownloadState.loading, recover: false);
                 FileUtil.saveImages(
                   context,
                   imageUrls
@@ -510,6 +515,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
                       .toList(),
                 ).then((res) {
                   if (res) {
+                    widget.onDownloadSuccess?.call();
                     setAllDownloadState(DownloadState.succeed);
                   } else {
                     setAllDownloadState(DownloadState.failed);

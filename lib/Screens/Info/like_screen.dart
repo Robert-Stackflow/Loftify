@@ -54,7 +54,6 @@ class _LikeScreenState extends State<LikeScreen>
   HistoryLayoutMode _layoutMode = HistoryLayoutMode.nineGrid;
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
-  final ScrollController _scrollController = ScrollController();
   bool _noMore = false;
 
   @override
@@ -69,13 +68,6 @@ class _LikeScreenState extends State<LikeScreen>
     if (widget.infoMode != InfoMode.me) {
       _onRefresh();
     }
-    _scrollController.addListener(() {
-      if (!_noMore &&
-          _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
-        _onLoad();
-      }
-    });
   }
 
   _fetchLike({bool refresh = false}) async {
@@ -93,7 +85,7 @@ class _LikeScreenState extends State<LikeScreen>
           if (value['meta']['status'] != 200) {
             if (Utils.isNotEmpty(
                 value['meta']['desc'] ?? value['meta']['msg'])) {
-              IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
+              IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
             }
             return IndicatorResult.fail;
           } else {
@@ -136,7 +128,7 @@ class _LikeScreenState extends State<LikeScreen>
             }
           }
         } catch (e) {
-          if (mounted) IToast.showTop( "加载失败");
+          if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
@@ -205,11 +197,14 @@ class _LikeScreenState extends State<LikeScreen>
       widgets.add(_buildNineGrid(startIndex, count));
       startIndex += e.count;
     }
-    return ListView(
-      controller: _scrollController,
-      padding: EdgeInsets.zero,
-      physics: physics,
-      children: widgets,
+    return ItemBuilder.buildLoadMoreNotification(
+      noMore: _noMore,
+      onLoad: _onLoad,
+      child: ListView(
+        padding: const EdgeInsets.only(bottom: 20),
+        physics: physics,
+        children: widgets,
+      ),
     );
   }
 
@@ -231,43 +226,47 @@ class _LikeScreenState extends State<LikeScreen>
   }
 
   Widget _buildWaterflow(ScrollPhysics physics) {
-    return WaterfallFlow.builder(
-      physics: physics,
-      cacheExtent: 9999,
-      controller: _scrollController,
-      padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-      gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-        mainAxisSpacing: 6,
-        crossAxisSpacing: 6,
-        maxCrossAxisExtent: 300,
-      ),
-      itemBuilder: (BuildContext context, int index) {
-        return CommonInfoItemBuilder.buildWaterfallFlowPostItem(
-            context, _likeList[index], onLikeTap: () async {
-          var item = _likeList[index];
-          HapticFeedback.mediumImpact();
-          return await PostApi.likeOrUnLike(
-                  isLike: !(item.liked == true),
-                  postId: item.post!.id,
-                  blogId: item.post!.blogId)
-              .then((value) {
-            setState(() {
-              if (value['meta']['status'] != 200) {
-                if (Utils.isNotEmpty(
-                    value['meta']['desc'] ?? value['meta']['msg'])) {
-                  IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
+    return ItemBuilder.buildLoadMoreNotification(
+      noMore: _noMore,
+      onLoad: _onLoad,
+      child: WaterfallFlow.builder(
+        physics: physics,
+        cacheExtent: 9999,
+        padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+        gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+          mainAxisSpacing: 6,
+          crossAxisSpacing: 6,
+          maxCrossAxisExtent: 300,
+        ),
+        itemBuilder: (BuildContext context, int index) {
+          return CommonInfoItemBuilder.buildWaterfallFlowPostItem(
+              context, _likeList[index], onLikeTap: () async {
+            var item = _likeList[index];
+            HapticFeedback.mediumImpact();
+            return await PostApi.likeOrUnLike(
+                    isLike: !(item.liked == true),
+                    postId: item.post!.id,
+                    blogId: item.post!.blogId)
+                .then((value) {
+              setState(() {
+                if (value['meta']['status'] != 200) {
+                  if (Utils.isNotEmpty(
+                      value['meta']['desc'] ?? value['meta']['msg'])) {
+                    IToast.showTop(
+                        value['meta']['desc'] ?? value['meta']['msg']);
+                  }
+                } else {
+                  item.liked = !(item.liked == true);
+                  item.post!.postCount?.favoriteCount +=
+                      item.liked == true ? 1 : -1;
                 }
-              } else {
-                item.liked = !(item.liked == true);
-                item.post!.postCount?.favoriteCount +=
-                    item.liked == true ? 1 : -1;
-              }
+              });
+              return value['meta']['status'];
             });
-            return value['meta']['status'];
           });
-        });
-      },
-      itemCount: _likeList.length,
+        },
+        itemCount: _likeList.length,
+      ),
     );
   }
 
@@ -317,13 +316,13 @@ class _LikeScreenState extends State<LikeScreen>
                               blogId: HiveUtil.getInt(key: HiveUtil.userIdKey))
                           .then((value) {
                         if (value['meta']['status'] != 200) {
-                          IToast.showTop( value['meta']['desc'] ??
-                                  value['meta']['msg']);
+                          IToast.showTop(
+                              value['meta']['desc'] ?? value['meta']['msg']);
                         } else {
                           _likeList.removeWhere(
                               (e) => CommonInfoItemBuilder.isInvalid(e));
                           setState(() {});
-                          IToast.showTop( "清空成功");
+                          IToast.showTop("清空成功");
                         }
                       });
                     }

@@ -33,6 +33,8 @@ class HiveUtil {
   static const String enableCloseNoticeKey = "enableCloseNotice";
   static const String autoCheckUpdateKey = "autoCheckUpdate";
   static const String inappWebviewKey = "inappWebview";
+  static const String doubleTapActionKey = "doubleTapAction";
+  static const String downloadSuccessActionKey = "downloadSuccessAction";
 
   //Appearance
   static const String fontFamilyKey = "fontFamily";
@@ -59,6 +61,7 @@ class HiveUtil {
   static const String showSearchConfigKey = "showSearchConfig";
   static const String showSearchRankKey = "showSearchRank";
   static const String showCollectionPreNextKey = "showCollectionPreNext";
+  static const String showDownloadKey = "showDownload";
 
   //image
   static const String followMainColorKey = "followMainColor";
@@ -84,6 +87,7 @@ class HiveUtil {
   static const String firstLoginKey = "firstLogin";
 
   static initConfig() async {
+    HiveUtil.put(key: HiveUtil.doubleTapActionKey, value: 1);
     HiveUtil.put(key: HiveUtil.showRecommendVideoKey, value: false);
     HiveUtil.put(key: HiveUtil.showRecommendArticleKey, value: true);
     HiveUtil.put(key: HiveUtil.showSearchHistoryKey, value: true);
@@ -246,7 +250,8 @@ class HiveUtil {
         }
       }
     } else {
-      return ThemeColorData.defaultLightThemes[Utils.patchEnum(index, ThemeColorData.defaultLightThemes.length)];
+      return ThemeColorData.defaultLightThemes[
+          Utils.patchEnum(index, ThemeColorData.defaultLightThemes.length)];
     }
   }
 
@@ -269,7 +274,8 @@ class HiveUtil {
         }
       }
     } else {
-      return ThemeColorData.defaultDarkThemes[Utils.patchEnum(index, ThemeColorData.defaultDarkThemes.length)];
+      return ThemeColorData.defaultDarkThemes[
+          Utils.patchEnum(index, ThemeColorData.defaultDarkThemes.length)];
     }
   }
 
@@ -300,11 +306,12 @@ class HiveUtil {
   static void setSortableItems(String key, List<SortableItem> items) =>
       HiveUtil.put(key: key, value: jsonEncode(items));
 
-  static int getInt(
-      {String boxName = HiveUtil.settingsBox,
-      required String key,
-      bool autoCreate = true,
-      int defaultValue = 0}) {
+  static int getInt({
+    String boxName = HiveUtil.settingsBox,
+    required String key,
+    bool autoCreate = true,
+    int defaultValue = 0,
+  }) {
     final Box box = Hive.box(name: boxName);
     if (!box.containsKey(key)) {
       put(boxName: boxName, key: key, value: defaultValue);
@@ -312,11 +319,12 @@ class HiveUtil {
     return box.get(key);
   }
 
-  static bool getBool(
-      {String boxName = HiveUtil.settingsBox,
-      required String key,
-      bool autoCreate = true,
-      bool defaultValue = true}) {
+  static bool getBool({
+    String boxName = HiveUtil.settingsBox,
+    required String key,
+    bool autoCreate = true,
+    bool defaultValue = true,
+  }) {
     final Box box = Hive.box(name: boxName);
     if (!box.containsKey(key)) {
       put(boxName: boxName, key: key, value: defaultValue);

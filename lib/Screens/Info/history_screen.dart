@@ -40,7 +40,6 @@ class _HistoryScreenState extends State<HistoryScreen>
   HistoryLayoutMode _layoutMode = HistoryLayoutMode.nineGrid;
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
-  final ScrollController _scrollController = ScrollController();
   bool _noMore = false;
 
   @override
@@ -52,13 +51,6 @@ class _HistoryScreenState extends State<HistoryScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     super.initState();
-    _scrollController.addListener(() {
-      if (!_noMore &&
-          _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
-        _onLoad();
-      }
-    });
   }
 
   _fetchHistory({bool refresh = false}) async {
@@ -72,7 +64,7 @@ class _HistoryScreenState extends State<HistoryScreen>
           .then((value) {
         try {
           if (value['meta']['status'] != 200) {
-            IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
+            IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
             return IndicatorResult.fail;
           } else {
             _total = value['response']['count'];
@@ -100,7 +92,7 @@ class _HistoryScreenState extends State<HistoryScreen>
             }
           }
         } catch (e) {
-          if (mounted) IToast.showTop( "加载失败");
+          if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
@@ -165,10 +157,13 @@ class _HistoryScreenState extends State<HistoryScreen>
       widgets.add(_buildNineGrid(startIndex, count));
       startIndex += e.count;
     }
-    return ListView(
-      controller: _scrollController,
-      padding: EdgeInsets.zero,
-      children: widgets,
+    return ItemBuilder.buildLoadMoreNotification(
+      noMore: _noMore,
+      onLoad: _onLoad,
+      child: ListView(
+        padding: const EdgeInsets.only(bottom: 20),
+        children: widgets,
+      ),
     );
   }
 
@@ -192,39 +187,42 @@ class _HistoryScreenState extends State<HistoryScreen>
   }
 
   Widget _buildWaterflow() {
-    return WaterfallFlow.builder(
-      cacheExtent: 9999,
-      controller: _scrollController,
-      padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-      gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-        mainAxisSpacing: 6,
-        crossAxisSpacing: 6,
-        maxCrossAxisExtent: 300,
-      ),
-      itemBuilder: (BuildContext context, int index) {
-        return CommonInfoItemBuilder.buildWaterfallFlowPostItem(
-            context, _histories[index], onLikeTap: () async {
-          var item = _histories[index];
-          HapticFeedback.mediumImpact();
-          return await PostApi.likeOrUnLike(
-            isLike: !(item.liked == true),
-            postId: item.post!.id,
-            blogId: item.post!.blogId,
-          ).then((value) {
-            setState(() {
-              if (value['meta']['status'] != 200) {
-                IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
-              } else {
-                item.liked = !(item.liked == true);
-                item.post!.postCount?.favoriteCount +=
-                    item.liked == true ? 1 : -1;
-              }
+    return ItemBuilder.buildLoadMoreNotification(
+      noMore: _noMore,
+      onLoad: _onLoad,
+      child: WaterfallFlow.builder(
+        cacheExtent: 9999,
+        padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+        gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+          mainAxisSpacing: 6,
+          crossAxisSpacing: 6,
+          maxCrossAxisExtent: 300,
+        ),
+        itemBuilder: (BuildContext context, int index) {
+          return CommonInfoItemBuilder.buildWaterfallFlowPostItem(
+              context, _histories[index], onLikeTap: () async {
+            var item = _histories[index];
+            HapticFeedback.mediumImpact();
+            return await PostApi.likeOrUnLike(
+              isLike: !(item.liked == true),
+              postId: item.post!.id,
+              blogId: item.post!.blogId,
+            ).then((value) {
+              setState(() {
+                if (value['meta']['status'] != 200) {
+                  IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+                } else {
+                  item.liked = !(item.liked == true);
+                  item.post!.postCount?.favoriteCount +=
+                      item.liked == true ? 1 : -1;
+                }
+              });
+              return value['meta']['status'];
             });
-            return value['meta']['status'];
           });
-        });
-      },
-      itemCount: _histories.length,
+        },
+        itemCount: _histories.length,
+      ),
     );
   }
 
@@ -274,14 +272,14 @@ class _HistoryScreenState extends State<HistoryScreen>
                     if (idx == 0) {
                       UserApi.clearHistory().then((value) {
                         if (value['meta']['status'] != 200) {
-                          IToast.showTop( value['meta']['desc'] ??
-                                  value['meta']['msg']);
+                          IToast.showTop(
+                              value['meta']['desc'] ?? value['meta']['msg']);
                         } else {
                           _histories.clear();
                           _archiveDataList.clear();
                           _total = 0;
                           setState(() {});
-                          IToast.showTop( "清空成功");
+                          IToast.showTop("清空成功");
                         }
                       });
                     } else if (idx == 1) {
@@ -289,12 +287,12 @@ class _HistoryScreenState extends State<HistoryScreen>
                               blogId: HiveUtil.getInt(key: HiveUtil.userIdKey))
                           .then((value) {
                         if (value['meta']['status'] != 200) {
-                          IToast.showTop( value['meta']['desc'] ??
-                                  value['meta']['msg']);
+                          IToast.showTop(
+                              value['meta']['desc'] ?? value['meta']['msg']);
                         } else {
                           clearInvalidHistory();
                           setState(() {});
-                          IToast.showTop( "清空成功");
+                          IToast.showTop("清空成功");
                         }
                       });
                     } else if (idx == 2) {
@@ -304,14 +302,15 @@ class _HistoryScreenState extends State<HistoryScreen>
                           blogName: blogInfo!.blogName,
                         ).then((value) {
                           if (value['meta']['status'] != 200) {
-                            IToast.showTop( value['meta']['desc'] ??
-                                    value['meta']['msg']);
+                            IToast.showTop(
+                                value['meta']['desc'] ?? value['meta']['msg']);
                           } else {
                             _histories.clear();
                             _archiveDataList.clear();
                             _total = 0;
                             _recordHistory = _recordHistory == 1 ? 0 : 1;
-                            IToast.showTop( _recordHistory == 1 ? "打开成功" : "关闭成功");
+                            IToast.showTop(
+                                _recordHistory == 1 ? "打开成功" : "关闭成功");
                             setState(() {});
                           }
                         });

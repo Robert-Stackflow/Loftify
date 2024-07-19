@@ -1,4 +1,5 @@
 import 'package:blur/blur.dart';
+import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/material.dart' hide AnimatedSlide;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,7 +16,7 @@ import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/uri_util.dart';
 import 'package:loftify/Widgets/BottomSheet/input_bottom_sheet.dart';
-import 'package:loftify/Widgets/Custom/custom_tab_indicator.dart';
+import 'package:loftify/Widgets/Custom/subordinate_scroll_controller.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:tuple/tuple.dart';
@@ -30,6 +31,8 @@ import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
+import '../../Widgets/Custom/custom_tab_indicator.dart';
+import '../../Widgets/Custom/sliver_appbar_delegate.dart';
 import '../../Widgets/Dialog/custom_dialog.dart';
 import '../../Widgets/Dialog/dialog_builder.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
@@ -63,6 +66,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
   List<ShowCaseItem> showCases = [];
   String _followButtonText = "关注";
   Color? _followButtonColor;
+  SubordinateScrollController? controller;
 
   InfoMode get infoMode => isMe == true ? InfoMode.me : InfoMode.other;
 
@@ -110,20 +114,15 @@ class UserDetailScreenState extends State<UserDetailScreen>
     _tabController = TabController(length: tabList.length, vsync: this);
   }
 
-  _onRefresh() {
-    _fetchData();
-  }
-
-  _onLoad() {}
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.getBackground(context),
       resizeToAvoidBottomInset: false,
       body: _fullBlogData != null
-          ? NestedScrollView(
+          ? ExtendedNestedScrollView(
               headerSliverBuilder: (_, __) => _buildHeaderSlivers(),
-              body: _buildTabView())
+              body: _tmp())
           : ItemBuilder.buildLoadingDialog(
               context,
               background: AppTheme.getBackground(context),
@@ -131,11 +130,23 @@ class UserDetailScreenState extends State<UserDetailScreen>
     );
   }
 
+  _tmp() {
+    return Builder(builder: (BuildContext context) {
+      final parentController = PrimaryScrollController.of(context);
+      if (controller?.parent != parentController) {
+        controller?.dispose();
+        controller = SubordinateScrollController(parentController);
+      }
+      return _mainContent();
+    });
+  }
+
   _buildHeaderSlivers() {
     return <Widget>[
       ItemBuilder.buildSliverAppBar(
         context: context,
-        expandedHeight: 400,
+        expandedHeight: 200,
+        collapsedHeight: 56,
         backgroundWidget: _buildBackground(true),
         actions: _appBarActions(),
         center: true,
@@ -182,6 +193,53 @@ class UserDetailScreenState extends State<UserDetailScreen>
         ),
       ),
     ];
+  }
+
+  Widget _mainContent() {
+    return CustomScrollView(
+      controller: controller,
+      slivers: [
+        SliverToBoxAdapter(
+          child: _buildInfo(),
+        ),
+        SliverPersistentHeader(
+          delegate: SliverHeaderDelegate.fixedHeight(
+            height: 40,
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppTheme.getBackground(context),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                overlayColor: WidgetStateProperty.all(Colors.transparent),
+                tabs: tabList,
+                labelPadding: const EdgeInsets.symmetric(horizontal: 12),
+                dividerHeight: 0,
+                physics: const BouncingScrollPhysics(),
+                labelStyle: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.apply(fontWeightDelta: 2),
+                unselectedLabelStyle: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.apply(color: Colors.grey),
+                indicator: CustomTabIndicator(
+                  borderColor: Theme.of(context).primaryColor,
+                ),
+              ),
+            ),
+          ),
+        ),
+        SliverFillRemaining(
+          child: _buildTabView(),
+        ),
+      ],
+    );
   }
 
   _appBarActions() {
@@ -458,7 +516,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
               textAlign: TextAlign.center,
               '性别：${_fullBlogData!.blogInfo.gendar == 1 ? "男" : _fullBlogData!.blogInfo.gendar == 2 ? "女" : "保密"}  |  IP属地: ${_fullBlogData!.blogInfo.ipLocation}${Utils.clearBlank(_fullBlogData!.blogInfo.selfIntro).isNotEmpty ? "  |  简介: ${Utils.clearBlank(_fullBlogData!.blogInfo.selfIntro)}" : ""}',
               style: Theme.of(context).textTheme.labelMedium,
-              maxLines: 2,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -1020,27 +1078,22 @@ class UserDetailScreenState extends State<UserDetailScreen>
     );
   }
 
-  Widget _buildBackground(bool blur) {
+  Widget _buildBackground(bool blur, {double? height}) {
     String backgroudUrl = _fullBlogData!.blogcover.customBlogCover ??
         _fullBlogData!.blogcover.url;
     if (blur) {
-      return GestureDetector(
-        onTap: () {},
-        behavior: HitTestBehavior.opaque,
-        child: Blur(
-          blur: 10,
-          blurColor: Colors.black12,
-          child: ItemBuilder.buildCachedImage(
-            context: context,
-            imageUrl: Utils.removeImageParam(backgroudUrl),
-            fit: BoxFit.cover,
-            width: MediaQuery.sizeOf(context).width * 2,
-            height: MediaQuery.sizeOf(context).height * 0.7,
-            placeholderBackground:
-                Theme.of(context).textTheme.labelSmall?.color,
-            bottomPadding: 50,
-            showLoading: false,
-          ),
+      return Blur(
+        blur: 10,
+        blurColor: Colors.black12,
+        child: ItemBuilder.buildCachedImage(
+          context: context,
+          imageUrl: Utils.removeImageParam(backgroudUrl),
+          fit: BoxFit.cover,
+          width: MediaQuery.sizeOf(context).width * 2,
+          height: height ?? 300,
+          placeholderBackground: Theme.of(context).textTheme.labelSmall?.color,
+          bottomPadding: 50,
+          showLoading: false,
         ),
       );
     } else {
@@ -1049,7 +1102,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
         imageUrl: Utils.removeImageParam(backgroudUrl),
         fit: BoxFit.cover,
         width: MediaQuery.sizeOf(context).width * 2,
-        height: MediaQuery.sizeOf(context).height * 0.7,
+        height: 300,
         placeholderBackground: Theme.of(context).textTheme.labelSmall?.color,
         bottomPadding: 50,
         showLoading: false,

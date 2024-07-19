@@ -196,7 +196,7 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
           .then((value) {
         try {
           if (value['meta']['status'] != 200) {
-            IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
+            IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
             return IndicatorResult.fail;
           } else {
             List<MessageItem> t = [];
@@ -214,7 +214,7 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
             }
           }
         } catch (e) {
-          if (mounted) IToast.showTop( "加载失败");
+          if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
@@ -243,7 +243,7 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
       ).then((value) {
         try {
           if (value['meta']['status'] != 200) {
-            IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
+            IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
             return IndicatorResult.fail;
           } else {
             List<MessageItem> t = [];
@@ -261,7 +261,7 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
             }
           }
         } catch (e) {
-          if (mounted) IToast.showTop( "加载失败");
+          if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
@@ -535,115 +535,119 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
   }
 
   _buildItem(MessageItem item) {
-    return GestureDetector(
-      onTap: () {
-        RouteUtil.pushCupertinoRoute(
-          context,
-          PostDetailScreen(
-            simpleMessagePost: item.simplePost,
-            isArticle: item.type == 1,
-          ),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.only(left: 5, right: 5, top: 5, bottom: 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(width: 10),
-            GestureDetector(
-              child: ItemBuilder.buildAvatar(
-                context: context,
-                size: 50,
-                imageUrl: item.actUserBlogInfo.bigAvaImg,
-              ),
-              onTap: () {
-                RouteUtil.pushCupertinoRoute(
-                  context,
-                  UserDetailScreen(
-                    blogId: item.actUserId,
-                    blogName: item.actUserBlogInfo.blogName,
-                  ),
-                );
-              },
+    return ItemBuilder.buildClickItem(
+      GestureDetector(
+        onTap: () {
+          RouteUtil.pushCupertinoRoute(
+            context,
+            PostDetailScreen(
+              simpleMessagePost: item.simplePost,
+              isArticle: item.type == 1,
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                      width: 0.5,
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.only(left: 5, right: 5, top: 5, bottom: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(width: 10),
+              GestureDetector(
+                child: ItemBuilder.buildAvatar(
+                  context: context,
+                  size: 50,
+                  imageUrl: item.actUserBlogInfo.bigAvaImg,
+                ),
+                onTap: () {
+                  RouteUtil.pushCupertinoRoute(
+                    context,
+                    UserDetailScreen(
+                      blogId: item.actUserId,
+                      blogName: item.actUserBlogInfo.blogName,
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Theme.of(context).dividerColor,
+                        width: 0.5,
+                      ),
                     ),
                   ),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text.rich(
-                            TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: item.actUserBlogInfo.blogNickName,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleSmall
-                                      ?.apply(
-                                        fontSizeDelta: 1,
-                                      ),
-                                ),
-                                TextSpan(
-                                  text: item.defString.replaceFirst(
-                                      item.actUserBlogInfo.blogNickName, ""),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleSmall
-                                      ?.apply(
-                                        fontSizeDelta: 1,
-                                        color: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.color,
-                                      ),
-                                ),
-                              ],
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text.rich(
+                              TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: item.actUserBlogInfo.blogNickName,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.apply(
+                                          fontSizeDelta: 1,
+                                        ),
+                                  ),
+                                  TextSpan(
+                                    text: item.defString.replaceFirst(
+                                        item.actUserBlogInfo.blogNickName, ""),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.apply(
+                                          fontSizeDelta: 1,
+                                          color: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.color,
+                                        ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            Utils.formatTimestamp(item.publishTime),
-                            style:
-                                Theme.of(context).textTheme.labelMedium?.apply(
-                                      fontSizeDelta: 1,
-                                    ),
-                          ),
-                          const SizedBox(height: 10),
-                        ],
+                            const SizedBox(height: 10),
+                            Text(
+                              Utils.formatTimestamp(item.publishTime),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelMedium
+                                  ?.apply(
+                                    fontSizeDelta: 1,
+                                  ),
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: ItemBuilder.buildCachedImage(
-                        imageUrl: item.thumbnail,
-                        context: context,
-                        height: 50,
-                        width: 50,
-                        fit: BoxFit.cover,
-                        showLoading: false,
+                      const SizedBox(width: 10),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: ItemBuilder.buildCachedImage(
+                          imageUrl: item.thumbnail,
+                          context: context,
+                          height: 50,
+                          width: 50,
+                          fit: BoxFit.cover,
+                          showLoading: false,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 10),
-          ],
+              const SizedBox(width: 10),
+            ],
+          ),
         ),
       ),
     );

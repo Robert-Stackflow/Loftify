@@ -48,7 +48,6 @@ class _CollectionScreenState extends State<CollectionScreen>
   final List<FullPostCollection> _collectionList = [];
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
-  final ScrollController _scrollController = ScrollController();
   bool _noMore = false;
 
   @override
@@ -63,13 +62,6 @@ class _CollectionScreenState extends State<CollectionScreen>
     if (widget.infoMode != InfoMode.me) {
       _onRefresh();
     }
-    _scrollController.addListener(() {
-      if (!_noMore &&
-          _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
-        _onLoad();
-      }
-    });
   }
 
   _fetchGrain({bool refresh = false}) async {
@@ -85,7 +77,7 @@ class _CollectionScreenState extends State<CollectionScreen>
           .then((value) {
         try {
           if (value['meta']['status'] != 200) {
-            IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
+            IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
             return IndicatorResult.fail;
           } else {
             List<FullPostCollection> tmp = [];
@@ -111,7 +103,7 @@ class _CollectionScreenState extends State<CollectionScreen>
             }
           }
         } catch (e) {
-          if (mounted) IToast.showTop( "加载失败");
+          if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
@@ -151,28 +143,31 @@ class _CollectionScreenState extends State<CollectionScreen>
   }
 
   Widget _buildBody(ScrollPhysics physics) {
-    return ListView.builder(
-      physics: physics,
-      controller: _scrollController,
-      padding: EdgeInsets.zero,
-      itemCount: _collectionList.length,
-      itemBuilder: (context, index) {
-        return _buildCollectionRow(
-          _collectionList[index],
-          verticalPadding: 8,
-          onTap: () {
-            RouteUtil.pushCupertinoRoute(
-              context,
-              CollectionDetailScreen(
-                collectionId: _collectionList[index].id,
-                blogId: _collectionList[index].blogId,
-                blogName: "",
-                postId: 0,
-              ),
-            );
-          },
-        );
-      },
+    return ItemBuilder.buildLoadMoreNotification(
+      noMore: _noMore,
+      onLoad: _onLoad,
+      child: ListView.builder(
+        physics: physics,
+        padding: const EdgeInsets.only(bottom: 20),
+        itemCount: _collectionList.length,
+        itemBuilder: (context, index) {
+          return _buildCollectionRow(
+            _collectionList[index],
+            verticalPadding: 8,
+            onTap: () {
+              RouteUtil.pushCupertinoRoute(
+                context,
+                CollectionDetailScreen(
+                  collectionId: _collectionList[index].id,
+                  blogId: _collectionList[index].blogId,
+                  blogName: "",
+                  postId: 0,
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 

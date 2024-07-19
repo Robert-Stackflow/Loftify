@@ -50,7 +50,6 @@ class _PostScreenState extends State<PostScreen>
   HistoryLayoutMode _layoutMode = HistoryLayoutMode.nineGrid;
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
-  final ScrollController _scrollController = ScrollController();
   bool _noMore = false;
 
   @override
@@ -65,13 +64,6 @@ class _PostScreenState extends State<PostScreen>
     if (widget.infoMode != InfoMode.me) {
       _onRefresh();
     }
-    _scrollController.addListener(() {
-      if (!_noMore &&
-          _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
-        _onLoad();
-      }
-    });
   }
 
   _fetchLike({bool refresh = false}) async {
@@ -99,7 +91,7 @@ class _PostScreenState extends State<PostScreen>
       ).then((value) {
         try {
           if (value['meta']['status'] != 200) {
-            IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
+            IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
             return IndicatorResult.fail;
           } else {
             if (value['response']['archives'] != null) {
@@ -162,7 +154,7 @@ class _PostScreenState extends State<PostScreen>
             }
           }
         } catch (e) {
-          if (mounted) IToast.showTop( "加载失败");
+          if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
@@ -231,11 +223,14 @@ class _PostScreenState extends State<PostScreen>
       widgets.add(_buildNineGrid(startIndex, count));
       startIndex += e.count;
     }
-    return ListView(
-      controller: _scrollController,
-      padding: EdgeInsets.zero,
-      physics: physics,
-      children: widgets,
+    return ItemBuilder.buildLoadMoreNotification(
+      noMore: _noMore,
+      onLoad: _onLoad,
+      child: ListView(
+        padding: const EdgeInsets.only(bottom: 20),
+        physics: physics,
+        children: widgets,
+      ),
     );
   }
 
@@ -257,40 +252,43 @@ class _PostScreenState extends State<PostScreen>
   }
 
   Widget _buildWaterflow(ScrollPhysics physics) {
-    return WaterfallFlow.builder(
-      physics: physics,
-      cacheExtent: 9999,
-      controller: _scrollController,
-      padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-      gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-        mainAxisSpacing: 6,
-        crossAxisSpacing: 6,
-        maxCrossAxisExtent: 300,
-      ),
-      itemBuilder: (BuildContext context, int index) {
-        return CommonInfoItemBuilder.buildWaterfallFlowPostItem(
-            context, _postList[index], onLikeTap: () async {
-          var item = _postList[index];
-          HapticFeedback.mediumImpact();
-          return await PostApi.likeOrUnLike(
-                  isLike: !(item.liked == true),
-                  postId: item.post!.id,
-                  blogId: item.post!.blogId)
-              .then((value) {
-            setState(() {
-              if (value['meta']['status'] != 200) {
-                IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
-              } else {
-                item.liked = !(item.liked == true);
-                item.post!.postCount?.favoriteCount +=
-                    item.liked == true ? 1 : -1;
-              }
+    return ItemBuilder.buildLoadMoreNotification(
+      noMore: _noMore,
+      onLoad: _onLoad,
+      child: WaterfallFlow.builder(
+        physics: physics,
+        cacheExtent: 9999,
+        padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+        gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+          mainAxisSpacing: 6,
+          crossAxisSpacing: 6,
+          maxCrossAxisExtent: 300,
+        ),
+        itemBuilder: (BuildContext context, int index) {
+          return CommonInfoItemBuilder.buildWaterfallFlowPostItem(
+              context, _postList[index], onLikeTap: () async {
+            var item = _postList[index];
+            HapticFeedback.mediumImpact();
+            return await PostApi.likeOrUnLike(
+                    isLike: !(item.liked == true),
+                    postId: item.post!.id,
+                    blogId: item.post!.blogId)
+                .then((value) {
+              setState(() {
+                if (value['meta']['status'] != 200) {
+                  IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+                } else {
+                  item.liked = !(item.liked == true);
+                  item.post!.postCount?.favoriteCount +=
+                      item.liked == true ? 1 : -1;
+                }
+              });
+              return value['meta']['status'];
             });
-            return value['meta']['status'];
           });
-        });
-      },
-      itemCount: _postList.length,
+        },
+        itemCount: _postList.length,
+      ),
     );
   }
 
