@@ -18,6 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
+import '../../../Utils/constant.dart';
 import 'drag_and_drop_builder_parameters.dart';
 import 'drag_and_drop_item.dart';
 import 'drag_and_drop_item_target.dart';
@@ -466,7 +467,7 @@ class DragAndDropListsState extends State<DragAndDropLists> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            widget.header ?? Container(),
+            widget.header ?? emptyWidget,
             widget.contentsWhenEmpty ?? const Text('Empty'),
             dragAndDropListTarget,
           ],
@@ -526,7 +527,7 @@ class DragAndDropListsState extends State<DragAndDropLists> {
     bool includeSeparators = widget.listDivider != null;
     int childrenCount = _calculateChildrenCount(includeSeparators);
 
-    List<Widget> list = [widget.header ?? Container()];
+    List<Widget> list = [widget.header ?? emptyWidget];
     list.addAll(List.generate(childrenCount, (index) {
       return _buildInnerList(index, childrenCount, dragAndDropListTarget,
           includeSeparators, parameters);

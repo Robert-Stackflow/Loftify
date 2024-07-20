@@ -3,7 +3,6 @@ import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/material.dart' hide AnimatedSlide;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:loftify/Models/enums.dart';
 import 'package:loftify/Models/show_case_response.dart';
 import 'package:loftify/Screens/Info/collection_screen.dart';
 import 'package:loftify/Screens/Info/following_follower_screen.dart';
@@ -13,12 +12,12 @@ import 'package:loftify/Screens/Info/post_screen.dart';
 import 'package:loftify/Screens/Info/share_screen.dart';
 import 'package:loftify/Screens/Info/supporter_screen.dart';
 import 'package:loftify/Screens/Post/post_detail_screen.dart';
+import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/uri_util.dart';
 import 'package:loftify/Widgets/BottomSheet/input_bottom_sheet.dart';
 import 'package:loftify/Widgets/Custom/subordinate_scroll_controller.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
-import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:tuple/tuple.dart';
 
 import '../../Api/user_api.dart';
@@ -117,7 +116,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       resizeToAvoidBottomInset: false,
       body: _fullBlogData != null
           ? ExtendedNestedScrollView(
@@ -125,7 +124,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
               body: _tmp())
           : ItemBuilder.buildLoadingDialog(
               context,
-              background: AppTheme.getBackground(context),
+              background: MyTheme.getBackground(context),
             ),
     );
   }
@@ -164,7 +163,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
           preferredSize: const Size.fromHeight(40),
           child: Container(
             decoration: BoxDecoration(
-              color: AppTheme.getBackground(context),
+              color: MyTheme.getBackground(context),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
@@ -207,7 +206,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
             height: 40,
             child: Container(
               decoration: BoxDecoration(
-                color: AppTheme.getBackground(context),
+                color: MyTheme.getBackground(context),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
@@ -321,15 +320,9 @@ class UserDetailScreenState extends State<UserDetailScreen>
                     IToast.showTop("佩戴成功");
                   }
                 } else if (idx == 4) {
-                  showMaterialModalBottomSheet(
-                    context: context,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        topRight: Radius.circular(20),
-                      ),
-                    ),
-                    builder: (sheetContext) => InputBottomSheet(
+                  BottomSheetBuilder.showBottomSheet(
+                    context,
+                    (sheetContext) => InputBottomSheet(
                       buttonText: "确认",
                       title: "设置「${_fullBlogData!.blogInfo.blogNickName}」的备注",
                       text: _fullBlogData!.blogInfo.remarkName.trim(),
@@ -349,6 +342,8 @@ class UserDetailScreenState extends State<UserDetailScreen>
                         });
                       },
                     ),
+                    preferMinWidth: 300,
+                    responsive: true,
                   );
                 } else if (idx == 5) {
                   _doBlockUser(
@@ -442,7 +437,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: AppTheme.getBackground(context),
+        color: MyTheme.getBackground(context),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
@@ -876,7 +871,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
       );
     }
     return Container(
-      color: AppTheme.getBackground(context),
+      color: MyTheme.getBackground(context),
       child: TabBarView(
         controller: _tabController,
         children: children,

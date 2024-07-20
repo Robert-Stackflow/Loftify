@@ -144,11 +144,8 @@ class _AboutSettingScreenState extends State<AboutSettingScreen>
                         BottomSheetBuilder.showBottomSheet(
                           context,
                           (context) => const StarBottomSheet(),
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(16),
-                            ),
-                          ),
+                          responsive: true,
+                          preferMinWidth: 300,
                         );
                       },
                       leading: Icons.rate_review_outlined,

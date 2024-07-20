@@ -7,7 +7,7 @@ import 'package:loftify/Utils/itoast.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Api/post_api.dart';
-import '../../Models/enums.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
@@ -59,7 +59,7 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
     super.build(context);
     return Scaffold(
       appBar: _buildAppBar(),
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       body: Column(
         children: [
           _buildSearchBar(),
@@ -105,7 +105,7 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop( value['msg']);
+          IToast.showTop(value['msg']);
         } else {
           List<String> tmp = [];
           if (value['data'] != null) {
@@ -133,7 +133,7 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop( value['msg']);
+          IToast.showTop(value['msg']);
         } else {
           List<PostListItem> tmp = [];
           if (value['data'] != null) {
@@ -159,7 +159,7 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
           }
         }
       } catch (_) {
-        IToast.showTop( "加载失败");
+        IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -202,7 +202,8 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
                     .then((value) {
                   setState(() {
                     if (value['meta']['status'] != 200) {
-                      IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
+                      IToast.showTop(
+                          value['meta']['desc'] ?? value['meta']['msg']);
                     } else {
                       item.favorite = !item.favorite;
                       item.postData!.postCount!.favoriteCount +=
@@ -257,12 +258,13 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
   PreferredSizeWidget _buildAppBar() {
     return ItemBuilder.buildAppBar(
       context: context,
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       leading: Icons.arrow_back_rounded,
       onLeadingTap: () {
         Navigator.pop(context);
       },
-      title: ItemBuilder.buildClickItem( ItemBuilder.buildTagItem(
+      title: ItemBuilder.buildClickItem(
+        ItemBuilder.buildTagItem(
           context,
           widget.tag,
           TagType.normal,

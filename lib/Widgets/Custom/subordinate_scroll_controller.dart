@@ -8,16 +8,17 @@ import 'package:flutter/cupertino.dart';
 /// for widgets with scrollbars that can actuate a parent scroll controller.
 class SubordinateScrollController extends ScrollController {
   SubordinateScrollController(
-      this.parent, {
-        String subordinateDebugLabel = 'subordinate',
-      }) : super(
-    debugLabel: parent.debugLabel == null
-        ? null
-        : '${parent.debugLabel}/$subordinateDebugLabel',
-    initialScrollOffset: parent.initialScrollOffset,
-    keepScrollOffset: parent.keepScrollOffset,
-  );
+    this.parent, {
+    String subordinateDebugLabel = 'subordinate',
+  }) : super(
+          debugLabel: parent.debugLabel == null
+              ? null
+              : '${parent.debugLabel}/$subordinateDebugLabel',
+          initialScrollOffset: parent.initialScrollOffset,
+          keepScrollOffset: parent.keepScrollOffset,
+        );
   final ScrollController parent;
+
   // Although some use cases might seem to be simplified if parent were made
   // settable, we can't really do this because scroll positions are owned by
   // Scrollables rather than the scroll controller, so the scroll view is
@@ -27,10 +28,10 @@ class SubordinateScrollController extends ScrollController {
 
   @override
   ScrollPosition createScrollPosition(
-      ScrollPhysics physics,
-      ScrollContext context,
-      ScrollPosition? oldPosition,
-      ) =>
+    ScrollPhysics physics,
+    ScrollContext context,
+    ScrollPosition? oldPosition,
+  ) =>
       parent.createScrollPosition(physics, context, oldPosition);
 
   @override

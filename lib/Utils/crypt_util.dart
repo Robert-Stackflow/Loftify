@@ -14,7 +14,6 @@ class CryptUtil {
     final iv = IV.fromUtf8(rawIv);
     final encrypter = Encrypter(AES(key, mode: AESMode.cbc));
     final encrypted = encrypter.encrypt(json.encode(data), iv: iv);
-    final decrypted = encrypter.decrypt(encrypted, iv: iv);
     return encrypted.base64;
   }
 

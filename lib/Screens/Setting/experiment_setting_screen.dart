@@ -4,8 +4,7 @@ import 'package:local_auth/local_auth.dart';
 import 'package:loftify/Screens/Setting/fontweight_screen.dart';
 import 'package:provider/provider.dart';
 
-import '../../Providers/global_provider.dart';
-import '../../Providers/provider_manager.dart';
+import '../../Utils/app_provider.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/responsive_util.dart';
@@ -121,19 +120,19 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
       ),
       Visibility(
         visible: _enableGuesturePasswd && _hasGuesturePasswd && _autoLock,
-        child: Selector<GlobalProvider, int>(
+        child: Selector<AppProvider, int>(
           selector: (context, globalProvider) => globalProvider.autoLockTime,
           builder: (context, autoLockTime, child) => ItemBuilder.buildEntryItem(
             context: context,
             title: "自动锁定时机",
-            tip: GlobalProvider.getAutoLockOptionLabel(autoLockTime),
+            tip: AppProvider.getAutoLockOptionLabel(autoLockTime),
             onTap: () {
               BottomSheetBuilder.showListBottomSheet(
                 context,
                 (context) => TileList.fromOptions(
-                  GlobalProvider.getAutoLockOptions(),
+                  AppProvider.getAutoLockOptions(),
                   (item2) {
-                    ProviderManager.globalProvider.autoLockTime = item2;
+                    appProvider.autoLockTime = item2;
                     Navigator.pop(context);
                   },
                   selected: autoLockTime,
@@ -172,7 +171,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
           context,
           PinVerifyScreen(
             onSuccess: () {
-              IToast.showTop( "手势密码关闭成功");
+              IToast.showTop("手势密码关闭成功");
               setState(() {
                 _enableGuesturePasswd = !_enableGuesturePasswd;
                 HiveUtil.put(
@@ -209,7 +208,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
         context,
         PinVerifyScreen(
           onSuccess: () {
-            IToast.showTop( "生物识别开启成功");
+            IToast.showTop("生物识别开启成功");
             setState(() {
               _enableBiometric = !_enableBiometric;
               HiveUtil.put(

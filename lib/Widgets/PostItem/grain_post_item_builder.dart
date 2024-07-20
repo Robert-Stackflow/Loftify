@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:loftify/Models/grain_response.dart';
 
-import '../../Models/enums.dart';
 import '../../Models/post_detail_response.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/utils.dart';
 import 'general_post_item_builder.dart';
 

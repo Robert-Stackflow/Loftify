@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:loftify/Models/enums.dart';
+import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/request_header_util.dart';
 
 import '../Utils/request_util.dart';
@@ -392,9 +392,7 @@ class UserApi {
     required FollowingMode followingMode,
   }) async {
     return RequestUtil.get(
-      "/v1.1/${followingMode == FollowingMode.following
-          ? "userfollowing"
-          : "blogfollower"}.api",
+      "/v1.1/${followingMode == FollowingMode.following ? "userfollowing" : "blogfollower"}.api",
       params: {
         // "timestamp": 0,
         "blogdomain": Utils.getBlogDomain(blogName),

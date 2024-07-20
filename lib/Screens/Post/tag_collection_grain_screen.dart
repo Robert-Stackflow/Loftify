@@ -8,7 +8,8 @@ import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/route_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
-import '../../Models/enums.dart';
+import '../../Utils/constant.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/Custom/custom_tab_indicator.dart';
 import '../../Widgets/Custom/sliver_appbar_delegate.dart';
@@ -49,7 +50,7 @@ class _TagCollectionGrainScreenState extends State<TagCollectionGrainScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,7 +82,7 @@ class _TagCollectionGrainScreenState extends State<TagCollectionGrainScreen>
             pinned: true,
             delegate: SliverAppBarDelegate(
               radius: 0,
-              background: AppTheme.getBackground(context),
+              background: MyTheme.getBackground(context),
               tabBar: TabBar(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
                 overlayColor: WidgetStateProperty.all(Colors.transparent),
@@ -123,7 +124,7 @@ class _TagCollectionGrainScreenState extends State<TagCollectionGrainScreen>
   PreferredSizeWidget _buildAppBar() {
     return ItemBuilder.buildAppBar(
       context: context,
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       leading: Icons.arrow_back_rounded,
       onLeadingTap: () {
         Navigator.pop(context);

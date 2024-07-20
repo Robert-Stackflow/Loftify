@@ -63,7 +63,7 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
     bool showLoading = false,
   }) async {
     if (loading || (upDown != -1 && startPostId == 0)) return;
-    if (showLoading) CustomLoadingDialog.showLoading(context, title: "加载中...");
+    if (showLoading) CustomLoadingDialog.showLoading(title: "加载中...");
     loading = true;
     return await CollectionApi.getCollection(
       postId: widget.postId,
@@ -137,7 +137,7 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
         if (mounted) IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
-        if (showLoading) CustomLoadingDialog.dismissLoading(context);
+        if (showLoading) CustomLoadingDialog.dismissLoading();
         if (mounted) setState(() {});
         loading = false;
       }
@@ -175,7 +175,7 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(20),
         ),
-        color: AppTheme.getBackground(context),
+        color: MyTheme.getBackground(context),
       ),
       height: MediaQuery.sizeOf(context).height * 0.8,
       padding: const EdgeInsets.symmetric(horizontal: 12),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:loftify/Providers/provider_manager.dart';
+import 'package:loftify/Utils/app_provider.dart';
 
 import '../../Utils/lottie_util.dart';
 
@@ -8,8 +8,8 @@ ProgressDialog showProgressDialog(
   String? msg,
   bool barrierDismissible = false,
 }) {
-  ProgressDialog dialog = ProgressDialog(
-      context: ProviderManager.globalNavigatorKey.currentState!.context);
+  ProgressDialog dialog =
+      ProgressDialog(context: globalNavigatorKey.currentState!.context);
   dialog.show(
     msg: msg ?? '加载中...',
     barrierDismissible: barrierDismissible,
@@ -114,7 +114,7 @@ class ProgressDialog {
 
   void dismiss() {
     if (_dialogIsOpen) {
-      Navigator.pop(ProviderManager.globalNavigatorKey.currentState!.context);
+      Navigator.pop(globalNavigatorKey.currentState!.context);
       _dialogIsOpen = false;
     }
   }

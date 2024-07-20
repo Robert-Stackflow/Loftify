@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../../../../../Utils/constant.dart';
 import '../../photo_view.dart'
     show
         PhotoViewScaleState,
@@ -369,7 +370,7 @@ class PhotoViewCoreState extends State<PhotoViewCore>
               child: child,
             );
           } else {
-            return Container();
+            return emptyWidget;
           }
         });
   }

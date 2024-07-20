@@ -10,8 +10,8 @@ import 'package:tuple/tuple.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Api/post_api.dart';
-import '../../Models/enums.dart';
 import '../../Models/post_detail_response.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/itoast.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
@@ -146,7 +146,7 @@ class _ShareScreenState extends State<ShareScreen>
     super.build(context);
     return Scaffold(
       backgroundColor: widget.infoMode == InfoMode.me
-          ? AppTheme.getBackground(context)
+          ? MyTheme.getBackground(context)
           : Colors.transparent,
       appBar: widget.infoMode == InfoMode.me ? _buildAppBar() : null,
       body: EasyRefresh(
@@ -270,7 +270,7 @@ class _ShareScreenState extends State<ShareScreen>
     return ItemBuilder.buildAppBar(
       context: context,
       leading: Icons.arrow_back_rounded,
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       onLeadingTap: () {
         Navigator.pop(context);
       },

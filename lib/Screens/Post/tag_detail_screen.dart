@@ -3,7 +3,6 @@ import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Api/tag_api.dart';
-import 'package:loftify/Models/enums.dart';
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Models/tag_response.dart';
 import 'package:loftify/Resources/theme.dart';
@@ -12,12 +11,14 @@ import 'package:loftify/Screens/Post/tag_collection_grain_screen.dart';
 import 'package:loftify/Screens/Post/tag_insearch_screen.dart';
 import 'package:loftify/Screens/Post/tag_related_screen.dart';
 import 'package:loftify/Utils/asset_util.dart';
+import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/route_util.dart';
 import 'package:tuple/tuple.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Api/post_api.dart';
+import '../../Utils/constant.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
@@ -89,11 +90,11 @@ class _TagDetailScreenState extends State<TagDetailScreen>
     super.build(context);
     return Scaffold(
       appBar: _buildAppBar(),
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       body: _tagDetailData != null
           ? _buildMainBody()
           : ItemBuilder.buildLoadingDialog(context,
-              background: AppTheme.getBackground(context)),
+              background: MyTheme.getBackground(context)),
     );
   }
 
@@ -129,7 +130,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
   _buildMainBody() {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.getBackground(context),
+        color: MyTheme.getBackground(context),
       ),
       child: ExtendedNestedScrollView(
         controller: _scrollController,
@@ -256,7 +257,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
       key: ValueKey(Utils.getRandomString()),
       delegate: SliverAppBarDelegate(
         radius: 0,
-        background: AppTheme.getBackground(context),
+        background: MyTheme.getBackground(context),
         tabBar: TabBar(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
           overlayColor: WidgetStateProperty.all(Colors.transparent),
@@ -385,7 +386,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
               ],
             ),
           )
-        : Container();
+        : emptyWidget;
   }
 
   Widget _buildEntryItem({
@@ -455,7 +456,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: AppTheme.getBackground(context),
+            color: MyTheme.getBackground(context),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.max,
@@ -537,7 +538,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
           height: 50,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: AppTheme.getBackground(context),
+            color: MyTheme.getBackground(context),
           ),
           child: Row(
             children: [
@@ -623,7 +624,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
   PreferredSizeWidget _buildAppBar() {
     return ItemBuilder.buildAppBar(
       context: context,
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       leading: Icons.arrow_back_rounded,
       onLeadingTap: () {
         Navigator.pop(context);

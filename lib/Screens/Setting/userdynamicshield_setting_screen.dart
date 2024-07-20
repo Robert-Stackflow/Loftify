@@ -37,7 +37,7 @@ class _UserDynamicShieldSettingScreenState
       try {
         if (value == null) return IndicatorResult.fail;
         if (value['code'] != 0) {
-          IToast.showTop( value['desc'] ?? value['msg']);
+          IToast.showTop(value['desc'] ?? value['msg']);
           return IndicatorResult.fail;
         } else {
           shieldList.clear();
@@ -48,7 +48,7 @@ class _UserDynamicShieldSettingScreenState
           return IndicatorResult.success;
         }
       } catch (_) {
-        IToast.showTop( "不看TA的动态列表加载失败");
+        IToast.showTop("不看TA的动态列表加载失败");
         return IndicatorResult.fail;
       } finally {
         loading = false;
@@ -60,10 +60,10 @@ class _UserDynamicShieldSettingScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       appBar: ItemBuilder.buildAppBar(
           leading: Icons.arrow_back_rounded,
-          backgroundColor: AppTheme.getBackground(context),
+          backgroundColor: MyTheme.getBackground(context),
           onLeadingTap: () {
             Navigator.pop(context);
           },
@@ -140,7 +140,7 @@ class _UserDynamicShieldSettingScreenState
                       isShield: false,
                     ).then((value) {
                       if (value['code'] != 0) {
-                        IToast.showTop( value['msg']);
+                        IToast.showTop(value['msg']);
                       } else {
                         shieldList.remove(blogInfo);
                         setState(() {});

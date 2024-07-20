@@ -6,12 +6,14 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:loftify/Models/enums.dart';
+import 'package:loftify/Models/Illust.dart';
+import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
 
 import '../../Models/post_detail_response.dart';
 import '../../Utils/asset_util.dart';
+import '../../Utils/constant.dart';
 import '../../Utils/responsive_util.dart';
 import '../../Utils/utils.dart';
 import '../General/PhotoView/photo_view.dart';
@@ -58,6 +60,8 @@ class HeroPhotoViewScreen extends StatefulWidget {
   State<HeroPhotoViewScreen> createState() => HeroPhotoViewScreenState();
 }
 
+enum UrlType { string, photoLink, illust }
+
 class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
     with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   @override
@@ -76,6 +80,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
   DownloadState allDownloadState = DownloadState.none;
   late PageController _pageController;
   final List<PhotoViewController> _viewControllers = [];
+  UrlType type = UrlType.string;
 
   @override
   void initState() {
@@ -216,9 +221,18 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
   }
 
   String getUrl(int index) {
-    return imageUrls[index] is PhotoLink
-        ? imageUrls[index].orign
-        : imageUrls[index];
+    if (imageUrls[index] is PhotoLink) {
+      type = UrlType.photoLink;
+      return imageUrls[index].orign;
+    } else if (imageUrls[index] is Illust) {
+      type = UrlType.illust;
+      return imageUrls[index].url;
+    } else if (imageUrls[index] is String) {
+      type = UrlType.string;
+      return imageUrls[index];
+    } else {
+      return "";
+    }
   }
 
   getCaption(index) {
@@ -282,9 +296,6 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
             event,
             index: currentIndex,
           ),
-          // onTapDown: (_, __, ___) {
-          //   Navigator.pop(context);
-          // },
         ),
       ),
     );
@@ -431,7 +442,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
                         color: Colors.white,
                       ),
                 )
-              : Container(),
+              : emptyWidget,
       actions: [
         ItemBuilder.buildIconButton(
           context: context,
@@ -478,20 +489,34 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
           onTap: () {
             if (downloadState == DownloadState.none) {
               setDownloadState(DownloadState.loading, recover: false);
-              FileUtil.saveImage(
-                context,
-                Utils.getUrlByQuality(
-                  currentUrl,
-                  ImageQuality.raw,
-                ),
-              ).then((res) {
-                if (res) {
-                  widget.onDownloadSuccess?.call();
-                  setDownloadState(DownloadState.succeed);
-                } else {
-                  setDownloadState(DownloadState.failed);
-                }
-              });
+              if (type == UrlType.illust) {
+                FileUtil.saveIllust(
+                  context,
+                  imageUrls[currentIndex],
+                ).then((res) {
+                  if (res) {
+                    widget.onDownloadSuccess?.call();
+                    setDownloadState(DownloadState.succeed);
+                  } else {
+                    setDownloadState(DownloadState.failed);
+                  }
+                });
+              } else {
+                FileUtil.saveImage(
+                  context,
+                  Utils.getUrlByQuality(
+                    currentUrl,
+                    ImageQuality.raw,
+                  ),
+                ).then((res) {
+                  if (res) {
+                    widget.onDownloadSuccess?.call();
+                    setDownloadState(DownloadState.succeed);
+                  } else {
+                    setDownloadState(DownloadState.failed);
+                  }
+                });
+              }
             }
           },
         ),
@@ -503,24 +528,38 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
             onTap: () {
               if (allDownloadState == DownloadState.none) {
                 setAllDownloadState(DownloadState.loading, recover: false);
-                FileUtil.saveImages(
-                  context,
-                  imageUrls
-                      .map(
-                        (e) => Utils.getUrlByQuality(
-                          getUrl(imageUrls.indexOf(e)),
-                          ImageQuality.raw,
-                        ),
-                      )
-                      .toList(),
-                ).then((res) {
-                  if (res) {
-                    widget.onDownloadSuccess?.call();
-                    setAllDownloadState(DownloadState.succeed);
-                  } else {
-                    setAllDownloadState(DownloadState.failed);
-                  }
-                });
+                if (type == UrlType.illust) {
+                  FileUtil.saveIllusts(
+                    context,
+                    imageUrls as List<Illust>,
+                  ).then((res) {
+                    if (res) {
+                      widget.onDownloadSuccess?.call();
+                      setAllDownloadState(DownloadState.succeed);
+                    } else {
+                      setAllDownloadState(DownloadState.failed);
+                    }
+                  });
+                } else {
+                  FileUtil.saveImages(
+                    context,
+                    imageUrls
+                        .map(
+                          (e) => Utils.getUrlByQuality(
+                            getUrl(imageUrls.indexOf(e)),
+                            ImageQuality.raw,
+                          ),
+                        )
+                        .toList(),
+                  ).then((res) {
+                    if (res) {
+                      widget.onDownloadSuccess?.call();
+                      setAllDownloadState(DownloadState.succeed);
+                    } else {
+                      setAllDownloadState(DownloadState.failed);
+                    }
+                  });
+                }
               }
             },
           ),

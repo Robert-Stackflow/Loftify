@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 
-import '../Models/enums.dart';
+import '../Utils/enums.dart';
 import '../Utils/request_util.dart';
 
 class TagApi {

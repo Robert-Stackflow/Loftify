@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:loftify/Providers/provider_manager.dart';
+import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Resources/fonts.dart';
 import 'package:loftify/Screens/Setting/select_theme_screen.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:provider/provider.dart';
 
-import '../../Providers/global_provider.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/route_util.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
@@ -70,20 +70,20 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
               const SizedBox(height: 10),
               ItemBuilder.buildCaptionItem(
                   context: context, title: S.current.themeSetting),
-              Selector<GlobalProvider, ActiveThemeMode>(
+              Selector<AppProvider, ActiveThemeMode>(
                 selector: (context, globalProvider) => globalProvider.themeMode,
                 builder: (context, themeMode, child) =>
                     ItemBuilder.buildEntryItem(
                   context: context,
                   title: S.current.themeMode,
-                  tip: GlobalProvider.getThemeModeLabel(themeMode),
+                  tip: AppProvider.getThemeModeLabel(themeMode),
                   onTap: () {
                     BottomSheetBuilder.showListBottomSheet(
                       context,
                       (context) => TileList.fromOptions(
-                        GlobalProvider.getSupportedThemeMode(),
+                        AppProvider.getSupportedThemeMode(),
                         (item2) {
-                          ProviderManager.globalProvider.themeMode = item2;
+                          appProvider.themeMode = item2;
                           Navigator.pop(context);
                         },
                         selected: themeMode,
@@ -170,7 +170,7 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                     HiveUtil.put(
                         key: HiveUtil.showSearchHistoryKey,
                         value: _showSearchHistory);
-                    ProviderManager.globalProvider.searchHistoryList = [];
+                    appProvider.searchHistoryList = [];
                   });
                 },
               ),

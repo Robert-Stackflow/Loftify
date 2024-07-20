@@ -2,27 +2,26 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/login_api.dart';
-import 'package:loftify/Models/enums.dart';
 import 'package:loftify/Models/login_response.dart';
-import 'package:loftify/Providers/provider_manager.dart';
+import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Screens/Login/login_by_lofterid_screen.dart';
 import 'package:loftify/Screens/Login/login_by_password_screen.dart';
+import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/iprint.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Widgets/Custom/no_shadow_scroll_behavior.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../Models/constant.dart';
 import '../../Models/simple_response.dart';
+import '../../Utils/constant.dart';
 import '../../Utils/request_util.dart';
 import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
 import '../../Widgets/Item/item_builder.dart';
 
 class LoginByCaptchaScreen extends StatefulWidget {
-  const LoginByCaptchaScreen(
-      {super.key, this.initPhone});
+  const LoginByCaptchaScreen({super.key, this.initPhone});
 
   static const String routeName = "/login/captcha";
 
@@ -65,17 +64,17 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
     String mobile = _mobileController.text;
     String captcha = _captchaController.text;
     if (mobile.isEmpty) {
-      IToast.showTop( "手机号不能为空");
+      IToast.showTop("手机号不能为空");
       return;
     }
     if (captcha.isEmpty) {
-      IToast.showTop( "图片验证码不能为空");
+      IToast.showTop("图片验证码不能为空");
       return;
     }
     LoginApi.getCaptchaCode(mobile, captcha).then((value) {
       SimpleResponse simpleResponse = SimpleResponse.fromJson(value);
       if (simpleResponse.result != 0) {
-        IToast.showTop( simpleResponse.desc);
+        IToast.showTop(simpleResponse.desc);
         _refrechPhotoCaptcha();
       } else {
         _isFetchingCaptchaCode = true;
@@ -85,7 +84,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
         Timer.periodic(const Duration(seconds: 1), (timer) {
           if (timer.tick == 60) {
             timer.cancel();
-            if(mounted){
+            if (mounted) {
               setState(() {
                 _isFetchingCaptchaCode = false;
                 _captchaText = "获取验证码";
@@ -101,7 +100,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
             }
           }
         });
-        IToast.showTop( "验证码发送成功");
+        IToast.showTop("验证码发送成功");
       }
     });
   }
@@ -110,17 +109,17 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
     String mobile = _mobileController.text;
     String password = _captchaCodeController.text;
     if (mobile.isEmpty || password.isEmpty) {
-      IToast.showTop( "手机号或短信验证码不能为空");
+      IToast.showTop("手机号或短信验证码不能为空");
       return;
     }
     LoginApi.loginByCaptchaCode(mobile, password).then((value) async {
       LoginResponse loginResponse = LoginResponse.fromJson(value);
       if (loginResponse.result != 0) {
-        IToast.showTop( loginResponse.desc);
+        IToast.showTop(loginResponse.desc);
         _refrechPhotoCaptcha();
       } else {
-        IToast.showTop( "登录成功");
-        ProviderManager.globalProvider.token = loginResponse.token ?? "";
+        IToast.showTop("登录成功");
+        appProvider.token = loginResponse.token ?? "";
         await RequestUtil.getInstance().clearCookie();
         await HiveUtil.put(
             key: HiveUtil.userIdKey, value: loginResponse.userid);

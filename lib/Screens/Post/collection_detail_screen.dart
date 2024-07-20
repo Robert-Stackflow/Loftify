@@ -10,11 +10,11 @@ import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:tuple/tuple.dart';
 
 import '../../Api/collection_api.dart';
-import '../../Models/enums.dart';
 import '../../Models/history_response.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Models/recommend_response.dart';
 import '../../Utils/asset_util.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/uri_util.dart';
@@ -81,7 +81,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
   _fetchData({bool refresh = false, bool showLoading = false}) async {
     if (loading) return;
     if (refresh) noMore = false;
-    if (showLoading) CustomLoadingDialog.showLoading(context, title: "加载中...");
+    if (showLoading) CustomLoadingDialog.showLoading(title: "加载中...");
     loading = true;
     int offset = refresh ? 0 : posts.length;
     return await CollectionApi.getCollectionDetail(
@@ -143,7 +143,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
         if (mounted) IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
-        if (showLoading) CustomLoadingDialog.dismissLoading(context);
+        if (showLoading) CustomLoadingDialog.dismissLoading();
         if (mounted) setState(() {});
         loading = false;
       }
@@ -168,7 +168,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       bottomNavigationBar:
           blogInfo != null && postCollection != null ? _buildFooter() : null,
       body: blogInfo != null && postCollection != null
@@ -255,7 +255,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
-              color: AppTheme.getBackground(context),
+              color: MyTheme.getBackground(context),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
@@ -556,7 +556,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
       childBuilder: (context, physics) {
         return Container(
           height: MediaQuery.sizeOf(context).height,
-          color: AppTheme.getBackground(context),
+          color: MyTheme.getBackground(context),
           child: ItemBuilder.buildLoadMoreNotification(
             child: ListView(
               physics: physics,

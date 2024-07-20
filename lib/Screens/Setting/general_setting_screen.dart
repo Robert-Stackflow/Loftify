@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:loftify/Models/github_response.dart';
 import 'package:loftify/Utils/cache_util.dart';
-import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/itoast.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:tuple/tuple.dart';
 
-import '../../Api/github_api.dart';
-import '../../Models/enums.dart';
-import '../../Providers/global_provider.dart';
-import '../../Providers/provider_manager.dart';
+import '../../Utils/app_provider.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/locale_util.dart';
 import '../../Utils/responsive_util.dart';
@@ -19,7 +15,6 @@ import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
 import '../../Widgets/Dialog/custom_dialog.dart';
-import '../../Widgets/Dialog/dialog_builder.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../generated/l10n.dart';
@@ -85,54 +80,24 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
   }
 
   Future<void> fetchReleases(bool showTip) async {
-    if (showTip) {
-      CustomLoadingDialog.showLoading(context, title: "检查更新中...");
-    }
-    await PackageInfo.fromPlatform().then((PackageInfo packageInfo) {
-      setState(() {
-        currentVersion = packageInfo.version;
-      });
-    });
-    GithubApi.getReleases("Robert-Stackflow", "Loftify").then((releases) async {
-      for (var release in releases) {
-        String tagName = release.tagName;
-        tagName = tagName.replaceAll(RegExp(r'[a-zA-Z]'), '');
+    setState(() {});
+    Utils.getReleases(
+      context: context,
+      showLoading: showTip,
+      showUpdateDialog: showTip,
+      showNoUpdateToast: showTip,
+      onGetCurrentVersion: (currentVersion) {
         setState(() {
-          if (latestVersion.compareTo(tagName) < 0) {
-            latestVersion = tagName;
-            latestReleaseItem = release;
-          }
+          this.currentVersion = currentVersion;
         });
-      }
-      if (showTip) {
-        CustomLoadingDialog.dismissLoading(context);
-        if (latestVersion.compareTo(currentVersion) > 0 &&
-            latestReleaseItem != null) {
-          DialogBuilder.showConfirmDialog(
-            context,
-            title: "发现新版本$latestVersion",
-            message:
-                "是否立即更新？${Utils.isNotEmpty(latestReleaseItem!.body) ? "更新日志如下：\n${latestReleaseItem!.body}" : ""}",
-            confirmButtonText: "立即下载",
-            cancelButtonText: "暂不更新",
-            onTapConfirm: () {
-              FileUtil.downloadAndUpdate(
-                context,
-                latestReleaseItem!.assets.isNotEmpty
-                    ? latestReleaseItem!.assets[0].browserDownloadUrl
-                    : "",
-                latestReleaseItem!.htmlUrl,
-                version: latestVersion,
-              );
-            },
-            onTapCancel: () {},
-            customDialogType: CustomDialogType.normal,
-          );
-        } else {
-          IToast.showTop(S.current.checkUpdatesAlreadyLatest);
-        }
-      }
-    });
+      },
+      onGetLatestRelease: (latestVersion, latestReleaseItem) {
+        setState(() {
+          this.latestVersion = latestVersion;
+          this.latestReleaseItem = latestReleaseItem;
+        });
+      },
+    );
   }
 
   @override
@@ -150,7 +115,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
             padding: const EdgeInsets.symmetric(horizontal: 10),
             children: [
               const SizedBox(height: 10),
-              Selector<GlobalProvider, Locale?>(
+              Selector<AppProvider, Locale?>(
                 selector: (context, globalProvider) => globalProvider.locale,
                 builder: (context, locale, child) => ItemBuilder.buildEntryItem(
                   context: context,
@@ -165,7 +130,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                       (context) => TileList.fromOptions(
                         _supportedLocaleTuples,
                         (item2) {
-                          ProviderManager.globalProvider.locale = item2;
+                          appProvider.locale = item2;
                           Navigator.pop(context);
                         },
                         selected: locale,
@@ -193,7 +158,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                     });
                   },
                 ),
-              ..._traySetting(),
+              if (ResponsiveUtil.isDesktop()) ..._traySetting(),
               const SizedBox(height: 10),
               ItemBuilder.buildRadioItem(
                 value: autoCheckUpdate,
@@ -293,13 +258,13 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                   bottomRadius: true,
                   tip: _cacheSize,
                   onTap: () {
-                    CustomLoadingDialog.showLoading(context, title: "清除缓存中...");
+                    CustomLoadingDialog.showLoading(title: "清除缓存中...");
                     getTemporaryDirectory().then((tempDir) {
                       CacheUtil.delDir(tempDir).then((value) {
                         CacheUtil.loadCache().then((value) {
                           setState(() {
                             _cacheSize = value;
-                            CustomLoadingDialog.dismissLoading(context);
+                            CustomLoadingDialog.dismissLoading();
                             IToast.showTop(S.current.clearCacheSuccess);
                           });
                         });

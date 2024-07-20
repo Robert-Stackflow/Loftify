@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
+import '../../Utils/constant.dart';
 import '../../Utils/responsive_util.dart';
 import './mouse_state_builder.dart';
 
@@ -100,11 +101,11 @@ class WindowButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (kIsWeb) {
-      return Container();
+      return emptyWidget;
     } else {
       // Don't show button on macOS
       if (Platform.isMacOS) {
-        return Container();
+        return emptyWidget;
       }
     }
     const buttonSize = Size(40, 40);
@@ -117,7 +118,7 @@ class WindowButton extends StatelessWidget {
             iconColor: getIconColor(mouseState));
 
         var icon =
-            (iconBuilder != null) ? iconBuilder!(buttonContext) : Container();
+            (iconBuilder != null) ? iconBuilder!(buttonContext) : emptyWidget;
         double borderSize = 0;
         double defaultPadding = (30 - borderSize) / 3 - (borderSize / 2);
         // Used when buttonContext.backgroundColor is null, allowing the AnimatedContainer to fade-out smoothly.
@@ -170,10 +171,8 @@ class StayOnTopWindowButton extends WindowButton {
             animate: animate ?? false,
             padding: EdgeInsets.zero,
             rotateAngle: rotateAngle ?? 0,
-            iconBuilder: (buttonContext) => Icon(
-                CupertinoIcons.pin,
-                size: 20,
-                color: buttonContext.iconColor));
+            iconBuilder: (buttonContext) => Icon(CupertinoIcons.pin,
+                size: 20, color: buttonContext.iconColor));
 }
 
 class MinimizeWindowButton extends WindowButton {

@@ -1,7 +1,7 @@
 import 'package:loftify/Models/post_detail_response.dart';
 import 'package:loftify/Models/recommend_response.dart';
 
-import 'enums.dart';
+import '../Utils/enums.dart';
 
 ///GuessKeyword
 class GuessKeyword {

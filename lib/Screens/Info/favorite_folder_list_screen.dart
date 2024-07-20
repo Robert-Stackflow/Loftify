@@ -51,7 +51,7 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
     return await UserApi.getFavoriteFolderList(offset: offset).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop( value['msg']);
+          IToast.showTop(value['msg']);
           return IndicatorResult.fail;
         } else {
           _createCount = value['data']['createCount'];
@@ -67,7 +67,7 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
           }
         }
       } catch (e) {
-        if (mounted) IToast.showTop( "加载失败");
+        if (mounted) IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -88,7 +88,7 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       appBar: _buildAppBar(),
       body: EasyRefresh(
         refreshOnStart: true,
@@ -195,7 +195,7 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
     return ItemBuilder.buildAppBar(
       context: context,
       leading: Icons.arrow_back_rounded,
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       onLeadingTap: () {
         Navigator.pop(context);
       },

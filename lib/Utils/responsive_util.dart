@@ -7,7 +7,7 @@ import 'package:loftify/Utils/route_util.dart';
 import 'package:restart_app/restart_app.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../Providers/provider_manager.dart';
+import 'app_provider.dart';
 import '../Screens/main_screen.dart';
 
 class ResponsiveUtil {
@@ -20,9 +20,9 @@ class ResponsiveUtil {
 
   static Future<void> returnToMainScreen(BuildContext context) async {
     if (ResponsiveUtil.isDesktop()) {
-      ProviderManager.globalProvider.desktopCanpop = false;
-      ProviderManager.desktopNavigatorKey = GlobalKey<NavigatorState>();
-      ProviderManager.globalNavigatorKey.currentState?.pushAndRemoveUntil(
+      appProvider.desktopCanpop = false;
+      desktopNavigatorKey = GlobalKey<NavigatorState>();
+      AppProvider.globalNavigatorState?.pushAndRemoveUntil(
         RouteUtil.getFadeRoute(const MainScreen(), duration: Duration.zero),
         (route) => false,
       );

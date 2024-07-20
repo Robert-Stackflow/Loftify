@@ -6,6 +6,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:loftify/Utils/constant.dart';
+import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Utils/uri_util.dart';
 import 'package:loftify/Utils/utils.dart';
@@ -14,6 +16,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../Models/Illust.dart';
 import '../Widgets/Item/item_builder.dart';
 import 'hive_util.dart';
 import 'iprint.dart';
@@ -36,6 +39,10 @@ class FileUtil {
     return Uri.parse(imageUrl).pathSegments.last;
   }
 
+  static String extractFileExtensionFromUrl(String imageUrl) {
+    return extractFileNameFromUrl(imageUrl).split('.').last;
+  }
+
   static Future<void> downloadAndUpdate(
     BuildContext context,
     String apkUrl,
@@ -45,7 +52,7 @@ class FileUtil {
     Function(double)? onReceiveProgress,
   }) async {
     await Permission.storage.onDeniedCallback(() {
-      IToast.showTop( "请授予文件存储权限");
+      IToast.showTop("请授予文件存储权限");
     }).onGrantedCallback(() async {
       if (Utils.isNotEmpty(apkUrl)) {
         double progressValue = 0.0;
@@ -103,14 +110,14 @@ class FileUtil {
         UriUtil.openExternal(htmlUrl);
       }
     }).onPermanentlyDeniedCallback(() {
-      IToast.showTop( "已拒绝文件存储权限，将跳转到浏览器下载");
+      IToast.showTop("已拒绝文件存储权限，将跳转到浏览器下载");
       UriUtil.openExternal(apkUrl);
     }).onRestrictedCallback(() {
-      IToast.showTop( "请授予文件存储权限");
+      IToast.showTop("请授予文件存储权限");
     }).onLimitedCallback(() {
-      IToast.showTop( "请授予文件存储权限");
+      IToast.showTop("请授予文件存储权限");
     }).onProvisionalCallback(() {
-      IToast.showTop( "请授予文件存储权限");
+      IToast.showTop("请授予文件存储权限");
     }).request();
   }
 
@@ -130,11 +137,11 @@ class FileUtil {
     );
     final result = await Share.shareXFiles([XFile(file.path)], text: message);
     if (result.status == ShareResultStatus.success) {
-      IToast.showTop( "分享成功");
+      IToast.showTop("分享成功");
     } else if (result.status == ShareResultStatus.dismissed) {
-      IToast.showTop( "取消分享");
+      IToast.showTop("取消分享");
     } else {
-      IToast.showTop( "分享失败");
+      IToast.showTop("分享失败");
     }
     return result.status;
   }
@@ -166,6 +173,7 @@ class FileUtil {
     BuildContext context,
     String imageUrl, {
     bool showToast = true,
+    String? fileName,
   }) async {
     try {
       CachedNetworkImage image =
@@ -177,18 +185,18 @@ class FileUtil {
         headers: headers,
       );
       File copiedFile = await copyAndRenameFile(
-          file, FileUtil.extractFileNameFromUrl(imageUrl));
+          file, fileName ?? FileUtil.extractFileNameFromUrl(imageUrl));
       if (ResponsiveUtil.isMobile()) {
         var result = await ImageGallerySaver.saveFile(
           copiedFile.path,
-          name: FileUtil.extractFileNameFromUrl(imageUrl),
+          name: fileName ?? FileUtil.extractFileNameFromUrl(imageUrl),
         );
         bool success = result != null && result['isSuccess'];
         if (showToast) {
           if (success) {
-            IToast.showTop( "图片已保存至相册");
+            IToast.showTop("图片已保存至相册");
           } else {
-            IToast.showTop( "保存失败，请重试");
+            IToast.showTop("保存失败，请重试");
           }
         }
         return success;
@@ -196,22 +204,22 @@ class FileUtil {
         String? saveDirectory = await checkSaveDirectory(context);
         if (Utils.isNotEmpty(saveDirectory)) {
           String newPath =
-              '$saveDirectory/${FileUtil.extractFileNameFromUrl(imageUrl)}';
+              '$saveDirectory/${fileName ?? FileUtil.extractFileNameFromUrl(imageUrl)}';
           await copiedFile.copy(newPath);
           if (showToast) {
-            IToast.showTop( "图片已保存至$saveDirectory");
+            IToast.showTop("图片已保存至$saveDirectory");
           }
           return true;
         } else {
-          IToast.showTop( "保存失败，请设置图片保存路径");
+          IToast.showTop("保存失败，请设置图片保存路径");
           return false;
         }
       }
     } catch (e) {
       if (e is PathNotFoundException) {
-        IToast.showTop( "保存路径不存在");
+        IToast.showTop("保存路径不存在");
       }
-      IToast.showTop( "保存失败，请重试");
+      IToast.showTop("保存失败，请重试");
       return false;
     }
   }
@@ -229,18 +237,70 @@ class FileUtil {
       if (showToast) {
         if (result) {
           if (ResponsiveUtil.isMobile()) {
-            IToast.showTop( "所有图片已保存至相册");
+            IToast.showTop("所有图片已保存至相册");
           } else {
             String? saveDirectory = await checkSaveDirectory(context);
-            IToast.showTop( "所有图片已保存至$saveDirectory");
+            IToast.showTop("所有图片已保存至$saveDirectory");
           }
         } else {
-          IToast.showTop( "保存失败，请重试");
+          IToast.showTop("保存失败，请重试");
         }
       }
       return result;
     } catch (e) {
-      IToast.showTop( "保存失败，请重试");
+      IToast.showTop("保存失败，请重试");
+      return false;
+    }
+  }
+
+  static Future<bool> saveIllust(
+    BuildContext context,
+    Illust illust, {
+    bool showToast = true,
+  }) async {
+    String fileNameFormat = HiveUtil.getString(
+            key: HiveUtil.filenameFormatKey,
+            defaultValue: defaultFilenameFormat) ??
+        defaultFilenameFormat;
+    String fileName = fileNameFormat
+        .replaceAll(FilenameField.blogNickName.format, illust.blogNickName)
+        .replaceAll(FilenameField.blogId.format, illust.blogId.toString())
+        .replaceAll(FilenameField.blogLofterId.format, illust.blogLofterId)
+        .replaceAll(FilenameField.originalName.format, illust.originalName)
+        .replaceAll(FilenameField.part.format, illust.part.toString())
+        .replaceAll(FilenameField.postId.format, illust.postId.toString())
+        .replaceAll(FilenameField.timestamp.format,
+            DateTime.now().millisecondsSinceEpoch.toString());
+    fileName = '$fileName.${illust.extension}';
+    return saveImage(context, illust.url,
+        fileName: fileName, showToast: showToast);
+  }
+
+  static Future<bool> saveIllusts(
+    BuildContext context,
+    List<Illust> illusts, {
+    bool showToast = true,
+  }) async {
+    try {
+      List<bool> statusList = await Future.wait(illusts.map((e) async {
+        return await saveIllust(context, e, showToast: false);
+      }).toList());
+      bool result = statusList.every((element) => element);
+      if (showToast) {
+        if (result) {
+          if (ResponsiveUtil.isMobile()) {
+            IToast.showTop("所有图片已保存至相册");
+          } else {
+            String? saveDirectory = await checkSaveDirectory(context);
+            IToast.showTop("所有图片已保存至$saveDirectory");
+          }
+        } else {
+          IToast.showTop("保存失败，请重试");
+        }
+      }
+      return result;
+    } catch (e) {
+      IToast.showTop("保存失败，请重试");
       return false;
     }
   }
@@ -288,9 +348,9 @@ class FileUtil {
         bool success = result != null && result['isSuccess'];
         if (showToast) {
           if (success) {
-            IToast.showTop( "视频已保存");
+            IToast.showTop("视频已保存");
           } else {
-            IToast.showTop( "保存失败，请重试");
+            IToast.showTop("保存失败，请重试");
           }
         }
         return success;
@@ -301,19 +361,19 @@ class FileUtil {
               '$saveDirectory/${FileUtil.extractFileNameFromUrl(videoUrl)}';
           await File(savePath).copy(newPath);
           if (showToast) {
-            IToast.showTop( "视频已保存至$saveDirectory");
+            IToast.showTop("视频已保存至$saveDirectory");
           }
           return true;
         } else {
-          IToast.showTop( "保存失败，请设置视频保存路径");
+          IToast.showTop("保存失败，请设置视频保存路径");
           return false;
         }
       }
     } catch (e) {
       if (e is PathNotFoundException) {
-        IToast.showTop( "保存路径不存在");
+        IToast.showTop("保存路径不存在");
       }
-      IToast.showTop( "保存失败，请重试");
+      IToast.showTop("保存失败，请重试");
       return false;
     }
   }

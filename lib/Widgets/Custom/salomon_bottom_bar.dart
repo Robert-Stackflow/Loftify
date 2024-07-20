@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:loftify/Resources/gaps.dart';
 
 class SalomonBottomBar extends StatelessWidget {
   /// A bottom bar that faithfully follows the design by Aurélien Salomon
@@ -92,7 +91,7 @@ class SalomonBottomBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.end,
           mainAxisSize: MainAxisSize.min,
           children: [
-            title ?? MyGaps.empty,
+            title ?? Container(),
             Row(
               /// Using a different alignment when there are 2 items or less
               /// so it behaves the same as BottomNavigationBar.

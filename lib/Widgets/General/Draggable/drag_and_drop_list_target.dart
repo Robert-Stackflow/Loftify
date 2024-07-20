@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
+import '../../../Utils/constant.dart';
 import 'drag_and_drop_builder_parameters.dart';
 import 'drag_and_drop_list_interface.dart';
 
@@ -47,7 +48,7 @@ class _DragAndDropListTarget extends State<DragAndDropListTarget>
                   child: widget.parameters.listGhost ??
                       _hoveredDraggable!.generateWidget(widget.parameters),
                 )
-              : Container(),
+              : emptyWidget,
         ),
         widget.child ??
             Container(
@@ -79,7 +80,7 @@ class _DragAndDropListTarget extends State<DragAndDropListTarget>
           child: DragTarget<DragAndDropListInterface>(
             builder: (context, candidateData, rejectedData) {
               if (candidateData.isNotEmpty) {}
-              return Container();
+              return emptyWidget;
             },
             onWillAccept: (incoming) {
               bool accept = true;

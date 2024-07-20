@@ -6,8 +6,8 @@ import 'package:loftify/Api/user_api.dart';
 import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Utils/hive_util.dart';
 
-import '../../Models/enums.dart';
 import '../../Models/post_detail_response.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
@@ -126,7 +126,7 @@ class _CollectionScreenState extends State<CollectionScreen>
     super.build(context);
     return Scaffold(
       backgroundColor: widget.infoMode == InfoMode.me
-          ? AppTheme.getBackground(context)
+          ? MyTheme.getBackground(context)
           : Colors.transparent,
       appBar: widget.infoMode == InfoMode.me ? _buildAppBar() : null,
       body: EasyRefresh.builder(
@@ -255,7 +255,7 @@ class _CollectionScreenState extends State<CollectionScreen>
     return ItemBuilder.buildAppBar(
       context: context,
       leading: Icons.arrow_back_rounded,
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       onLeadingTap: () {
         Navigator.pop(context);
       },

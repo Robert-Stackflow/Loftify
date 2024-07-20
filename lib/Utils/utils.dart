@@ -10,17 +10,30 @@ import 'package:flutter/services.dart';
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:loftify/Models/enums.dart';
+import 'package:loftify/Models/Illust.dart';
+import 'package:loftify/Models/github_response.dart';
+import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
+import 'package:loftify/Utils/responsive_util.dart';
+import 'package:loftify/Utils/uri_util.dart';
 import 'package:loftify/Widgets/BottomSheet/slide_captcha_bottom_sheet.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:palette_generator/palette_generator.dart';
 
-import '../Providers/global_provider.dart';
-import '../Providers/provider_manager.dart';
+import '../Api/github_api.dart';
+import 'app_provider.dart';
+import '../Widgets/Dialog/custom_dialog.dart';
+import '../Widgets/Dialog/dialog_builder.dart';
+import '../generated/l10n.dart';
 import 'itoast.dart';
 
 class Utils {
+  static Brightness currentBrightness(BuildContext context) {
+    return appProvider.getBrightness() ??
+        MediaQuery.of(context).platformBrightness;
+  }
+
   static String processEmpty(String? str, {String defaultValue = ""}) {
     return isEmpty(str) ? defaultValue : str!;
   }
@@ -58,10 +71,9 @@ class Utils {
   }
 
   static isDark(BuildContext context) {
-    return (ProviderManager.globalProvider.themeMode ==
-                ActiveThemeMode.system &&
+    return (appProvider.themeMode == ActiveThemeMode.system &&
             MediaQuery.of(context).platformBrightness == Brightness.dark) ||
-        ProviderManager.globalProvider.themeMode == ActiveThemeMode.dark;
+        appProvider.themeMode == ActiveThemeMode.dark;
   }
 
   static Color getDarkColor(Color color, {Color darkColor = Colors.black}) {
@@ -81,9 +93,9 @@ class Utils {
     return images.map((e) => e.attributes["src"] ?? "").toList();
   }
 
-  static getIndexOfImage(String image, List<String> images) {
-    return images.indexWhere((element) =>
-        Utils.removeImageParam(element) == Utils.removeImageParam(image));
+  static getIndexOfImage(String image, List<Illust> illusts) {
+    return illusts.indexWhere((element) =>
+        Utils.removeImageParam(element.url) == Utils.removeImageParam(image));
   }
 
   static String replaceLineBreak(String str) {
@@ -239,13 +251,12 @@ class Utils {
   static addSearchHistory(String str) {
     if (HiveUtil.getBool(
         key: HiveUtil.showSearchHistoryKey, defaultValue: true)) {
-      while (ProviderManager.globalProvider.searchHistoryList.contains(str)) {
-        ProviderManager.globalProvider.searchHistoryList.remove(str);
+      while (appProvider.searchHistoryList.contains(str)) {
+        appProvider.searchHistoryList.remove(str);
       }
-      List<String> tmp =
-          deepCopy(ProviderManager.globalProvider.searchHistoryList);
+      List<String> tmp = deepCopy(appProvider.searchHistoryList);
       tmp.insert(0, str);
-      ProviderManager.globalProvider.searchHistoryList = tmp;
+      appProvider.searchHistoryList = tmp;
     }
   }
 
@@ -442,5 +453,77 @@ class Utils {
         onUnrecommend?.call();
         break;
     }
+  }
+
+  static getReleases({
+    required BuildContext context,
+    Function(String)? onGetCurrentVersion,
+    Function(List<ReleaseItem>)? onGetReleases,
+    Function(String, ReleaseItem)? onGetLatestRelease,
+    Function(String, ReleaseItem)? onUpdate,
+    bool showLoading = false,
+    bool showUpdateDialog = true,
+    bool showNoUpdateToast = true,
+  }) async {
+    if (showLoading) {
+      CustomLoadingDialog.showLoading(title: "检查更新中...");
+    }
+    String currentVersion = (await PackageInfo.fromPlatform()).version;
+    onGetCurrentVersion?.call(currentVersion);
+    String latestVersion = currentVersion;
+    GithubApi.getReleases("Robert-Stackflow", "Loftify").then((releases) async {
+      onGetReleases?.call(releases);
+      ReleaseItem? latestReleaseItem;
+      for (var release in releases) {
+        String tagName = release.tagName;
+        tagName = tagName.replaceAll(RegExp(r'[a-zA-Z]'), '');
+        if (latestVersion.compareTo(tagName) <= 0) {
+          latestVersion = tagName;
+          latestReleaseItem = release;
+        }
+      }
+      onGetLatestRelease?.call(latestVersion, latestReleaseItem!);
+      if (showLoading) {
+        CustomLoadingDialog.dismissLoading();
+      }
+      if (latestVersion.compareTo(currentVersion) > 0) {
+        onUpdate?.call(latestVersion, latestReleaseItem!);
+        if (showUpdateDialog && latestReleaseItem != null) {
+          DialogBuilder.showConfirmDialog(
+            context,
+            title: "发现新版本$latestVersion",
+            message:
+                "是否立即更新？${Utils.isNotEmpty(latestReleaseItem.body) ? "更新日志如下：\n${latestReleaseItem.body}" : ""}",
+            confirmButtonText: ResponsiveUtil.isDesktop() ? "前往下载" : "立即下载",
+            cancelButtonText: "暂不更新",
+            onTapConfirm: () {
+              if (ResponsiveUtil.isDesktop()) {
+                UriUtil.openExternal(latestReleaseItem!.htmlUrl);
+                return;
+              } else {
+                ReleaseAsset androidAssset = latestReleaseItem!.assets
+                    .firstWhere((element) =>
+                        element.contentType ==
+                        "application/vnd.android.package-archive");
+                if (ResponsiveUtil.isAndroid()) {
+                  FileUtil.downloadAndUpdate(
+                    context,
+                    androidAssset.browserDownloadUrl,
+                    latestReleaseItem.htmlUrl,
+                    version: latestVersion,
+                  );
+                }
+              }
+            },
+            onTapCancel: () {},
+            customDialogType: CustomDialogType.normal,
+          );
+        } else {
+          if (showNoUpdateToast) {
+            IToast.showTop(S.current.checkUpdatesAlreadyLatest);
+          }
+        }
+      }
+    });
   }
 }

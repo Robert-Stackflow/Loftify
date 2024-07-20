@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:like_button/like_button.dart';
 
-import '../Providers/provider_manager.dart';
+import '../Utils/utils.dart';
 import '../Widgets/Window/window_button.dart';
 
 class MyColors {
@@ -124,19 +124,19 @@ class MyColors {
   }
 
   static getLinkColor(BuildContext context) {
-    return ProviderManager.currentBrightness(context) == Brightness.light
+    return Utils.currentBrightness(context) == Brightness.light
         ? Theme.of(context).primaryColor
         : Theme.of(context).primaryColor;
   }
 
   static getHotTagBackground(BuildContext context) {
-    return ProviderManager.currentBrightness(context) == Brightness.light
+    return Utils.currentBrightness(context) == Brightness.light
         ? hotTagBackground
         : hotTagBackgroundDark;
   }
 
   static getHotTagTextColor(BuildContext context) {
-    return ProviderManager.currentBrightness(context) == Brightness.light
+    return Utils.currentBrightness(context) == Brightness.light
         ? hotTagTextColor
         : hotTagTextColorDark;
   }

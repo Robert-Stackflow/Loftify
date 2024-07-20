@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../Models/enums.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Models/recommend_response.dart';
+import '../../Utils/constant.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/utils.dart';
 import 'general_post_item_builder.dart';
@@ -95,7 +96,7 @@ class RecommendFlowItemBuilder {
     String? excludeTag,
     bool showMoreButton = false,
   }) {
-    if (item.postData == null) return Container();
+    if (item.postData == null) return emptyWidget;
     return GeneralPostItemBuilder.buildWaterfallFlowPostItem(
       context,
       getGeneralPostItem(

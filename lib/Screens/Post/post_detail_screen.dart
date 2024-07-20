@@ -7,14 +7,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_resizable_container/flutter_resizable_container.dart';
 import 'package:loftify/Api/post_api.dart';
 import 'package:loftify/Api/user_api.dart';
-import 'package:loftify/Models/enums.dart';
+import 'package:loftify/Models/Illust.dart';
 import 'package:loftify/Models/grain_response.dart';
 import 'package:loftify/Models/message_response.dart';
 import 'package:loftify/Models/post_detail_response.dart';
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Models/show_case_response.dart';
 import 'package:loftify/Resources/colors.dart';
-import 'package:loftify/Resources/gaps.dart';
+import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/itoast.dart';
@@ -31,6 +31,7 @@ import '../../Api/recommend_api.dart';
 import '../../Models/search_response.dart';
 import '../../Resources/theme.dart';
 import '../../Utils/asset_util.dart';
+import '../../Utils/constant.dart';
 import '../../Utils/lottie_util.dart';
 import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
@@ -119,16 +120,6 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   bool isArticle = false;
 
   @override
-  void dispose() {
-    _scrollController.dispose();
-    _doubleTapLikeController.dispose();
-    _shareController.dispose();
-    _likeController.dispose();
-    windowManager.removeListener(this);
-    super.dispose();
-  }
-
-  @override
   void initState() {
     isArticle = widget.isArticle;
     if (Platform.isAndroid) {
@@ -159,16 +150,14 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   @override
-  void onWindowMaximize() {}
-
-  @override
-  void onWindowUnmaximize() {}
-
-  @override
-  void onWindowResize() {}
-
-  @override
-  void onWindowResized() {}
+  void dispose() {
+    _scrollController.dispose();
+    _doubleTapLikeController.dispose();
+    _shareController.dispose();
+    _likeController.dispose();
+    windowManager.removeListener(this);
+    super.dispose();
+  }
 
   initLottie() {
     _doubleTapLikeController =
@@ -186,15 +175,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
 
   initData() {
     _initParams();
-    _fetchData();
+    _fetchPostDetail();
     _fetchRecommendPosts();
     return Future(() => null);
-  }
-
-  void _onScroll(int index) {
-    setState(() {
-      _currentIndex = index + 1;
-    });
   }
 
   _initParams() {
@@ -252,7 +235,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     });
   }
 
-  _fetchData() async {
+  _fetchPostDetail() async {
     if (_loadingInfo) return;
     _loadingInfo = true;
     var t1 = await PostApi.getDetail(
@@ -407,69 +390,6 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         : IndicatorResult.fail;
   }
 
-  _updateMeta({bool swipeToFirst = true}) {
-    setState(() {
-      isArticle = _postDetailData!.post!.type == 1;
-    });
-    collectionId = _postDetailData!.post!.postCollection != null
-        ? _postDetailData!.post!.postCollection!.id
-        : 0;
-    postId = _postDetailData!.post!.id;
-    blogId = _postDetailData!.post!.blogId;
-    blogName = _postDetailData!.post!.blogInfo!.blogName;
-    _shareController.value = _postDetailData!.shared == true ? 1 : 0;
-    _likeController.value = _postDetailData!.liked == true ? 1 : 0;
-    setDownloadState(DownloadState.none, recover: false);
-    int count = 3;
-    while (count-- > 0) {
-      Future.delayed(const Duration(milliseconds: 300),
-          () => _likeController.value = _postDetailData!.liked == true ? 1 : 0);
-      Future.delayed(
-          const Duration(milliseconds: 300),
-          () =>
-              _shareController.value = _postDetailData!.shared == true ? 1 : 0);
-    }
-    if (swipeToFirst) {
-      setState(() {
-        _currentIndex = 1;
-        _swiperController.move(0);
-      });
-    }
-    if (_hasImage() && HiveUtil.getBool(key: HiveUtil.followMainColorKey)) {
-      List<PhotoLink> photoLinks = getImages()[0];
-      Utils.getMainColors(
-        context,
-        photoLinks.map((e) => e.middle).toList(),
-      ).then((value) {
-        if (mounted) setState(() {});
-        mainColors = value;
-      });
-    } else {
-      List<String> imageUrls =
-          Utils.extractImagesFromHtml(_postDetailData!.post!.content);
-      Utils.getMainColors(
-        context,
-        imageUrls,
-      ).then((value) {
-        if (mounted) setState(() {});
-        mainColors = value;
-      });
-    }
-  }
-
-  _onRefresh() async {
-    _currentPage = 0;
-    var t1 = await _fetchData();
-    var t2 = await _fetchRecommendPosts(append: false);
-    return t1 == IndicatorResult.success && t2 == IndicatorResult.success
-        ? IndicatorResult.success
-        : IndicatorResult.fail;
-  }
-
-  _onLoad() async {
-    return await _fetchRecommendPosts();
-  }
-
   _fetchRecommendPosts({bool append = true}) async {
     if (_loadingRecommend) return;
     _loadingRecommend = true;
@@ -502,12 +422,74 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     });
   }
 
+  _updateMeta({bool swipeToFirst = true}) {
+    setState(() {
+      isArticle = _postDetailData!.post!.type == 1;
+    });
+    collectionId = _postDetailData!.post!.postCollection != null
+        ? _postDetailData!.post!.postCollection!.id
+        : 0;
+    postId = _postDetailData!.post!.id;
+    blogId = _postDetailData!.post!.blogId;
+    blogName = _postDetailData!.post!.blogInfo!.blogName;
+    _shareController.value = _postDetailData!.shared == true ? 1 : 0;
+    _likeController.value = _postDetailData!.liked == true ? 1 : 0;
+    setDownloadState(DownloadState.none, recover: false);
+    int count = 3;
+    while (count-- > 0) {
+      Future.delayed(const Duration(milliseconds: 300),
+          () => _likeController.value = _postDetailData!.liked == true ? 1 : 0);
+      Future.delayed(
+          const Duration(milliseconds: 300),
+          () =>
+              _shareController.value = _postDetailData!.shared == true ? 1 : 0);
+    }
+    if (swipeToFirst) {
+      setState(() {
+        _currentIndex = 1;
+        _swiperController.move(0);
+      });
+    }
+    if (_hasImage() && HiveUtil.getBool(key: HiveUtil.followMainColorKey)) {
+      List<PhotoLink> photoLinks = _getImages()[0];
+      Utils.getMainColors(
+        context,
+        photoLinks.map((e) => e.middle).toList(),
+      ).then((value) {
+        if (mounted) setState(() {});
+        mainColors = value;
+      });
+    } else {
+      List<String> imageUrls = _getArticleImages();
+      Utils.getMainColors(
+        context,
+        imageUrls,
+      ).then((value) {
+        if (mounted) setState(() {});
+        mainColors = value;
+      });
+    }
+  }
+
+  _onRefresh() async {
+    _currentPage = 0;
+    var t1 = await _fetchPostDetail();
+    var t2 = await _fetchRecommendPosts(append: false);
+    return t1 == IndicatorResult.success && t2 == IndicatorResult.success
+        ? IndicatorResult.success
+        : IndicatorResult.fail;
+  }
+
+  _onLoad() async {
+    return await _fetchRecommendPosts();
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
       appBar: _buildAppBar(),
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       body: _buildBody(),
     );
   }
@@ -539,7 +521,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               )
             : ItemBuilder.buildLoadingDialog(
                 context,
-                background: AppTheme.getBackground(context),
+                background: MyTheme.getBackground(context),
               ),
       ),
       tablet: (context) => _postDetailData != null
@@ -563,8 +545,74 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             )
           : ItemBuilder.buildLoadingDialog(
               context,
-              background: AppTheme.getBackground(context),
+              background: MyTheme.getBackground(context),
             ),
+    );
+  }
+
+  _buildMainBody(ScrollPhysics physics) {
+    return ScreenTypeLayout.builder(
+      mobile: (context) => _buildMobileMainBody(physics),
+      tablet: (context) => _buildTabletMainBody(),
+    );
+  }
+
+  _buildMobileMainBody(ScrollPhysics physics) {
+    return CustomScrollView(
+      controller: _scrollController,
+      physics: physics,
+      slivers: [
+        SliverToBoxAdapter(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: _buildCommonContent(false),
+          ),
+        ),
+        _buildRecommendFlow(),
+      ],
+    );
+  }
+
+  _buildTabletMainBody() {
+    return ResizableContainer(
+      direction: Axis.horizontal,
+      controller: _resizableController,
+      divider: ResizableDivider(
+        color: Theme.of(context).dividerColor,
+        thickness: ResponsiveUtil.isMobile() ? 2 : 1,
+        size: 6,
+        onHoverEnter: () {
+          if (ResponsiveUtil.isMobile()) {
+            HapticFeedback.lightImpact();
+          }
+        },
+      ),
+      children: [
+        ResizableChild(
+          size: ResizableSize.pixels(
+            isArticle
+                ? MediaQuery.sizeOf(context).width * 2 / 3
+                : max(MediaQuery.sizeOf(context).width * 1 / 3, 400),
+          ),
+          minSize: 300,
+          child: ListView(
+            controller: _tabletScrollController,
+            children: [
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: _buildCommonContent(true),
+              ),
+            ],
+          ),
+        ),
+        ResizableChild(
+          minSize: 200,
+          size: const ResizableSize.expand(),
+          child: _buildRecommendFlow(sliver: false),
+        ),
+      ],
     );
   }
 
@@ -702,11 +750,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     }
     if (downloadState == DownloadState.none) {
       setDownloadState(DownloadState.loading, recover: false);
-      List<PhotoLink> photoLinks = getImages()[0];
-      FileUtil.saveImage(
+      FileUtil.saveIllust(
         context,
-        Utils.getUrlByQuality(
-            photoLinks[_currentIndex - 1].middle, ImageQuality.raw),
+        _getIllusts()[_currentIndex - 1],
       ).then((res) {
         if (res) {
           setDownloadState(DownloadState.succeed);
@@ -725,17 +771,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     }
     if (downloadState == DownloadState.none) {
       setDownloadState(DownloadState.loading, recover: false);
-      List<String> images = [];
-      if (_hasImage()) {
-        List<PhotoLink> photoLinks = getImages()[0];
-        images = photoLinks
-            .map((e) => Utils.getUrlByQuality(e.middle, ImageQuality.raw))
-            .toList();
-      }
-      if (_hasArticleImage()) {
-        images = Utils.extractImagesFromHtml(_postDetailData!.post!.content);
-      }
-      FileUtil.saveImages(context, images).then((res) {
+      FileUtil.saveIllusts(context, _getIllusts()).then((res) {
         if (res) {
           _handleDownloadSuccessAction();
           setDownloadState(DownloadState.succeed);
@@ -744,72 +780,6 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         }
       });
     }
-  }
-
-  _buildMainBody(ScrollPhysics physics) {
-    return ScreenTypeLayout.builder(
-      mobile: (context) => _buildMobileMainBody(physics),
-      tablet: (context) => _buildTabletMainBody(),
-    );
-  }
-
-  _buildMobileMainBody(ScrollPhysics physics) {
-    return CustomScrollView(
-      controller: _scrollController,
-      physics: physics,
-      slivers: [
-        SliverToBoxAdapter(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: _buildCommonContent(false),
-          ),
-        ),
-        _buildRecommendFlow(),
-      ],
-    );
-  }
-
-  _buildTabletMainBody() {
-    return ResizableContainer(
-      direction: Axis.horizontal,
-      controller: _resizableController,
-      divider: ResizableDivider(
-        color: Theme.of(context).dividerColor,
-        thickness: ResponsiveUtil.isMobile() ? 2 : 1,
-        size: 6,
-        onHoverEnter: () {
-          if (ResponsiveUtil.isMobile()) {
-            HapticFeedback.lightImpact();
-          }
-        },
-      ),
-      children: [
-        ResizableChild(
-          size: ResizableSize.pixels(
-            isArticle
-                ? MediaQuery.sizeOf(context).width * 2 / 3
-                : max(MediaQuery.sizeOf(context).width * 1 / 3, 400),
-          ),
-          minSize: 300,
-          child: ListView(
-            controller: _tabletScrollController,
-            children: [
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: _buildCommonContent(true),
-              ),
-            ],
-          ),
-        ),
-        ResizableChild(
-          minSize: 200,
-          size: const ResizableSize.expand(),
-          child: _buildRecommendFlow(sliver: false),
-        ),
-      ],
-    );
   }
 
   _buildCommonContent(bool isTablet) {
@@ -891,7 +861,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                     ),
                   ),
                   enableDrag: false,
-                  backgroundColor: AppTheme.getBackground(context),
+                  backgroundColor: MyTheme.getBackground(context),
                 );
               },
             ),
@@ -983,7 +953,13 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     );
   }
 
-  List<dynamic> getImages() {
+  List<String> _getArticleImages() {
+    List<String> imageUrls =
+        Utils.extractImagesFromHtml(_postDetailData!.post!.content);
+    return imageUrls;
+  }
+
+  List<dynamic> _getImages() {
     List<PhotoLink> photoLinks =
         Utils.parseJsonList(_postDetailData!.post!.photoLinks)
             .map((e) => PhotoLink.fromJson(e))
@@ -1007,7 +983,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   _buildImageList() {
     late List<PhotoLink> photoLinks;
     late int previewIndex;
-    [photoLinks, previewIndex] = getImages();
+    [photoLinks, previewIndex] = _getImages();
     List<String> captions =
         Utils.parseJsonList(_postDetailData!.post!.photoCaptions)
             .map((e) => e.toString())
@@ -1059,7 +1035,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                           context,
                           RouteUtil.getFadeRoute(
                             HeroPhotoViewScreen(
-                              imageUrls: photoLinks,
+                              imageUrls: _getIllusts(),
                               initIndex: index,
                               captions: captions,
                               tagPrefix: tagPrefix,
@@ -1128,7 +1104,11 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                     ),
                   )
                 : null,
-            onIndexChanged: _onScroll,
+            onIndexChanged: (index) {
+              setState(() {
+                _currentIndex = index + 1;
+              });
+            },
           ),
         ),
         if (photoLinks.length > 1)
@@ -1218,6 +1198,47 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             .isNotEmpty;
   }
 
+  List<Illust> _getIllusts() {
+    List<Illust> illusts = [];
+    if (_hasImage()) {
+      List<PhotoLink> photoLinks = _getImages()[0];
+      for (int i = 0; i < photoLinks.length; i++) {
+        PhotoLink e = photoLinks[i];
+        String rawUrl = Utils.getUrlByQuality(e.middle, ImageQuality.raw);
+        illusts.add(
+          Illust(
+            extension: FileUtil.extractFileExtensionFromUrl(rawUrl),
+            originalName: FileUtil.extractFileNameFromUrl(rawUrl),
+            blogId: _postDetailData!.post!.blogId,
+            blogLofterId: _postDetailData!.post!.blogInfo!.blogName,
+            blogNickName: _postDetailData!.post!.blogInfo!.blogNickName,
+            postId: _postDetailData!.post!.id,
+            part: i,
+            url: rawUrl,
+          ),
+        );
+      }
+    } else if (_hasArticleImage()) {
+      List<String> imageUrls = _getArticleImages();
+      for (int i = 0; i < imageUrls.length; i++) {
+        String rawUrl = Utils.getUrlByQuality(imageUrls[i], ImageQuality.raw);
+        illusts.add(
+          Illust(
+            extension: FileUtil.extractFileExtensionFromUrl(rawUrl),
+            originalName: FileUtil.extractFileNameFromUrl(rawUrl),
+            blogId: _postDetailData!.post!.blogId,
+            blogLofterId: _postDetailData!.post!.blogInfo!.blogName,
+            blogNickName: _postDetailData!.post!.blogInfo!.blogNickName,
+            postId: _postDetailData!.post!.id,
+            part: i,
+            url: rawUrl,
+          ),
+        );
+      }
+    }
+    return illusts;
+  }
+
   _hasContent() {
     String title = Utils.clearBlank(_postDetailData!.post!.title);
     String content = Utils.clearBlank(
@@ -1228,8 +1249,6 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   _buildPostContent() {
     String title = Utils.clearBlank(_postDetailData!.post!.title);
     String content = Utils.extractTextFromHtml(_postDetailData!.post!.content);
-    List<String> imageUrls =
-        Utils.extractImagesFromHtml(_postDetailData!.post!.content);
     String htmlTitle = Utils.isNotEmpty(title)
         ? "<p id='title'><strong>${_postDetailData!.post?.title}</strong></p>"
         : "";
@@ -1241,7 +1260,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             child: ItemBuilder.buildHtmlWidget(
               context,
               "$htmlTitle${_postDetailData!.post?.content}",
-              imageUrls: imageUrls,
+              illusts: _getIllusts(),
               textStyle: Theme.of(context)
                   .textTheme
                   .bodyMedium
@@ -1249,7 +1268,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               onDownloadSuccess: _handleDownloadSuccessAction,
             ),
           )
-        : MyGaps.empty;
+        : emptyWidget;
   }
 
   _handleDownloadSuccessAction() {
@@ -1445,7 +1464,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: AppTheme.getBackground(context),
+            color: MyTheme.getBackground(context),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -1703,7 +1722,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   PreferredSizeWidget _buildAppBar() {
     return ItemBuilder.buildAppBar(
       context: context,
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       leading: Icons.arrow_back_rounded,
       onLeadingTap: () {
         Navigator.pop(context);

@@ -8,7 +8,7 @@ import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
-import '../../Models/enums.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/itoast.dart';
 import '../../Widgets/Custom/hero_photo_view_screen.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
@@ -62,7 +62,7 @@ class _DressDetailScreenState extends State<DressDetailScreen>
     ).then((value) {
       try {
         if (value['code'] != 200) {
-          IToast.showTop( value['msg']);
+          IToast.showTop(value['msg']);
           return IndicatorResult.fail;
         } else {
           _giftDress = GiftDress.fromJson(value['data']['returnGiftDress']);
@@ -71,7 +71,7 @@ class _DressDetailScreenState extends State<DressDetailScreen>
           return IndicatorResult.success;
         }
       } catch (e) {
-        if (mounted) IToast.showTop( "加载失败");
+        if (mounted) IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -88,7 +88,7 @@ class _DressDetailScreenState extends State<DressDetailScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       appBar: _buildAppBar(),
       body: EasyRefresh.builder(
           refreshOnStart: true,
@@ -100,7 +100,7 @@ class _DressDetailScreenState extends State<DressDetailScreen>
                 ? _buildBody(physics)
                 : ItemBuilder.buildLoadingDialog(
                     context,
-                    background: AppTheme.getBackground(context),
+                    background: MyTheme.getBackground(context),
                   );
           }),
     );
@@ -129,12 +129,12 @@ class _DressDetailScreenState extends State<DressDetailScreen>
       await HiveUtil.put(key: HiveUtil.customAvatarBoxKey, value: "");
       currentAvatarImg = "";
       setState(() {});
-      IToast.showTop( "取消佩戴成功");
+      IToast.showTop("取消佩戴成功");
     } else {
       await HiveUtil.put(key: HiveUtil.customAvatarBoxKey, value: item.partUrl);
       currentAvatarImg = item.partUrl;
       setState(() {});
-      IToast.showTop( "佩戴成功");
+      IToast.showTop("佩戴成功");
     }
   }
 
@@ -142,7 +142,7 @@ class _DressDetailScreenState extends State<DressDetailScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
-        color: AppTheme.getCardBackground(context),
+        color: MyTheme.getCardBackground(context),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -218,7 +218,7 @@ class _DressDetailScreenState extends State<DressDetailScreen>
     return ItemBuilder.buildAppBar(
       context: context,
       leading: Icons.arrow_back_rounded,
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       onLeadingTap: () {
         Navigator.pop(context);
       },

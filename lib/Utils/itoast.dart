@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:loftify/Utils/route_util.dart';
-import 'package:loftify/Utils/utils.dart';
 
 class IToast {
   static FToast show(

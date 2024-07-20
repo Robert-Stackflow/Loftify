@@ -1,7 +1,12 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:loftify/Models/enums.dart';
+import 'package:loftify/Screens/Setting/filename_setting_screen.dart';
+import 'package:loftify/Utils/enums.dart';
+import 'package:loftify/Utils/responsive_util.dart';
+import 'package:loftify/Utils/route_util.dart';
+import 'package:loftify/Widgets/Dialog/dialog_builder.dart';
 
+import '../../Utils/constant.dart';
 import '../../Utils/hive_util.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
@@ -32,6 +37,10 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
       HiveUtil.getImageQuality(HiveUtil.longPressLinkButtonImageQualityKey);
   bool followMainColor = HiveUtil.getBool(key: HiveUtil.followMainColorKey);
   String? savePath = HiveUtil.getString(key: HiveUtil.savePathKey);
+  String _filenameFormat = HiveUtil.getString(
+          key: HiveUtil.filenameFormatKey,
+          defaultValue: defaultFilenameFormat) ??
+      defaultFilenameFormat;
 
   @override
   void initState() {
@@ -203,7 +212,6 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
               ItemBuilder.buildEntryItem(
                 context: context,
                 title: "图片/视频保存路径",
-                bottomRadius: true,
                 description: savePath ?? "",
                 tip: "修改",
                 onTap: () async {
@@ -221,14 +229,27 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
                   }
                 },
               ),
-              // ItemBuilder.buildEntryItem(
-              //   context: context,
-              //   title: "文件命名格式",
-              //   description: "{illust_id}_p{part}",
-              //   tip: "修改",
-              //   bottomRadius: true,
-              //   onTap: () {},
-              // ),
+              ItemBuilder.buildEntryItem(
+                context: context,
+                title: "文件命名格式",
+                description: _filenameFormat,
+                tip: "修改",
+                bottomRadius: true,
+                onTap: () {
+                  var page = FilenameSettingScreen(
+                    onSaved: (newFormat) {
+                      setState(() {
+                        _filenameFormat = newFormat;
+                      });
+                    },
+                  );
+                  if (ResponsiveUtil.isLandscape()) {
+                    DialogBuilder.showPageDialog(context, child: page);
+                  } else {
+                    RouteUtil.pushCupertinoRoute(context, page);
+                  }
+                },
+              ),
               const SizedBox(height: 30),
             ],
           ),

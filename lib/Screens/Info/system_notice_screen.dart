@@ -10,7 +10,7 @@ import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/route_util.dart';
 
-import '../../Models/enums.dart';
+import '../../Utils/constant.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/Custom/custom_tab_indicator.dart';
@@ -291,7 +291,7 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       appBar: _buildAppBar(),
       body: _buildTabView(),
     );
@@ -657,7 +657,7 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
     return ItemBuilder.buildAppBar(
       context: context,
       leading: Icons.arrow_back_rounded,
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       onLeadingTap: () {
         Navigator.pop(context);
       },

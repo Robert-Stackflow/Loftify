@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 
-import '../../Models/enums.dart';
 import '../../Resources/theme.dart';
+import '../../Utils/enums.dart';
 
 class ShieldBottomSheet extends StatefulWidget {
   const ShieldBottomSheet({
@@ -40,7 +40,7 @@ class ShieldBottomSheetState extends State<ShieldBottomSheet> {
           margin: const EdgeInsets.symmetric(horizontal: 50),
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: AppTheme.getBackground(context),
+            color: MyTheme.getBackground(context),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Column(

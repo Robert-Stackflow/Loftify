@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/user_api.dart';
 import 'package:loftify/Models/account_response.dart';
-import 'package:loftify/Models/enums.dart';
 import 'package:loftify/Screens/Info/collection_screen.dart';
 import 'package:loftify/Screens/Info/dress_screen.dart';
 import 'package:loftify/Screens/Info/favorite_folder_list_screen.dart';
@@ -13,14 +12,14 @@ import 'package:loftify/Screens/Info/share_screen.dart';
 import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
 import 'package:loftify/Utils/asset_util.dart';
+import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/lottie_util.dart';
 import 'package:responsive_builder/responsive_builder.dart';
 
 import '../../Models/user_response.dart';
-import '../../Providers/global_provider.dart';
-import '../../Providers/provider_manager.dart';
+import '../../Utils/app_provider.dart';
 import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
@@ -72,7 +71,7 @@ class _MineScreenState extends State<MineScreen>
       );
     });
     _fetchUserInfo();
-    if (ProviderManager.globalProvider.token.isNotEmpty) {
+    if (appProvider.token.isNotEmpty) {
       _fetchFollowingOrFolllowerList(FollowingMode.following, refresh: true);
       _fetchFollowingOrFolllowerList(FollowingMode.follower, refresh: true);
     }
@@ -81,11 +80,11 @@ class _MineScreenState extends State<MineScreen>
   _fetchUserInfo() async {
     if (_loading) return;
     _loading = true;
-    if (ProviderManager.globalProvider.token.isNotEmpty) {
+    if (appProvider.token.isNotEmpty) {
       return await UserApi.getUserInfo().then((value) async {
         try {
           if (value['meta']['status'] != 200) {
-            IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
+            IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
             return IndicatorResult.fail;
           } else {
             AccountResponse accountResponse =
@@ -98,7 +97,7 @@ class _MineScreenState extends State<MineScreen>
                 .then((value) async {
               try {
                 if (value['meta']['status'] != 200) {
-                  IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
+                  IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
                   return IndicatorResult.fail;
                 } else {
                   setState(() {
@@ -107,13 +106,13 @@ class _MineScreenState extends State<MineScreen>
                   return IndicatorResult.success;
                 }
               } catch (_) {
-                if (mounted) IToast.showTop( "加载失败");
+                if (mounted) IToast.showTop("加载失败");
                 return IndicatorResult.fail;
               }
             });
           }
         } catch (_) {
-          if (mounted) IToast.showTop( "加载失败");
+          if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
         } finally {
           _loading = false;
@@ -137,7 +136,7 @@ class _MineScreenState extends State<MineScreen>
   }
 
   _buildMainBody() {
-    return ProviderManager.globalProvider.token.isNotEmpty
+    return appProvider.token.isNotEmpty
         ? ScreenTypeLayout.builder(
             breakpoints: const ScreenBreakpoints(
               desktop: 640,
@@ -231,7 +230,7 @@ class _MineScreenState extends State<MineScreen>
   _processResult(value, FollowingMode followingMode, {bool refresh = false}) {
     try {
       if (value['meta']['status'] != 200) {
-IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
         return IndicatorResult.fail;
       } else {
         List<dynamic> t = value['response'];
@@ -266,7 +265,7 @@ IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
         return IndicatorResult.success;
       }
     } catch (e) {
-      if (mounted) IToast.showTop( "加载失败");
+      if (mounted) IToast.showTop("加载失败");
       return IndicatorResult.fail;
     } finally {
       if (mounted) setState(() {});
@@ -689,10 +688,10 @@ IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
 
   changeMode() {
     if (Utils.isDark(context)) {
-      ProviderManager.globalProvider.themeMode = ActiveThemeMode.light;
+      appProvider.themeMode = ActiveThemeMode.light;
       darkModeController.forward();
     } else {
-      ProviderManager.globalProvider.themeMode = ActiveThemeMode.dark;
+      appProvider.themeMode = ActiveThemeMode.dark;
       darkModeController.reverse();
     }
   }

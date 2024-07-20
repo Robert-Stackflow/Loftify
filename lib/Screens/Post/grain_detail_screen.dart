@@ -10,10 +10,10 @@ import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:loftify/Widgets/PostItem/grain_post_item_builder.dart';
 import 'package:tuple/tuple.dart';
 
-import '../../Models/enums.dart';
 import '../../Models/history_response.dart';
 import '../../Resources/theme.dart';
 import '../../Utils/asset_util.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/uri_util.dart';
@@ -76,7 +76,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
   _fetchData({bool refresh = false, bool showLoading = false}) async {
     if (loading) return;
     if (refresh) noMore = false;
-    if (showLoading) CustomLoadingDialog.showLoading(context, title: "加载中...");
+    if (showLoading) CustomLoadingDialog.showLoading(title: "加载中...");
     loading = true;
     int offset = refresh ? 0 : grainDetailData?.offset ?? 0;
     return await GrainApi.getGrainDetail(
@@ -135,7 +135,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
         if (mounted) IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
-        if (showLoading) CustomLoadingDialog.dismissLoading(context);
+        if (showLoading) CustomLoadingDialog.dismissLoading();
         if (mounted) setState(() {});
         loading = false;
       }
@@ -160,7 +160,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       bottomNavigationBar: grainDetailData != null ? _buildFooter() : null,
       body: grainDetailData != null
           ? NestedScrollView(
@@ -248,7 +248,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
-              color: AppTheme.getBackground(context),
+              color: MyTheme.getBackground(context),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
@@ -552,7 +552,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
       childBuilder: (context, physics) {
         return Container(
           height: MediaQuery.sizeOf(context).height,
-          color: AppTheme.getBackground(context),
+          color: MyTheme.getBackground(context),
           child: ItemBuilder.buildLoadMoreNotification(
             child: ListView(
               padding: const EdgeInsets.only(bottom: 20),

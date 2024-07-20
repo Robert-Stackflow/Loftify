@@ -3,8 +3,8 @@ import 'package:group_button/group_button.dart';
 import 'package:loftify/Api/tag_api.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 
-import '../../Models/enums.dart';
 import '../../Resources/theme.dart';
+import '../../Utils/enums.dart';
 
 class NewestFilterBottomSheet extends StatefulWidget {
   const NewestFilterBottomSheet({
@@ -56,7 +56,7 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(20),
         ),
-        color: AppTheme.getBackground(context),
+        color: MyTheme.getBackground(context),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

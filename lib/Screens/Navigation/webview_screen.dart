@@ -9,6 +9,7 @@ import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/uri_util.dart';
 import 'package:tuple/tuple.dart';
 
+import '../../Utils/constant.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
@@ -182,7 +183,7 @@ class _WebviewScreenState extends State<WebviewScreen>
                     action: PermissionResponseAction.GRANT);
               },
               onDownloadStartRequest: (controller, url) async {
-                IToast.showTop( "即将跳转到浏览器下载");
+                IToast.showTop("即将跳转到浏览器下载");
                 Future.delayed(const Duration(milliseconds: 300), () {
                   UriUtil.openExternalUri(url.url);
                 });
@@ -265,7 +266,7 @@ class _WebviewScreenState extends State<WebviewScreen>
                     backgroundColor: Colors.transparent,
                     minHeight: 2,
                   )
-                : Container(),
+                : emptyWidget,
             _buildErrorPage(),
           ],
         ),
@@ -280,7 +281,7 @@ class _WebviewScreenState extends State<WebviewScreen>
         height: MediaQuery.sizeOf(context).height - 56,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: AppTheme.getBackground(context),
+          color: MyTheme.getBackground(context),
         ),
         child: SingleChildScrollView(
           child: Column(

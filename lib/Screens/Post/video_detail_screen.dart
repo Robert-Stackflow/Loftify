@@ -5,13 +5,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:loftify/Api/post_api.dart';
 import 'package:loftify/Api/user_api.dart';
-import 'package:loftify/Models/enums.dart';
 import 'package:loftify/Models/grain_response.dart';
 import 'package:loftify/Models/post_detail_response.dart';
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Models/search_response.dart';
 import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Screens/Post/video_list_controller.dart';
+import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/itoast.dart';
@@ -22,6 +22,7 @@ import 'package:video_player/video_player.dart';
 
 import '../../Resources/colors.dart';
 import '../../Resources/theme.dart';
+import '../../Utils/constant.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
@@ -170,7 +171,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
       collectionId: _currentPostItem!.postCollection?.grainId,
     ).then((value) {
       if (value['code'] != 200) {
-        IToast.showTop( value['msg']);
+        IToast.showTop(value['msg']);
       }
     });
   }
@@ -184,7 +185,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop( value['msg']);
+          IToast.showTop(value['msg']);
         } else {
           page++;
           offset = value['data']['offset'];
@@ -201,7 +202,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
           setState(() {});
         }
       } catch (e) {
-        if (mounted) IToast.showTop( "加载失败");
+        if (mounted) IToast.showTop("加载失败");
       }
       if (mounted) setState(() {});
     });
@@ -366,7 +367,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
                       blogId: postListItem.blogInfo!.blogId)
                   .then((value) {
                 if (value['meta']['status'] != 200) {
-                  IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
+                  IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
                 } else {
                   postListItem.favorite = !(postListItem.favorite == true);
                   postListItem.postData!.postCount!.favoriteCount +=
@@ -387,7 +388,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
                   ),
                 ),
                 enableDrag: false,
-                backgroundColor: AppTheme.getBackground(context),
+                backgroundColor: MyTheme.getBackground(context),
               );
             },
             onTapAvatar: () {
@@ -407,7 +408,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
                 blogName: postListItem.blogInfo!.blogName,
               ).then((value) {
                 if (value['meta']['status'] != 200) {
-                  IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
+                  IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
                 }
                 postListItem.following = !postListItem.following;
                 setState(() {});
@@ -421,7 +422,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
                       blogId: postListItem.blogInfo!.blogId)
                   .then((value) {
                 if (value['meta']['status'] != 200) {
-                  IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
+                  IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
                 } else {
                   postListItem.share = !(postListItem.share == true);
                   postListItem.postData!.postCount!.shareCount +=
@@ -500,7 +501,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
               ],
             ),
           )
-        : Container();
+        : emptyWidget;
   }
 
   _buildTagList(PostListItem postListItem) {
@@ -712,7 +713,7 @@ class _IconButton extends StatelessWidget {
     Widget body = Column(
       children: <Widget>[
         GestureDetector(
-          child: icon ?? Container(),
+          child: icon ?? emptyWidget,
           onTap: () {
             onTap?.call();
           },

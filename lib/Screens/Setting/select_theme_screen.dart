@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:loftify/Providers/provider_manager.dart';
+import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Resources/theme_color_data.dart';
 import 'package:loftify/Utils/hive_util.dart';
 
@@ -87,7 +87,7 @@ class _SelectThemeScreenState extends State<SelectThemeScreen>
           onChanged: (index) {
             setState(() {
               _selectedLightIndex = index ?? 0;
-              ProviderManager.globalProvider.setLightTheme(index ?? 0);
+              appProvider.setLightTheme(index ?? 0);
             });
           }),
     );
@@ -106,7 +106,7 @@ class _SelectThemeScreenState extends State<SelectThemeScreen>
           onChanged: (index) {
             setState(() {
               _selectedDarkIndex = index ?? 0;
-              ProviderManager.globalProvider.setDarkTheme(index ?? 0);
+              appProvider.setDarkTheme(index ?? 0);
             });
           }),
     );

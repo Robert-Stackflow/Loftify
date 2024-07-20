@@ -67,7 +67,7 @@ class PinChangeScreenState extends State<PinChangeScreen> {
                   stickyAuth: true))
           .then((value) {
         if (value) {
-          IToast.showTop( "验证成功");
+          IToast.showTop("验证成功");
           setState(() {
             _notifier.setStatus(
               status: GestureStatus.create,
@@ -181,7 +181,7 @@ class PinChangeScreenState extends State<PinChangeScreen> {
         if (!_isEditMode) {
           String password = GestureUnlockView.selectedToString(selected);
           if (_gesturePassword == password) {
-            IToast.showTop( "设置成功");
+            IToast.showTop("设置成功");
             setState(() {
               _notifier.setStatus(
                 status: GestureStatus.verify,

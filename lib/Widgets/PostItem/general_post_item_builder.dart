@@ -6,11 +6,12 @@ import 'package:like_button/like_button.dart';
 import 'package:loftify/Screens/Post/video_detail_screen.dart';
 import 'package:loftify/Widgets/BottomSheet/shield_bottom_sheet.dart';
 
-import '../../Models/enums.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Resources/theme.dart';
 import '../../Screens/Info/user_detail_screen.dart';
 import '../../Screens/Post/post_detail_screen.dart';
+import '../../Utils/constant.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
@@ -96,17 +97,17 @@ class GeneralPostItemBuilder {
         main = item.showArticle ?? true
             ? buildWaterfallFlowArticleItem(context, item,
                 width: width, onLikeTap: onLikeTap)
-            : Container();
+            : emptyWidget;
       case PostType.video:
         main = item.showVideo ?? true
             ? buildWaterfallFlowVideoItem(context, item,
                 width: width, onLikeTap: onLikeTap)
-            : Container();
+            : emptyWidget;
       case PostType.grain:
         main = buildWaterfallFlowGrainItem(context, item,
             width: width, onLikeTap: onLikeTap);
       case PostType.invalid:
-        main = Container();
+        main = emptyWidget;
     }
     return GestureDetector(
       onTap: () {
@@ -339,7 +340,7 @@ class GeneralPostItemBuilder {
     required double width,
     Function()? onLikeTap,
   }) {
-    return Container();
+    return emptyWidget;
   }
 
   static showMoreSheet(BuildContext context, GeneralPostItem item) {
@@ -530,7 +531,7 @@ class GeneralPostItemBuilder {
         main = buildNineGridVideoItem(context, item,
             wh: wh, activePostId: activePostId);
       case PostType.grain:
-        main = Container();
+        main = emptyWidget;
       case PostType.invalid:
         main = buildInvalidItem(context, wh: wh);
     }
@@ -699,7 +700,7 @@ class GeneralPostItemBuilder {
 
   static Widget buildInvalidItem(BuildContext context, {required double wh}) {
     return ItemBuilder.buildContainerItem(
-      backgroundColor: AppTheme.getCardBackground(context),
+      backgroundColor: MyTheme.getCardBackground(context),
       topRadius: true,
       bottomRadius: true,
       border: Border.all(color: Theme.of(context).dividerColor, width: 0.8),

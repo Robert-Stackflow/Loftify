@@ -78,9 +78,9 @@ enum FontEnum {
         onFinished?.call(value);
         if (showToast && context != null) {
           if (value == true) {
-            IToast.showTop( "字体加载成功，重启后切换");
+            IToast.showTop("字体加载成功，重启后切换");
           } else {
-            IToast.showTop( "字体加载失败");
+            IToast.showTop("字体加载失败");
           }
         }
       });

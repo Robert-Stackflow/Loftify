@@ -8,7 +8,8 @@ import 'package:loftify/Screens/Info/dress_detail_screen.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Api/dress_api.dart';
-import '../../Models/enums.dart';
+import '../../Utils/constant.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
@@ -70,7 +71,7 @@ class _DressScreenState extends State<DressScreen>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop( value['msg']);
+          IToast.showTop(value['msg']);
           return IndicatorResult.fail;
         } else {
           offset = value['data']['offset'];
@@ -109,7 +110,7 @@ class _DressScreenState extends State<DressScreen>
           }
         }
       } catch (e) {
-        if (mounted) IToast.showTop( "加载失败");
+        if (mounted) IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -130,7 +131,7 @@ class _DressScreenState extends State<DressScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       appBar: _buildAppBar(),
       body: EasyRefresh.builder(
         refreshOnStart: true,
@@ -176,7 +177,7 @@ class _DressScreenState extends State<DressScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
         decoration: BoxDecoration(
-          color: AppTheme.getCardBackground(context),
+          color: MyTheme.getCardBackground(context),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Column(
@@ -224,14 +225,14 @@ class _DressScreenState extends State<DressScreen>
     return ItemBuilder.buildAppBar(
       context: context,
       leading: Icons.arrow_back_rounded,
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       onLeadingTap: () {
         Navigator.pop(context);
       },
       center: Utils.isNotEmpty(widget.tag) ? true : false,
       title: Utils.isNotEmpty(widget.tag)
           ? ItemBuilder.buildClickItem(
-               ItemBuilder.buildTagItem(
+              ItemBuilder.buildTagItem(
                 context,
                 widget.tag!,
                 TagType.normal,

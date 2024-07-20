@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loftify/Widgets/Dialog/widgets/loading_dialog_widget.dart';
 
-import '../../Providers/provider_manager.dart';
+import '../../Utils/app_provider.dart';
 import './animations.dart';
 import './widgets/custom_confirm_dialog_widget.dart';
 import './widgets/custom_info_dialog_widget.dart';
@@ -705,15 +705,14 @@ class CustomConfirmDialog {
 }
 
 class CustomLoadingDialog {
-  static void showLoading(
-    BuildContext context, {
-    bool dismissible = true,
+  static void showLoading({
+    bool dismissible = false,
     String? title,
     double size = 40,
   }) {
     showDialog(
         barrierDismissible: dismissible,
-        context: ProviderManager.globalNavigatorKey.currentState!.context,
+        context: globalNavigatorKey.currentState!.context,
         builder: (context) {
           return LoadingDialogWidget(
             dismissible: dismissible,
@@ -723,8 +722,8 @@ class CustomLoadingDialog {
         });
   }
 
-  static Future<void> dismissLoading(BuildContext context) async {
-    return Future.sync(() => Navigator.pop(
-        ProviderManager.globalNavigatorKey.currentState!.context));
+  static Future<void> dismissLoading() async {
+    return Future.sync(
+        () => Navigator.pop(globalNavigatorKey.currentState!.context));
   }
 }

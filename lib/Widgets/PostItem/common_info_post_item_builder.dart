@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../Models/enums.dart';
 import '../../Models/post_detail_response.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/utils.dart';
 import '../PostItem/general_post_item_builder.dart';
 

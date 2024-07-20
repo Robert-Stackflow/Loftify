@@ -55,7 +55,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
       try {
         if (value == null) return IndicatorResult.fail;
         if (value['code'] != 0) {
-          IToast.showTop( value['msg']);
+          IToast.showTop(value['msg']);
           return IndicatorResult.fail;
         } else {
           l1CommentOffset = value['data']['offset'];
@@ -70,7 +70,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
           return IndicatorResult.success;
         }
       } catch (_) {
-        IToast.showTop( "最新评论加载失败");
+        IToast.showTop("最新评论加载失败");
         return IndicatorResult.fail;
       } finally {
         loading = false;
@@ -92,7 +92,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
       try {
         if (value == null) return IndicatorResult.fail;
         if (value['code'] != 0) {
-          IToast.showTop( value['msg']);
+          IToast.showTop(value['msg']);
           return IndicatorResult.fail;
         } else {
           currentComment.l2CommentOffset = value['data']['offset'];
@@ -103,7 +103,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
           return IndicatorResult.success;
         }
       } catch (_) {
-        IToast.showTop( "回复加载失败");
+        IToast.showTop("回复加载失败");
         return IndicatorResult.fail;
       } finally {
         currentComment.l2CommentLoading = false;
@@ -129,14 +129,13 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.getBackground(context),
+        color: MyTheme.getBackground(context),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
       ),
       height: MediaQuery.sizeOf(context).height * 0.8,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Column(
         children: [
-          _buildHeader(),
           Expanded(
             child: EasyRefresh(
               controller: _refreshController,
@@ -148,10 +147,6 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
         ],
       ),
     );
-  }
-
-  _buildHeader() {
-    return Container();
   }
 
   Widget _buildBody() {
@@ -183,7 +178,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
                     child: ItemBuilder.buildLoadingDialog(
                       context,
                       text: "",
-                      background: AppTheme.getBackground(context),
+                      background: MyTheme.getBackground(context),
                       size: 40,
                       topPadding: 40,
                     ),
@@ -201,7 +196,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
               maxHeight: 50,
               minHeight: 50,
               child: Container(
-                color: AppTheme.getBackground(context),
+                color: MyTheme.getBackground(context),
                 child: ItemBuilder.buildTitle(
                   context,
                   title: "最新评论",

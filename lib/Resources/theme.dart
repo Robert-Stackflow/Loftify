@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../Providers/provider_manager.dart';
+import '../Utils/utils.dart';
 import 'colors.dart';
 import 'styles.dart';
 
-class AppTheme {
-  AppTheme._();
+class MyTheme {
+  MyTheme._();
 
   bool isDarkMode(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark;
@@ -172,13 +172,13 @@ class AppTheme {
   );
 
   static getBackground(BuildContext context) {
-    return ProviderManager.currentBrightness(context) == Brightness.light
+    return Utils.currentBrightness(context) == Brightness.light
         ? Theme.of(context).canvasColor
         : Theme.of(context).scaffoldBackgroundColor;
   }
 
   static getCardBackground(BuildContext context) {
-    return ProviderManager.currentBrightness(context) == Brightness.light
+    return Utils.currentBrightness(context) == Brightness.light
         ? Theme.of(context).scaffoldBackgroundColor
         : Theme.of(context).canvasColor;
   }

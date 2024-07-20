@@ -27,6 +27,8 @@ dependencies:
   custom_sliding_segmented_control: ^1.8.3 # 分段控制器
   flutter_inappwebview: ^6.0.0 # Webview
   extended_nested_scroll_view: ^6.2.1 # 嵌套滚动
+  super_tooltip:
+    path: third-party/super_tooltip
   # 系统
   provider: ^6.0.5 # 状态管理
   local_auth: ^2.2.0 # 指纹验证
@@ -42,6 +44,7 @@ dependencies:
   permission_handler: ^11.3.1 # 权限管理
   install_plugin: ^2.1.0 # 安装APP
   flutter_local_notifications: ^17.2.1+2 # 通知
+  hotkey_manager: ^0.2.3 # 热键
   # 存储/网络
   path:
   http: ^1.2.1
@@ -122,7 +125,6 @@ flutter_intl:
 flutter:
   uses-material-design: true
   assets:
-    - assets/article/
     - assets/lottie/
     - assets/icon/
     - assets/illust/

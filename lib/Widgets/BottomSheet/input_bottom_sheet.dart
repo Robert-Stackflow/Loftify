@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../Resources/theme.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Utils/utils.dart';
 import '../Item/item_builder.dart';
 
@@ -33,7 +35,7 @@ class InputBottomSheet extends StatefulWidget {
 
 class InputBottomSheetState extends State<InputBottomSheet> {
   TextEditingController controller = TextEditingController();
-  FocusNode _focusNode = FocusNode();
+  final FocusNode _focusNode = FocusNode();
 
   @override
   void initState() {
@@ -49,31 +51,53 @@ class InputBottomSheetState extends State<InputBottomSheet> {
     return AnimatedPadding(
       padding: MediaQuery.of(context).viewInsets,
       duration: const Duration(milliseconds: 100),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            if (Utils.isNotEmpty(widget.title)) _buildHeader(),
-            TextField(
-              focusNode: _focusNode,
-              controller: controller,
-              maxLines: widget.maxLines,
-              minLines: widget.minLines,
-              cursorColor: Theme.of(context).primaryColor,
-              cursorHeight: 22,
-              cursorRadius: const Radius.circular(3),
-              decoration: InputDecoration(
-                border: InputBorder.none,
-                hintText: widget.hint,
-              ),
+      child: Wrap(
+        runAlignment: WrapAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.vertical(
+                  top: const Radius.circular(20),
+                  bottom: ResponsiveUtil.isLandscape()
+                      ? const Radius.circular(20)
+                      : Radius.zero),
+              color: MyTheme.getBackground(context),
             ),
-            const SizedBox(width: 8.0),
-            _buildFooter(),
-          ],
-        ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                if (Utils.isNotEmpty(widget.title)) _buildHeader(),
+                Center(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: TextField(
+                      focusNode: _focusNode,
+                      controller: controller,
+                      contextMenuBuilder: (contextMenuContext, details) =>
+                          ItemBuilder.editTextContextMenuBuilder(
+                              contextMenuContext, details,
+                              context: context),
+                      maxLines: widget.maxLines,
+                      minLines: widget.minLines,
+                      cursorColor: Theme.of(context).primaryColor,
+                      cursorHeight: 22,
+                      cursorRadius: const Radius.circular(3),
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        hintText: widget.hint,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8.0),
+                _buildFooter(),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -95,6 +119,7 @@ class InputBottomSheetState extends State<InputBottomSheet> {
       alignment: Alignment.center,
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Expanded(
             child: SizedBox(

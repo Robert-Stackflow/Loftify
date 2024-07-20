@@ -3,10 +3,11 @@ import 'package:loftify/Models/favorites_response.dart';
 import 'package:loftify/Models/recommend_response.dart';
 
 import '../../Api/user_api.dart';
-import '../../Models/enums.dart';
 import '../../Models/history_response.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Resources/theme.dart';
+import '../../Utils/constant.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
@@ -70,7 +71,7 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
       ).then((value) {
         try {
           if (value['code'] != 0) {
-            IToast.showTop( value['msg']);
+            IToast.showTop(value['msg']);
             return IndicatorResult.fail;
           } else {
             _follow = value['data']['followStatus'];
@@ -109,7 +110,7 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
             }
           }
         } catch (e) {
-          if (mounted) IToast.showTop( "加载失败");
+          if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
@@ -131,7 +132,7 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       appBar: _buildAppBar(),
       body: EasyRefresh(
         refreshOnStart: true,
@@ -199,7 +200,7 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
               wh: 160),
           onTap: () {
             if (FavoriteFolderPostItemBuilder.isInvalid(_posts[trueIndex])) {
-              IToast.showTop( "无效内容");
+              IToast.showTop("无效内容");
             } else {
               RouteUtil.pushCupertinoRoute(
                 context,
@@ -218,11 +219,11 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
   }
 
   Widget _buildFlow() {
-    return Container();
+    return emptyWidget;
   }
 
   Widget _buildList() {
-    return Container();
+    return emptyWidget;
   }
 
   PreferredSizeWidget _buildAppBar() {
@@ -241,7 +242,7 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
     return ItemBuilder.buildAppBar(
       context: context,
       leading: Icons.arrow_back_rounded,
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       onLeadingTap: () {
         Navigator.pop(context);
       },

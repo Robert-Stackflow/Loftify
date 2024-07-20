@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../Utils/constant.dart';
 import 'drag_and_drop_builder_parameters.dart';
 import 'drag_and_drop_list_interface.dart';
 import 'drag_handle.dart';
@@ -78,7 +79,7 @@ class _DragAndDropListWrapper extends State<DragAndDropListWrapper>
                     offset: _feedbackContainerOffset(),
                     child: feedback,
                   ),
-                  childWhenDragging: Container(),
+                  childWhenDragging: emptyWidget,
                   onDragStarted: () => _setDragging(true),
                   onDragCompleted: () => _setDragging(false),
                   onDraggableCanceled: (_, __) => _setDragging(false),
@@ -95,7 +96,7 @@ class _DragAndDropListWrapper extends State<DragAndDropListWrapper>
           child: dragAndDropListContents,
           feedback:
               buildFeedbackWithoutHandle(context, dragAndDropListContents),
-          childWhenDragging: Container(),
+          childWhenDragging: emptyWidget,
           onDragStarted: () => _setDragging(true),
           onDragCompleted: () => _setDragging(false),
           onDraggableCanceled: (_, __) => _setDragging(false),
@@ -108,7 +109,7 @@ class _DragAndDropListWrapper extends State<DragAndDropListWrapper>
           child: dragAndDropListContents,
           feedback:
               buildFeedbackWithoutHandle(context, dragAndDropListContents),
-          childWhenDragging: Container(),
+          childWhenDragging: emptyWidget,
           onDragStarted: () => _setDragging(true),
           onDragCompleted: () => _setDragging(false),
           onDraggableCanceled: (_, __) => _setDragging(false),
@@ -140,7 +141,7 @@ class _DragAndDropListWrapper extends State<DragAndDropListWrapper>
                           _hoveredDraggable!.generateWidget(widget.parameters),
                     ),
               )
-            : Container(),
+            : emptyWidget,
       ),
       Listener(
         child: draggable,
@@ -164,7 +165,7 @@ class _DragAndDropListWrapper extends State<DragAndDropListWrapper>
           child: DragTarget<DragAndDropListInterface>(
             builder: (context, candidateData, rejectedData) {
               if (candidateData.isNotEmpty) {}
-              return Container();
+              return emptyWidget;
             },
             onWillAccept: (incoming) {
               bool accept = true;

@@ -8,8 +8,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:hive/hive.dart';
+import 'package:hotkey_manager/hotkey_manager.dart';
+import 'package:loftify/Database/database_manager.dart';
 import 'package:loftify/Models/recommend_response.dart';
-import 'package:loftify/Providers/global_provider.dart';
+import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Screens/Info/favorite_folder_list_screen.dart';
 import 'package:loftify/Screens/Info/history_screen.dart';
 import 'package:loftify/Screens/Info/share_screen.dart';
@@ -38,8 +41,6 @@ import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
-import 'Models/enums.dart';
-import 'Providers/provider_manager.dart';
 import 'Screens/Info/favorite_folder_detail_screen.dart';
 import 'Screens/Info/like_screen.dart';
 import 'Screens/Info/user_detail_screen.dart';
@@ -48,7 +49,7 @@ import 'Screens/Navigation/dynamic_screen.dart';
 import 'Screens/Navigation/home_screen.dart';
 import 'Screens/Setting/about_setting_screen.dart';
 import 'Screens/main_screen.dart';
-import 'Utils/iprint.dart';
+import 'Utils/enums.dart';
 import 'Utils/notification_util.dart';
 import 'Utils/responsive_util.dart';
 import 'generated/l10n.dart';
@@ -96,10 +97,12 @@ Future<void> runMyApp(List<String> args) async {
 
 Future<void> initApp() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  await HotKeyManager.instance.unregisterAll();
   imageCache.maximumSizeBytes = 1024 * 1024 * 1024 * 2;
   PaintingBinding.instance.imageCache.maximumSizeBytes = 1024 * 1024 * 1024 * 2;
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
-  await ProviderManager.init();
+  await DatabaseManager.getDataBase();
+  Hive.defaultDirectory = await FileUtil.getApplicationDir();
   NotificationUtil.init();
   FlutterError.onError = (FlutterErrorDetails details) async {
     File errorFile = File("${await FileUtil.getApplicationDir()}/error.log");
@@ -179,7 +182,6 @@ void runMultiWindow(
     default:
       break;
   }
-  IPrint.debug(kWindowId);
   runApp(MyApp(title: title, home: widget));
   WindowController.fromWindowId(kWindowId!).show();
 }
@@ -200,11 +202,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider.value(value: ProviderManager.globalProvider),
+        ChangeNotifierProvider.value(value: appProvider),
       ],
-      child: Consumer<GlobalProvider>(
+      child: Consumer<AppProvider>(
         builder: (context, globalProvider, child) => MaterialApp(
-          navigatorKey: ProviderManager.globalNavigatorKey,
+          navigatorKey: globalNavigatorKey,
           title: title,
           theme: globalProvider.getBrightness() == null ||
                   globalProvider.getBrightness() == Brightness.light

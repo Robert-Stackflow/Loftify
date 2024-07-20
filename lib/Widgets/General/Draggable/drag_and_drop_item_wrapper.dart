@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../Utils/constant.dart';
 import 'drag_and_drop_lists.dart';
 import 'measure_size.dart';
 
@@ -85,7 +86,7 @@ class _DragAndDropItemWrapper extends State<DragAndDropItemWrapper>
                   ),
                 ),
               ),
-              childWhenDragging: Container(),
+              childWhenDragging: emptyWidget,
               onDragStarted: () => _setDragging(true),
               onDragCompleted: () => _setDragging(false),
               onDraggableCanceled: (_, __) => _setDragging(false),
@@ -141,7 +142,7 @@ class _DragAndDropItemWrapper extends State<DragAndDropItemWrapper>
                 ),
               ),
             ),
-            childWhenDragging: Container(),
+            childWhenDragging: emptyWidget,
             onDragStarted: () => _setDragging(true),
             onDragCompleted: () => _setDragging(false),
             onDraggableCanceled: (_, __) => _setDragging(false),
@@ -175,7 +176,7 @@ class _DragAndDropItemWrapper extends State<DragAndDropItemWrapper>
                 ),
               ),
             ),
-            childWhenDragging: Container(),
+            childWhenDragging: emptyWidget,
             onDragStarted: () => _setDragging(true),
             onDragCompleted: () => _setDragging(false),
             onDraggableCanceled: (_, __) => _setDragging(false),
@@ -189,7 +190,7 @@ class _DragAndDropItemWrapper extends State<DragAndDropItemWrapper>
         duration: Duration(
             milliseconds: widget.parameters!.itemSizeAnimationDuration),
         alignment: Alignment.bottomCenter,
-        child: _hoveredDraggable != null ? Container() : widget.child.child,
+        child: _hoveredDraggable != null ? emptyWidget : widget.child.child,
       );
     }
     return Stack(
@@ -208,7 +209,7 @@ class _DragAndDropItemWrapper extends State<DragAndDropItemWrapper>
                       child: widget.parameters!.itemGhost ??
                           _hoveredDraggable!.child,
                     )
-                  : Container(),
+                  : emptyWidget,
             ),
             Listener(
               onPointerMove: _onPointerMove,
@@ -222,7 +223,7 @@ class _DragAndDropItemWrapper extends State<DragAndDropItemWrapper>
           child: DragTarget<DragAndDropItem>(
             builder: (context, candidateData, rejectedData) {
               if (candidateData.isNotEmpty) {}
-              return Container();
+              return emptyWidget;
             },
             onWillAccept: (incoming) {
               bool accept = true;

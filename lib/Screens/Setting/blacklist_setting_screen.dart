@@ -5,8 +5,8 @@ import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Utils/route_util.dart';
 
 import '../../Api/setting_api.dart';
-import '../../Models/enums.dart';
 import '../../Resources/theme.dart';
+import '../../Utils/constant.dart';
 import '../../Utils/itoast.dart';
 import '../../Widgets/Dialog/custom_dialog.dart';
 import '../../Widgets/Dialog/dialog_builder.dart';
@@ -52,7 +52,7 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
       try {
         if (value == null) return IndicatorResult.fail;
         if (value['meta']['status'] != 200) {
-          IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
+          IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
           return IndicatorResult.fail;
         } else {
           var tmp = (value['response']['blogs'] as List)
@@ -67,7 +67,7 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
           return IndicatorResult.success;
         }
       } catch (_) {
-        IToast.showTop( "黑名单加载失败");
+        IToast.showTop("黑名单加载失败");
         return IndicatorResult.fail;
       } finally {
         loading = false;
@@ -79,10 +79,10 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       appBar: ItemBuilder.buildAppBar(
           leading: Icons.arrow_back_rounded,
-          backgroundColor: AppTheme.getBackground(context),
+          backgroundColor: MyTheme.getBackground(context),
           onLeadingTap: () {
             Navigator.pop(context);
           },
@@ -164,7 +164,7 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
                     ).then((value) {
                       if (value['meta']['status'] != 200) {
                         IToast.showTop(
-                                value['meta']['desc'] ?? value['meta']['msg']);
+                            value['meta']['desc'] ?? value['meta']['msg']);
                       } else {
                         blacklist.remove(blacklistItem);
                         setState(() {});

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:loftify/Models/nav_entry.dart';
-import 'package:loftify/Providers/global_provider.dart';
-import 'package:loftify/Providers/provider_manager.dart';
+import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:provider/provider.dart';
 
+import '../../Utils/constant.dart';
 import '../../Widgets/Custom/no_shadow_scroll_behavior.dart';
 import '../../Widgets/General/Draggable/drag_and_drop_lists.dart';
 import '../../Widgets/Item/item_builder.dart';
@@ -44,7 +44,7 @@ class _NavItemSettingScreenState extends State<NavItemSettingScreen>
 
   void initList() {
     SortableItemList navItemList = SortableItemList(
-        items: ProviderManager.globalProvider.navItems,
+        items: appProvider.navItems,
         defaultItems: SortableItemList.defaultNavItems);
     List<SortableItem> shownNavItems = navItemList.getShownItems();
     List<SortableItem> hiddenNavItems = navItemList.getHiddenItems();
@@ -61,7 +61,7 @@ class _NavItemSettingScreenState extends State<NavItemSettingScreen>
             title: S.current.dragTip,
             topRadius: false,
             bottomRadius: true),
-        contentsWhenEmpty: Container(),
+        contentsWhenEmpty: emptyWidget,
         children: List.generate(
           shownNavItems.length,
           (index) => DragAndDropItem(
@@ -86,7 +86,7 @@ class _NavItemSettingScreenState extends State<NavItemSettingScreen>
             title: S.current.dragTip,
             topRadius: false,
             bottomRadius: true),
-        contentsWhenEmpty: Container(),
+        contentsWhenEmpty: emptyWidget,
         children: List.generate(
           hiddenNavItems.length,
           (index) => DragAndDropItem(
@@ -134,12 +134,12 @@ class _NavItemSettingScreenState extends State<NavItemSettingScreen>
       cur += 1;
       navs.add(data);
     }
-    ProviderManager.globalProvider.navItems = navs;
+    appProvider.navItems = navs;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<GlobalProvider>(builder: (context, globalProvider, child) {
+    return Consumer<AppProvider>(builder: (context, globalProvider, child) {
       return Scaffold(
         appBar: ItemBuilder.buildSimpleAppBar(
           title: S.current.navItemSetting,
@@ -183,7 +183,7 @@ class _NavItemSettingScreenState extends State<NavItemSettingScreen>
                               onTap: () {}),
                         )),
                       )
-                    : SliverToBoxAdapter(child: Container()),
+                    : SliverToBoxAdapter(child: emptyWidget),
               ],
             ),
           ),

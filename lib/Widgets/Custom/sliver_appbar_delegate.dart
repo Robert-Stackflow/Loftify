@@ -27,7 +27,7 @@ class SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
       decoration: BoxDecoration(
-        color: background ?? AppTheme.getBackground(context),
+        color: background ?? MyTheme.getBackground(context),
         borderRadius: BorderRadius.vertical(top: Radius.circular(radius)),
       ),
       child: Theme(

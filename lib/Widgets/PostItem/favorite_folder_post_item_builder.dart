@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:loftify/Utils/iprint.dart';
 
-import '../../Models/enums.dart';
 import '../../Models/post_detail_response.dart';
+import '../../Utils/enums.dart';
 import '../PostItem/general_post_item_builder.dart';
 
 class FavoriteFolderPostItemBuilder {
@@ -44,7 +43,6 @@ class FavoriteFolderPostItemBuilder {
       default:
         photoLinks = [];
     }
-    IPrint.debug(item.postData!.postView);
     return GeneralPostItem(
       type: getPostType(item),
       photoLinks: photoLinks,

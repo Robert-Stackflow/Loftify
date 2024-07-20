@@ -8,6 +8,7 @@
 
 #include <app_links/app_links_plugin_c_api.h>
 #include <desktop_multi_window/desktop_multi_window_plugin.h>
+#include <hotkey_manager_windows/hotkey_manager_windows_plugin_c_api.h>
 #include <isar_flutter_libs/isar_flutter_libs_plugin.h>
 #include <local_auth_windows/local_auth_plugin.h>
 #include <permission_handler_windows/permission_handler_windows_plugin.h>
@@ -24,6 +25,8 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("AppLinksPluginCApi"));
   DesktopMultiWindowPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("DesktopMultiWindowPlugin"));
+  HotkeyManagerWindowsPluginCApiRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("HotkeyManagerWindowsPluginCApi"));
   IsarFlutterLibsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("IsarFlutterLibsPlugin"));
   LocalAuthPluginRegisterWithRegistrar(

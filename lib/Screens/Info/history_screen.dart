@@ -10,8 +10,8 @@ import 'package:tuple/tuple.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Api/post_api.dart';
-import '../../Models/enums.dart';
 import '../../Models/post_detail_response.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
@@ -114,7 +114,7 @@ class _HistoryScreenState extends State<HistoryScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       appBar: _buildAppBar(),
       body: EasyRefresh(
         refreshOnStart: true,
@@ -239,7 +239,7 @@ class _HistoryScreenState extends State<HistoryScreen>
     return ItemBuilder.buildAppBar(
       context: context,
       leading: Icons.arrow_back_rounded,
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       onLeadingTap: () {
         Navigator.pop(context);
       },

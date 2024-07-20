@@ -3,9 +3,8 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/login_api.dart';
-import 'package:loftify/Providers/provider_manager.dart';
+import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/crypt_util.dart';
-import 'package:loftify/Utils/iprint.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 
@@ -45,7 +44,7 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
     await LoginApi.getSlideCaptcha().then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop( value['msg']);
+          IToast.showTop(value['msg']);
         } else {
           frontLeftOffset = 0;
           bg = value['data']['bg'];
@@ -54,9 +53,8 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
           bg64 = base64Decode(bg!);
           front64 = base64Decode(front!);
         }
-        IPrint.debug(id);
       } catch (_) {
-        IToast.showTop( "滑块验证码获取失败");
+        IToast.showTop("滑块验证码获取失败");
       } finally {
         if (mounted) setState(() {});
       }
@@ -265,20 +263,19 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
                   rawIv: rawIv,
                 ).then((value) {
                   if (value == null) {
-                    IToast.showTop( "发送验证失败");
+                    IToast.showTop("发送验证失败");
                   } else {
                     var res = CryptUtil.decryptDataByAES(value, rawKey, rawIv);
                     res = json.decode(res);
                     if (res['code'] != 0) {
                       updateState(false);
-                      IToast.showTop( res['msg']);
+                      IToast.showTop(res['msg']);
                       _fetchCaptcha();
                     } else if (!res['data']['success']) {
                       updateState(false);
                       _fetchCaptcha();
                     } else if (res['data']['success']) {
-                      ProviderManager.globalProvider.captchaToken =
-                          res['data']['token'];
+                      appProvider.captchaToken = res['data']['token'];
                       updateState(true);
                     }
                   }
@@ -288,7 +285,7 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppTheme.getBackground(context),
+                  color: MyTheme.getBackground(context),
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: [
                     BoxShadow(

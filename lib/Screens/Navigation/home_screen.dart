@@ -11,9 +11,9 @@ import 'package:loftify/Widgets/PostItem/recommend_flow_item_builder.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Api/post_api.dart';
-import '../../Models/enums.dart';
 import '../../Models/recommend_response.dart';
 import '../../Utils/asset_util.dart';
+import '../../Utils/constant.dart';
 import '../../Utils/iprint.dart';
 import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
@@ -75,7 +75,7 @@ class HomeScreenState extends State<HomeScreen>
       try {
         if (value['code'] != 0) {
           if (value['code'] != 4009) {
-            IToast.showTop( value['msg']);
+            IToast.showTop(value['msg']);
           }
           return IndicatorResult.fail;
         } else {
@@ -89,7 +89,7 @@ class HomeScreenState extends State<HomeScreen>
       } catch (e, t) {
         IPrint.debug(e);
         IPrint.debug(t);
-        if (mounted) IToast.showTop( "加载失败");
+        if (mounted) IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -111,7 +111,7 @@ class HomeScreenState extends State<HomeScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       appBar: _buildAppBar(),
       body: EasyRefresh(
         refreshOnStart: true,
@@ -144,7 +144,7 @@ class HomeScreenState extends State<HomeScreen>
                     setState(() {
                       if (value['meta']['status'] != 200) {
                         IToast.showTop(
-                                value['meta']['desc'] ?? value['meta']['msg']);
+                            value['meta']['desc'] ?? value['meta']['msg']);
                       } else {
                         item.favorite = !item.favorite;
                         item.postData!.postCount!.favoriteCount +=
@@ -196,7 +196,7 @@ class HomeScreenState extends State<HomeScreen>
   PreferredSizeWidget _buildAppBar() {
     return ItemBuilder.buildAppBar(
       context: context,
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       title:
           Text(S.current.home, style: Theme.of(context).textTheme.titleLarge),
       actions: [

@@ -8,8 +8,9 @@ import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
-import '../../Models/enums.dart';
 import '../../Models/user_response.dart';
+import '../../Utils/constant.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
@@ -78,7 +79,7 @@ class _SupporterScreenState extends State<SupporterScreen>
       ).then((value) {
         try {
           if (value['code'] != 200) {
-            IToast.showTop( value['msg']);
+            IToast.showTop(value['msg']);
             return IndicatorResult.fail;
           } else {
             List<dynamic> t = value['data']['ranks'];
@@ -97,7 +98,7 @@ class _SupporterScreenState extends State<SupporterScreen>
             }
           }
         } catch (e) {
-          if (mounted) IToast.showTop( "加载失败");
+          if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
@@ -119,7 +120,7 @@ class _SupporterScreenState extends State<SupporterScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       appBar: _buildAppBar(),
       body: EasyRefresh.builder(
         refreshOnStart: true,
@@ -211,7 +212,7 @@ class _SupporterScreenState extends State<SupporterScreen>
     return ItemBuilder.buildAppBar(
       context: context,
       leading: Icons.arrow_back_rounded,
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       onLeadingTap: () {
         Navigator.pop(context);
       },

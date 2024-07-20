@@ -4,19 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Api/search_api.dart';
 import 'package:loftify/Models/collection_response.dart';
-import 'package:loftify/Models/enums.dart';
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Models/search_response.dart';
 import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Screens/Post/grain_detail_screen.dart';
 import 'package:loftify/Screens/Post/tag_detail_screen.dart';
-import 'package:loftify/Utils/iprint.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Widgets/PostItem/search_post_flow_item_builder.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Api/post_api.dart';
+import '../../Utils/constant.dart';
 import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/uri_util.dart';
@@ -106,7 +105,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,7 +203,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
         .then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop( value['msg']);
+          IToast.showTop(value['msg']);
         } else {
           if (value['data'] != null) {
             _allResult = SearchAllResult.fromJson(value['data']);
@@ -214,7 +213,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           return IndicatorResult.success;
         }
       } catch (_) {
-        IToast.showTop( "加载失败");
+        IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
         _allResultLoading = false;
@@ -231,18 +230,23 @@ class _SearchResultScreenState extends State<SearchResultScreen>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop( value['msg']);
+          IToast.showTop(value['msg']);
         } else {
+          bool noMore = false;
           if (value['data'] != null) {
             var tmp = SearchAllResult.fromJson(value['data']);
+            tmp.posts.removeWhere((element) =>
+                _allResult!.posts.any((e) => e.itemId == element.itemId));
             _allResultOffset = tmp.offset;
             _allResult?.posts.addAll(tmp.posts);
+            noMore = tmp.posts.isEmpty;
           }
           if (mounted) setState(() {});
+          if (noMore) return IndicatorResult.noMore;
           return IndicatorResult.success;
         }
       } catch (_) {
-        IToast.showTop( "加载失败");
+        IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -261,7 +265,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop( value['msg']);
+          IToast.showTop(value['msg']);
         } else {
           List<TagInfo> tmp = [];
           if (value['data'] != null) {
@@ -291,7 +295,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           }
         }
       } catch (_) {
-        IToast.showTop( "加载失败");
+        IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -310,7 +314,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop( value['msg']);
+          IToast.showTop(value['msg']);
         } else {
           List<Collection> tmp = [];
           if (value['data'] != null) {
@@ -337,7 +341,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           }
         }
       } catch (_) {
-        IToast.showTop( "加载失败");
+        IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -356,7 +360,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop( value['msg']);
+          IToast.showTop(value['msg']);
         } else {
           List<SearchPost> tmp = [];
           if (value['data'] != null) {
@@ -383,7 +387,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           }
         }
       } catch (_) {
-        IToast.showTop( "加载失败");
+        IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -402,7 +406,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop( value['msg']);
+          IToast.showTop(value['msg']);
         } else {
           List<GrainInfo> tmp = [];
           if (value['data'] != null) {
@@ -429,7 +433,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           }
         }
       } catch (_) {
-        IToast.showTop( "加载失败");
+        IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -448,7 +452,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
     ).then((value) {
       try {
         if (value['code'] != 0) {
-          IToast.showTop( value['msg']);
+          IToast.showTop(value['msg']);
         } else {
           List<SearchBlogData> tmp = [];
           if (value['data'] != null) {
@@ -476,7 +480,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           }
         }
       } catch (_) {
-        IToast.showTop( "加载失败");
+        IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -517,7 +521,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
   _performSuggest(String str) {
     SearchApi.getSuggestList(key: str).then((value) {
       if (value['code'] != 0) {
-        IToast.showTop( value['msg']);
+        IToast.showTop(value['msg']);
       } else {
         if (value['data']['items'] != null &&
             _searchController!.text.isNotEmpty) {
@@ -532,7 +536,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
 
   _buildSuggestList() {
     return Container(
-      color: AppTheme.getBackground(context),
+      color: MyTheme.getBackground(context),
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: ListView.builder(
         itemCount: _sugList.length,
@@ -574,7 +578,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           );
         });
       default:
-        return Container();
+        return emptyWidget;
     }
   }
 
@@ -588,7 +592,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
             pinned: true,
             delegate: SliverAppBarDelegate(
               radius: 0,
-              background: AppTheme.getBackground(context),
+              background: MyTheme.getBackground(context),
               tabBar: TabBar(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
                 overlayColor: WidgetStateProperty.all(Colors.transparent),
@@ -770,7 +774,6 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                                     onLikeTap: () async {
                               var item = _allResult!.posts[index];
                               HapticFeedback.mediumImpact();
-                              IPrint.debug(item.toJson());
                               return await PostApi.likeOrUnLike(
                                       isLike: !item.favorite,
                                       postId: item.itemId,
@@ -778,8 +781,8 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                                   .then((value) {
                                 setState(() {
                                   if (value['meta']['status'] != 200) {
-                                    IToast.showTop( value['meta']['desc'] ??
-                                            value['meta']['msg']);
+                                    IToast.showTop(value['meta']['desc'] ??
+                                        value['meta']['msg']);
                                   } else {
                                     item.favorite = !item.favorite;
                                     if (item.postData!.postCount != null) {
@@ -801,7 +804,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
             )
           : ItemBuilder.buildLoadingDialog(
               context,
-              background: AppTheme.getBackground(context),
+              background: MyTheme.getBackground(context),
             ),
     );
   }

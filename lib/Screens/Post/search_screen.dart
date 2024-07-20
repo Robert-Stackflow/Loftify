@@ -1,10 +1,8 @@
 import 'package:card_swiper/card_swiper.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/search_api.dart';
-import 'package:loftify/Models/enums.dart';
 import 'package:loftify/Models/search_response.dart';
-import 'package:loftify/Providers/provider_manager.dart';
-import 'package:loftify/Resources/gaps.dart';
+import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Screens/Post/collection_detail_screen.dart';
@@ -12,13 +10,14 @@ import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Screens/Post/search_result_screen.dart';
 import 'package:loftify/Screens/Post/tag_detail_screen.dart';
 import 'package:loftify/Screens/Post/video_detail_screen.dart';
+import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Utils/route_util.dart';
 import 'package:provider/provider.dart';
 
-import '../../Providers/global_provider.dart';
 import '../../Resources/colors.dart';
+import '../../Utils/constant.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
@@ -89,7 +88,7 @@ class _SearchScreenState extends State<SearchScreen>
   fetchGuessList() {
     SearchApi.getGuessList().then((value) {
       if (value['code'] != 0) {
-        IToast.showTop( value['msg']);
+        IToast.showTop(value['msg']);
       } else {
         if (value['data']['guessKeywords'] != null) {
           _guessList = (value['data']['guessKeywords'] as List)
@@ -104,7 +103,7 @@ class _SearchScreenState extends State<SearchScreen>
   fetchRankList() {
     SearchApi.getRankList().then((value) {
       if (value['code'] != 0) {
-        IToast.showTop( value['msg']);
+        IToast.showTop(value['msg']);
       } else {
         if (value['data']['rankList'] != null) {
           _rankList = (value['data']['rankList'] as List)
@@ -126,7 +125,7 @@ class _SearchScreenState extends State<SearchScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -163,7 +162,7 @@ class _SearchScreenState extends State<SearchScreen>
   _performSuggest(String str) {
     SearchApi.getSuggestList(key: str).then((value) {
       if (value['code'] != 0) {
-        IToast.showTop( value['msg']);
+        IToast.showTop(value['msg']);
       } else {
         if (value['data']['items'] != null &&
             _searchController.text.isNotEmpty) {
@@ -178,7 +177,7 @@ class _SearchScreenState extends State<SearchScreen>
 
   _buildSuggestList() {
     return Container(
-      color: AppTheme.getBackground(context),
+      color: MyTheme.getBackground(context),
       padding: const EdgeInsets.only(top: 8),
       child: ListView.builder(
         itemCount: _sugList.length,
@@ -212,7 +211,7 @@ class _SearchScreenState extends State<SearchScreen>
           );
         });
       default:
-        return Container();
+        return emptyWidget;
     }
   }
 
@@ -234,7 +233,7 @@ class _SearchScreenState extends State<SearchScreen>
             mainAxisSize: MainAxisSize.max,
             children: [
               if (showSearchHistory)
-                Selector<GlobalProvider, List<String>>(
+                Selector<AppProvider, List<String>>(
                   selector: (context, globalProvider) =>
                       globalProvider.searchHistoryList,
                   builder: (context, searchHistoryList, child) =>
@@ -244,14 +243,13 @@ class _SearchScreenState extends State<SearchScreen>
                               title: "最近搜索",
                               icon: Icons.delete_outline_rounded,
                               onTap: () {
-                                ProviderManager
-                                    .globalProvider.searchHistoryList = [];
+                                appProvider.searchHistoryList = [];
                               },
                             )
-                          : MyGaps.empty,
+                          : emptyWidget,
                 ),
               if (showSearchHistory)
-                Selector<GlobalProvider, List<String>>(
+                Selector<AppProvider, List<String>>(
                   selector: (context, globalProvider) =>
                       globalProvider.searchHistoryList,
                   builder: (context, searchHistoryList, child) =>
@@ -286,7 +284,7 @@ class _SearchScreenState extends State<SearchScreen>
             pinned: true,
             delegate: SliverAppBarDelegate(
               radius: 0,
-              background: AppTheme.getBackground(context),
+              background: MyTheme.getBackground(context),
               tabBar: TabBar(
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
                 overlayColor: WidgetStateProperty.all(Colors.transparent),
@@ -372,8 +370,8 @@ class _SearchScreenState extends State<SearchScreen>
           physics: const NeverScrollableScrollPhysics(),
           itemCount: item.hotLists.length,
           itemBuilder: (context, index) {
-            return ItemBuilder.buildClickItem(_buildRankItem(
-                index, item.rankListType, item.hotLists[index]));
+            return ItemBuilder.buildClickItem(
+                _buildRankItem(index, item.rankListType, item.hotLists[index]));
           },
         ),
       ),

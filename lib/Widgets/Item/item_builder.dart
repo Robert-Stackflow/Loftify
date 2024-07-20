@@ -1,31 +1,33 @@
 import 'dart:math';
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:group_button/group_button.dart';
 import 'package:like_button/like_button.dart';
-import 'package:loftify/Models/enums.dart';
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Models/search_response.dart';
-import 'package:loftify/Resources/gaps.dart';
 import 'package:loftify/Resources/theme_color_data.dart';
 import 'package:loftify/Utils/lottie_util.dart';
+import 'package:loftify/Widgets/Selectable/my_context_menu_item.dart';
 import 'package:provider/provider.dart';
 
 import '../../Api/post_api.dart';
 import '../../Api/user_api.dart';
+import '../../Models/Illust.dart';
 import '../../Models/collection_response.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Models/user_response.dart';
-import '../../Providers/global_provider.dart';
+import '../../Utils/app_provider.dart';
 import '../../Resources/colors.dart';
 import '../../Screens/Info/user_detail_screen.dart';
 import '../../Screens/Login/login_by_captcha_screen.dart';
+import '../../Screens/Post/search_result_screen.dart';
 import '../../Screens/Post/tag_detail_screen.dart';
 import '../../Utils/asset_util.dart';
+import '../../Utils/constant.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/responsive_util.dart';
@@ -33,10 +35,11 @@ import '../../Utils/route_util.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../Custom/hero_photo_view_screen.dart';
-import '../Custom/selection_transformer.dart';
 import '../Dialog/dialog_builder.dart';
 import '../Scaffold/my_appbar.dart';
-import '../Scaffold/my_selection_toolbar.dart';
+import '../Selectable/my_selection_area.dart';
+import '../Selectable/my_selection_toolbar.dart';
+import '../Selectable/selection_transformer.dart';
 
 enum TailingType { none, clear, password, icon, text, widget }
 
@@ -81,7 +84,7 @@ class ItemBuilder {
                     ),
               ),
             )
-          : Container(),
+          : emptyWidget,
       actions: actions,
     );
   }
@@ -123,7 +126,7 @@ class ItemBuilder {
       title: showLeading
           ? center
               ? Center(child: title)
-              : title ?? Container()
+              : title ?? emptyWidget
           : center
               ? Center(
                   child: Container(
@@ -179,7 +182,7 @@ class ItemBuilder {
       title: showLeading
           ? center
               ? Center(child: title)
-              : title ?? Container()
+              : title ?? emptyWidget
           : center
               ? Center(
                   child: Container(
@@ -249,7 +252,7 @@ class ItemBuilder {
         onLongPress: onLongPress,
         child: Container(
           padding: const EdgeInsets.all(8),
-          child: icon ?? Container(),
+          child: icon ?? emptyWidget,
         ),
       ),
     );
@@ -277,7 +280,7 @@ class ItemBuilder {
         onLongPress: onLongPress,
         child: Container(
           padding: padding ?? const EdgeInsets.all(10),
-          child: icon ?? Container(),
+          child: icon ?? emptyWidget,
         ),
       ),
     );
@@ -293,12 +296,13 @@ class ItemBuilder {
       color: Colors.transparent,
       shape: const CircleBorder(),
       clipBehavior: Clip.hardEdge,
-      child: Selector<GlobalProvider, ActiveThemeMode>(
-          selector: (context, globalProvider) => globalProvider.themeMode,
-          builder: (context, themeMode, child) {
-            onChangemode?.call(context, themeMode, child);
-            return buildIconButton(context: context, icon: icon, onTap: onTap);
-          }),
+      child: Selector<AppProvider, ActiveThemeMode>(
+        selector: (context, globalProvider) => globalProvider.themeMode,
+        builder: (context, themeMode, child) {
+          onChangemode?.call(context, themeMode, child);
+          return buildIconButton(context: context, icon: icon, onTap: onTap);
+        },
+      ),
     );
   }
 
@@ -396,7 +400,7 @@ class ItemBuilder {
                                       .textTheme
                                       .labelSmall
                                       ?.apply(fontSizeDelta: 1))
-                              : Container(),
+                              : emptyWidget,
                         ],
                       ),
                     ),
@@ -415,7 +419,7 @@ class ItemBuilder {
                 ),
               ),
               ThemeColorData.isImmersive(context)
-                  ? MyGaps.empty
+                  ? Container()
                   : Container(
                       height: 0,
                       margin: const EdgeInsets.symmetric(horizontal: 10),
@@ -553,12 +557,12 @@ class ItemBuilder {
                                         color: descriptionColor,
                                       ),
                                 )
-                              : Container(),
+                              : emptyWidget,
                         ],
                       ),
                     ),
                     isCaption || tip.isEmpty
-                        ? MyGaps.empty
+                        ? Container()
                         : const SizedBox(width: 50),
                     Text(
                       tip,
@@ -581,7 +585,7 @@ class ItemBuilder {
                 ),
               ),
               ThemeColorData.isImmersive(context)
-                  ? MyGaps.empty
+                  ? Container()
                   : Container(
                       height: 0,
                       margin: EdgeInsets.symmetric(
@@ -859,6 +863,7 @@ class ItemBuilder {
     Widget? tailingWidget,
     Color? backgroundColor,
     TextInputType? keyboardType,
+    FocusNode? focusNode,
   }) {
     Widget? tailing;
     Function()? defaultTapFunction;
@@ -907,6 +912,7 @@ class ItemBuilder {
         children: [
           Expanded(
             child: TextField(
+              focusNode: focusNode,
               controller: controller,
               textInputAction: textInputAction,
               keyboardType: keyboardType,
@@ -914,11 +920,19 @@ class ItemBuilder {
               decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: hint,
-                contentPadding: const EdgeInsets.only(top: 13.0),
+                contentPadding: EdgeInsets.only(
+                    top: leadingIcon != null ? 13.0 : 0,
+                    left: leadingIcon != null ? 0 : 10),
                 hintStyle: Theme.of(context).textTheme.titleSmall,
-                prefixIcon:
-                    Icon(leadingIcon, color: Theme.of(context).iconTheme.color),
+                prefixIcon: leadingIcon != null
+                    ? Icon(leadingIcon,
+                        color: Theme.of(context).iconTheme.color)
+                    : null,
               ),
+              contextMenuBuilder: (contextMenuContext, details) =>
+                  ItemBuilder.editTextContextMenuBuilder(
+                      contextMenuContext, details,
+                      context: context),
             ),
           ),
           if (tailing != null)
@@ -1156,7 +1170,7 @@ class ItemBuilder {
                   count == 0 ? zeroPlaceHolder : text,
                   style: countStyle ?? Theme.of(context).textTheme.labelSmall,
                 )
-              : Container();
+              : emptyWidget;
         },
       ),
     );
@@ -1303,7 +1317,7 @@ class ItemBuilder {
                     style: countStyle ?? Theme.of(context).textTheme.labelSmall,
                   ),
                 )
-              : Container();
+              : emptyWidget;
         },
       ),
     );
@@ -1544,7 +1558,7 @@ class ItemBuilder {
     );
   }
 
-  static buildRoundButton(
+  static Widget buildRoundButton(
     BuildContext context, {
     String? text,
     Function()? onTap,
@@ -1564,11 +1578,11 @@ class ItemBuilder {
         onTap: onTap,
         borderRadius: BorderRadius.circular(radius),
         child: ItemBuilder.buildClickItem(
+          clickable: onTap != null,
           Container(
             width: width,
             padding: padding ??
                 const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: Colors.transparent,
               borderRadius: BorderRadius.circular(radius),
@@ -1822,6 +1836,10 @@ class ItemBuilder {
                   focusNode: focusNode,
                   controller: controller,
                   textInputAction: TextInputAction.search,
+                  contextMenuBuilder: (contextMenuContext, details) =>
+                      ItemBuilder.editTextContextMenuBuilder(
+                          contextMenuContext, details,
+                          context: context),
                   onSubmitted: onSubmitted,
                   style: Theme.of(context).textTheme.titleSmall,
                   decoration: InputDecoration(
@@ -1861,25 +1879,31 @@ class ItemBuilder {
       child: Row(
         children: [
           Expanded(
-            child: Card(
-              elevation: 0,
-              color: Colors.transparent,
-              child: TextField(
-                focusNode: focusNode,
-                controller: controller,
-                textInputAction: TextInputAction.search,
-                onSubmitted: onSubmitted,
-                style: Theme.of(context).textTheme.titleSmall?.apply(
-                      fontSizeDelta: hintFontSizeDelta,
-                    ),
-                decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.only(left: 8),
-                  border: const OutlineInputBorder(borderSide: BorderSide.none),
-                  hintText: hintText,
-                  hintStyle: Theme.of(context).textTheme.titleSmall?.apply(
-                        color: Theme.of(context).textTheme.labelSmall?.color,
+            child: Center(
+              child: Material(
+                color: Colors.transparent,
+                child: TextField(
+                  focusNode: focusNode,
+                  contextMenuBuilder: (contextMenuContext, details) =>
+                      ItemBuilder.editTextContextMenuBuilder(
+                          contextMenuContext, details,
+                          context: context),
+                  controller: controller,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: onSubmitted,
+                  style: Theme.of(context).textTheme.titleSmall?.apply(
                         fontSizeDelta: hintFontSizeDelta,
                       ),
+                  decoration: InputDecoration(
+                    contentPadding: const EdgeInsets.only(left: 8),
+                    border:
+                        const OutlineInputBorder(borderSide: BorderSide.none),
+                    hintText: hintText,
+                    hintStyle: Theme.of(context).textTheme.titleSmall?.apply(
+                          color: Theme.of(context).textTheme.labelSmall?.color,
+                          fontSizeDelta: hintFontSizeDelta,
+                        ),
+                  ),
                 ),
               ),
             ),
@@ -2564,7 +2588,7 @@ class ItemBuilder {
     required BuildContext context,
     required Widget child,
   }) {
-    return SelectionArea(
+    return MySelectionArea(
       contextMenuBuilder: (contextMenuContext, details) {
         Map<ContextMenuButtonType, String> typeToString = {
           ContextMenuButtonType.copy: "复制",
@@ -2578,29 +2602,64 @@ class ItemBuilder {
           ContextMenuButtonType.liveTextInput: "输入",
           ContextMenuButtonType.custom: "自定义",
         };
-        List<CupertinoTextSelectionToolbarButton> buttons = [];
+        List<MyContextMenuItem> items = [];
         for (var e in details.contextMenuButtonItems) {
           if (e.type != ContextMenuButtonType.custom) {
-            buttons.add(
-              CupertinoTextSelectionToolbarButton(
-                child: Text(
-                  typeToString[e.type]!,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+            items.add(
+              MyContextMenuItem(
+                label: typeToString[e.type] ?? "",
+                type: e.type,
                 onPressed: () {
                   e.onPressed?.call();
+                  if (e.type == ContextMenuButtonType.copy) {
+                    IToast.showTop("已复制到剪贴板");
+                  }
                 },
               ),
             );
           }
         }
-        return MyCupertinoTextSelectionToolbar(
-          anchorAbove: details.contextMenuAnchors.primaryAnchor,
-          anchorBelow: details.contextMenuAnchors.primaryAnchor,
-          backgroundColor: Theme.of(context).canvasColor,
-          dividerColor: Theme.of(context).dividerColor,
-          children: buttons,
-        );
+        if (Utils.isNotEmpty(details.selectedText)) {
+          items.add(
+            MyContextMenuItem(
+              label: "应用内搜索",
+              type: ContextMenuButtonType.custom,
+              onPressed: () {
+                if (Utils.isNotEmpty(details.selectedText)) {
+                  RouteUtil.pushCupertinoRoute(
+                    context,
+                    SearchResultScreen(
+                      searchKey: details.selectedText!,
+                    ),
+                  );
+                }
+                details.hideToolbar();
+              },
+            ),
+          );
+        }
+        if (ResponsiveUtil.isMobile()) {
+          return MyMobileTextSelectionToolbar.items(
+            anchorAbove: details.contextMenuAnchors.primaryAnchor,
+            anchorBelow: details.contextMenuAnchors.primaryAnchor,
+            backgroundColor: Theme.of(context).canvasColor,
+            dividerColor: Theme.of(context).dividerColor,
+            items: items,
+            itemBuilder: (MyContextMenuItem item) {
+              return Text(
+                item.label ?? "",
+                style: Theme.of(context).textTheme.titleMedium,
+              );
+            },
+          );
+        } else {
+          return MyDesktopTextSelectionToolbar(
+            anchor: details.contextMenuAnchors.primaryAnchor,
+            backgroundColor: Theme.of(context).canvasColor,
+            dividerColor: Theme.of(context).dividerColor,
+            items: items,
+          );
+        }
       },
       child: SelectionTransformer.separated(
         child: child,
@@ -2608,11 +2667,98 @@ class ItemBuilder {
     );
   }
 
+  static Widget editTextContextMenuBuilder(
+    contextMenuContext,
+    EditableTextState details, {
+    required BuildContext context,
+  }) {
+    Map<ContextMenuButtonType, String> typeToString = {
+      ContextMenuButtonType.copy: "复制",
+      ContextMenuButtonType.cut: "剪切",
+      ContextMenuButtonType.paste: "粘贴",
+      ContextMenuButtonType.selectAll: "全选",
+      ContextMenuButtonType.searchWeb: "选择",
+      ContextMenuButtonType.share: "分享",
+      ContextMenuButtonType.lookUp: "搜索",
+      ContextMenuButtonType.delete: "删除",
+      ContextMenuButtonType.liveTextInput: "输入",
+      ContextMenuButtonType.custom: "自定义",
+    };
+    List<MyContextMenuItem> items = [];
+    int start = details.textEditingValue.selection.start <= -1
+        ? 0
+        : details.textEditingValue.selection.start;
+    int end = details.textEditingValue.selection.end
+        .clamp(0, details.textEditingValue.text.length);
+    String selectedText = details.textEditingValue.text.substring(start, end);
+    for (var e in details.contextMenuButtonItems) {
+      if (e.type != ContextMenuButtonType.custom) {
+        items.add(
+          MyContextMenuItem(
+            label: typeToString[e.type] ?? "",
+            type: e.type,
+            onPressed: () {
+              e.onPressed?.call();
+              if (e.type == ContextMenuButtonType.copy) {
+                IToast.showTop("已复制到剪贴板");
+              }
+            },
+          ),
+        );
+      }
+    }
+    if (Utils.isNotEmpty(selectedText)) {
+      items.add(
+        MyContextMenuItem(
+          label: "应用内搜索",
+          type: ContextMenuButtonType.custom,
+          onPressed: () {
+            if (Utils.isNotEmpty(selectedText)) {
+              if (ResponsiveUtil.isLandscape()) {
+                RouteUtil.pushDesktopFadeRoute(
+                  SearchResultScreen(searchKey: selectedText),
+                );
+              } else {
+                RouteUtil.pushCupertinoRoute(
+                  context,
+                  SearchResultScreen(searchKey: selectedText),
+                );
+              }
+            }
+            details.hideToolbar();
+          },
+        ),
+      );
+    }
+    if (ResponsiveUtil.isMobile()) {
+      return MyMobileTextSelectionToolbar.items(
+        anchorAbove: details.contextMenuAnchors.primaryAnchor,
+        anchorBelow: details.contextMenuAnchors.primaryAnchor,
+        backgroundColor: Theme.of(contextMenuContext).canvasColor,
+        dividerColor: Theme.of(contextMenuContext).dividerColor,
+        items: items,
+        itemBuilder: (MyContextMenuItem item) {
+          return Text(
+            item.label ?? "",
+            style: Theme.of(contextMenuContext).textTheme.titleMedium,
+          );
+        },
+      );
+    } else {
+      return MyDesktopTextSelectionToolbar(
+        anchor: details.contextMenuAnchors.primaryAnchor,
+        backgroundColor: Theme.of(contextMenuContext).canvasColor,
+        dividerColor: Theme.of(contextMenuContext).dividerColor,
+        items: items,
+      );
+    }
+  }
+
   static buildHtmlWidget(
     BuildContext context,
     String content, {
     TextStyle? textStyle,
-    List<String>? imageUrls,
+    List<Illust>? illusts,
     bool enableImageDetail = true,
     bool parseImage = true,
     bool showLoading = true,
@@ -2654,32 +2800,34 @@ class ItemBuilder {
                 element.attributes['src'] ?? "",
                 HiveUtil.getImageQuality(HiveUtil.postDetailImageQualityKey));
             return enableImageDetail
-                ? GestureDetector(
-                    onTap: () {
-                      if (imageUrl.isNotEmpty) {
-                        RouteUtil.pushMaterialRoute(
-                          context,
-                          HeroPhotoViewScreen(
-                            imageUrls: imageUrls ?? [],
-                            useMainColor: true,
-                            initIndex: Utils.getIndexOfImage(
-                              imageUrl,
-                              imageUrls ?? [],
+                ? ItemBuilder.buildClickItem(
+                    GestureDetector(
+                      onTap: () {
+                        if (imageUrl.isNotEmpty) {
+                          RouteUtil.pushMaterialRoute(
+                            context,
+                            HeroPhotoViewScreen(
+                              imageUrls: illusts ?? [imageUrl],
+                              useMainColor: true,
+                              initIndex: Utils.getIndexOfImage(
+                                imageUrl,
+                                illusts ?? [],
+                              ),
+                              onDownloadSuccess: onDownloadSuccess,
                             ),
-                            onDownloadSuccess: onDownloadSuccess,
+                          );
+                        }
+                      },
+                      child: Hero(
+                        tag: Utils.getHeroTag(url: imageUrl),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: ItemBuilder.buildCachedImage(
+                            context: context,
+                            showLoading: false,
+                            imageUrl: imageUrl,
+                            fit: BoxFit.cover,
                           ),
-                        );
-                      }
-                    },
-                    child: Hero(
-                      tag: Utils.getHeroTag(url: imageUrl),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: ItemBuilder.buildCachedImage(
-                          context: context,
-                          showLoading: false,
-                          imageUrl: imageUrl,
-                          fit: BoxFit.cover,
                         ),
                       ),
                     ),
@@ -2969,7 +3117,19 @@ class ItemBuilder {
   }
 
   static Widget buildToolTip(
-      BuildContext context, String message, Widget child) {
+    BuildContext context,
+    String message,
+    Widget child,
+  ) {
+    // return SuperTooltip(
+    //   showBarrier: false,
+    //   borderWidth: 2,
+    //   toggleOnTap: true,
+    //   popupDirection: TooltipDirection.right,
+    //   borderColor: Theme.of(context).dividerColor,
+    //   content: Text(message),
+    //   child: child,
+    // );
     return Tooltip(
       message: message,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -3242,8 +3402,8 @@ class CustomImageFactory extends WidgetFactory {
     return CachedNetworkImage(
       imageUrl: url,
       fit: BoxFit.fill,
-      placeholder: (_, __) => Container(),
-      errorWidget: (_, __, ___) => Container(),
+      placeholder: (_, __) => emptyWidget,
+      errorWidget: (_, __, ___) => emptyWidget,
     );
   }
 }

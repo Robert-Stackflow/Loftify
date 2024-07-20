@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/login_api.dart';
-import 'package:loftify/Models/constant.dart';
-import 'package:loftify/Models/enums.dart';
 import 'package:loftify/Models/login_response.dart';
 import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
 import 'package:loftify/Screens/Login/login_by_lofterid_screen.dart';
+import 'package:loftify/Utils/constant.dart';
+import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Widgets/Custom/no_shadow_scroll_behavior.dart';
 
-import '../../Providers/provider_manager.dart';
+import '../../Utils/app_provider.dart';
 import '../../Utils/request_util.dart';
 import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
@@ -45,16 +45,16 @@ class _LoginByPasswordScreenState extends State<LoginByPasswordScreen>
     String mobile = _mobileController.text;
     String password = _passwordController.text;
     if (mobile.isEmpty || password.isEmpty) {
-      IToast.showTop( "手机号或密码不能为空");
+      IToast.showTop("手机号或密码不能为空");
       return;
     }
     LoginApi.loginByPassword(mobile, password).then((value) async {
       LoginResponse loginResponse = LoginResponse.fromJson(value);
       if (loginResponse.result != 0) {
-        IToast.showTop( loginResponse.desc);
+        IToast.showTop(loginResponse.desc);
       } else {
-        IToast.showTop( "登录成功");
-        ProviderManager.globalProvider.token = loginResponse.token ?? "";
+        IToast.showTop("登录成功");
+        appProvider.token = loginResponse.token ?? "";
         await RequestUtil.getInstance().clearCookie();
         await HiveUtil.put(
             key: HiveUtil.userIdKey, value: loginResponse.userid);

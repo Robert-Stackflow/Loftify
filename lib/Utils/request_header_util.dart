@@ -2,10 +2,10 @@ import 'dart:math';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/services.dart';
-import 'package:loftify/Models/enums.dart';
+import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/utils.dart';
 
-import '../Providers/provider_manager.dart';
+import 'app_provider.dart';
 import 'hive_util.dart';
 
 class RequestHeaderUtil {
@@ -34,7 +34,7 @@ class RequestHeaderUtil {
         HiveUtil.getInt(key: HiveUtil.tokenTypeKey, defaultValue: 0);
     tokenTypeIndex = max(tokenTypeIndex, 0);
     TokenType tokenType = TokenType.values[tokenTypeIndex];
-    String? token = ProviderManager.globalProvider.token;
+    String? token = appProvider.token;
     Map<String, dynamic> res = {};
     switch (tokenType) {
       case TokenType.captchCode:
@@ -61,9 +61,8 @@ class RequestHeaderUtil {
       "androidid": getAndroidId(),
       "x-reqid": getXReqId(),
     };
-    if (Utils.isNotEmpty(ProviderManager.globalProvider.captchaToken)) {
-      headers
-          .addAll({"capttoken": ProviderManager.globalProvider.captchaToken});
+    if (Utils.isNotEmpty(appProvider.captchaToken)) {
+      headers.addAll({"capttoken": appProvider.captchaToken});
     }
     Map<String, dynamic> authHeader = getAuthHeader();
     if (authHeader.isNotEmpty) {

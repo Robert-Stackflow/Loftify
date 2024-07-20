@@ -44,7 +44,7 @@ class UriUtil {
         Clipboard.setData(ClipboardData(text: email));
       }
     } on PlatformException catch (_) {
-      IToast.showTop( "尚未安装邮箱程序，已复制Email地址到剪贴板");
+      IToast.showTop("尚未安装邮箱程序，已复制Email地址到剪贴板");
     }
     return true;
   }
@@ -52,11 +52,11 @@ class UriUtil {
   static share(BuildContext context, String str) {
     Share.share(str).then((shareResult) {
       if (shareResult.status == ShareResultStatus.success) {
-        IToast.showTop( "分享成功");
+        IToast.showTop("分享成功");
       } else if (shareResult.status == ShareResultStatus.dismissed) {
-        IToast.showTop( "取消分享");
+        IToast.showTop("取消分享");
       } else {
-        IToast.showTop( "分享失败");
+        IToast.showTop("分享失败");
       }
     });
   }
@@ -246,16 +246,15 @@ class UriUtil {
     bool pass = true,
     bool quiet = false,
   }) async {
-    IPrint.debug(url);
     try {
-      if (!quiet) CustomLoadingDialog.showLoading(context, title: "加载中...");
+      if (!quiet) CustomLoadingDialog.showLoading(title: "加载中...");
       url = Uri.decodeComponent(url);
       if (UriUtil.isShortLinkUrl(url)) {
         url = (await UriUtil.getRedirectUrl(url))!.realUri.toString();
       }
       if (UriUtil.isMentionBlogIdUrl(url)) {
         String blogId = extractMentionBlogId(url);
-        if (!quiet) await CustomLoadingDialog.dismissLoading(context);
+        if (!quiet) await CustomLoadingDialog.dismissLoading();
         RouteUtil.pushCupertinoRoute(
           context,
           UserDetailScreen(
@@ -266,8 +265,7 @@ class UriUtil {
         return true;
       } else if (UriUtil.isPostUrl(url)) {
         Map<String, String> map = UriUtil.extractPostInfo(url);
-        IPrint.debug(map);
-        if (!quiet) await CustomLoadingDialog.dismissLoading(context);
+        if (!quiet) await CustomLoadingDialog.dismissLoading();
         RouteUtil.pushCupertinoRoute(
           context,
           PostDetailScreen(
@@ -278,12 +276,12 @@ class UriUtil {
         return true;
       } else if (UriUtil.isTagUrl(url)) {
         String tag = UriUtil.extractTagName(url);
-        if (!quiet) await CustomLoadingDialog.dismissLoading(context);
+        if (!quiet) await CustomLoadingDialog.dismissLoading();
         RouteUtil.pushCupertinoRoute(context, TagDetailScreen(tag: tag));
         return true;
       } else if (UriUtil.isCollectionShareUrl(url)) {
         Map collectionInfo = UriUtil.extractCollectionShareInfo(url);
-        if (!quiet) await CustomLoadingDialog.dismissLoading(context);
+        if (!quiet) await CustomLoadingDialog.dismissLoading();
         RouteUtil.pushCupertinoRoute(
           context,
           CollectionDetailScreen(
@@ -296,7 +294,7 @@ class UriUtil {
         return true;
       } else if (UriUtil.isGrainShareUrl(url)) {
         Map grainInfo = UriUtil.extractGrainShareInfo(url);
-        if (!quiet) await CustomLoadingDialog.dismissLoading(context);
+        if (!quiet) await CustomLoadingDialog.dismissLoading();
         RouteUtil.pushCupertinoRoute(
           context,
           GrainDetailScreen(
@@ -307,7 +305,7 @@ class UriUtil {
         return true;
       } else if (UriUtil.isHomePageUrl(url)) {
         String blogName = UriUtil.extractHomePageName(url);
-        if (!quiet) await CustomLoadingDialog.dismissLoading(context);
+        if (!quiet) await CustomLoadingDialog.dismissLoading();
         RouteUtil.pushCupertinoRoute(
           context,
           UserDetailScreen(
@@ -317,11 +315,11 @@ class UriUtil {
         );
         return true;
       } else if (isLiveUrl(url)) {
-        if (!quiet) await CustomLoadingDialog.dismissLoading(context);
-        IToast.showTop( "直播功能已下线");
+        if (!quiet) await CustomLoadingDialog.dismissLoading();
+        IToast.showTop("直播功能已下线");
         return false;
       } else {
-        if (!quiet) await CustomLoadingDialog.dismissLoading(context);
+        if (!quiet) await CustomLoadingDialog.dismissLoading();
         if (!quiet) {
           if (pass) {
             if (HiveUtil.getBool(
@@ -331,14 +329,14 @@ class UriUtil {
               UriUtil.openExternal(url);
             }
           } else {
-            IToast.showTop( "不支持的URI：$url");
+            IToast.showTop("不支持的URI：$url");
             IPrint.debug("不支持的URI：$url");
           }
         }
         return false;
       }
     } catch (e) {
-      if (!quiet) await CustomLoadingDialog.dismissLoading(context);
+      if (!quiet) await CustomLoadingDialog.dismissLoading();
       if (!quiet) Share.share(url);
       return false;
     }

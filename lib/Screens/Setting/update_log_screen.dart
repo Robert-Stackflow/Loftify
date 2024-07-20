@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:loftify/Utils/file_util.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
-import '../../Api/github_api.dart';
 import '../../Models/github_response.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
@@ -42,21 +40,27 @@ class _UpdateLogScreenState extends State<UpdateLogScreen>
   }
 
   Future<void> fetchReleases() async {
-    await GithubApi.getReleases("Robert-Stackflow", "Loftify")
-        .then((releases) async {
-      for (var release in releases) {
-        String tagName = release.tagName;
-        tagName = tagName.replaceAll(RegExp(r'[a-zA-Z]'), '');
+    await Utils.getReleases(
+      context: context,
+      showLoading: false,
+      showUpdateDialog: false,
+      showNoUpdateToast: false,
+      onGetCurrentVersion: (currentVersion) {
         setState(() {
-          if (latestVersion.compareTo(tagName) < 0) {
-            latestVersion = tagName;
-          }
+          this.currentVersion = currentVersion;
         });
-      }
-      setState(() {
-        releaseItems = releases;
-      });
-    });
+      },
+      onGetLatestRelease: (latestVersion, latestReleaseItem) {
+        setState(() {
+          this.latestVersion = latestVersion;
+        });
+      },
+      onGetReleases: (releases) {
+        setState(() {
+          releaseItems = releases;
+        });
+      },
+    );
   }
 
   @override
@@ -84,87 +88,68 @@ class _UpdateLogScreenState extends State<UpdateLogScreen>
   }
 
   _buildItem(ReleaseItem item) {
-    return GestureDetector(
-      onTap: () {
-        UriUtil.launchUrlUri(context, item.htmlUrl);
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        child: ItemBuilder.buildContainerItem(
-          topRadius: true,
-          bottomRadius: true,
-          context: context,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            width: double.infinity,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const SizedBox(width: 2),
-                    Text(
-                      item.tagName,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.apply(fontSizeDelta: 1),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ItemBuilder.buildContainerItem(
+        topRadius: true,
+        bottomRadius: true,
+        context: context,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          width: double.infinity,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(width: 2),
+                  Text(
+                    item.tagName,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.apply(fontSizeDelta: 1),
+                  ),
+                  const SizedBox(width: 6),
+                  if (item.tagName
+                          .replaceAll(RegExp(r'[a-zA-Z]'), '')
+                          .compareTo(currentVersion) ==
+                      0)
+                    ItemBuilder.buildRoundButton(
+                      context,
+                      text: "当前版本",
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 3, vertical: 2),
+                      radius: 3,
+                      color: Theme.of(context).primaryColor,
                     ),
-                    const SizedBox(width: 6),
-                    if (item.tagName
-                            .replaceAll(RegExp(r'[a-zA-Z]'), '')
-                            .compareTo(currentVersion) ==
-                        0)
-                      ItemBuilder.buildRoundButton(
-                        context,
-                        text: "当前版本",
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 3, vertical: 2),
-                        radius: 3,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    const Spacer(),
-                    // Icon(
-                    //   Icons.keyboard_arrow_right_rounded,
-                    //   size: 20,
-                    //   color: Theme.of(context).textTheme.labelMedium?.color,
-                    // ),
-                    ItemBuilder.buildIconButton(
-                      context: context,
-                      icon: Icon(
-                        Icons.download_rounded,
-                        size: 20,
-                        color: Theme.of(context).textTheme.labelMedium?.color,
-                      ),
-                      onTap: () {
-                        FileUtil.downloadAndUpdate(
-                          context,
-                          item.assets.isNotEmpty
-                              ? item.assets[0].browserDownloadUrl
-                              : "",
-                          item.htmlUrl,
-                          version:
-                              item.tagName.replaceAll(RegExp(r'[a-zA-Z]'), ''),
-                          isUpdate: false,
-                        );
-                      },
+                  const Spacer(),
+                  ItemBuilder.buildIconButton(
+                    context: context,
+                    icon: Icon(
+                      Icons.keyboard_arrow_right_rounded,
+                      size: 20,
+                      color: Theme.of(context).textTheme.labelMedium?.color,
                     ),
-                  ],
-                ),
-                ItemBuilder.buildDivider(context, horizontal: 0, vertical: 5),
-                const SizedBox(height: 9),
-                ItemBuilder.buildHtmlWidget(
-                  context,
-                  Utils.replaceLineBreak(item.body ?? ""),
-                  textStyle: Theme.of(context).textTheme.titleMedium?.apply(
-                        fontSizeDelta: 1,
-                        color: Theme.of(context).textTheme.bodySmall?.color,
-                      ),
-                ),
-                const SizedBox(height: 5),
-              ],
-            ),
+                    onTap: () {
+                      UriUtil.launchUrlUri(context, item.htmlUrl);
+                    },
+                  ),
+                ],
+              ),
+              ItemBuilder.buildDivider(context, horizontal: 0, vertical: 5),
+              const SizedBox(height: 9),
+              ItemBuilder.buildHtmlWidget(
+                context,
+                Utils.replaceLineBreak(item.body ?? ""),
+                textStyle: Theme.of(context).textTheme.titleMedium?.apply(
+                      fontSizeDelta: 1,
+                      color: Theme.of(context).textTheme.bodySmall?.color,
+                    ),
+              ),
+              const SizedBox(height: 5),
+            ],
           ),
         ),
       ),

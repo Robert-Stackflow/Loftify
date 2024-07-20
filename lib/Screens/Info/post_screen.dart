@@ -9,8 +9,8 @@ import 'package:loftify/Utils/hive_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Api/post_api.dart';
-import '../../Models/enums.dart';
 import '../../Models/post_detail_response.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/itoast.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
@@ -177,7 +177,7 @@ class _PostScreenState extends State<PostScreen>
     super.build(context);
     return Scaffold(
       backgroundColor: widget.infoMode == InfoMode.me
-          ? AppTheme.getBackground(context)
+          ? MyTheme.getBackground(context)
           : Colors.transparent,
       appBar: widget.infoMode == InfoMode.me ? _buildAppBar() : null,
       body: EasyRefresh.builder(
@@ -305,7 +305,7 @@ class _PostScreenState extends State<PostScreen>
     return ItemBuilder.buildAppBar(
       context: context,
       leading: Icons.arrow_back_rounded,
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       onLeadingTap: () {
         Navigator.pop(context);
       },

@@ -3,12 +3,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Models/account_response.dart';
-import 'package:loftify/Models/enums.dart';
 import 'package:loftify/Resources/theme_color_data.dart';
+import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/utils.dart';
 
 import '../Models/nav_entry.dart';
-import '../Providers/global_provider.dart';
 
 class HiveUtil {
   //Database
@@ -66,6 +65,7 @@ class HiveUtil {
   //image
   static const String followMainColorKey = "followMainColor";
   static const String savePathKey = "savePaths";
+  static const String filenameFormatKey = "filenameFormat";
   static const String waterfallFlowImageQualityKey =
       "waterfallFlowImageQuality";
   static const String postDetailImageQualityKey = "postDetailImageQuality";

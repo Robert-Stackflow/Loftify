@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 
 import '../../Resources/theme.dart';
@@ -29,8 +30,12 @@ class StarBottomSheetState extends State<StarBottomSheet> {
       children: [
         Container(
           decoration: BoxDecoration(
-            color: AppTheme.getBackground(context),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+            color: MyTheme.getBackground(context),
+            borderRadius: BorderRadius.vertical(
+                top: const Radius.circular(20),
+                bottom: ResponsiveUtil.isLandscape()
+                    ? const Radius.circular(20)
+                    : Radius.zero),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,

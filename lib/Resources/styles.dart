@@ -1,46 +1,14 @@
 import 'package:flutter/material.dart';
 
 import 'colors.dart';
-import 'dimens.dart';
 
 class MyStyles {
-  static const TextStyle textSize12 = TextStyle(
-    fontSize: MyDimens.font_sp12,
-  );
-  static const TextStyle textSize16 = TextStyle(
-    fontSize: MyDimens.font_sp16,
-  );
-  static const TextStyle textBold14 =
-      TextStyle(fontSize: MyDimens.font_sp14, fontWeight: FontWeight.bold);
-  static const TextStyle textBold16 =
-      TextStyle(fontSize: MyDimens.font_sp16, fontWeight: FontWeight.bold);
-  static const TextStyle textBold18 =
-      TextStyle(fontSize: MyDimens.font_sp18, fontWeight: FontWeight.bold);
-  static const TextStyle textBold24 =
-      TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold);
-  static const TextStyle textBold26 =
-      TextStyle(fontSize: 26.0, fontWeight: FontWeight.bold);
-
-  static const TextStyle textGray14 = TextStyle(
-    fontSize: MyDimens.font_sp14,
-    color: MyColors.textGrayColor,
-  );
-  static const TextStyle textDarkGray14 = TextStyle(
-    fontSize: MyDimens.font_sp14,
-    color: MyColors.textGrayColorDark,
-  );
-
-  static const TextStyle textWhite14 = TextStyle(
-    fontSize: MyDimens.font_sp14,
-    color: Colors.white,
-  );
-
   static const TextStyle text = TextStyle(
-      fontSize: MyDimens.font_sp14,
+      fontSize: 14,
       color: MyColors.textColor,
       textBaseline: TextBaseline.alphabetic);
   static const TextStyle textDark = TextStyle(
-      fontSize: MyDimens.font_sp14,
+      fontSize: 14,
       color: MyColors.textColorDark,
       textBaseline: TextBaseline.alphabetic);
 

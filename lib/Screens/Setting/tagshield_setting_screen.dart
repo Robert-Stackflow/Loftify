@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:loftify/Api/setting_api.dart';
 import 'package:loftify/Widgets/BottomSheet/input_bottom_sheet.dart';
 import 'package:loftify/Widgets/Dialog/custom_dialog.dart';
-import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
 import '../../Resources/theme.dart';
 import '../../Utils/itoast.dart';
+import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/Dialog/dialog_builder.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
@@ -33,7 +33,7 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
       try {
         if (value == null) return IndicatorResult.fail;
         if (value['meta']['status'] != 200) {
-          IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
+          IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
           return IndicatorResult.fail;
         } else {
           tags = (value['response']['list'] as List)
@@ -42,7 +42,7 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
           return IndicatorResult.success;
         }
       } catch (_) {
-        IToast.showTop( "屏蔽标签加载失败");
+        IToast.showTop("屏蔽标签加载失败");
         return IndicatorResult.fail;
       } finally {
         loading = false;
@@ -54,10 +54,10 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       appBar: ItemBuilder.buildAppBar(
         leading: Icons.arrow_back_rounded,
-        backgroundColor: AppTheme.getBackground(context),
+        backgroundColor: MyTheme.getBackground(context),
         onLeadingTap: () {
           Navigator.pop(context);
         },
@@ -70,22 +70,17 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
             icon: Icon(Icons.add_rounded,
                 color: Theme.of(context).iconTheme.color),
             onTap: () {
-              showMaterialModalBottomSheet(
-                context: context,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
-                  ),
-                ),
-                builder: (sheetContext) => InputBottomSheet(
+              BottomSheetBuilder.showBottomSheet(
+                context,
+                (sheetContext) => InputBottomSheet(
                   buttonText: "确认",
                   title: "添加屏蔽标签",
                   text: "",
                   onConfirm: (text) {
                     SettingApi.shieldOrUnshieldTag(tag: text, isShield: true)
                         .then((value) {
-                      IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
+                      IToast.showTop(
+                          value['meta']['desc'] ?? value['meta']['msg']);
                       if (value['meta']['status'] == 200) {
                         tags.insert(0, text);
                         setState(() {});
@@ -93,6 +88,8 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
                     });
                   },
                 ),
+                preferMinWidth: 300,
+                responsive: true,
               );
             },
           ),
@@ -146,7 +143,8 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
                 onTapConfirm: () {
                   SettingApi.shieldOrUnshieldTag(tag: tag, isShield: false)
                       .then((value) {
-                    IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
+                    IToast.showTop(
+                        value['meta']['desc'] ?? value['meta']['msg']);
                     if (value['meta']['status'] == 200) {
                       tags.remove(tag);
                       setState(() {});

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:loftify/Providers/provider_manager.dart';
+import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Screens/Setting/apperance_setting_screen.dart';
 import 'package:loftify/Screens/Setting/blacklist_setting_screen.dart';
 import 'package:loftify/Screens/Setting/general_setting_screen.dart';
@@ -102,13 +102,10 @@ class _SettingScreenState extends State<SettingScreen>
                 },
                 leading: Icons.flag_outlined,
               ),
-              if (ProviderManager.globalProvider.token.isEmpty)
-                const SizedBox(height: 10),
-              if (ProviderManager.globalProvider.token.isEmpty) _buildAbout(),
-              if (ProviderManager.globalProvider.token.isNotEmpty)
-                ..._buildLofter(),
-              if (ProviderManager.globalProvider.token.isNotEmpty)
-                ..._buildLogout(),
+              if (appProvider.token.isEmpty) const SizedBox(height: 10),
+              if (appProvider.token.isEmpty) _buildAbout(),
+              if (appProvider.token.isNotEmpty) ..._buildLofter(),
+              if (appProvider.token.isNotEmpty) ..._buildLogout(),
               const SizedBox(height: 20),
             ],
           ),
@@ -199,13 +196,13 @@ class _SettingScreenState extends State<SettingScreen>
             confirmButtonText: S.current.confirm,
             cancelButtonText: S.current.cancel,
             onTapConfirm: () async {
-              ProviderManager.globalProvider.token = "";
+              appProvider.token = "";
               await HiveUtil.delete(key: HiveUtil.userIdKey);
               await HiveUtil.delete(key: HiveUtil.tokenKey);
               await HiveUtil.delete(key: HiveUtil.deviceIdKey);
               await RequestUtil.getInstance().clearCookie();
               HiveUtil.delete(key: HiveUtil.tokenTypeKey).then((value) {
-                IToast.showTop( "退出成功");
+                IToast.showTop("退出成功");
                 ResponsiveUtil.returnToMainScreen(context);
               });
             },

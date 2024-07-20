@@ -5,21 +5,21 @@ import 'package:flutter/services.dart';
 import 'package:loftify/Api/collection_api.dart';
 import 'package:loftify/Api/grain_api.dart';
 import 'package:loftify/Models/dynamic_response.dart';
-import 'package:loftify/Models/enums.dart';
 import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Screens/Post/collection_detail_screen.dart';
 import 'package:loftify/Screens/Post/grain_detail_screen.dart';
 import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Screens/Post/tag_detail_screen.dart';
 import 'package:loftify/Utils/asset_util.dart';
-import 'package:loftify/Utils/iprint.dart';
+import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/route_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Api/tag_api.dart';
-import '../../Providers/provider_manager.dart';
+import '../../Utils/app_provider.dart';
 import '../../Resources/colors.dart';
 import '../../Resources/theme.dart';
+import '../../Utils/constant.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/responsive_util.dart';
 import '../../Utils/utils.dart';
@@ -50,7 +50,7 @@ class DynamicScreenState extends State<DynamicScreen>
   final GlobalKey _grainTabKey = GlobalKey();
 
   void scrollToTopAndRefresh() {
-    if (ProviderManager.globalProvider.token.isEmpty) return;
+    if (appProvider.token.isEmpty) return;
     int nowTime = DateTime.now().millisecondsSinceEpoch;
     if (lastRefreshTime == 0 || (nowTime - lastRefreshTime) > krefreshTimeout) {
       lastRefreshTime = nowTime;
@@ -85,15 +85,15 @@ class DynamicScreenState extends State<DynamicScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: AppTheme.getBackground(context),
-      appBar: ProviderManager.globalProvider.token.isNotEmpty
+      backgroundColor: MyTheme.getBackground(context),
+      appBar: appProvider.token.isNotEmpty
           ? _buildAppBar()
           : ResponsiveUtil.isDesktop()
               ? null
               : ItemBuilder.buildAppBar(
                   context: context,
-                  backgroundColor: AppTheme.getBackground(context)),
-      body: ProviderManager.globalProvider.token.isNotEmpty
+                  backgroundColor: MyTheme.getBackground(context)),
+      body: appProvider.token.isNotEmpty
           ? TabBarView(
               controller: _tabController,
               children: [
@@ -120,7 +120,7 @@ class DynamicScreenState extends State<DynamicScreen>
 
   PreferredSizeWidget _buildAppBar() {
     return ItemBuilder.buildAppBar(
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       context: context,
       title: TabBar(
         padding: EdgeInsets.zero,
@@ -312,7 +312,8 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
         scrollDirection: Axis.horizontal,
         itemCount: _recentVisitList.length,
         itemBuilder: (context, index) {
-          return ItemBuilder.buildClickItem(_buildRecentVisitTagItem(_recentVisitList[index]));
+          return ItemBuilder.buildClickItem(
+              _buildRecentVisitTagItem(_recentVisitList[index]));
         },
       ),
     );
@@ -379,7 +380,8 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
       mainAxisSpacing: 12,
       crossAxisSpacing: 6,
       children: List.generate(_subscribeList.length, (int index) {
-        return ItemBuilder.buildClickItem(_buildSubscribeTagItem(_subscribeList[index]));
+        return ItemBuilder.buildClickItem(
+            _buildSubscribeTagItem(_subscribeList[index]));
       }),
     );
   }
@@ -707,7 +709,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
         ),
       );
     }
-    return Container();
+    return emptyWidget;
   }
 }
 
@@ -894,7 +896,8 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
     return SliverWaterfallFlow.extent(
       maxCrossAxisExtent: 560,
       children: List.generate(_subscribeList.length, (index) {
-        return ItemBuilder.buildClickItem(_buildSubscribeCollectionItem(_subscribeList[index]));
+        return ItemBuilder.buildClickItem(
+            _buildSubscribeCollectionItem(_subscribeList[index]));
       }),
     );
   }
@@ -1047,7 +1050,8 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
     return SliverWaterfallFlow.extent(
       maxCrossAxisExtent: 560,
       children: List.generate(_guessLikeList.length, (index) {
-        return ItemBuilder.buildClickItem(_buildGuessLikeCollectionItem(_guessLikeList[index]));
+        return ItemBuilder.buildClickItem(
+            _buildGuessLikeCollectionItem(_guessLikeList[index]));
       }),
     );
   }
@@ -1355,7 +1359,8 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
     return SliverWaterfallFlow.extent(
       maxCrossAxisExtent: 560,
       children: List.generate(_subscribeList.length, (index) {
-        return ItemBuilder.buildClickItem(_buildSubscribeGrainItem(_subscribeList[index]));
+        return ItemBuilder.buildClickItem(
+            _buildSubscribeGrainItem(_subscribeList[index]));
       }),
     );
   }

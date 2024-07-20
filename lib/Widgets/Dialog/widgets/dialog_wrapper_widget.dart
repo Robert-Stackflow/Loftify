@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 
 import '../../../Utils/route_util.dart';
+import '../../../Utils/utils.dart';
 
 GlobalKey<NavigatorState> dialogNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -31,11 +32,25 @@ class DialogWrapperWidget extends StatelessWidget {
         width > preferWidth ? (width - preferWidth) / 2 : 0;
     double preferVerticalMargin =
         height > preferHeight ? (height - preferHeight) / 2 : 0;
+    preferHorizontalMargin = max(preferHorizontalMargin, 20);
+    preferVerticalMargin = max(preferVerticalMargin, 20);
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.symmetric(
             horizontal: preferHorizontalMargin, vertical: preferVerticalMargin),
         child: Container(
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: Utils.isDark(context)
+                    ? Theme.of(context).shadowColor
+                    : Colors.grey.shade400,
+                offset: const Offset(0, 4),
+                blurRadius: 10,
+                spreadRadius: 0,
+              ).scale(4)
+            ],
+          ),
           padding: const EdgeInsets.symmetric(horizontal: 10),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),

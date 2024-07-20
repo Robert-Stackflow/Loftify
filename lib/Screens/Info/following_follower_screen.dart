@@ -7,8 +7,9 @@ import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
-import '../../Models/enums.dart';
 import '../../Models/user_response.dart';
+import '../../Utils/constant.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/itoast.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
@@ -73,7 +74,7 @@ class _FollowingFollowerScreenState extends State<FollowingFollowerScreen>
   _processResult(value, {bool refresh = false}) {
     try {
       if (value['meta']['status'] != 200) {
-IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
         return IndicatorResult.fail;
       } else {
         List<dynamic> t = value['response'];
@@ -99,7 +100,7 @@ IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
         }
       }
     } catch (e) {
-      if (mounted) IToast.showTop( "加载失败");
+      if (mounted) IToast.showTop("加载失败");
       return IndicatorResult.fail;
     } finally {
       if (mounted) setState(() {});
@@ -148,7 +149,7 @@ IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       appBar: _buildAppBar(),
       body: EasyRefresh.builder(
         refreshOnStart: true,
@@ -182,7 +183,7 @@ IToast.showTop( value['meta']['desc'] ?? value['meta']['msg']);
     return ItemBuilder.buildAppBar(
       context: context,
       leading: Icons.arrow_back_rounded,
-      backgroundColor: AppTheme.getBackground(context),
+      backgroundColor: MyTheme.getBackground(context),
       onLeadingTap: () {
         Navigator.pop(context);
       },

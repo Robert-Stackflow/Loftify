@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/widgets.dart';
 import 'package:window_manager/window_manager.dart';
 
+import '../../Utils/constant.dart';
 import '../../Utils/responsive_util.dart';
 
 class _MoveWindow extends StatelessWidget {
@@ -18,7 +19,7 @@ class _MoveWindow extends StatelessWidget {
           windowManager.startDragging();
         },
         onDoubleTap: onDoubleTap ?? () => ResponsiveUtil.maximizeOrRestore(),
-        child: child ?? Container());
+        child: child ?? emptyWidget);
   }
 }
 
@@ -58,7 +59,7 @@ class WindowTitleBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (kIsWeb) {
-      return Container();
+      return emptyWidget;
     }
     const titlebarHeight = 30;
     return SizedBox(
@@ -68,7 +69,7 @@ class WindowTitleBar extends StatelessWidget {
           if (useMoveHandle) const WindowMoveHandle(),
           Container(
             margin: margin,
-            child: child ?? Container(),
+            child: child ?? emptyWidget,
           ),
         ],
       ),
