@@ -19,12 +19,12 @@ import '../../Models/Illust.dart';
 import '../../Models/collection_response.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Models/user_response.dart';
-import '../../Utils/app_provider.dart';
 import '../../Resources/colors.dart';
 import '../../Screens/Info/user_detail_screen.dart';
 import '../../Screens/Login/login_by_captcha_screen.dart';
 import '../../Screens/Post/search_result_screen.dart';
 import '../../Screens/Post/tag_detail_screen.dart';
+import '../../Utils/app_provider.dart';
 import '../../Utils/asset_util.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/enums.dart';
@@ -320,6 +320,7 @@ class ItemBuilder {
     double trailingLeftMargin = 5,
     double padding = 15,
     required BuildContext context,
+    bool disabled = false,
   }) {
     assert(padding > 5);
     return Material(
@@ -405,14 +406,19 @@ class ItemBuilder {
                       ),
                     ),
                     SizedBox(width: trailingLeftMargin),
-                    Transform.scale(
-                      scale: 0.9,
-                      child: Switch(
-                        value: value,
-                        onChanged: (_) {
-                          HapticFeedback.lightImpact();
-                          if (onTap != null) onTap();
-                        },
+                    Opacity(
+                      opacity: disabled ? 0.2 : 1,
+                      child: Transform.scale(
+                        scale: 0.9,
+                        child: Switch(
+                          value: value,
+                          onChanged: disabled
+                              ? null
+                              : (_) {
+                                  HapticFeedback.lightImpact();
+                                  if (onTap != null) onTap();
+                                },
+                        ),
                       ),
                     ),
                   ],
@@ -1615,6 +1621,59 @@ class ItemBuilder {
     );
   }
 
+  static Widget buildFramedButton(
+    BuildContext context, {
+    String? text,
+    Function()? onTap,
+    Color? outline,
+    Icon? icon,
+    EdgeInsets? padding,
+    double radius = 50,
+    Color? color,
+    double fontSizeDelta = 0,
+    TextStyle? textStyle,
+    double? width,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(radius),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(radius),
+        child: ItemBuilder.buildClickItem(
+          clickable: onTap != null,
+          Container(
+            width: width,
+            padding: padding ??
+                const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              border: Border.all(
+                  color: outline ?? Theme.of(context).primaryColor, width: 1),
+              borderRadius: BorderRadius.circular(radius),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (icon != null) icon,
+                Text(
+                  text ?? "",
+                  style: textStyle ??
+                      Theme.of(context).textTheme.titleSmall?.apply(
+                            color: color ?? Theme.of(context).primaryColor,
+                            fontWeightDelta: 2,
+                            fontSizeDelta: fontSizeDelta,
+                          ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   static buildUnLoginMainBody(BuildContext context) {
     return Align(
       alignment: Alignment.topCenter,
@@ -1656,7 +1715,7 @@ class ItemBuilder {
     );
   }
 
-  static Widget buildFramedButton({
+  static Widget buildFramedDoubleButton({
     required BuildContext context,
     required bool isFollowed,
     required Function() onTap,
@@ -3351,7 +3410,7 @@ class ItemBuilder {
                     color: MyColors.getHotTagTextColor(context),
                   ),
                 ),
-              ItemBuilder.buildFramedButton(
+              ItemBuilder.buildFramedDoubleButton(
                 context: context,
                 isFollowed: item.following,
                 positiveText: item.follower ? "相互关注" : "已关注",

@@ -56,11 +56,9 @@ class _LoginByLofterIDScreenState extends State<LoginByLofterIDScreen>
         IToast.showTop("登录成功");
         appProvider.token = loginResponse.token ?? "";
         await RequestUtil.getInstance().clearCookie();
-        await HiveUtil.put(
-            key: HiveUtil.userIdKey, value: loginResponse.userId);
-        await HiveUtil.put(key: HiveUtil.tokenKey, value: loginResponse.token);
-        await HiveUtil.put(
-            key: HiveUtil.tokenTypeKey, value: TokenType.lofterID.index);
+        await HiveUtil.put(HiveUtil.userIdKey, loginResponse.userId);
+        await HiveUtil.put(HiveUtil.tokenKey, loginResponse.token);
+        await HiveUtil.put(HiveUtil.tokenTypeKey, TokenType.lofterID.index);
         ResponsiveUtil.returnToMainScreen(context);
       }
     });

@@ -35,10 +35,9 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
       HiveUtil.getImageQuality(HiveUtil.tapLinkButtonImageQualityKey);
   ImageQuality longPressLinkButtonImageQuality =
       HiveUtil.getImageQuality(HiveUtil.longPressLinkButtonImageQualityKey);
-  bool followMainColor = HiveUtil.getBool(key: HiveUtil.followMainColorKey);
-  String? savePath = HiveUtil.getString(key: HiveUtil.savePathKey);
-  String _filenameFormat = HiveUtil.getString(
-          key: HiveUtil.filenameFormatKey,
+  bool followMainColor = HiveUtil.getBool(HiveUtil.followMainColorKey);
+  String? savePath = HiveUtil.getString(HiveUtil.savePathKey);
+  String _filenameFormat = HiveUtil.getString(HiveUtil.filenameFormatKey,
           defaultValue: defaultFilenameFormat) ??
       defaultFilenameFormat;
 
@@ -97,9 +96,8 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
                     onSelected: (quality) {
                       setState(() {
                         waterfallFlowImageQuality = quality;
-                        HiveUtil.put(
-                            key: HiveUtil.waterfallFlowImageQualityKey,
-                            value: quality.index);
+                        HiveUtil.put(HiveUtil.waterfallFlowImageQualityKey,
+                            quality.index);
                       });
                     },
                     selected: waterfallFlowImageQuality,
@@ -118,8 +116,7 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
                       setState(() {
                         postDetailImageQuality = quality;
                         HiveUtil.put(
-                            key: HiveUtil.postDetailImageQualityKey,
-                            value: quality.index);
+                            HiveUtil.postDetailImageQualityKey, quality.index);
                       });
                     },
                     selected: postDetailImageQuality,
@@ -139,8 +136,7 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
                       setState(() {
                         imageDetailImageQuality = quality;
                         HiveUtil.put(
-                            key: HiveUtil.imageDetailImageQualityKey,
-                            value: quality.index);
+                            HiveUtil.imageDetailImageQualityKey, quality.index);
                       });
                     },
                     selected: imageDetailImageQuality,
@@ -158,8 +154,8 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
                   setState(() {
                     followMainColor = !followMainColor;
                     HiveUtil.put(
-                      key: HiveUtil.followMainColorKey,
-                      value: followMainColor,
+                      HiveUtil.followMainColorKey,
+                      followMainColor,
                     );
                   });
                 },
@@ -175,9 +171,8 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
                     onSelected: (quality) {
                       setState(() {
                         tapLinkButtonImageQuality = quality;
-                        HiveUtil.put(
-                            key: HiveUtil.tapLinkButtonImageQualityKey,
-                            value: quality.index);
+                        HiveUtil.put(HiveUtil.tapLinkButtonImageQualityKey,
+                            quality.index);
                       });
                     },
                     selected: tapLinkButtonImageQuality,
@@ -198,8 +193,8 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
                       setState(() {
                         longPressLinkButtonImageQuality = quality;
                         HiveUtil.put(
-                            key: HiveUtil.longPressLinkButtonImageQualityKey,
-                            value: quality.index);
+                            HiveUtil.longPressLinkButtonImageQualityKey,
+                            quality.index);
                       });
                     },
                     selected: longPressLinkButtonImageQuality,
@@ -223,8 +218,7 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
                   if (selectedDirectory != null) {
                     setState(() {
                       savePath = selectedDirectory;
-                      HiveUtil.put(
-                          key: HiveUtil.savePathKey, value: selectedDirectory);
+                      HiveUtil.put(HiveUtil.savePathKey, selectedDirectory);
                     });
                   }
                 },

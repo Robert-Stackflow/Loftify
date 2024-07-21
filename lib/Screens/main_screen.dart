@@ -25,7 +25,6 @@ import '../Api/user_api.dart';
 import '../Models/account_response.dart';
 import '../Resources/fonts.dart';
 import '../Utils/app_provider.dart';
-import '../Utils/constant.dart';
 import '../Utils/enums.dart';
 import '../Utils/hive_util.dart';
 import '../Utils/iprint.dart';
@@ -83,8 +82,35 @@ class MainScreenState extends State<MainScreen>
   bool clearNavSelectState = false;
   bool _isMaximized = false;
   bool _isStayOnTop = false;
+  bool _hasJumpedToPinVerify = false;
   late Navigator navigator;
   late PageView pageView;
+
+  @override
+  void onWindowMinimize() {
+    setTimer();
+    super.onWindowMinimize();
+  }
+
+  @override
+  void onWindowRestore() {
+    super.onWindowRestore();
+    cancleTimer();
+  }
+
+  @override
+  void onWindowFocus() {
+    cancleTimer();
+    super.onWindowFocus();
+  }
+
+  @override
+  void onWindowEvent(String eventName) {
+    super.onWindowEvent(eventName);
+    if (eventName == "hide") {
+      setTimer();
+    }
+  }
 
   @override
   void onWindowMaximize() {
@@ -137,7 +163,7 @@ class MainScreenState extends State<MainScreen>
   }
 
   Future<void> fetchReleases() async {
-    if (HiveUtil.getBool(key: HiveUtil.autoCheckUpdateKey)) {
+    if (HiveUtil.getBool(HiveUtil.autoCheckUpdateKey)) {
       Utils.getReleases(
         context: context,
         showLoading: false,
@@ -157,11 +183,11 @@ class MainScreenState extends State<MainScreen>
     FontEnum.downloadFont(showToast: false);
     if (ResponsiveUtil.isLandscape()) _fetchUserInfo();
     if (ResponsiveUtil.isDesktop()) initHotKey();
-    if (HiveUtil.getBool(key: HiveUtil.autoCheckUpdateKey)) fetchReleases();
+    if (HiveUtil.getBool(HiveUtil.autoCheckUpdateKey)) fetchReleases();
     darkModeController = AnimationController(vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      goLogin();
-      goPinVerify();
+      jumpToLogin();
+      jumpToPinVerify(autoAuth: true);
       darkModeWidget = LottieUtil.load(
         LottieUtil.sunLight,
         size: 25,
@@ -174,14 +200,14 @@ class MainScreenState extends State<MainScreen>
     appProvider.addListener(() {
       if (mounted) {
         setState(() {
-          clearNavSelectState = appProvider.desktopCanpop;
+          clearNavSelectState = appProvider.canPopByProvider;
         });
       }
     });
     navigator = Navigator(
       key: desktopNavigatorKey,
       onGenerateRoute: (settings) {
-        return RouteUtil.getFadeRoute(emptyWidget);
+        return RouteUtil.getFadeRoute(_pageList[0]);
       },
     );
     pageView = PageView(
@@ -192,12 +218,14 @@ class MainScreenState extends State<MainScreen>
   }
 
   initGlobalConfig() {
-    windowManager
-        .isAlwaysOnTop()
-        .then((value) => setState(() => _isStayOnTop = value));
-    windowManager
-        .isMaximized()
-        .then((value) => setState(() => _isMaximized = value));
+    if (ResponsiveUtil.isDesktop()) {
+      windowManager
+          .isAlwaysOnTop()
+          .then((value) => setState(() => _isStayOnTop = value));
+      windowManager
+          .isMaximized()
+          .then((value) => setState(() => _isMaximized = value));
+    }
     ResponsiveUtil.checkSizeCondition();
     EasyRefresh.defaultHeaderBuilder = () => LottieCupertinoHeader(
           backgroundColor: Theme.of(context).canvasColor,
@@ -209,8 +237,7 @@ class MainScreenState extends State<MainScreen>
           indicator: LottieUtil.load(LottieUtil.getLoadingPath(context)),
         );
     if (ResponsiveUtil.isMobile()) {
-      if (HiveUtil.getBool(
-          key: HiveUtil.enableSafeModeKey, defaultValue: false)) {
+      if (HiveUtil.getBool(HiveUtil.enableSafeModeKey, defaultValue: false)) {
         FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
       } else {
         FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
@@ -255,9 +282,10 @@ class MainScreenState extends State<MainScreen>
   }
 
   void onBottomNavigationBarItemTap(int index) {
-    bool canRefresh = (ResponsiveUtil.isMobile()) ||
-        (ResponsiveUtil.isLandscape() && appProvider.desktopCanpop == false);
-    if (canRefresh && _bottomBarSelectedIndex == index) {
+    bool canRefresh = (ResponsiveUtil.isMobile() ||
+            (ResponsiveUtil.isLandscape() && !canPopByKey)) &&
+        _bottomBarSelectedIndex == index;
+    if (canRefresh) {
       var page = _pageList[index];
       var currentState = _keyList[index].currentState;
       if (page is HomeScreen && currentState != null) {
@@ -267,8 +295,10 @@ class MainScreenState extends State<MainScreen>
       }
     }
     if (ResponsiveUtil.isLandscape()) {
-      appProvider.desktopCanpop = false;
-      _pageController.jumpToPage(index);
+      appProvider.canPopByProvider = false;
+      if (!canRefresh) {
+        RouteUtil.pushDesktopFadeRoute(_pageList[index], removeUtil: true);
+      }
     } else {
       _pageController.jumpToPage(index);
     }
@@ -277,33 +307,32 @@ class MainScreenState extends State<MainScreen>
     });
   }
 
-  void goLogin() {
+  void jumpToLogin() {
     if (HiveUtil.isFirstLogin() &&
-        HiveUtil.getString(key: HiveUtil.tokenKey, defaultValue: null) ==
-            null) {
+        HiveUtil.getString(HiveUtil.tokenKey, defaultValue: null) == null) {
       HiveUtil.initConfig();
       HiveUtil.setFirstLogin();
       if (ResponsiveUtil.isLandscape()) {
         DialogBuilder.showPageDialog(context,
             child: const LoginByCaptchaScreen());
       } else {
-        RouteUtil.pushCupertinoRoute(
-          context,
-          const LoginByCaptchaScreen(),
-        );
+        RouteUtil.pushCupertinoRoute(context, const LoginByCaptchaScreen());
       }
     }
   }
 
-  void goPinVerify() {
+  void jumpToPinVerify({bool autoAuth = false}) {
     if (HiveUtil.shouldAutoLock()) {
+      _hasJumpedToPinVerify = true;
       RouteUtil.pushCupertinoRoute(
-        context,
-        PinVerifyScreen(
-          onSuccess: () {},
-          isModal: true,
-        ),
-      );
+          context,
+          PinVerifyScreen(
+            onSuccess: () {},
+            isModal: true,
+            autoAuth: autoAuth,
+          ), onThen: (_) {
+        _hasJumpedToPinVerify = false;
+      });
     }
   }
 
@@ -388,7 +417,7 @@ class MainScreenState extends State<MainScreen>
     return SizedBox(
       width: 65,
       child: Container(
-        color: Theme.of(context).scaffoldBackgroundColor,
+        color: Colors.transparent,
         child: Stack(
           children: [
             if (ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
@@ -515,7 +544,7 @@ class MainScreenState extends State<MainScreen>
               children: [
                 Selector<AppProvider, bool>(
                   selector: (context, globalProvider) =>
-                      globalProvider.desktopCanpop,
+                      globalProvider.canPopByProvider,
                   builder: (context, desktopCanpop, child) => MouseRegion(
                     cursor: desktopCanpop
                         ? SystemMouseCursors.click
@@ -532,10 +561,10 @@ class MainScreenState extends State<MainScreen>
                             : Colors.grey,
                       ),
                       onTap: () {
-                        if (AppProvider.canPop) {
-                          AppProvider.desktopNavigatorState?.pop();
+                        if (canPopByKey) {
+                          desktopNavigatorState?.pop();
                         }
-                        appProvider.desktopCanpop = AppProvider.canPop;
+                        appProvider.canPopByProvider = canPopByKey;
                       },
                     ),
                   ),
@@ -614,8 +643,7 @@ class MainScreenState extends State<MainScreen>
                         colors: MyColors.getNormalButtonColors(context),
                         borderRadius: BorderRadius.circular(10),
                         onPressed: () {
-                          if (HiveUtil.getBool(
-                              key: HiveUtil.enableCloseToTrayKey)) {
+                          if (HiveUtil.getBool(HiveUtil.enableCloseToTrayKey)) {
                             windowManager.hide();
                           } else {
                             windowManager.close();
@@ -636,13 +664,7 @@ class MainScreenState extends State<MainScreen>
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
-                child: Selector<AppProvider, bool>(
-                  selector: (context, globalProvider) =>
-                      globalProvider.desktopCanpop,
-                  builder: (context, desktopCanpop, child) {
-                    return desktopCanpop ? navigator : pageView;
-                  },
-                ),
+                child: navigator,
               ),
             ),
           ),
@@ -658,10 +680,14 @@ class MainScreenState extends State<MainScreen>
   }
 
   void setTimer() {
-    _timer = Timer(
-      Duration(minutes: appProvider.autoLockTime),
-      goPinVerify,
-    );
+    if (!_hasJumpedToPinVerify) {
+      _timer = Timer(
+        Duration(minutes: appProvider.autoLockTime),
+        () {
+          jumpToPinVerify();
+        },
+      );
+    }
   }
 
   @override
@@ -713,6 +739,8 @@ class MainScreenState extends State<MainScreen>
       windowManager.show();
       windowManager.focus();
       windowManager.restore();
+    } else if (menuItem.key == 'lock_window') {
+      jumpToPinVerify();
     } else if (menuItem.key == 'show_official_website') {
       UriUtil.launchUrlUri(context, "https://apps.cloudchewie.com/loftify");
     } else if (menuItem.key == 'show_github_repo') {

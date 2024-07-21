@@ -12,6 +12,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:loftify/Models/Illust.dart';
 import 'package:loftify/Models/github_response.dart';
+import 'package:loftify/Screens/Setting/update_screen.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
@@ -22,10 +23,10 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:palette_generator/palette_generator.dart';
 
 import '../Api/github_api.dart';
-import 'app_provider.dart';
 import '../Widgets/Dialog/custom_dialog.dart';
 import '../Widgets/Dialog/dialog_builder.dart';
 import '../generated/l10n.dart';
+import 'app_provider.dart';
 import 'itoast.dart';
 
 class Utils {
@@ -249,8 +250,7 @@ class Utils {
   }
 
   static addSearchHistory(String str) {
-    if (HiveUtil.getBool(
-        key: HiveUtil.showSearchHistoryKey, defaultValue: true)) {
+    if (HiveUtil.getBool(HiveUtil.showSearchHistoryKey, defaultValue: true)) {
       while (appProvider.searchHistoryList.contains(str)) {
         appProvider.searchHistoryList.remove(str);
       }
@@ -441,7 +441,7 @@ class Utils {
     Function()? onUnrecommend,
   }) {
     DownloadSuccessAction action = DownloadSuccessAction.values[Utils.patchEnum(
-        HiveUtil.getInt(key: HiveUtil.downloadSuccessActionKey),
+        HiveUtil.getInt(HiveUtil.downloadSuccessActionKey),
         DownloadSuccessAction.values.length)];
     switch (action) {
       case DownloadSuccessAction.none:
@@ -489,39 +489,48 @@ class Utils {
       if (latestVersion.compareTo(currentVersion) > 0) {
         onUpdate?.call(latestVersion, latestReleaseItem!);
         if (showUpdateDialog && latestReleaseItem != null) {
-          DialogBuilder.showConfirmDialog(
-            context,
-            title: "发现新版本$latestVersion",
-            message:
-                "是否立即更新？${Utils.isNotEmpty(latestReleaseItem.body) ? "更新日志如下：\n${latestReleaseItem.body}" : ""}",
-            confirmButtonText: ResponsiveUtil.isDesktop() ? "前往下载" : "立即下载",
-            cancelButtonText: "暂不更新",
-            onTapConfirm: () {
-              if (ResponsiveUtil.isDesktop()) {
-                UriUtil.openExternal(latestReleaseItem!.htmlUrl);
-                return;
-              } else {
-                ReleaseAsset androidAssset = latestReleaseItem!.assets
-                    .firstWhere((element) =>
-                        element.contentType ==
-                        "application/vnd.android.package-archive");
-                if (ResponsiveUtil.isAndroid()) {
-                  FileUtil.downloadAndUpdate(
-                    context,
-                    androidAssset.browserDownloadUrl,
-                    latestReleaseItem.htmlUrl,
-                    version: latestVersion,
-                  );
+          if (ResponsiveUtil.isMobile()) {
+            DialogBuilder.showConfirmDialog(
+              context,
+              title: "发现新版本$latestVersion",
+              message:
+                  "是否立即更新？${Utils.isNotEmpty(latestReleaseItem.body) ? "更新日志如下：\n${latestReleaseItem.body}" : ""}",
+              confirmButtonText: "立即下载",
+              cancelButtonText: "暂不更新",
+              onTapConfirm: () {
+                if (ResponsiveUtil.isDesktop()) {
+                  UriUtil.openExternal(latestReleaseItem!.htmlUrl);
+                  return;
+                } else {
+                  ReleaseAsset androidAssset =
+                      FileUtil.getAndroidAsset(latestReleaseItem!);
+                  if (ResponsiveUtil.isAndroid()) {
+                    FileUtil.downloadAndUpdate(
+                      context,
+                      androidAssset.browserDownloadUrl,
+                      latestReleaseItem.htmlUrl,
+                      version: latestVersion,
+                    );
+                  }
                 }
-              }
-            },
-            onTapCancel: () {},
-            customDialogType: CustomDialogType.normal,
-          );
-        } else {
-          if (showNoUpdateToast) {
-            IToast.showTop(S.current.checkUpdatesAlreadyLatest);
+              },
+              onTapCancel: () {},
+              customDialogType: CustomDialogType.normal,
+            );
+          } else {
+            DialogBuilder.showPageDialog(
+              context,
+              child: UpdateScreen(
+                currentVersion: currentVersion,
+                latestReleaseItem: latestReleaseItem,
+                latestVersion: latestVersion,
+              ),
+            );
           }
+        }
+      } else {
+        if (showNoUpdateToast) {
+          IToast.showTop(S.current.checkUpdatesAlreadyLatest);
         }
       }
     });

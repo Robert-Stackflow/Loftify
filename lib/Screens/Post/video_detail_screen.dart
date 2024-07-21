@@ -162,7 +162,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
 
   _uploadHistory() {
     if (_currentPostItem == null) return;
-    int userId = HiveUtil.getInt(key: HiveUtil.userIdKey);
+    int userId = HiveUtil.getInt(HiveUtil.userIdKey);
     PostApi.uploadHistory(
       postId: _currentPostItem!.itemId,
       blogId: _currentPostItem!.blogInfo!.blogId,

@@ -30,14 +30,14 @@ class ExperimentSettingScreen extends StatefulWidget {
 class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
     with TickerProviderStateMixin {
   bool _enableGuesturePasswd =
-      HiveUtil.getBool(key: HiveUtil.enableGuesturePasswdKey);
+      HiveUtil.getBool(HiveUtil.enableGuesturePasswdKey);
   bool _hasGuesturePasswd =
-      HiveUtil.getString(key: HiveUtil.guesturePasswdKey) != null &&
-          HiveUtil.getString(key: HiveUtil.guesturePasswdKey)!.isNotEmpty;
-  bool _autoLock = HiveUtil.getBool(key: HiveUtil.autoLockKey);
+      HiveUtil.getString(HiveUtil.guesturePasswdKey) != null &&
+          HiveUtil.getString(HiveUtil.guesturePasswdKey)!.isNotEmpty;
+  bool _autoLock = HiveUtil.getBool(HiveUtil.autoLockKey);
   bool _enableSafeMode =
-      HiveUtil.getBool(key: HiveUtil.enableSafeModeKey, defaultValue: false);
-  bool _enableBiometric = HiveUtil.getBool(key: HiveUtil.enableBiometricKey);
+      HiveUtil.getBool(HiveUtil.enableSafeModeKey, defaultValue: false);
+  bool _enableBiometric = HiveUtil.getBool(HiveUtil.enableBiometricKey);
   bool _biometricAvailable = false;
 
   @override
@@ -59,7 +59,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             children: [
-              if (ResponsiveUtil.isMobile()) ..._privacySettings(),
+              ..._privacySettings(),
               const SizedBox(height: 10),
               ItemBuilder.buildEntryItem(
                 context: context,
@@ -105,7 +105,9 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
         child: ItemBuilder.buildRadioItem(
           context: context,
           value: _enableBiometric,
+          disabled: ResponsiveUtil.isMacOS() || ResponsiveUtil.isLinux(),
           title: "生物识别",
+          description: "仅支持Android、IOS、Windows设备；Windows设备上仅支持PIN",
           onTap: onBiometricTapped,
         ),
       ),
@@ -115,6 +117,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
           context: context,
           value: _autoLock,
           title: "处于后台自动锁定",
+          description: "在Windows、Linux、MacOS设备中，窗口最小化或最小化至托盘时即表示处于后台",
           onTap: onEnableAutoLockTapped,
         ),
       ),
@@ -149,8 +152,9 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
         context: context,
         value: _enableSafeMode,
         title: "安全模式",
+        disabled: ResponsiveUtil.isDesktop(),
         bottomRadius: true,
-        description: "当软件进入最近任务列表页面，隐藏页面内容；同时禁用应用内截图",
+        description: "仅支持Android、IOS设备；当软件进入最近任务列表页面，隐藏页面内容；同时禁用应用内截图",
         onTap: onSafeModeTapped,
       ),
     ];
@@ -166,39 +170,24 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
 
   onEnablePinTapped() {
     setState(() {
-      if (_enableGuesturePasswd) {
-        RouteUtil.pushCupertinoRoute(
-          context,
-          PinVerifyScreen(
-            onSuccess: () {
-              IToast.showTop("手势密码关闭成功");
-              setState(() {
-                _enableGuesturePasswd = !_enableGuesturePasswd;
-                HiveUtil.put(
-                    key: HiveUtil.enableGuesturePasswdKey,
-                    value: _enableGuesturePasswd);
-                _hasGuesturePasswd =
-                    HiveUtil.getString(key: HiveUtil.guesturePasswdKey) !=
-                            null &&
-                        HiveUtil.getString(key: HiveUtil.guesturePasswdKey)!
-                            .isNotEmpty;
-              });
-            },
-            isModal: false,
-          ),
-        );
-      } else {
-        setState(() {
-          _enableGuesturePasswd = !_enableGuesturePasswd;
-          HiveUtil.put(
-              key: HiveUtil.enableGuesturePasswdKey,
-              value: _enableGuesturePasswd);
-          _hasGuesturePasswd =
-              HiveUtil.getString(key: HiveUtil.guesturePasswdKey) != null &&
-                  HiveUtil.getString(key: HiveUtil.guesturePasswdKey)!
-                      .isNotEmpty;
-        });
-      }
+      RouteUtil.pushCupertinoRoute(
+        context,
+        PinVerifyScreen(
+          onSuccess: () {
+            setState(() {
+              _enableGuesturePasswd = !_enableGuesturePasswd;
+              IToast.showTop(_enableGuesturePasswd ? "手势密码启用成功" : "手势密码关闭成功");
+              HiveUtil.put(
+                  HiveUtil.enableGuesturePasswdKey, _enableGuesturePasswd);
+              _hasGuesturePasswd =
+                  HiveUtil.getString(HiveUtil.guesturePasswdKey) != null &&
+                      HiveUtil.getString(HiveUtil.guesturePasswdKey)!
+                          .isNotEmpty;
+            });
+          },
+          isModal: false,
+        ),
+      );
     });
   }
 
@@ -211,8 +200,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
             IToast.showTop("生物识别开启成功");
             setState(() {
               _enableBiometric = !_enableBiometric;
-              HiveUtil.put(
-                  key: HiveUtil.enableBiometricKey, value: _enableBiometric);
+              HiveUtil.put(HiveUtil.enableBiometricKey, _enableBiometric);
             });
           },
           isModal: false,
@@ -221,7 +209,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
     } else {
       setState(() {
         _enableBiometric = !_enableBiometric;
-        HiveUtil.put(key: HiveUtil.enableBiometricKey, value: _enableBiometric);
+        HiveUtil.put(HiveUtil.enableBiometricKey, _enableBiometric);
       });
     }
   }
@@ -232,9 +220,8 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
           .then((value) {
         setState(() {
           _hasGuesturePasswd =
-              HiveUtil.getString(key: HiveUtil.guesturePasswdKey) != null &&
-                  HiveUtil.getString(key: HiveUtil.guesturePasswdKey)!
-                      .isNotEmpty;
+              HiveUtil.getString(HiveUtil.guesturePasswdKey) != null &&
+                  HiveUtil.getString(HiveUtil.guesturePasswdKey)!.isNotEmpty;
         });
       });
     });
@@ -243,7 +230,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
   onEnableAutoLockTapped() {
     setState(() {
       _autoLock = !_autoLock;
-      HiveUtil.put(key: HiveUtil.autoLockKey, value: _autoLock);
+      HiveUtil.put(HiveUtil.autoLockKey, _autoLock);
     });
   }
 
@@ -257,7 +244,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
           FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
         }
       }
-      HiveUtil.put(key: HiveUtil.enableSafeModeKey, value: _enableSafeMode);
+      HiveUtil.put(HiveUtil.enableSafeModeKey, _enableSafeMode);
     });
   }
 }

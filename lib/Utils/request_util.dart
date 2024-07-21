@@ -180,8 +180,7 @@ class RequestUtil {
         response.requestOptions.headers['cookie'] != null ? "有" : "无";
     if (response.requestOptions.headers['cookie'] != null) {
       HiveUtil.put(
-          key: HiveUtil.cookieKey,
-          value: response.requestOptions.headers['cookie']);
+          HiveUtil.cookieKey, response.requestOptions.headers['cookie']);
     }
     list["Content-Length"] = response.requestOptions.headers['Content-Length'];
     list["Content-Type"] = response.requestOptions.contentType;

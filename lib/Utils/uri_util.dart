@@ -62,7 +62,7 @@ class UriUtil {
   }
 
   static void launchUrlUri(BuildContext context, String url) async {
-    if (HiveUtil.getBool(key: HiveUtil.inappWebviewKey)) {
+    if (HiveUtil.getBool(HiveUtil.inappWebviewKey)) {
       openInternal(context, url);
     } else {
       openExternal(url);
@@ -322,8 +322,8 @@ class UriUtil {
         if (!quiet) await CustomLoadingDialog.dismissLoading();
         if (!quiet) {
           if (pass) {
-            if (HiveUtil.getBool(
-                key: HiveUtil.inappWebviewKey, defaultValue: true)) {
+            if (HiveUtil.getBool(HiveUtil.inappWebviewKey,
+                defaultValue: true)) {
               UriUtil.openInternal(context, url);
             } else {
               UriUtil.openExternal(url);

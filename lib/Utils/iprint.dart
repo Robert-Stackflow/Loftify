@@ -50,7 +50,7 @@ class IPrint {
     String nowRecord = _buffer.toString();
     if (nowRecord.length > 50) {
       var path = await getTemporaryDirectory();
-      var filePath = join(path.path, "log.log");
+      var filePath = join(path.path, "loftify.log");
       File file = File(filePath);
       file.writeAsStringSync(nowRecord, mode: FileMode.append);
       _buffer.clear();
@@ -59,7 +59,7 @@ class IPrint {
 
   static Future<File> savedLogFile() async {
     var path = await getTemporaryDirectory();
-    var filePath = join(path.path, "log.log");
+    var filePath = join(path.path, "loftify.log");
     File file = File(filePath);
     file.writeAsStringSync(_buffer.toString());
     _buffer.clear();

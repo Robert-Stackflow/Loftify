@@ -78,7 +78,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
         } else {
           _fullBlogData = TotalBlogData.fromJson(value['response']);
           isMe = _fullBlogData!.blogInfo.blogId ==
-              HiveUtil.getInt(key: HiveUtil.userIdKey);
+              HiveUtil.getInt(HiveUtil.userIdKey);
           initTab();
           updateFollowStatus();
           _fetchShowCases();
@@ -259,9 +259,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
             if (Utils.isNotEmpty(_fullBlogData!.blogInfo.avatarBoxImage)) {
               options.add(
                 Tuple2(
-                    HiveUtil.getString(
-                                key: HiveUtil.customAvatarBoxKey,
-                                defaultValue: null) ==
+                    HiveUtil.getString(HiveUtil.customAvatarBoxKey) ==
                             _fullBlogData!.blogInfo.avatarBoxImage
                         ? "取消佩戴头像框"
                         : "佩戴头像框",
@@ -302,19 +300,17 @@ class UserDetailScreenState extends State<UserDetailScreen>
                     _fullBlogData!.blogInfo.homePageUrl,
                   );
                 } else if (idx == 3) {
-                  String? currentAvatarImg = HiveUtil.getString(
-                      key: HiveUtil.customAvatarBoxKey, defaultValue: null);
+                  String? currentAvatarImg =
+                      HiveUtil.getString(HiveUtil.customAvatarBoxKey);
                   if (currentAvatarImg ==
                       _fullBlogData!.blogInfo.avatarBoxImage) {
-                    await HiveUtil.put(
-                        key: HiveUtil.customAvatarBoxKey, value: "");
+                    await HiveUtil.put(HiveUtil.customAvatarBoxKey, "");
                     currentAvatarImg = "";
                     setState(() {});
                     IToast.showTop("取消佩戴成功");
                   } else {
-                    await HiveUtil.put(
-                        key: HiveUtil.customAvatarBoxKey,
-                        value: _fullBlogData!.blogInfo.avatarBoxImage);
+                    await HiveUtil.put(HiveUtil.customAvatarBoxKey,
+                        _fullBlogData!.blogInfo.avatarBoxImage);
                     currentAvatarImg = _fullBlogData!.blogInfo.avatarBoxImage;
                     setState(() {});
                     IToast.showTop("佩戴成功");
@@ -423,9 +419,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
 
   getAvatarBoxImage() {
     if (infoMode == InfoMode.me) {
-      String url = HiveUtil.getString(
-              key: HiveUtil.customAvatarBoxKey, defaultValue: null) ??
-          "";
+      String url = HiveUtil.getString(HiveUtil.customAvatarBoxKey) ?? "";
       return url.isNotEmpty ? url : _fullBlogData!.blogInfo.avatarBoxImage;
     } else {
       return _fullBlogData!.blogInfo.avatarBoxImage;

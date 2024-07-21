@@ -32,18 +32,18 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
     with TickerProviderStateMixin {
   String _cacheSize = "";
   List<Tuple2<String, Locale?>> _supportedLocaleTuples = [];
-  bool inAppBrowser = HiveUtil.getBool(key: HiveUtil.inappWebviewKey);
+  bool inAppBrowser = HiveUtil.getBool(HiveUtil.inappWebviewKey);
   String currentVersion = "";
   String latestVersion = "";
   ReleaseItem? latestReleaseItem;
-  bool autoCheckUpdate = HiveUtil.getBool(key: HiveUtil.autoCheckUpdateKey);
-  bool enableCloseToTray = HiveUtil.getBool(key: HiveUtil.enableCloseToTrayKey);
-  bool enableCloseNotice = HiveUtil.getBool(key: HiveUtil.enableCloseNoticeKey);
+  bool autoCheckUpdate = HiveUtil.getBool(HiveUtil.autoCheckUpdateKey);
+  bool enableCloseToTray = HiveUtil.getBool(HiveUtil.enableCloseToTrayKey);
+  bool enableCloseNotice = HiveUtil.getBool(HiveUtil.enableCloseNoticeKey);
   int doubleTapAction = Utils.patchEnum(
-      HiveUtil.getInt(key: HiveUtil.doubleTapActionKey, defaultValue: 1),
+      HiveUtil.getInt(HiveUtil.doubleTapActionKey, defaultValue: 1),
       DoubleTapAction.values.length);
   int downloadSuccessAction = Utils.patchEnum(
-      HiveUtil.getInt(key: HiveUtil.downloadSuccessActionKey),
+      HiveUtil.getInt(HiveUtil.downloadSuccessActionKey),
       DownloadSuccessAction.values.length);
 
   @override
@@ -153,8 +153,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                   onTap: () {
                     setState(() {
                       inAppBrowser = !inAppBrowser;
-                      HiveUtil.put(
-                          key: HiveUtil.inappWebviewKey, value: inAppBrowser);
+                      HiveUtil.put(HiveUtil.inappWebviewKey, inAppBrowser);
                     });
                   },
                 ),
@@ -168,9 +167,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                 onTap: () {
                   setState(() {
                     autoCheckUpdate = !autoCheckUpdate;
-                    HiveUtil.put(
-                        key: HiveUtil.autoCheckUpdateKey,
-                        value: autoCheckUpdate);
+                    HiveUtil.put(HiveUtil.autoCheckUpdateKey, autoCheckUpdate);
                   });
                 },
               ),
@@ -205,8 +202,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                         setState(() {
                           doubleTapAction = newAction.index;
                           HiveUtil.put(
-                              key: HiveUtil.doubleTapActionKey,
-                              value: doubleTapAction);
+                              HiveUtil.doubleTapActionKey, doubleTapAction);
                         });
                       },
                       selected: DoubleTapAction.values[doubleTapAction],
@@ -234,9 +230,8 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                         Navigator.pop(sheetContext);
                         setState(() {
                           downloadSuccessAction = newAction.index;
-                          HiveUtil.put(
-                              key: HiveUtil.downloadSuccessActionKey,
-                              value: downloadSuccessAction);
+                          HiveUtil.put(HiveUtil.downloadSuccessActionKey,
+                              downloadSuccessAction);
                         });
                       },
                       selected:
@@ -304,15 +299,13 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                   setState(() {
                     enableCloseToTray = true;
                     HiveUtil.put(
-                        key: HiveUtil.enableCloseToTrayKey,
-                        value: enableCloseToTray);
+                        HiveUtil.enableCloseToTrayKey, enableCloseToTray);
                   });
                 } else if (idx == 1) {
                   setState(() {
                     enableCloseToTray = false;
                     HiveUtil.put(
-                        key: HiveUtil.enableCloseToTrayKey,
-                        value: enableCloseToTray);
+                        HiveUtil.enableCloseToTrayKey, enableCloseToTray);
                   });
                 }
               },

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/error_codes.dart' as auth_error;
@@ -5,9 +7,12 @@ import 'package:local_auth/local_auth.dart';
 import 'package:local_auth_android/local_auth_android.dart';
 import 'package:loftify/Utils/iprint.dart';
 import 'package:loftify/Utils/itoast.dart';
+import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Widgets/General/Unlock/gesture_notifier.dart';
 import 'package:loftify/Widgets/General/Unlock/gesture_unlock_indicator.dart';
 import 'package:loftify/Widgets/General/Unlock/gesture_unlock_view.dart';
+import 'package:loftify/Widgets/Item/item_builder.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../Utils/hive_util.dart';
 
@@ -33,13 +38,11 @@ AndroidAuthMessages andStrings = const AndroidAuthMessages(
 
 class PinChangeScreenState extends State<PinChangeScreen> {
   String _gesturePassword = "";
-  final String? _oldPassword =
-      HiveUtil.getString(key: HiveUtil.guesturePasswdKey);
-  bool _isEditMode =
-      HiveUtil.getString(key: HiveUtil.guesturePasswdKey) != null &&
-          HiveUtil.getString(key: HiveUtil.guesturePasswdKey)!.isNotEmpty;
+  final String? _oldPassword = HiveUtil.getString(HiveUtil.guesturePasswdKey);
+  bool _isEditMode = HiveUtil.getString(HiveUtil.guesturePasswdKey) != null &&
+      HiveUtil.getString(HiveUtil.guesturePasswdKey)!.isNotEmpty;
   late final bool _isUseBiometric =
-      _isEditMode && HiveUtil.getBool(key: HiveUtil.enableBiometricKey);
+      _isEditMode && HiveUtil.getBool(HiveUtil.enableBiometricKey);
   late final GestureNotifier _notifier = _isEditMode
       ? GestureNotifier(status: GestureStatus.verify, gestureText: "绘制旧手势密码")
       : GestureNotifier(status: GestureStatus.create, gestureText: "绘制新手势密码");
@@ -57,14 +60,18 @@ class PinChangeScreenState extends State<PinChangeScreen> {
   void auth() async {
     LocalAuthentication localAuth = LocalAuthentication();
     try {
+      String appName = (await PackageInfo.fromPlatform()).appName;
       await localAuth
           .authenticate(
-              localizedReason: '进行指纹验证以使用APP',
-              authMessages: [andStrings, andStrings, andStrings],
-              options: const AuthenticationOptions(
-                  biometricOnly: true,
-                  useErrorDialogs: false,
-                  stickyAuth: true))
+        localizedReason: ResponsiveUtil.isWindows()
+            ? '验证PIN以使用$appName'
+            : '进行指纹验证以使用$appName',
+        authMessages: [andStrings, andStrings, andStrings],
+        options: const AuthenticationOptions(
+          useErrorDialogs: false,
+          stickyAuth: true,
+        ),
+      )
           .then((value) {
         if (value) {
           IToast.showTop("验证成功");
@@ -97,11 +104,13 @@ class PinChangeScreenState extends State<PinChangeScreen> {
     return Scaffold(
       body: SafeArea(
         right: false,
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 100),
+        child: Center(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
+              const SizedBox(height: 50),
               Text(
                 _notifier.gestureText,
                 style: Theme.of(context).textTheme.titleMedium,
@@ -114,10 +123,10 @@ class PinChangeScreenState extends State<PinChangeScreen> {
                 defaultColor: Colors.grey.withOpacity(0.5),
                 selectedColor: Theme.of(context).primaryColor.withOpacity(0.6),
               ),
-              Expanded(
+              Flexible(
                 child: GestureUnlockView(
                   key: _gestureUnlockView,
-                  size: MediaQuery.sizeOf(context).width,
+                  size: min(MediaQuery.sizeOf(context).width, 400),
                   padding: 60,
                   roundSpace: 40,
                   defaultColor: Colors.grey.withOpacity(0.5),
@@ -130,21 +139,23 @@ class PinChangeScreenState extends State<PinChangeScreen> {
                   onCompleted: _gestureComplete,
                 ),
               ),
-              Visibility(
-                visible: _isEditMode,
-                child: Visibility(
-                  visible: _isUseBiometric,
-                  child: GestureDetector(
-                    onTap: () {
-                      auth();
-                    },
-                    child: Text(
-                      "指纹识别",
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
+              GestureDetector(
+                onTap: () {
+                  if (_isEditMode && _isUseBiometric) {
+                    auth();
+                  }
+                },
+                child: ItemBuilder.buildClickItem(
+                  clickable: _isEditMode && _isUseBiometric,
+                  Text(
+                    _isEditMode && _isUseBiometric
+                        ? (ResponsiveUtil.isWindows() ? "验证PIN" : "指纹识别")
+                        : "",
+                    style: Theme.of(context).textTheme.titleSmall,
                   ),
                 ),
               ),
+              const SizedBox(height: 50),
             ],
           ),
         ),
@@ -189,9 +200,8 @@ class PinChangeScreenState extends State<PinChangeScreen> {
               );
               Navigator.pop(context);
             });
-            HiveUtil.put(
-                key: HiveUtil.guesturePasswdKey,
-                value: GestureUnlockView.selectedToString(selected));
+            HiveUtil.put(HiveUtil.guesturePasswdKey,
+                GestureUnlockView.selectedToString(selected));
           } else {
             setState(() {
               _notifier.setStatus(

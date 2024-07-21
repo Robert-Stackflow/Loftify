@@ -30,6 +30,7 @@ import '../../Api/collection_api.dart';
 import '../../Api/recommend_api.dart';
 import '../../Models/search_response.dart';
 import '../../Resources/theme.dart';
+import '../../Utils/app_provider.dart';
 import '../../Utils/asset_util.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/lottie_util.dart';
@@ -91,7 +92,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   int _currentIndex = 1;
   final List<PostListItem> _recommendPosts = [];
   int _currentPage = 0;
-  final int _myBlogId = HiveUtil.getInt(key: HiveUtil.userIdKey);
+  final int _myBlogId = HiveUtil.getInt(HiveUtil.userIdKey);
   bool _loadingInfo = false;
   bool _loadingRecommend = false;
   int blogId = 0;
@@ -221,7 +222,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   _uploadHistory() {
-    int userId = HiveUtil.getInt(key: HiveUtil.userIdKey);
+    int userId = HiveUtil.getInt(HiveUtil.userIdKey);
     PostApi.uploadHistory(
       postId: postId,
       blogId: blogId,
@@ -450,7 +451,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         _swiperController.move(0);
       });
     }
-    if (_hasImage() && HiveUtil.getBool(key: HiveUtil.followMainColorKey)) {
+    if (_hasImage() && HiveUtil.getBool(HiveUtil.followMainColorKey)) {
       List<PhotoLink> photoLinks = _getImages()[0];
       Utils.getMainColors(
         context,
@@ -631,7 +632,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
 
   _operateDoubleTapAction() {
     DoubleTapAction action = DoubleTapAction.values[Utils.patchEnum(
-        HiveUtil.getInt(key: HiveUtil.doubleTapActionKey, defaultValue: 1),
+        HiveUtil.getInt(HiveUtil.doubleTapActionKey, defaultValue: 1),
         DoubleTapAction.values.length)];
     switch (action) {
       case DoubleTapAction.none:
@@ -927,7 +928,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             ),
             const SizedBox(width: 40),
             if (_myBlogId != _postDetailData!.post!.blogId)
-              ItemBuilder.buildFramedButton(
+              ItemBuilder.buildFramedDoubleButton(
                   context: context,
                   isFollowed: _postDetailData!.followed == 1 ? true : false,
                   onTap: () {
@@ -1689,7 +1690,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     switch (state) {
       case DownloadState.none:
         downloadIcon = Icon(Icons.download_rounded,
-            color: Theme.of(RouteUtil.getRootContext()).iconTheme.color);
+            color: Theme.of(rootContext).iconTheme.color);
         break;
       case DownloadState.loading:
         downloadIcon = Container(
@@ -1769,8 +1770,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         const SizedBox(width: 5),
         if (_hasImage() ||
             _hasArticleImage() &&
-                HiveUtil.getBool(
-                    key: HiveUtil.showDownloadKey, defaultValue: true))
+                HiveUtil.getBool(HiveUtil.showDownloadKey, defaultValue: true))
           ItemBuilder.buildIconButton(
             context: context,
             icon: downloadIcon,
@@ -1779,7 +1779,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             },
           ),
         if ((_hasImage() || _hasArticleImage()) &&
-            HiveUtil.getBool(key: HiveUtil.showDownloadKey, defaultValue: true))
+            HiveUtil.getBool(HiveUtil.showDownloadKey, defaultValue: true))
           const SizedBox(width: 5),
         ItemBuilder.buildIconButton(
             context: context,

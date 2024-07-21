@@ -9,5 +9,7 @@ import 'package:flutter/physics.dart' as physics;
 import '../EasyRefresh/easy_refresh.dart';
 
 part 'material_footer.dart';
+
 part 'material_header.dart';
+
 part 'material_indicator.dart';

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/error_codes.dart' as auth_error;
@@ -6,13 +8,19 @@ import 'package:local_auth_android/local_auth_android.dart';
 import 'package:loftify/Utils/iprint.dart';
 import 'package:loftify/Widgets/General/Unlock/gesture_notifier.dart';
 import 'package:loftify/Widgets/General/Unlock/gesture_unlock_view.dart';
+import 'package:loftify/Widgets/Window/window_caption.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../Utils/hive_util.dart';
+import '../../Utils/responsive_util.dart';
+import '../../Widgets/Item/item_builder.dart';
 
 class PinVerifyScreen extends StatefulWidget {
-  const PinVerifyScreen({super.key, this.onSuccess, this.isModal = true});
+  const PinVerifyScreen(
+      {super.key, this.onSuccess, this.isModal = true, this.autoAuth = true});
 
   final bool isModal;
+  final bool autoAuth;
   final Function()? onSuccess;
   static const String routeName = "/pin/verify";
 
@@ -32,9 +40,9 @@ AndroidAuthMessages andStrings = const AndroidAuthMessages(
 );
 
 class PinVerifyScreenState extends State<PinVerifyScreen> {
-  final String? _password = HiveUtil.getString(key: HiveUtil.guesturePasswdKey);
+  final String? _password = HiveUtil.getString(HiveUtil.guesturePasswdKey);
   late final bool _isUseBiometric =
-      HiveUtil.getBool(key: HiveUtil.enableBiometricKey);
+      HiveUtil.getBool(HiveUtil.enableBiometricKey);
   late final GestureNotifier _notifier =
       GestureNotifier(status: GestureStatus.verify, gestureText: "验证密码");
   final GlobalKey<GestureState> _gestureUnlockView = GlobalKey();
@@ -42,7 +50,7 @@ class PinVerifyScreenState extends State<PinVerifyScreen> {
   @override
   void initState() {
     super.initState();
-    if (_isUseBiometric) {
+    if (_isUseBiometric && widget.autoAuth) {
       auth();
     }
   }
@@ -50,14 +58,18 @@ class PinVerifyScreenState extends State<PinVerifyScreen> {
   void auth() async {
     LocalAuthentication localAuth = LocalAuthentication();
     try {
+      String appName = (await PackageInfo.fromPlatform()).appName;
       await localAuth
           .authenticate(
-              localizedReason: '进行指纹验证以使用APP',
-              authMessages: [andStrings, andStrings, andStrings],
-              options: const AuthenticationOptions(
-                  biometricOnly: true,
-                  useErrorDialogs: false,
-                  stickyAuth: true))
+        localizedReason: ResponsiveUtil.isWindows()
+            ? '验证PIN以使用$appName'
+            : '进行指纹验证以使用$appName',
+        authMessages: [andStrings, andStrings, andStrings],
+        options: const AuthenticationOptions(
+          useErrorDialogs: false,
+          stickyAuth: true,
+        ),
+      )
           .then((value) {
         if (value) {
           if (widget.onSuccess != null) widget.onSuccess!();
@@ -84,49 +96,59 @@ class PinVerifyScreenState extends State<PinVerifyScreen> {
     return Scaffold(
       body: SafeArea(
         right: false,
-        child: PopScope(
-          canPop: !widget.isModal,
-          child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 100),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  _notifier.gestureText,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 30),
-                Expanded(
-                  child: GestureUnlockView(
-                    key: _gestureUnlockView,
-                    size: MediaQuery.sizeOf(context).width,
-                    padding: 60,
-                    roundSpace: 40,
-                    defaultColor: Colors.grey.withOpacity(0.5),
-                    selectedColor: Theme.of(context).primaryColor,
-                    failedColor: Colors.redAccent,
-                    disableColor: Colors.grey,
-                    solidRadiusRatio: 0.3,
-                    lineWidth: 2,
-                    touchRadiusRatio: 0.3,
-                    onCompleted: _gestureComplete,
-                  ),
-                ),
-                Visibility(
-                  visible: _isUseBiometric,
-                  child: GestureDetector(
-                    onTap: () {
-                      auth();
-                    },
-                    child: Text(
-                      "指纹识别",
-                      style: Theme.of(context).textTheme.titleSmall,
+        child: Stack(
+          children: [
+            if (ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
+            Center(
+              child: PopScope(
+                canPop: !widget.isModal,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 50),
+                    Text(
+                      _notifier.gestureText,
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
-                  ),
+                    const SizedBox(height: 30),
+                    Flexible(
+                      child: GestureUnlockView(
+                        key: _gestureUnlockView,
+                        size: min(MediaQuery.sizeOf(context).width, 400),
+                        padding: 60,
+                        roundSpace: 40,
+                        defaultColor: Colors.grey.withOpacity(0.5),
+                        selectedColor: Theme.of(context).primaryColor,
+                        failedColor: Colors.redAccent,
+                        disableColor: Colors.grey,
+                        solidRadiusRatio: 0.3,
+                        lineWidth: 2,
+                        touchRadiusRatio: 0.3,
+                        onCompleted: _gestureComplete,
+                      ),
+                    ),
+                    Visibility(
+                      visible: _isUseBiometric,
+                      child: GestureDetector(
+                        onTap: () {
+                          auth();
+                        },
+                        child: ItemBuilder.buildClickItem(
+                          Text(
+                            ResponsiveUtil.isWindows() ? "验证PIN" : "指纹识别",
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 50),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

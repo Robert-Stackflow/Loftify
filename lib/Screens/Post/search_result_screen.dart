@@ -66,12 +66,6 @@ class _SearchResultScreenState extends State<SearchResultScreen>
       EasyRefreshController();
   final EasyRefreshController _userResultRefreshController =
       EasyRefreshController();
-  final ScrollController _allResultScrollController = ScrollController();
-  final ScrollController _tagResultScrollController = ScrollController();
-  final ScrollController _collectionResultScrollController = ScrollController();
-  final ScrollController _postResultScrollController = ScrollController();
-  final ScrollController _grainResultScrollController = ScrollController();
-  final ScrollController _userResultScrollController = ScrollController();
 
   final List<String> _tabLabelList = ["综合", "标签", "合集", "粮单", "文章", "用户"];
   int _allResultOffset = 0;
@@ -98,7 +92,6 @@ class _SearchResultScreenState extends State<SearchResultScreen>
     super.initState();
     _performSearch(widget.searchKey, init: true);
     initTab();
-    initScrollController();
   }
 
   @override
@@ -133,56 +126,6 @@ class _SearchResultScreenState extends State<SearchResultScreen>
       int index = _tabController.index + indexChange;
       if (index != _currentTabIndex) {
         setState(() => _currentTabIndex = index);
-      }
-    });
-  }
-
-  initScrollController() {
-    _allResultScrollController.addListener(() {
-      if (_allResultScrollController.position.pixels >
-          _allResultScrollController.position.maxScrollExtent -
-              kLoadExtentOffset) {
-        _fetchAllPostResult();
-      }
-    });
-    _tagResultScrollController.addListener(() {
-      if (!_tagResultNoMore &&
-          _tagResultScrollController.position.pixels >
-              _tagResultScrollController.position.maxScrollExtent -
-                  kLoadExtentOffset) {
-        _fetchTagResult();
-      }
-    });
-    _collectionResultScrollController.addListener(() {
-      if (!_collectionResultNoMore &&
-          _collectionResultScrollController.position.pixels >
-              _collectionResultScrollController.position.maxScrollExtent -
-                  200) {
-        _fetchCollectionResult();
-      }
-    });
-    _postResultScrollController.addListener(() {
-      if (!_postResultNoMore &&
-          _postResultScrollController.position.pixels >
-              _postResultScrollController.position.maxScrollExtent -
-                  kLoadExtentOffset) {
-        _fetchPostResult();
-      }
-    });
-    _grainResultScrollController.addListener(() {
-      if (!_grainResultNoMore &&
-          _grainResultScrollController.position.pixels >
-              _grainResultScrollController.position.maxScrollExtent -
-                  kLoadExtentOffset) {
-        _fetchGrainResult();
-      }
-    });
-    _userResultScrollController.addListener(() {
-      if (!_userResultNoMore &&
-          _userResultScrollController.position.pixels >
-              _userResultScrollController.position.maxScrollExtent -
-                  kLoadExtentOffset) {
-        _fetchUserResult();
       }
     });
   }
@@ -681,126 +624,132 @@ class _SearchResultScreenState extends State<SearchResultScreen>
       },
       triggerAxis: Axis.vertical,
       childBuilder: (context, physics) => _allResult != null
-          ? CustomScrollView(
-              physics: physics,
-              controller: _allResultScrollController,
-              slivers: [
-                SliverList(
-                  delegate: SliverChildListDelegate(
-                    [
-                      const SizedBox(height: 10),
-                      if (_allResult!.tags.isEmpty &&
-                          _allResult!.tagRank == null &&
-                          _allResult!.posts.isEmpty)
-                        Container(
-                          height: 160,
-                          margin: const EdgeInsets.symmetric(vertical: 16),
-                          alignment: Alignment.center,
-                          child: ItemBuilder.buildEmptyPlaceholder(
-                            context: context,
-                            text: "暂无结果",
+          ? ItemBuilder.buildLoadMoreNotification(
+              noMore: false,
+              onLoad: _fetchAllPostResult,
+              child: CustomScrollView(
+                physics: physics,
+                slivers: [
+                  SliverList(
+                    delegate: SliverChildListDelegate(
+                      [
+                        const SizedBox(height: 10),
+                        if (_allResult!.tags.isEmpty &&
+                            _allResult!.tagRank == null &&
+                            _allResult!.posts.isEmpty)
+                          Container(
+                            height: 160,
+                            margin: const EdgeInsets.symmetric(vertical: 16),
+                            alignment: Alignment.center,
+                            child: ItemBuilder.buildEmptyPlaceholder(
+                              context: context,
+                              text: "暂无结果",
+                            ),
                           ),
-                        ),
-                      if (_allResult!.tagRank != null)
-                        ItemBuilder.buildRankTagRow(
-                          context,
-                          _allResult!.tagRank!,
-                          useBackground: false,
-                          onTap: () {
-                            _jumpToTag(_allResult!.tagRank!.tagName);
-                          },
-                        ),
-                      if (_allResult!.tagRank != null) _buildDivider(),
-                      if (_allResult!.tags.isNotEmpty)
-                        ItemBuilder.buildTitle(
-                          context,
-                          title: "相关标签",
-                          suffixText: "查看全部",
-                          topMargin: 16,
-                          bottomMargin: 8,
-                          onTap: () {
-                            _tabController.animateTo(1);
-                          },
-                        ),
-                      if (_allResult!.tags.isNotEmpty)
-                        ...List<Widget>.generate(
-                            min(_allResult!.tags.length, 2), (index) {
-                          return ItemBuilder.buildTagRow(
+                        if (_allResult!.tagRank != null)
+                          ItemBuilder.buildRankTagRow(
                             context,
-                            _allResult!.tags[index],
-                            verticalPadding: 8,
+                            _allResult!.tagRank!,
+                            useBackground: false,
                             onTap: () {
-                              if (_allResult!.tags[index].joinCount != -1) {
-                                _jumpToTag(_allResult!.tags[index].tagName);
-                              } else {
-                                _performSearch(_allResult!.tags[index].tagName);
-                              }
+                              _jumpToTag(_allResult!.tagRank!.tagName);
                             },
-                          );
-                        }),
-                      if (_allResult!.tags.isNotEmpty)
-                        const SizedBox(height: 8),
-                      if (_allResult!.tags.isNotEmpty) _buildDivider(),
-                      if (_allResult!.posts.isNotEmpty)
-                        ItemBuilder.buildTitle(
-                          context,
-                          title: "相关文章",
-                          suffixText: "查看全部",
-                          topMargin: 16,
-                          bottomMargin: 8,
-                          onTap: () {
-                            _tabController.animateTo(4);
-                          },
-                        ),
-                    ],
-                  ),
-                ),
-                if (_allResult!.posts.isNotEmpty)
-                  SliverPadding(
-                    padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-                    sliver: SliverWaterfallFlow(
-                      gridDelegate:
-                          const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-                        mainAxisSpacing: 6,
-                        crossAxisSpacing: 6,
-                        maxCrossAxisExtent: 300,
-                      ),
-                      delegate: SliverChildBuilderDelegate(
-                        (BuildContext context, int index) {
-                          return GestureDetector(
-                            child: RecommendFlowItemBuilder
-                                .buildWaterfallFlowPostItem(
-                                    context, _allResult!.posts[index],
-                                    onLikeTap: () async {
-                              var item = _allResult!.posts[index];
-                              HapticFeedback.mediumImpact();
-                              return await PostApi.likeOrUnLike(
-                                      isLike: !item.favorite,
-                                      postId: item.itemId,
-                                      blogId: item.postData!.postView.blogId)
-                                  .then((value) {
-                                setState(() {
-                                  if (value['meta']['status'] != 200) {
-                                    IToast.showTop(value['meta']['desc'] ??
-                                        value['meta']['msg']);
-                                  } else {
-                                    item.favorite = !item.favorite;
-                                    if (item.postData!.postCount != null) {
-                                      item.postData!.postCount!.favoriteCount +=
-                                          item.favorite ? 1 : -1;
-                                    }
-                                  }
-                                });
-                                return value['meta']['status'];
-                              });
-                            }),
-                          );
-                        },
-                        childCount: _allResult!.posts.length,
-                      ),
+                          ),
+                        if (_allResult!.tagRank != null) _buildDivider(),
+                        if (_allResult!.tags.isNotEmpty)
+                          ItemBuilder.buildTitle(
+                            context,
+                            title: "相关标签",
+                            suffixText: "查看全部",
+                            topMargin: 16,
+                            bottomMargin: 8,
+                            onTap: () {
+                              _tabController.animateTo(1);
+                            },
+                          ),
+                        if (_allResult!.tags.isNotEmpty)
+                          ...List<Widget>.generate(
+                              min(_allResult!.tags.length, 2), (index) {
+                            return ItemBuilder.buildTagRow(
+                              context,
+                              _allResult!.tags[index],
+                              verticalPadding: 8,
+                              onTap: () {
+                                if (_allResult!.tags[index].joinCount != -1) {
+                                  _jumpToTag(_allResult!.tags[index].tagName);
+                                } else {
+                                  _performSearch(
+                                      _allResult!.tags[index].tagName);
+                                }
+                              },
+                            );
+                          }),
+                        if (_allResult!.tags.isNotEmpty)
+                          const SizedBox(height: 8),
+                        if (_allResult!.tags.isNotEmpty) _buildDivider(),
+                        if (_allResult!.posts.isNotEmpty)
+                          ItemBuilder.buildTitle(
+                            context,
+                            title: "相关文章",
+                            suffixText: "查看全部",
+                            topMargin: 16,
+                            bottomMargin: 8,
+                            onTap: () {
+                              _tabController.animateTo(4);
+                            },
+                          ),
+                      ],
                     ),
                   ),
-              ],
+                  if (_allResult!.posts.isNotEmpty)
+                    SliverPadding(
+                      padding:
+                          const EdgeInsets.only(top: 10, left: 8, right: 8),
+                      sliver: SliverWaterfallFlow(
+                        gridDelegate:
+                            const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                          mainAxisSpacing: 6,
+                          crossAxisSpacing: 6,
+                          maxCrossAxisExtent: 300,
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                          (BuildContext context, int index) {
+                            return GestureDetector(
+                              child: RecommendFlowItemBuilder
+                                  .buildWaterfallFlowPostItem(
+                                      context, _allResult!.posts[index],
+                                      onLikeTap: () async {
+                                var item = _allResult!.posts[index];
+                                HapticFeedback.mediumImpact();
+                                return await PostApi.likeOrUnLike(
+                                        isLike: !item.favorite,
+                                        postId: item.itemId,
+                                        blogId: item.postData!.postView.blogId)
+                                    .then((value) {
+                                  setState(() {
+                                    if (value['meta']['status'] != 200) {
+                                      IToast.showTop(value['meta']['desc'] ??
+                                          value['meta']['msg']);
+                                    } else {
+                                      item.favorite = !item.favorite;
+                                      if (item.postData!.postCount != null) {
+                                        item.postData!.postCount!
+                                                .favoriteCount +=
+                                            item.favorite ? 1 : -1;
+                                      }
+                                    }
+                                  });
+                                  return value['meta']['status'];
+                                });
+                              }),
+                            );
+                          },
+                          childCount: _allResult!.posts.length,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             )
           : ItemBuilder.buildLoadingDialog(
               context,
@@ -819,53 +768,56 @@ class _SearchResultScreenState extends State<SearchResultScreen>
         return await _fetchTagResult();
       },
       triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => CustomScrollView(
-        physics: physics,
-        controller: _tagResultScrollController,
-        slivers: [
-          SliverList(
-            delegate: SliverChildListDelegate(
-              [
-                const SizedBox(height: 10),
-                if (_tagList.isEmpty && _tagRank == null)
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 16),
-                    height: 160,
-                    child: ItemBuilder.buildEmptyPlaceholder(
-                      context: context,
-                      text: "暂无标签",
+      childBuilder: (context, physics) => ItemBuilder.buildLoadMoreNotification(
+        noMore: _tagResultNoMore,
+        onLoad: _fetchTagResult,
+        child: CustomScrollView(
+          physics: physics,
+          slivers: [
+            SliverList(
+              delegate: SliverChildListDelegate(
+                [
+                  const SizedBox(height: 10),
+                  if (_tagList.isEmpty && _tagRank == null)
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 16),
+                      height: 160,
+                      child: ItemBuilder.buildEmptyPlaceholder(
+                        context: context,
+                        text: "暂无标签",
+                      ),
                     ),
-                  ),
-                if (_tagRank != null)
-                  ItemBuilder.buildRankTagRow(
-                    context,
-                    _tagRank!,
-                    useBackground: false,
-                    onTap: () {
-                      _jumpToTag(_tagRank!.tagName);
-                    },
-                  ),
-                if (_tagRank != null && _tagList.isNotEmpty) _buildDivider(),
-                if (_tagList.isNotEmpty)
-                  ...List<Widget>.generate(_tagList.length, (index) {
-                    return ItemBuilder.buildTagRow(
+                  if (_tagRank != null)
+                    ItemBuilder.buildRankTagRow(
                       context,
-                      _tagList[index],
-                      verticalPadding: 8,
+                      _tagRank!,
+                      useBackground: false,
                       onTap: () {
-                        if (_tagList[index].joinCount != -1) {
-                          _jumpToTag(_tagList[index].tagName);
-                        } else {
-                          _performSearch(_tagList[index].tagName);
-                        }
+                        _jumpToTag(_tagRank!.tagName);
                       },
-                    );
-                  }),
-                if (_tagList.isNotEmpty) const SizedBox(height: 8),
-              ],
+                    ),
+                  if (_tagRank != null && _tagList.isNotEmpty) _buildDivider(),
+                  if (_tagList.isNotEmpty)
+                    ...List<Widget>.generate(_tagList.length, (index) {
+                      return ItemBuilder.buildTagRow(
+                        context,
+                        _tagList[index],
+                        verticalPadding: 8,
+                        onTap: () {
+                          if (_tagList[index].joinCount != -1) {
+                            _jumpToTag(_tagList[index].tagName);
+                          } else {
+                            _performSearch(_tagList[index].tagName);
+                          }
+                        },
+                      );
+                    }),
+                  if (_tagList.isNotEmpty) const SizedBox(height: 8),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -880,53 +832,56 @@ class _SearchResultScreenState extends State<SearchResultScreen>
         return await _fetchCollectionResult();
       },
       triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => CustomScrollView(
-        physics: physics,
-        controller: _collectionResultScrollController,
-        slivers: [
-          SliverList(
-            delegate: SliverChildListDelegate(
-              [
-                const SizedBox(height: 10),
-                if (_collectionList.isEmpty)
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 16),
-                    height: 160,
-                    child: ItemBuilder.buildEmptyPlaceholder(
-                      context: context,
-                      text: "暂无合集",
+      childBuilder: (context, physics) => ItemBuilder.buildLoadMoreNotification(
+        noMore: _collectionResultNoMore,
+        onLoad: _fetchCollectionResult,
+        child: CustomScrollView(
+          physics: physics,
+          slivers: [
+            SliverList(
+              delegate: SliverChildListDelegate(
+                [
+                  const SizedBox(height: 10),
+                  if (_collectionList.isEmpty)
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 16),
+                      height: 160,
+                      child: ItemBuilder.buildEmptyPlaceholder(
+                        context: context,
+                        text: "暂无合集",
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
-          SliverWaterfallFlow(
-            gridDelegate:
-                const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-              mainAxisSpacing: 0,
-              crossAxisSpacing: 6,
-              maxCrossAxisExtent: 600,
+            SliverWaterfallFlow(
+              gridDelegate:
+                  const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                mainAxisSpacing: 0,
+                crossAxisSpacing: 6,
+                maxCrossAxisExtent: 600,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (BuildContext context, int index) {
+                  return ItemBuilder.buildCollectionRow(
+                      context, _collectionList[index], verticalPadding: 8,
+                      onTap: () {
+                    RouteUtil.pushCupertinoRoute(
+                      context,
+                      CollectionDetailScreen(
+                        collectionId: _collectionList[index].id,
+                        blogId: _collectionList[index].blogId,
+                        blogName: _collectionList[index].blogName,
+                        postId: 0,
+                      ),
+                    );
+                  });
+                },
+                childCount: _collectionList.length,
+              ),
             ),
-            delegate: SliverChildBuilderDelegate(
-              (BuildContext context, int index) {
-                return ItemBuilder.buildCollectionRow(
-                    context, _collectionList[index], verticalPadding: 8,
-                    onTap: () {
-                  RouteUtil.pushCupertinoRoute(
-                    context,
-                    CollectionDetailScreen(
-                      collectionId: _collectionList[index].id,
-                      blogId: _collectionList[index].blogId,
-                      blogName: _collectionList[index].blogName,
-                      postId: 0,
-                    ),
-                  );
-                });
-              },
-              childCount: _collectionList.length,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -941,51 +896,54 @@ class _SearchResultScreenState extends State<SearchResultScreen>
         return await _fetchPostResult();
       },
       triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => CustomScrollView(
-        physics: physics,
-        controller: _postResultScrollController,
-        slivers: [
-          SliverList(
-            delegate: SliverChildListDelegate(
-              [
-                const SizedBox(height: 10),
-                if (_postList.isEmpty)
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 16),
-                    height: 160,
-                    child: ItemBuilder.buildEmptyPlaceholder(
-                      context: context,
-                      text: "暂无文章",
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          if (_postList.isNotEmpty)
-            SliverPadding(
-              padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-              sliver: SliverWaterfallFlow(
-                gridDelegate:
-                    const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-                  mainAxisSpacing: 6,
-                  crossAxisSpacing: 6,
-                  maxCrossAxisExtent: 300,
-                ),
-                delegate: SliverChildBuilderDelegate(
-                  (BuildContext context, int index) {
-                    return GestureDetector(
-                      child:
-                          SearchPostFlowItemBuilder.buildWaterfallFlowPostItem(
-                        context,
-                        _postList[index],
+      childBuilder: (context, physics) => ItemBuilder.buildLoadMoreNotification(
+        noMore: _postResultNoMore,
+        onLoad: _fetchPostResult,
+        child: CustomScrollView(
+          physics: physics,
+          slivers: [
+            SliverList(
+              delegate: SliverChildListDelegate(
+                [
+                  const SizedBox(height: 10),
+                  if (_postList.isEmpty)
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 16),
+                      height: 160,
+                      child: ItemBuilder.buildEmptyPlaceholder(
+                        context: context,
+                        text: "暂无文章",
                       ),
-                    );
-                  },
-                  childCount: _postList.length,
-                ),
+                    ),
+                ],
               ),
             ),
-        ],
+            if (_postList.isNotEmpty)
+              SliverPadding(
+                padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+                sliver: SliverWaterfallFlow(
+                  gridDelegate:
+                      const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                    mainAxisSpacing: 6,
+                    crossAxisSpacing: 6,
+                    maxCrossAxisExtent: 300,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (BuildContext context, int index) {
+                      return GestureDetector(
+                        child: SearchPostFlowItemBuilder
+                            .buildWaterfallFlowPostItem(
+                          context,
+                          _postList[index],
+                        ),
+                      );
+                    },
+                    childCount: _postList.length,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -1000,53 +958,56 @@ class _SearchResultScreenState extends State<SearchResultScreen>
         return await _fetchGrainResult();
       },
       triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => CustomScrollView(
-        physics: physics,
-        controller: _grainResultScrollController,
-        slivers: [
-          SliverList(
-            delegate: SliverChildListDelegate(
-              [
-                const SizedBox(height: 10),
-                if (_grainList.isEmpty)
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 16),
-                    height: 160,
-                    child: ItemBuilder.buildEmptyPlaceholder(
-                      context: context,
-                      text: "暂无粮单",
+      childBuilder: (context, physics) => ItemBuilder.buildLoadMoreNotification(
+        noMore: _grainResultNoMore,
+        onLoad: _fetchGrainResult,
+        child: CustomScrollView(
+          physics: physics,
+          slivers: [
+            SliverList(
+              delegate: SliverChildListDelegate(
+                [
+                  const SizedBox(height: 10),
+                  if (_grainList.isEmpty)
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 16),
+                      height: 160,
+                      child: ItemBuilder.buildEmptyPlaceholder(
+                        context: context,
+                        text: "暂无粮单",
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
-          SliverWaterfallFlow(
-            gridDelegate:
-                const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-              mainAxisSpacing: 0,
-              crossAxisSpacing: 6,
-              maxCrossAxisExtent: 600,
+            SliverWaterfallFlow(
+              gridDelegate:
+                  const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                mainAxisSpacing: 0,
+                crossAxisSpacing: 6,
+                maxCrossAxisExtent: 600,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (BuildContext context, int index) {
+                  return ItemBuilder.buildGrainRow(
+                    context,
+                    _grainList[index],
+                    verticalPadding: 8,
+                    onTap: () {
+                      RouteUtil.pushCupertinoRoute(
+                        context,
+                        GrainDetailScreen(
+                            grainId: _grainList[index].id,
+                            blogId: _grainList[index].userId),
+                      );
+                    },
+                  );
+                },
+                childCount: _grainList.length,
+              ),
             ),
-            delegate: SliverChildBuilderDelegate(
-              (BuildContext context, int index) {
-                return ItemBuilder.buildGrainRow(
-                  context,
-                  _grainList[index],
-                  verticalPadding: 8,
-                  onTap: () {
-                    RouteUtil.pushCupertinoRoute(
-                      context,
-                      GrainDetailScreen(
-                          grainId: _grainList[index].id,
-                          blogId: _grainList[index].userId),
-                    );
-                  },
-                );
-              },
-              childCount: _grainList.length,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1061,53 +1022,56 @@ class _SearchResultScreenState extends State<SearchResultScreen>
         return await _fetchUserResult();
       },
       triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => CustomScrollView(
-        physics: physics,
-        controller: _userResultScrollController,
-        slivers: [
-          SliverList(
-            delegate: SliverChildListDelegate(
-              [
-                const SizedBox(height: 10),
-                if (_userList.isEmpty)
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 16),
-                    height: 160,
-                    child: ItemBuilder.buildEmptyPlaceholder(
-                      context: context,
-                      text: "暂无用户",
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          SliverWaterfallFlow(
-            gridDelegate:
-                const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-              mainAxisSpacing: 0,
-              crossAxisSpacing: 6,
-              maxCrossAxisExtent: 400,
-            ),
-            delegate: SliverChildBuilderDelegate(
-              (BuildContext context, int index) {
-                return ItemBuilder.buildUserRow(
-                  context,
-                  _userList[index],
-                  onTap: () {
-                    RouteUtil.pushCupertinoRoute(
-                      context,
-                      UserDetailScreen(
-                        blogId: _userList[index].blogInfo.blogId,
-                        blogName: _userList[index].blogInfo.blogName,
+      childBuilder: (context, physics) => ItemBuilder.buildLoadMoreNotification(
+        noMore: _userResultNoMore,
+        onLoad: _fetchUserResult,
+        child: CustomScrollView(
+          physics: physics,
+          slivers: [
+            SliverList(
+              delegate: SliverChildListDelegate(
+                [
+                  const SizedBox(height: 10),
+                  if (_userList.isEmpty)
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 16),
+                      height: 160,
+                      child: ItemBuilder.buildEmptyPlaceholder(
+                        context: context,
+                        text: "暂无用户",
                       ),
-                    );
-                  },
-                );
-              },
-              childCount: _userList.length,
+                    ),
+                ],
+              ),
             ),
-          ),
-        ],
+            SliverWaterfallFlow(
+              gridDelegate:
+                  const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                mainAxisSpacing: 0,
+                crossAxisSpacing: 6,
+                maxCrossAxisExtent: 400,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (BuildContext context, int index) {
+                  return ItemBuilder.buildUserRow(
+                    context,
+                    _userList[index],
+                    onTap: () {
+                      RouteUtil.pushCupertinoRoute(
+                        context,
+                        UserDetailScreen(
+                          blogId: _userList[index].blogInfo.blogId,
+                          blogName: _userList[index].blogInfo.blogName,
+                        ),
+                      );
+                    },
+                  );
+                },
+                childCount: _userList.length,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

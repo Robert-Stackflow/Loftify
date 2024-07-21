@@ -300,7 +300,7 @@ class _ShareScreenState extends State<ShareScreen>
                     Navigator.pop(sheetContext);
                     if (idx == 0) {
                       UserApi.deleteInvalidLike(
-                              blogId: HiveUtil.getInt(key: HiveUtil.userIdKey))
+                              blogId: HiveUtil.getInt(HiveUtil.userIdKey))
                           .then((value) {
                         if (value['meta']['status'] != 200) {
                           IToast.showTop(

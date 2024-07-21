@@ -175,7 +175,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                         ),
                       ),
                       const SizedBox(width: 12),
-                      ItemBuilder.buildFramedButton(
+                      ItemBuilder.buildFramedDoubleButton(
                         context: context,
                         isFollowed: _tagDetailData!.favorited,
                         positiveText: "已订阅",

@@ -106,12 +106,12 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
     _pageController = PageController(initialPage: currentIndex);
     if (widget.mainColors != null &&
         widget.mainColors!.length >= imageUrls.length &&
-        HiveUtil.getBool(key: HiveUtil.followMainColorKey)) {
+        HiveUtil.getBool(HiveUtil.followMainColorKey)) {
       mainColors = widget.mainColors!;
     } else {
       mainColors = List.filled(imageUrls.length, Colors.black);
       if (widget.useMainColor &&
-          HiveUtil.getBool(key: HiveUtil.followMainColorKey)) {
+          HiveUtil.getBool(HiveUtil.followMainColorKey)) {
         Utils.getMainColors(
           context,
           imageUrls.map((e) => getUrl(imageUrls.indexOf(e))).toList(),

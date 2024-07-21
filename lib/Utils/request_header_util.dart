@@ -31,7 +31,7 @@ class RequestHeaderUtil {
 
   static getAuthHeader() {
     int tokenTypeIndex =
-        HiveUtil.getInt(key: HiveUtil.tokenTypeKey, defaultValue: 0);
+        HiveUtil.getInt(HiveUtil.tokenTypeKey, defaultValue: 0);
     tokenTypeIndex = max(tokenTypeIndex, 0);
     TokenType tokenType = TokenType.values[tokenTypeIndex];
     String? token = appProvider.token;

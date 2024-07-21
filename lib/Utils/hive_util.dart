@@ -87,52 +87,46 @@ class HiveUtil {
   static const String firstLoginKey = "firstLogin";
 
   static initConfig() async {
-    HiveUtil.put(key: HiveUtil.doubleTapActionKey, value: 1);
-    HiveUtil.put(key: HiveUtil.showRecommendVideoKey, value: false);
-    HiveUtil.put(key: HiveUtil.showRecommendArticleKey, value: true);
-    HiveUtil.put(key: HiveUtil.showSearchHistoryKey, value: true);
-    HiveUtil.put(key: HiveUtil.showSearchGuessKey, value: true);
-    HiveUtil.put(key: HiveUtil.showSearchConfigKey, value: false);
-    HiveUtil.put(key: HiveUtil.showSearchRankKey, value: true);
-    HiveUtil.put(key: HiveUtil.showCollectionPreNextKey, value: true);
+    HiveUtil.put(HiveUtil.doubleTapActionKey, 1);
+    HiveUtil.put(HiveUtil.showRecommendVideoKey, false);
+    HiveUtil.put(HiveUtil.showRecommendArticleKey, true);
+    HiveUtil.put(HiveUtil.showSearchHistoryKey, true);
+    HiveUtil.put(HiveUtil.showSearchGuessKey, true);
+    HiveUtil.put(HiveUtil.showSearchConfigKey, false);
+    HiveUtil.put(HiveUtil.showSearchRankKey, true);
+    HiveUtil.put(HiveUtil.showCollectionPreNextKey, true);
     HiveUtil.put(
-        key: HiveUtil.waterfallFlowImageQualityKey,
-        value: ImageQuality.medium.index);
+        HiveUtil.waterfallFlowImageQualityKey, ImageQuality.medium.index);
+    HiveUtil.put(HiveUtil.postDetailImageQualityKey, ImageQuality.origin.index);
+    HiveUtil.put(HiveUtil.imageDetailImageQualityKey, ImageQuality.raw.index);
+    HiveUtil.put(HiveUtil.tapLinkButtonImageQualityKey, ImageQuality.raw.index);
     HiveUtil.put(
-        key: HiveUtil.postDetailImageQualityKey,
-        value: ImageQuality.origin.index);
-    HiveUtil.put(
-        key: HiveUtil.imageDetailImageQualityKey,
-        value: ImageQuality.raw.index);
-    HiveUtil.put(
-        key: HiveUtil.tapLinkButtonImageQualityKey,
-        value: ImageQuality.raw.index);
-    HiveUtil.put(
-        key: HiveUtil.longPressLinkButtonImageQualityKey,
-        value: ImageQuality.raw.index);
-    HiveUtil.put(key: HiveUtil.followMainColorKey, value: true);
-    HiveUtil.put(key: HiveUtil.inappWebviewKey, value: true);
+        HiveUtil.longPressLinkButtonImageQualityKey, ImageQuality.raw.index);
+    HiveUtil.put(HiveUtil.followMainColorKey, true);
+    HiveUtil.put(HiveUtil.inappWebviewKey, true);
   }
 
   static bool isFirstLogin() {
-    if (getBool(key: firstLoginKey, defaultValue: true) == true) return true;
+    if (getBool(firstLoginKey, defaultValue: true) == true) return true;
     return false;
   }
 
   static void setFirstLogin() {
-    HiveUtil.put(key: firstLoginKey, value: false);
+    HiveUtil.put(firstLoginKey, false);
   }
 
   static Future? setUserInfo(FullBlogInfo? blogInfo) {
     if (blogInfo != null) {
-      return HiveUtil.put(key: HiveUtil.userInfoKey, value: blogInfo.toJson());
+      return HiveUtil.put(HiveUtil.userInfoKey, blogInfo.toJson());
     }
     return Future(() => null);
   }
 
-  static Future<FullBlogInfo?> getUserInfo({Function()? onEmpty}) async {
-    Map<String, dynamic>? json = HiveUtil.getMap(key: HiveUtil.userInfoKey);
-    if (json == null || json.isEmpty) {
+  static Future<FullBlogInfo?> getUserInfo({
+    Function()? onEmpty,
+  }) async {
+    Map<String, dynamic>? json = HiveUtil.getMap(HiveUtil.userInfoKey);
+    if (json.isEmpty) {
       onEmpty?.call();
       return Future(() => null);
     } else {
@@ -153,45 +147,44 @@ class HiveUtil {
   }
 
   static Locale? getLocale() {
-    return stringToLocale(HiveUtil.getString(key: HiveUtil.localeKey));
+    return stringToLocale(HiveUtil.getString(HiveUtil.localeKey));
   }
 
   static void setLocale(Locale? locale) {
     if (locale == null) {
-      HiveUtil.delete(key: HiveUtil.localeKey);
+      HiveUtil.delete(HiveUtil.localeKey);
     } else {
-      HiveUtil.put(key: HiveUtil.localeKey, value: locale.toString());
+      HiveUtil.put(HiveUtil.localeKey, locale.toString());
     }
   }
 
   static ImageQuality getImageQuality(String key) {
     return ImageQuality.values[Utils.patchEnum(
-        HiveUtil.getInt(key: key), ImageQuality.values.length,
+        HiveUtil.getInt(key), ImageQuality.values.length,
         defaultValue: ImageQuality.medium.index)];
   }
 
   static int? getFontSize() {
     return 2;
-    // return HiveUtil.getInt(key: HiveUtil.fontSizeKey,defaultValue: 2);
+    // return HiveUtil.getInt( HiveUtil.fontSizeKey,defaultValue: 2);
   }
 
   static void setFontSize(int? fontSize) {
-    HiveUtil.put(key: HiveUtil.fontFamilyKey, value: fontSize);
+    HiveUtil.put(HiveUtil.fontFamilyKey, fontSize);
   }
 
   static ActiveThemeMode getThemeMode() {
-    return ActiveThemeMode.values[HiveUtil.getInt(key: HiveUtil.themeModeKey)];
+    return ActiveThemeMode.values[HiveUtil.getInt(HiveUtil.themeModeKey)];
   }
 
   static void setThemeMode(ActiveThemeMode themeMode) {
-    HiveUtil.put(key: HiveUtil.themeModeKey, value: themeMode.index);
+    HiveUtil.put(HiveUtil.themeModeKey, themeMode.index);
   }
 
   static int getLightThemeIndex() {
-    int index =
-        HiveUtil.getInt(key: HiveUtil.lightThemeIndexKey, defaultValue: 0);
+    int index = HiveUtil.getInt(HiveUtil.lightThemeIndexKey, defaultValue: 0);
     if (index > ThemeColorData.defaultLightThemes.length) {
-      String? json = HiveUtil.getString(key: HiveUtil.customLightThemeListKey);
+      String? json = HiveUtil.getString(HiveUtil.customLightThemeListKey);
       if (json == null || json.isEmpty) {
         setLightTheme(0);
         return 0;
@@ -210,10 +203,9 @@ class HiveUtil {
   }
 
   static int getDarkThemeIndex() {
-    int index =
-        HiveUtil.getInt(key: HiveUtil.darkThemeIndexKey, defaultValue: 0);
+    int index = HiveUtil.getInt(HiveUtil.darkThemeIndexKey, defaultValue: 0);
     if (index > ThemeColorData.defaultDarkThemes.length) {
-      String? json = HiveUtil.getString(key: HiveUtil.customDarkThemeListKey);
+      String? json = HiveUtil.getString(HiveUtil.customDarkThemeListKey);
       if (json == null || json.isEmpty) {
         setDarkTheme(0);
         return 0;
@@ -232,10 +224,9 @@ class HiveUtil {
   }
 
   static ThemeColorData getLightTheme() {
-    int index =
-        HiveUtil.getInt(key: HiveUtil.lightThemeIndexKey, defaultValue: 0);
+    int index = HiveUtil.getInt(HiveUtil.lightThemeIndexKey, defaultValue: 0);
     if (index > ThemeColorData.defaultLightThemes.length) {
-      String? json = HiveUtil.getString(key: HiveUtil.customLightThemeListKey);
+      String? json = HiveUtil.getString(HiveUtil.customLightThemeListKey);
       if (json == null || json.isEmpty) {
         setLightTheme(0);
         return ThemeColorData.defaultLightThemes[0];
@@ -256,10 +247,9 @@ class HiveUtil {
   }
 
   static ThemeColorData getDarkTheme() {
-    int index =
-        HiveUtil.getInt(key: HiveUtil.darkThemeIndexKey, defaultValue: 0);
+    int index = HiveUtil.getInt(HiveUtil.darkThemeIndexKey, defaultValue: 0);
     if (index > ThemeColorData.defaultDarkThemes.length) {
-      String? json = HiveUtil.getString(key: HiveUtil.customDarkThemeListKey);
+      String? json = HiveUtil.getString(HiveUtil.customDarkThemeListKey);
       if (json == null || json.isEmpty) {
         setDarkTheme(0);
         return ThemeColorData.defaultDarkThemes[0];
@@ -280,20 +270,22 @@ class HiveUtil {
   }
 
   static void setLightTheme(int index) =>
-      HiveUtil.put(key: HiveUtil.lightThemeIndexKey, value: index);
+      HiveUtil.put(HiveUtil.lightThemeIndexKey, index);
 
   static void setDarkTheme(int index) =>
-      HiveUtil.put(key: HiveUtil.darkThemeIndexKey, value: index);
+      HiveUtil.put(HiveUtil.darkThemeIndexKey, index);
 
   static bool shouldAutoLock() =>
-      HiveUtil.getBool(key: HiveUtil.enableGuesturePasswdKey) &&
-      HiveUtil.getString(key: HiveUtil.guesturePasswdKey) != null &&
-      HiveUtil.getString(key: HiveUtil.guesturePasswdKey)!.isNotEmpty &&
-      HiveUtil.getBool(key: HiveUtil.autoLockKey);
+      HiveUtil.getBool(HiveUtil.enableGuesturePasswdKey) &&
+      HiveUtil.getString(HiveUtil.guesturePasswdKey) != null &&
+      HiveUtil.getString(HiveUtil.guesturePasswdKey)!.isNotEmpty &&
+      HiveUtil.getBool(HiveUtil.autoLockKey);
 
   static List<SortableItem> getSortableItems(
-      String key, List<SortableItem> defaultValue) {
-    String? json = HiveUtil.getString(key: key);
+    String key,
+    List<SortableItem> defaultValue,
+  ) {
+    String? json = HiveUtil.getString(key);
     if (json == null || json.isEmpty) {
       return defaultValue;
     } else {
@@ -304,37 +296,11 @@ class HiveUtil {
   }
 
   static void setSortableItems(String key, List<SortableItem> items) =>
-      HiveUtil.put(key: key, value: jsonEncode(items));
-
-  static int getInt({
-    String boxName = HiveUtil.settingsBox,
-    required String key,
-    bool autoCreate = true,
-    int defaultValue = 0,
-  }) {
-    final Box box = Hive.box(name: boxName);
-    if (!box.containsKey(key)) {
-      put(boxName: boxName, key: key, value: defaultValue);
-    }
-    return box.get(key);
-  }
-
-  static bool getBool({
-    String boxName = HiveUtil.settingsBox,
-    required String key,
-    bool autoCreate = true,
-    bool defaultValue = true,
-  }) {
-    final Box box = Hive.box(name: boxName);
-    if (!box.containsKey(key)) {
-      put(boxName: boxName, key: key, value: defaultValue);
-    }
-    return box.get(key);
-  }
+      HiveUtil.put(key, jsonEncode(items));
 
   static Map<String, String> getCookie() {
     Map<String, String> map = {};
-    String str = getString(key: cookieKey) ?? "";
+    String str = getString(cookieKey) ?? "";
     if (str.isNotEmpty) {
       List<String> list = str.split("; ");
       for (String item in list) {
@@ -347,27 +313,52 @@ class HiveUtil {
     return map;
   }
 
+  static int getInt(
+    String key, {
+    String boxName = HiveUtil.settingsBox,
+    int defaultValue = 0,
+  }) {
+    final Box box = Hive.box(name: boxName);
+    if (!box.containsKey(key)) {
+      put(key, defaultValue, boxName: boxName);
+    }
+    return box.get(key);
+  }
+
+  static bool getBool(
+    String key, {
+    String boxName = HiveUtil.settingsBox,
+    bool defaultValue = true,
+  }) {
+    final Box box = Hive.box(name: boxName);
+    if (!box.containsKey(key)) {
+      put(key, defaultValue, boxName: boxName);
+    }
+    return box.get(key);
+  }
+
   static String? getString(
-      {String boxName = HiveUtil.settingsBox,
-      required String key,
-      bool autoCreate = true,
-      String? defaultValue}) {
+    String key, {
+    String boxName = HiveUtil.settingsBox,
+    bool autoCreate = true,
+    String? defaultValue,
+  }) {
     final Box box = Hive.box(name: boxName);
     if (!box.containsKey(key)) {
       if (!autoCreate) {
         return null;
       }
-      put(boxName: boxName, key: key, value: defaultValue);
+      put(key, defaultValue, boxName: boxName);
     }
     return box.get(key);
   }
 
-  static Map<String, dynamic>? getMap({
+  static Map<String, dynamic> getMap(
+    String key, {
     String boxName = HiveUtil.settingsBox,
-    required String key,
   }) {
     final Box box = Hive.box(name: boxName);
-    Map<String, dynamic>? res;
+    Map<String, dynamic> res = {};
     if (box.get(key) != null) {
       res = Map<String, dynamic>.from(box.get(key));
     }
@@ -375,27 +366,29 @@ class HiveUtil {
   }
 
   static List<dynamic>? getList(
-      {String boxName = HiveUtil.settingsBox,
-      required String key,
-      bool autoCreate = true,
-      List<dynamic>? defaultValue}) {
+    String key, {
+    String boxName = HiveUtil.settingsBox,
+    bool autoCreate = true,
+    List<dynamic> defaultValue = const [],
+  }) {
     final Box box = Hive.box(name: boxName);
     if (!box.containsKey(key)) {
       if (!autoCreate) {
         return null;
       }
-      put(boxName: boxName, key: key, value: defaultValue);
+      put(key, defaultValue, boxName: boxName);
     }
     return box.get(key);
   }
 
   static List<String>? getStringList(
-      {String boxName = HiveUtil.settingsBox,
-      required String key,
-      bool autoCreate = true,
-      List<dynamic>? defaultValue}) {
+    String key, {
+    String boxName = HiveUtil.settingsBox,
+    bool autoCreate = true,
+    List<dynamic> defaultValue = const [],
+  }) {
     return getList(
-      key: key,
+      key,
       boxName: boxName,
       autoCreate: autoCreate,
       defaultValue: defaultValue,
@@ -405,21 +398,26 @@ class HiveUtil {
   }
 
   static Future<void> put(
-      {String boxName = HiveUtil.settingsBox,
-      required String key,
-      required dynamic value}) async {
+    String key,
+    dynamic value, {
+    String boxName = HiveUtil.settingsBox,
+  }) async {
     final Box box = Hive.box(name: boxName);
     return box.put(key, value);
   }
 
   static Future<void> delete(
-      {String boxName = HiveUtil.settingsBox, required String key}) async {
+    String key, {
+    String boxName = HiveUtil.settingsBox,
+  }) async {
     final Box box = Hive.box(name: boxName);
     box.delete(key);
   }
 
   static bool contains(
-      {String boxName = HiveUtil.settingsBox, required String key}) {
+    String key, {
+    String boxName = HiveUtil.settingsBox,
+  }) {
     final Box box = Hive.box(name: boxName);
     return box.containsKey(key);
   }

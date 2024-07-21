@@ -122,7 +122,7 @@ class _UserDynamicShieldSettingScreenState
             Expanded(
               child: Text(blogInfo.blogNickName),
             ),
-            ItemBuilder.buildFramedButton(
+            ItemBuilder.buildFramedDoubleButton(
               context: context,
               isFollowed: false,
               positiveText: "恢复查看",

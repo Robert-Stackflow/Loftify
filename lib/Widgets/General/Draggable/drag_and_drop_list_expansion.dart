@@ -112,7 +112,9 @@ class DragAndDropListExpansion implements DragAndDropListExpansionInterface {
                 onLeave: (incoming) {
                   _stopExpansionTimer();
                 },
-                onWillAcceptWithDetails: (incoming) {return false;},
+                onWillAcceptWithDetails: (incoming) {
+                  return false;
+                },
               ),
             )
           ]);

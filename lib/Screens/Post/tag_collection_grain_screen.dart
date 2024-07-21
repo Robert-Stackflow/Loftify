@@ -8,7 +8,6 @@ import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/route_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
-import '../../Utils/constant.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/Custom/custom_tab_indicator.dart';
@@ -179,7 +178,6 @@ class CollectionTabState extends State<CollectionTab>
   final List<SimpleCollectionInfo> _hotCollectionList = [];
   final EasyRefreshController _collectionRefreshController =
       EasyRefreshController();
-  final ScrollController _scrollController = ScrollController();
   bool _noMore = false;
   int _collectionOffset = 0;
   bool _collectionLoading = false;
@@ -188,18 +186,6 @@ class CollectionTabState extends State<CollectionTab>
   Widget build(BuildContext context) {
     super.build(context);
     return _buildCollectionResultTab();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(() {
-      if (!_noMore &&
-          _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
-        _fetchCollectionResult();
-      }
-    });
   }
 
   callRefresh() {
@@ -269,46 +255,49 @@ class CollectionTabState extends State<CollectionTab>
         return await _fetchCollectionResult();
       },
       triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => CustomScrollView(
-        physics: physics,
-        controller: _scrollController,
-        slivers: [
-          SliverList(
-            delegate: SliverChildListDelegate(
-              [
-                const SizedBox(height: 10),
-                if (_hotCollectionList.isEmpty ||
-                    _recommendCollectionList.isEmpty)
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 16),
-                    height: 160,
-                    child: ItemBuilder.buildEmptyPlaceholder(
-                      context: context,
-                      text: "暂无合集",
+      childBuilder: (context, physics) => ItemBuilder.buildLoadMoreNotification(
+        noMore: _noMore,
+        onLoad: _fetchCollectionResult,
+        child: CustomScrollView(
+          physics: physics,
+          slivers: [
+            SliverList(
+              delegate: SliverChildListDelegate(
+                [
+                  const SizedBox(height: 10),
+                  if (_hotCollectionList.isEmpty ||
+                      _recommendCollectionList.isEmpty)
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 16),
+                      height: 160,
+                      child: ItemBuilder.buildEmptyPlaceholder(
+                        context: context,
+                        text: "暂无合集",
+                      ),
                     ),
-                  ),
-                if (_hotCollectionList.isNotEmpty)
-                  ItemBuilder.buildTitle(
-                    context,
-                    title: "热门合集榜",
-                    bottomMargin: 12,
-                    topMargin: 0,
-                  ),
-                if (_hotCollectionList.isNotEmpty)
-                  _buildHotCollectionRankList(),
-                if (_recommendCollectionList.isNotEmpty)
-                  ItemBuilder.buildTitle(
-                    context,
-                    title: "热门推荐",
-                    bottomMargin: 12,
-                    topMargin: _hotCollectionList.isNotEmpty ? 24 : 0,
-                  ),
-                if (_recommendCollectionList.isNotEmpty)
-                  _buildRecommendCollectionList(),
-              ],
+                  if (_hotCollectionList.isNotEmpty)
+                    ItemBuilder.buildTitle(
+                      context,
+                      title: "热门合集榜",
+                      bottomMargin: 12,
+                      topMargin: 0,
+                    ),
+                  if (_hotCollectionList.isNotEmpty)
+                    _buildHotCollectionRankList(),
+                  if (_recommendCollectionList.isNotEmpty)
+                    ItemBuilder.buildTitle(
+                      context,
+                      title: "热门推荐",
+                      bottomMargin: 12,
+                      topMargin: _hotCollectionList.isNotEmpty ? 24 : 0,
+                    ),
+                  if (_recommendCollectionList.isNotEmpty)
+                    _buildRecommendCollectionList(),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -566,22 +555,9 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
   final List<SimpleGrainInfo> _hotGrainList = [];
   final List<SimpleGrainInfo> _recommendGrainList = [];
   final EasyRefreshController _grainRefreshController = EasyRefreshController();
-  final ScrollController _scrollController = ScrollController();
   int _grainOffset = 0;
   bool _grainLoading = false;
   bool _noMore = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(() {
-      if (!_noMore &&
-          _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
-        _fetchGrainResult();
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -656,43 +632,47 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
         return await _fetchGrainResult();
       },
       triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => CustomScrollView(
-        physics: physics,
-        controller: _scrollController,
-        slivers: [
-          SliverList(
-            delegate: SliverChildListDelegate(
-              [
-                const SizedBox(height: 10),
-                if (_hotGrainList.isEmpty && _recommendGrainList.isEmpty)
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 16),
-                    height: 160,
-                    child: ItemBuilder.buildEmptyPlaceholder(
-                      context: context,
-                      text: "暂无粮单",
+      childBuilder: (context, physics) => ItemBuilder.buildLoadMoreNotification(
+        noMore: _noMore,
+        onLoad: _fetchGrainResult,
+        child: CustomScrollView(
+          physics: physics,
+          slivers: [
+            SliverList(
+              delegate: SliverChildListDelegate(
+                [
+                  const SizedBox(height: 10),
+                  if (_hotGrainList.isEmpty && _recommendGrainList.isEmpty)
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 16),
+                      height: 160,
+                      child: ItemBuilder.buildEmptyPlaceholder(
+                        context: context,
+                        text: "暂无粮单",
+                      ),
                     ),
-                  ),
-                if (_hotGrainList.isNotEmpty)
-                  ItemBuilder.buildTitle(
-                    context,
-                    title: "热门粮单榜",
-                    bottomMargin: 12,
-                    topMargin: 0,
-                  ),
-                if (_hotGrainList.isNotEmpty) _buildHotGrainRankList(),
-                if (_recommendGrainList.isNotEmpty)
-                  ItemBuilder.buildTitle(
-                    context,
-                    title: "热门推荐",
-                    bottomMargin: 12,
-                    topMargin: _hotGrainList.isNotEmpty ? 24 : 0,
-                  ),
-                if (_recommendGrainList.isNotEmpty) _buildRecommendGrainList(),
-              ],
+                  if (_hotGrainList.isNotEmpty)
+                    ItemBuilder.buildTitle(
+                      context,
+                      title: "热门粮单榜",
+                      bottomMargin: 12,
+                      topMargin: 0,
+                    ),
+                  if (_hotGrainList.isNotEmpty) _buildHotGrainRankList(),
+                  if (_recommendGrainList.isNotEmpty)
+                    ItemBuilder.buildTitle(
+                      context,
+                      title: "热门推荐",
+                      bottomMargin: 12,
+                      topMargin: _hotGrainList.isNotEmpty ? 24 : 0,
+                    ),
+                  if (_recommendGrainList.isNotEmpty)
+                    _buildRecommendGrainList(),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

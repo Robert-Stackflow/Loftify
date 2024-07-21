@@ -254,7 +254,7 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
                     ),
                   ),
                   SizedBox(width: subscribed ? 8 : 20),
-                  ItemBuilder.buildFramedButton(
+                  ItemBuilder.buildFramedDoubleButton(
                       context: context,
                       isFollowed: subscribed,
                       positiveText: "已订阅",

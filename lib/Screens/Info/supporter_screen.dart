@@ -9,7 +9,6 @@ import 'package:loftify/Utils/hive_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Models/user_response.dart';
-import '../../Utils/constant.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
@@ -44,7 +43,6 @@ class _SupporterScreenState extends State<SupporterScreen>
   final List<SupporterItem> _supporterList = [];
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
-  final ScrollController _scrollController = ScrollController();
   bool _noMore = false;
 
   @override
@@ -56,13 +54,6 @@ class _SupporterScreenState extends State<SupporterScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     super.initState();
-    _scrollController.addListener(() {
-      if (!_noMore &&
-          _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
-        _fetchList();
-      }
-    });
   }
 
   _fetchList({bool refresh = false}) async {
@@ -72,7 +63,7 @@ class _SupporterScreenState extends State<SupporterScreen>
     _loading = true;
     return await HiveUtil.getUserInfo().then((blogInfo) async {
       int blogId = widget.infoMode == InfoMode.me
-          ? HiveUtil.getInt(key: HiveUtil.userIdKey)
+          ? HiveUtil.getInt(HiveUtil.userIdKey)
           : widget.blogId!;
       return await UserApi.getSupporterList(
         blogId: blogId,
@@ -136,14 +127,17 @@ class _SupporterScreenState extends State<SupporterScreen>
   }
 
   Widget _buildBody(ScrollPhysics physics) {
-    return WaterfallFlow.extent(
-      maxCrossAxisExtent: 600,
-      controller: _scrollController,
-      padding: EdgeInsets.zero,
-      physics: physics,
-      children: List.generate(_supporterList.length, (index) {
-        return _buildItem(index, _supporterList[index]);
-      }),
+    return ItemBuilder.buildLoadMoreNotification(
+      noMore: _noMore,
+      onLoad: _onLoad,
+      child: WaterfallFlow.extent(
+        maxCrossAxisExtent: 600,
+        padding: EdgeInsets.zero,
+        physics: physics,
+        children: List.generate(_supporterList.length, (index) {
+          return _buildItem(index, _supporterList[index]);
+        }),
+      ),
     );
   }
 

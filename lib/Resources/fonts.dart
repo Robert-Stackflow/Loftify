@@ -57,7 +57,7 @@ enum FontEnum {
 
   static getCurrentFont() {
     return FontEnum.values[Utils.patchEnum(
-      HiveUtil.getInt(key: HiveUtil.fontFamilyKey, defaultValue: 0),
+      HiveUtil.getInt(HiveUtil.fontFamilyKey, defaultValue: 0),
       FontEnum.values.length,
     )];
   }
@@ -93,7 +93,7 @@ enum FontEnum {
   static void loadFont(BuildContext context, FontEnum item,
       {bool autoRestartApp = false}) async {
     var dialog = showProgressDialog(context, msg: "已下载");
-    await HiveUtil.put(key: HiveUtil.fontFamilyKey, value: item.index);
+    await HiveUtil.put(HiveUtil.fontFamilyKey, item.index);
     await FontEnum.downloadFont(
       context: context,
       onFinished: (value) {

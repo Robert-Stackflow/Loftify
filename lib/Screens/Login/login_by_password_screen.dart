@@ -56,13 +56,10 @@ class _LoginByPasswordScreenState extends State<LoginByPasswordScreen>
         IToast.showTop("登录成功");
         appProvider.token = loginResponse.token ?? "";
         await RequestUtil.getInstance().clearCookie();
-        await HiveUtil.put(
-            key: HiveUtil.userIdKey, value: loginResponse.userid);
-        await HiveUtil.put(key: HiveUtil.tokenKey, value: loginResponse.token);
-        await HiveUtil.put(
-            key: HiveUtil.deviceIdKey, value: loginResponse.deviceid);
-        await HiveUtil.put(
-            key: HiveUtil.tokenTypeKey, value: TokenType.password.index);
+        await HiveUtil.put(HiveUtil.userIdKey, loginResponse.userid);
+        await HiveUtil.put(HiveUtil.tokenKey, loginResponse.token);
+        await HiveUtil.put(HiveUtil.deviceIdKey, loginResponse.deviceid);
+        await HiveUtil.put(HiveUtil.tokenTypeKey, TokenType.password.index);
         ResponsiveUtil.returnToMainScreen(context);
       }
     });

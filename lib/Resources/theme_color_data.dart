@@ -271,6 +271,8 @@ class ThemeColorData {
         thumbColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return canvasBackground;
+          } else if (states.contains(WidgetState.disabled)) {
+            return Colors.grey;
           } else {
             return textGrayColor.withAlpha(200);
           }

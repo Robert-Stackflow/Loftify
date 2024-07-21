@@ -4,18 +4,15 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
-  desktop_multi_window
   hotkey_manager_windows
   isar_flutter_libs
   local_auth_windows
   permission_handler_windows
   screen_retriever
   share_plus
-  texture_rgba_renderer
   tray_manager
   url_launcher_windows
   window_manager
-  window_size
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

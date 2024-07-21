@@ -375,9 +375,7 @@ class _MineScreenState extends State<MineScreen>
   }
 
   getAvatarBoxImage() {
-    String url = HiveUtil.getString(
-            key: HiveUtil.customAvatarBoxKey, defaultValue: null) ??
-        "";
+    String url = HiveUtil.getString(HiveUtil.customAvatarBoxKey) ?? "";
     return url.isNotEmpty ? url : blogInfo?.avatarBoxImage ?? "";
   }
 

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Screens/Setting/apperance_setting_screen.dart';
 import 'package:loftify/Screens/Setting/blacklist_setting_screen.dart';
 import 'package:loftify/Screens/Setting/general_setting_screen.dart';
@@ -7,6 +6,7 @@ import 'package:loftify/Screens/Setting/image_setting_screen.dart';
 import 'package:loftify/Screens/Setting/lofter_basic_setting_screen.dart';
 import 'package:loftify/Screens/Setting/tagshield_setting_screen.dart';
 import 'package:loftify/Screens/Setting/userdynamicshield_setting_screen.dart';
+import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/request_util.dart';
 import 'package:loftify/Widgets/Dialog/custom_dialog.dart';
@@ -197,11 +197,11 @@ class _SettingScreenState extends State<SettingScreen>
             cancelButtonText: S.current.cancel,
             onTapConfirm: () async {
               appProvider.token = "";
-              await HiveUtil.delete(key: HiveUtil.userIdKey);
-              await HiveUtil.delete(key: HiveUtil.tokenKey);
-              await HiveUtil.delete(key: HiveUtil.deviceIdKey);
+              await HiveUtil.delete(HiveUtil.userIdKey);
+              await HiveUtil.delete(HiveUtil.tokenKey);
+              await HiveUtil.delete(HiveUtil.deviceIdKey);
               await RequestUtil.getInstance().clearCookie();
-              HiveUtil.delete(key: HiveUtil.tokenTypeKey).then((value) {
+              HiveUtil.delete(HiveUtil.tokenTypeKey).then((value) {
                 IToast.showTop("退出成功");
                 ResponsiveUtil.returnToMainScreen(context);
               });

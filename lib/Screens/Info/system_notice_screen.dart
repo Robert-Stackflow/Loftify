@@ -10,7 +10,6 @@ import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/route_util.dart';
 
-import '../../Utils/constant.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/Custom/custom_tab_indicator.dart';
@@ -50,14 +49,6 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
   final EasyRefreshController _collectionRefreshController =
       EasyRefreshController();
   final EasyRefreshController _otherRefreshController = EasyRefreshController();
-  final ScrollController _allScrollController = ScrollController();
-  final ScrollController _likeScrollController = ScrollController();
-  final ScrollController _recommendScrollController = ScrollController();
-  final ScrollController _giftScrollController = ScrollController();
-  final ScrollController _atScrollController = ScrollController();
-  final ScrollController _subscribeScrollController = ScrollController();
-  final ScrollController _collectionScrollController = ScrollController();
-  final ScrollController _otherScrollController = ScrollController();
   bool _allNoMore = false;
   bool _likeNoMore = false;
   bool _recommendNoMore = false;
@@ -88,89 +79,7 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     super.initState();
-    initScrollController();
     initTab();
-  }
-
-  initScrollController() {
-    _allScrollController.addListener(() {
-      if (!_allNoMore &&
-          _allScrollController.position.pixels >
-              _allScrollController.position.maxScrollExtent -
-                  kLoadExtentOffset) {
-        _fetchSystemNotices(MessageType.all, _allMessages,
-            resetNoMore: () => _allNoMore = false,
-            onNoMore: () => _allNoMore = true);
-      }
-    });
-    _likeScrollController.addListener(() {
-      if (!_likeNoMore &&
-          _likeScrollController.position.pixels >
-              _likeScrollController.position.maxScrollExtent -
-                  kLoadExtentOffset) {
-        _fetchLikeMessages();
-      }
-    });
-    _recommendScrollController.addListener(() {
-      if (!_recommendNoMore &&
-          _recommendScrollController.position.pixels >
-              _recommendScrollController.position.maxScrollExtent -
-                  kLoadExtentOffset) {
-        _fetchSystemNotices(MessageType.recommend, _recommendMessages,
-            resetNoMore: () => _recommendNoMore = false,
-            onNoMore: () => _recommendNoMore = true);
-      }
-    });
-    _giftScrollController.addListener(() {
-      if (!_giftNoMore &&
-          _giftScrollController.position.pixels >
-              _giftScrollController.position.maxScrollExtent -
-                  kLoadExtentOffset) {
-        _fetchSystemNotices(MessageType.gift, _giftMessages,
-            resetNoMore: () => _giftNoMore = false,
-            onNoMore: () => _giftNoMore = true);
-      }
-    });
-    _atScrollController.addListener(() {
-      if (!_atNoMore &&
-          _atScrollController.position.pixels >
-              _atScrollController.position.maxScrollExtent -
-                  kLoadExtentOffset) {
-        _fetchSystemNotices(MessageType.at, _atMessages,
-            resetNoMore: () => _atNoMore = false,
-            onNoMore: () => _atNoMore = true);
-      }
-    });
-    _subscribeScrollController.addListener(() {
-      if (!_subscribeNoMore &&
-          _subscribeScrollController.position.pixels >
-              _subscribeScrollController.position.maxScrollExtent -
-                  kLoadExtentOffset) {
-        _fetchSystemNotices(MessageType.subscribe, _subscribeMessages,
-            resetNoMore: () => _subscribeNoMore = false,
-            onNoMore: () => _subscribeNoMore = true);
-      }
-    });
-    _collectionScrollController.addListener(() {
-      if (!_collectionNoMore &&
-          _collectionScrollController.position.pixels >
-              _collectionScrollController.position.maxScrollExtent -
-                  kLoadExtentOffset) {
-        _fetchSystemNotices(MessageType.collection, _collectionMessages,
-            resetNoMore: () => _collectionNoMore = false,
-            onNoMore: () => _collectionNoMore = true);
-      }
-    });
-    _otherScrollController.addListener(() {
-      if (!_otherNoMore &&
-          _otherScrollController.position.pixels >
-              _otherScrollController.position.maxScrollExtent -
-                  kLoadExtentOffset) {
-        _fetchSystemNotices(MessageType.other, _otherMessages,
-            resetNoMore: () => _otherNoMore = false,
-            onNoMore: () => _otherNoMore = true);
-      }
-    });
   }
 
   initTab() {
@@ -319,11 +228,18 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
         );
       },
       triggerAxis: Axis.vertical,
-      child: ListView.builder(
-        controller: _allScrollController,
-        padding: const EdgeInsets.only(top: 10),
-        itemBuilder: (context, index) => _buildItem(_allMessages[index]),
-        itemCount: _allMessages.length,
+      child: ItemBuilder.buildLoadMoreNotification(
+        noMore: _allNoMore,
+        onLoad: () {
+          _fetchSystemNotices(MessageType.all, _allMessages,
+              resetNoMore: () => _allNoMore = false,
+              onNoMore: () => _allNoMore = true);
+        },
+        child: ListView.builder(
+          padding: const EdgeInsets.only(top: 10),
+          itemBuilder: (context, index) => _buildItem(_allMessages[index]),
+          itemCount: _allMessages.length,
+        ),
       ),
     );
   }
@@ -339,11 +255,16 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
         return await _fetchLikeMessages();
       },
       triggerAxis: Axis.vertical,
-      child: ListView.builder(
-        controller: _likeScrollController,
-        padding: const EdgeInsets.only(top: 10),
-        itemBuilder: (context, index) => _buildItem(_likeMessages[index]),
-        itemCount: _likeMessages.length,
+      child: ItemBuilder.buildLoadMoreNotification(
+        noMore: _likeNoMore,
+        onLoad: () {
+          _fetchLikeMessages();
+        },
+        child: ListView.builder(
+          padding: const EdgeInsets.only(top: 10),
+          itemBuilder: (context, index) => _buildItem(_likeMessages[index]),
+          itemCount: _likeMessages.length,
+        ),
       ),
     );
   }
@@ -370,11 +291,19 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
         );
       },
       triggerAxis: Axis.vertical,
-      child: ListView.builder(
-        controller: _recommendScrollController,
-        padding: const EdgeInsets.only(top: 10),
-        itemBuilder: (context, index) => _buildItem(_recommendMessages[index]),
-        itemCount: _recommendMessages.length,
+      child: ItemBuilder.buildLoadMoreNotification(
+        noMore: _recommendNoMore,
+        onLoad: () {
+          _fetchSystemNotices(MessageType.recommend, _recommendMessages,
+              resetNoMore: () => _recommendNoMore = false,
+              onNoMore: () => _recommendNoMore = true);
+        },
+        child: ListView.builder(
+          padding: const EdgeInsets.only(top: 10),
+          itemBuilder: (context, index) =>
+              _buildItem(_recommendMessages[index]),
+          itemCount: _recommendMessages.length,
+        ),
       ),
     );
   }
@@ -401,11 +330,18 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
         );
       },
       triggerAxis: Axis.vertical,
-      child: ListView.builder(
-        controller: _giftScrollController,
-        padding: const EdgeInsets.only(top: 10),
-        itemBuilder: (context, index) => _buildItem(_giftMessages[index]),
-        itemCount: _giftMessages.length,
+      child: ItemBuilder.buildLoadMoreNotification(
+        noMore: _giftNoMore,
+        onLoad: () {
+          _fetchSystemNotices(MessageType.gift, _giftMessages,
+              resetNoMore: () => _giftNoMore = false,
+              onNoMore: () => _giftNoMore = true);
+        },
+        child: ListView.builder(
+          padding: const EdgeInsets.only(top: 10),
+          itemBuilder: (context, index) => _buildItem(_giftMessages[index]),
+          itemCount: _giftMessages.length,
+        ),
       ),
     );
   }
@@ -432,11 +368,18 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
         );
       },
       triggerAxis: Axis.vertical,
-      child: ListView.builder(
-        controller: _atScrollController,
-        padding: const EdgeInsets.only(top: 10),
-        itemBuilder: (context, index) => _buildItem(_atMessages[index]),
-        itemCount: _atMessages.length,
+      child: ItemBuilder.buildLoadMoreNotification(
+        noMore: _atNoMore,
+        onLoad: () {
+          _fetchSystemNotices(MessageType.at, _atMessages,
+              resetNoMore: () => _atNoMore = false,
+              onNoMore: () => _atNoMore = true);
+        },
+        child: ListView.builder(
+          padding: const EdgeInsets.only(top: 10),
+          itemBuilder: (context, index) => _buildItem(_atMessages[index]),
+          itemCount: _atMessages.length,
+        ),
       ),
     );
   }
@@ -463,11 +406,19 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
         );
       },
       triggerAxis: Axis.vertical,
-      child: ListView.builder(
-        controller: _subscribeScrollController,
-        padding: const EdgeInsets.only(top: 10),
-        itemBuilder: (context, index) => _buildItem(_subscribeMessages[index]),
-        itemCount: _subscribeMessages.length,
+      child: ItemBuilder.buildLoadMoreNotification(
+        noMore: _subscribeNoMore,
+        onLoad: () {
+          _fetchSystemNotices(MessageType.subscribe, _subscribeMessages,
+              resetNoMore: () => _subscribeNoMore = false,
+              onNoMore: () => _subscribeNoMore = true);
+        },
+        child: ListView.builder(
+          padding: const EdgeInsets.only(top: 10),
+          itemBuilder: (context, index) =>
+              _buildItem(_subscribeMessages[index]),
+          itemCount: _subscribeMessages.length,
+        ),
       ),
     );
   }
@@ -494,11 +445,19 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
         );
       },
       triggerAxis: Axis.vertical,
-      child: ListView.builder(
-        controller: _collectionScrollController,
-        padding: const EdgeInsets.only(top: 10),
-        itemBuilder: (context, index) => _buildItem(_collectionMessages[index]),
-        itemCount: _collectionMessages.length,
+      child: ItemBuilder.buildLoadMoreNotification(
+        noMore: _collectionNoMore,
+        onLoad: () {
+          _fetchSystemNotices(MessageType.collection, _collectionMessages,
+              resetNoMore: () => _collectionNoMore = false,
+              onNoMore: () => _collectionNoMore = true);
+        },
+        child: ListView.builder(
+          padding: const EdgeInsets.only(top: 10),
+          itemBuilder: (context, index) =>
+              _buildItem(_collectionMessages[index]),
+          itemCount: _collectionMessages.length,
+        ),
       ),
     );
   }
@@ -525,11 +484,18 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
         );
       },
       triggerAxis: Axis.vertical,
-      child: ListView.builder(
-        controller: _otherScrollController,
-        padding: const EdgeInsets.only(top: 10),
-        itemBuilder: (context, index) => _buildItem(_otherMessages[index]),
-        itemCount: _otherMessages.length,
+      child: ItemBuilder.buildLoadMoreNotification(
+        noMore: _otherNoMore,
+        onLoad: () {
+          _fetchSystemNotices(MessageType.other, _otherMessages,
+              resetNoMore: () => _otherNoMore = false,
+              onNoMore: () => _otherNoMore = true);
+        },
+        child: ListView.builder(
+          padding: const EdgeInsets.only(top: 10),
+          itemBuilder: (context, index) => _buildItem(_otherMessages[index]),
+          itemCount: _otherMessages.length,
+        ),
       ),
     );
   }

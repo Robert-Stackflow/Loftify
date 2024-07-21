@@ -7,8 +7,8 @@ import 'package:loftify/Utils/route_util.dart';
 import 'package:restart_app/restart_app.dart';
 import 'package:window_manager/window_manager.dart';
 
-import 'app_provider.dart';
 import '../Screens/main_screen.dart';
+import 'app_provider.dart';
 
 class ResponsiveUtil {
   static Future<void> restartApp(BuildContext context) async {
@@ -20,9 +20,9 @@ class ResponsiveUtil {
 
   static Future<void> returnToMainScreen(BuildContext context) async {
     if (ResponsiveUtil.isDesktop()) {
-      appProvider.desktopCanpop = false;
+      appProvider.canPopByProvider = false;
       desktopNavigatorKey = GlobalKey<NavigatorState>();
-      AppProvider.globalNavigatorState?.pushAndRemoveUntil(
+      globalNavigatorState?.pushAndRemoveUntil(
         RouteUtil.getFadeRoute(const MainScreen(), duration: Duration.zero),
         (route) => false,
       );
@@ -58,6 +58,10 @@ class ResponsiveUtil {
     return Platform.isMacOS;
   }
 
+  static bool isLinux() {
+    return Platform.isLinux;
+  }
+
   static bool isWeb() {
     return kIsWeb;
   }
@@ -74,10 +78,8 @@ class ResponsiveUtil {
   static checkSizeCondition() {
     double shortestThreshold = 600;
     double longestThreshold = 900;
-    double longestSide =
-        MediaQuery.sizeOf(RouteUtil.getRootContext()).longestSide;
-    double shortestSide =
-        MediaQuery.sizeOf(RouteUtil.getRootContext()).shortestSide;
+    double longestSide = MediaQuery.sizeOf(rootContext).longestSide;
+    double shortestSide = MediaQuery.sizeOf(rootContext).shortestSide;
     bool sizeCondition =
         longestSide >= longestThreshold && shortestSide >= shortestThreshold;
     if (!sizeCondition) {
@@ -91,12 +93,9 @@ class ResponsiveUtil {
   static bool isTablet() {
     double shortestThreshold = 600;
     double longestThreshold = 900;
-    double longestSide =
-        MediaQuery.sizeOf(RouteUtil.getRootContext()).longestSide;
-    double shortestSide =
-        MediaQuery.sizeOf(RouteUtil.getRootContext()).shortestSide;
-    Orientation orientation =
-        MediaQuery.of(RouteUtil.getRootContext()).orientation;
+    double longestSide = MediaQuery.sizeOf(rootContext).longestSide;
+    double shortestSide = MediaQuery.sizeOf(rootContext).shortestSide;
+    Orientation orientation = MediaQuery.of(rootContext).orientation;
     bool sizeCondition =
         longestSide >= longestThreshold && shortestSide >= shortestThreshold;
     return !kIsWeb &&

@@ -2,7 +2,6 @@ import 'package:card_swiper/card_swiper.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/search_api.dart';
 import 'package:loftify/Models/search_response.dart';
-import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Screens/Post/collection_detail_screen.dart';
@@ -10,6 +9,7 @@ import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Screens/Post/search_result_screen.dart';
 import 'package:loftify/Screens/Post/tag_detail_screen.dart';
 import 'package:loftify/Screens/Post/video_detail_screen.dart';
+import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/responsive_util.dart';
@@ -216,14 +216,14 @@ class _SearchScreenState extends State<SearchScreen>
   }
 
   _buildMainBody() {
-    bool showSearchHistory = HiveUtil.getBool(
-        key: HiveUtil.showSearchHistoryKey, defaultValue: false);
+    bool showSearchHistory =
+        HiveUtil.getBool(HiveUtil.showSearchHistoryKey, defaultValue: false);
     bool showSearchGuess =
-        HiveUtil.getBool(key: HiveUtil.showSearchGuessKey, defaultValue: false);
+        HiveUtil.getBool(HiveUtil.showSearchGuessKey, defaultValue: false);
     bool showSearchConfig =
-        HiveUtil.getBool(key: HiveUtil.showSearchConfigKey, defaultValue: true);
+        HiveUtil.getBool(HiveUtil.showSearchConfigKey, defaultValue: true);
     bool showSearchRank =
-        HiveUtil.getBool(key: HiveUtil.showSearchRankKey, defaultValue: false);
+        HiveUtil.getBool(HiveUtil.showSearchRankKey, defaultValue: false);
     return CustomScrollView(
       controller: _scrollController,
       slivers: [

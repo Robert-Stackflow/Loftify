@@ -48,8 +48,8 @@ class _DressDetailScreenState extends State<DressDetailScreen>
     }
     super.initState();
     _onRefresh();
-    currentAvatarImg = HiveUtil.getString(
-        key: HiveUtil.customAvatarBoxKey, defaultValue: null);
+    currentAvatarImg =
+        HiveUtil.getString(HiveUtil.customAvatarBoxKey, defaultValue: null);
     setState(() {});
   }
 
@@ -126,12 +126,12 @@ class _DressDetailScreenState extends State<DressDetailScreen>
   _dressOrUnDress(GiftPartItem item) async {
     HapticFeedback.mediumImpact();
     if (currentAvatarImg == item.partUrl) {
-      await HiveUtil.put(key: HiveUtil.customAvatarBoxKey, value: "");
+      await HiveUtil.put(HiveUtil.customAvatarBoxKey, "");
       currentAvatarImg = "";
       setState(() {});
       IToast.showTop("取消佩戴成功");
     } else {
-      await HiveUtil.put(key: HiveUtil.customAvatarBoxKey, value: item.partUrl);
+      await HiveUtil.put(HiveUtil.customAvatarBoxKey, item.partUrl);
       currentAvatarImg = item.partUrl;
       setState(() {});
       IToast.showTop("佩戴成功");

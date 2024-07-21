@@ -24,8 +24,7 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
     with TickerProviderStateMixin {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  String filenameFormat = HiveUtil.getString(
-          key: HiveUtil.filenameFormatKey,
+  String filenameFormat = HiveUtil.getString(HiveUtil.filenameFormatKey,
           defaultValue: defaultFilenameFormat) ??
       defaultFilenameFormat;
 
@@ -68,8 +67,8 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
                       onTap: () {
                         _controller.text = defaultFilenameFormat;
                         HiveUtil.put(
-                          key: HiveUtil.filenameFormatKey,
-                          value: defaultFilenameFormat,
+                          HiveUtil.filenameFormatKey,
+                          defaultFilenameFormat,
                         );
                         widget.onSaved?.call(defaultFilenameFormat);
                         IToast.showTop("重置成功");
@@ -80,8 +79,8 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
                       icon: const Icon(Icons.save_rounded),
                       onTap: () {
                         HiveUtil.put(
-                          key: HiveUtil.filenameFormatKey,
-                          value: _controller.text,
+                          HiveUtil.filenameFormatKey,
+                          _controller.text,
                         );
                         widget.onSaved?.call(_controller.text);
                         IToast.showTop("保存成功");

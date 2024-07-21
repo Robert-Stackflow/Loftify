@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Widgets/Dialog/widgets/dialog_wrapper_widget.dart';
 import 'package:loftify/Widgets/General/Animation/animated_fade.dart';
@@ -148,7 +149,8 @@ class DialogBuilder {
         );
       },
       pageBuilder: (context, animation, secondaryAnimation) =>
-          DialogWrapperWidget(showClose: showClose, child: child),
+          DialogWrapperWidget(
+              key: dialogNavigatorKey, showClose: showClose, child: child),
     );
   }
 }

@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/login_api.dart';
 import 'package:loftify/Models/login_response.dart';
-import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Screens/Login/login_by_lofterid_screen.dart';
 import 'package:loftify/Screens/Login/login_by_password_screen.dart';
+import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/iprint.dart';
@@ -121,13 +121,10 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
         IToast.showTop("登录成功");
         appProvider.token = loginResponse.token ?? "";
         await RequestUtil.getInstance().clearCookie();
-        await HiveUtil.put(
-            key: HiveUtil.userIdKey, value: loginResponse.userid);
-        await HiveUtil.put(key: HiveUtil.tokenKey, value: loginResponse.token);
-        await HiveUtil.put(
-            key: HiveUtil.deviceIdKey, value: loginResponse.deviceid);
-        await HiveUtil.put(
-            key: HiveUtil.tokenTypeKey, value: TokenType.captchCode.index);
+        await HiveUtil.put(HiveUtil.userIdKey, loginResponse.userid);
+        await HiveUtil.put(HiveUtil.tokenKey, loginResponse.token);
+        await HiveUtil.put(HiveUtil.deviceIdKey, loginResponse.deviceid);
+        await HiveUtil.put(HiveUtil.tokenTypeKey, TokenType.captchCode.index);
         ResponsiveUtil.returnToMainScreen(context);
       }
     });

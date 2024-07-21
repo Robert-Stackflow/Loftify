@@ -8,7 +8,6 @@ import 'package:loftify/Screens/Info/dress_detail_screen.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Api/dress_api.dart';
-import '../../Utils/constant.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
@@ -40,7 +39,6 @@ class _DressScreenState extends State<DressScreen>
   bool _loading = false;
   int offset = 0;
   final EasyRefreshController _refreshController = EasyRefreshController();
-  final ScrollController _scrollController = ScrollController();
   bool _noMore = false;
 
   @override
@@ -52,13 +50,6 @@ class _DressScreenState extends State<DressScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     super.initState();
-    _scrollController.addListener(() {
-      if (!_noMore &&
-          _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
-        _onLoad();
-      }
-    });
   }
 
   _fetchList({bool refresh = false}) async {
@@ -147,20 +138,23 @@ class _DressScreenState extends State<DressScreen>
   }
 
   Widget _buildBody(ScrollPhysics physics) {
-    return WaterfallFlow.builder(
-      physics: physics,
-      cacheExtent: 9999,
-      controller: _scrollController,
-      padding: const EdgeInsets.all(10),
-      itemCount: _giftDressList.length,
-      gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-        mainAxisSpacing: 10,
-        crossAxisSpacing: 10,
-        maxCrossAxisExtent: 300,
+    return ItemBuilder.buildLoadMoreNotification(
+      child: WaterfallFlow.builder(
+        physics: physics,
+        cacheExtent: 9999,
+        padding: const EdgeInsets.all(10),
+        itemCount: _giftDressList.length,
+        gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 10,
+          maxCrossAxisExtent: 300,
+        ),
+        itemBuilder: (context, index) {
+          return _buildGiftDressItem(_giftDressList[index]);
+        },
       ),
-      itemBuilder: (context, index) {
-        return _buildGiftDressItem(_giftDressList[index]);
-      },
+      noMore: _noMore,
+      onLoad: _onLoad,
     );
   }
 

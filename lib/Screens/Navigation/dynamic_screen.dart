@@ -16,9 +16,9 @@ import 'package:loftify/Utils/route_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Api/tag_api.dart';
-import '../../Utils/app_provider.dart';
 import '../../Resources/colors.dart';
 import '../../Resources/theme.dart';
+import '../../Utils/app_provider.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/responsive_util.dart';

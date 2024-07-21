@@ -6,7 +6,6 @@ import 'package:loftify/Utils/route_util.dart';
 
 import '../../Api/setting_api.dart';
 import '../../Resources/theme.dart';
-import '../../Utils/constant.dart';
 import '../../Utils/itoast.dart';
 import '../../Widgets/Dialog/custom_dialog.dart';
 import '../../Widgets/Dialog/dialog_builder.dart';
@@ -28,20 +27,7 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
   bool loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
   List<BlacklistItem> blacklist = [];
-  final ScrollController _scrollController = ScrollController();
   bool _noMore = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(() {
-      if (!_noMore &&
-          _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
-        _fetchBlacklist();
-      }
-    });
-  }
 
   _fetchBlacklist({bool refresh = false}) async {
     if (loading) return;
@@ -102,11 +88,15 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
           return await _fetchBlacklist();
         },
         triggerAxis: Axis.vertical,
-        child: ListView.builder(
-          controller: _scrollController,
-          itemCount: blacklist.length,
-          padding: EdgeInsets.zero,
-          itemBuilder: (context, index) => _buildBlacklistRow(blacklist[index]),
+        child: ItemBuilder.buildLoadMoreNotification(
+          child: ListView.builder(
+            itemCount: blacklist.length,
+            padding: EdgeInsets.zero,
+            itemBuilder: (context, index) =>
+                _buildBlacklistRow(blacklist[index]),
+          ),
+          noMore: _noMore,
+          onLoad: _fetchBlacklist,
         ),
       ),
     );
@@ -145,7 +135,7 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
             Expanded(
               child: Text(blacklistItem.blogInfo.blogNickName),
             ),
-            ItemBuilder.buildFramedButton(
+            ItemBuilder.buildFramedDoubleButton(
               context: context,
               isFollowed: false,
               positiveText: "解除黑名单",

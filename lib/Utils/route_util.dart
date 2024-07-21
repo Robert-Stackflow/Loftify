@@ -4,30 +4,42 @@ import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/responsive_util.dart';
 
 class RouteUtil {
-  static getRootContext() {
-    return globalNavigatorKey.currentState?.context;
-  }
-
   static pushMaterialRoute(BuildContext context, Widget page) {
     return Navigator.push(
         context, MaterialPageRoute(builder: (context) => page));
   }
 
-  static pushCupertinoRoute(BuildContext context, Widget page) {
-    appProvider.desktopCanpop = true;
+  static pushCupertinoRoute(
+    BuildContext context,
+    Widget page, {
+    Function(dynamic)? onThen,
+  }) {
+    appProvider.canPopByProvider = true;
     if (ResponsiveUtil.isLandscape()) {
-      return pushFadeRoute(context, page);
+      return pushFadeRoute(context, page, onThen: onThen);
     } else {
       return Navigator.push(
-          context, CupertinoPageRoute(builder: (context) => page));
+              context, CupertinoPageRoute(builder: (context) => page))
+          .then(onThen ?? (_) => {});
     }
   }
 
-  static pushDesktopFadeRoute(Widget page) async {
-    appProvider.desktopCanpop = true;
-    return await desktopNavigatorKey.currentState?.push(
-      getFadeRoute(page),
-    );
+  static pushDesktopFadeRoute(
+    Widget page, {
+    bool removeUtil = false,
+  }) async {
+    if (removeUtil) {
+      appProvider.canPopByProvider = false;
+      return await desktopNavigatorKey.currentState?.pushAndRemoveUntil(
+        getFadeRoute(page),
+        (route) => false,
+      );
+    } else {
+      appProvider.canPopByProvider = true;
+      return await desktopNavigatorKey.currentState?.push(
+        getFadeRoute(page),
+      );
+    }
   }
 
   static getFadeRoute(Widget page, {Duration? duration}) {
@@ -46,10 +58,14 @@ class RouteUtil {
     );
   }
 
-  static pushFadeRoute(BuildContext context, Widget page) {
+  static pushFadeRoute(
+    BuildContext context,
+    Widget page, {
+    Function(dynamic)? onThen,
+  }) {
     return Navigator.push(
       context,
       getFadeRoute(page),
-    );
+    ).then(onThen ?? (_) => {});
   }
 }

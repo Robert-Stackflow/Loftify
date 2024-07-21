@@ -49,7 +49,6 @@ class _FollowingFollowerScreenState extends State<FollowingFollowerScreen>
   bool _loading = false;
   int total = 0;
   final EasyRefreshController _refreshController = EasyRefreshController();
-  final ScrollController _scrollController = ScrollController();
   bool _noMore = false;
 
   @override
@@ -62,13 +61,6 @@ class _FollowingFollowerScreenState extends State<FollowingFollowerScreen>
     }
     total = widget.total;
     super.initState();
-    _scrollController.addListener(() {
-      if (!_noMore &&
-          _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
-        _fetchList();
-      }
-    });
   }
 
   _processResult(value, {bool refresh = false}) {
@@ -165,17 +157,20 @@ class _FollowingFollowerScreenState extends State<FollowingFollowerScreen>
   }
 
   Widget _buildBody(ScrollPhysics physics) {
-    return WaterfallFlow.extent(
-      maxCrossAxisExtent: 600,
-      controller: _scrollController,
-      physics: physics,
-      children: List.generate(_followingList.length, (index) {
-        return ItemBuilder.buildFollowerOrFollowingItem(
-            context, index, _followingList[index], onFollowOrUnFollow: () {
-          total += _followingList[index].following ? 1 : -1;
-          setState(() {});
-        });
-      }),
+    return ItemBuilder.buildLoadMoreNotification(
+      noMore: _noMore,
+      onLoad: _onLoad,
+      child: WaterfallFlow.extent(
+        maxCrossAxisExtent: 600,
+        physics: physics,
+        children: List.generate(_followingList.length, (index) {
+          return ItemBuilder.buildFollowerOrFollowingItem(
+              context, index, _followingList[index], onFollowOrUnFollow: () {
+            total += _followingList[index].following ? 1 : -1;
+            setState(() {});
+          });
+        }),
+      ),
     );
   }
 

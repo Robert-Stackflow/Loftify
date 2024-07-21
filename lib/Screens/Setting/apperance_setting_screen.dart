@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Resources/fonts.dart';
 import 'package:loftify/Screens/Setting/select_theme_screen.dart';
+import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:provider/provider.dart';
 
@@ -25,22 +25,22 @@ class AppearanceSettingScreen extends StatefulWidget {
 
 class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
     with TickerProviderStateMixin {
-  bool _showRecommendVideo = HiveUtil.getBool(
-      key: HiveUtil.showRecommendVideoKey, defaultValue: false);
-  bool _showRecommendArticle = HiveUtil.getBool(
-      key: HiveUtil.showRecommendArticleKey, defaultValue: false);
+  bool _showRecommendVideo =
+      HiveUtil.getBool(HiveUtil.showRecommendVideoKey, defaultValue: false);
+  bool _showRecommendArticle =
+      HiveUtil.getBool(HiveUtil.showRecommendArticleKey, defaultValue: false);
   bool _showSearchHistory =
-      HiveUtil.getBool(key: HiveUtil.showSearchHistoryKey, defaultValue: true);
+      HiveUtil.getBool(HiveUtil.showSearchHistoryKey, defaultValue: true);
   bool _showSearchGuess =
-      HiveUtil.getBool(key: HiveUtil.showSearchGuessKey, defaultValue: true);
+      HiveUtil.getBool(HiveUtil.showSearchGuessKey, defaultValue: true);
   bool _showSearchConfig =
-      HiveUtil.getBool(key: HiveUtil.showSearchConfigKey, defaultValue: false);
+      HiveUtil.getBool(HiveUtil.showSearchConfigKey, defaultValue: false);
   bool _showSearchRank =
-      HiveUtil.getBool(key: HiveUtil.showSearchRankKey, defaultValue: true);
-  bool _showCollectionPreNext = HiveUtil.getBool(
-      key: HiveUtil.showCollectionPreNextKey, defaultValue: true);
+      HiveUtil.getBool(HiveUtil.showSearchRankKey, defaultValue: true);
+  bool _showCollectionPreNext =
+      HiveUtil.getBool(HiveUtil.showCollectionPreNextKey, defaultValue: true);
   bool _showDownload =
-      HiveUtil.getBool(key: HiveUtil.showDownloadKey, defaultValue: true);
+      HiveUtil.getBool(HiveUtil.showDownloadKey, defaultValue: true);
   FontEnum _currentFont = FontEnum.getCurrentFont();
 
   @override
@@ -137,9 +137,8 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                 onTap: () {
                   setState(() {
                     _showRecommendArticle = !_showRecommendArticle;
-                    HiveUtil.put(
-                        key: HiveUtil.showRecommendArticleKey,
-                        value: _showRecommendArticle);
+                    HiveUtil.put(HiveUtil.showRecommendArticleKey,
+                        _showRecommendArticle);
                   });
                 },
               ),
@@ -152,8 +151,7 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                   setState(() {
                     _showRecommendVideo = !_showRecommendVideo;
                     HiveUtil.put(
-                        key: HiveUtil.showRecommendVideoKey,
-                        value: _showRecommendVideo);
+                        HiveUtil.showRecommendVideoKey, _showRecommendVideo);
                   });
                 },
               ),
@@ -168,8 +166,7 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                   setState(() {
                     _showSearchHistory = !_showSearchHistory;
                     HiveUtil.put(
-                        key: HiveUtil.showSearchHistoryKey,
-                        value: _showSearchHistory);
+                        HiveUtil.showSearchHistoryKey, _showSearchHistory);
                     appProvider.searchHistoryList = [];
                   });
                 },
@@ -182,9 +179,7 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                 onTap: () {
                   setState(() {
                     _showSearchGuess = !_showSearchGuess;
-                    HiveUtil.put(
-                        key: HiveUtil.showSearchGuessKey,
-                        value: _showSearchGuess);
+                    HiveUtil.put(HiveUtil.showSearchGuessKey, _showSearchGuess);
                   });
                 },
               ),
@@ -197,8 +192,7 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                   setState(() {
                     _showSearchConfig = !_showSearchConfig;
                     HiveUtil.put(
-                        key: HiveUtil.showSearchConfigKey,
-                        value: _showSearchConfig);
+                        HiveUtil.showSearchConfigKey, _showSearchConfig);
                   });
                 },
               ),
@@ -211,9 +205,7 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                 onTap: () {
                   setState(() {
                     _showSearchRank = !_showSearchRank;
-                    HiveUtil.put(
-                        key: HiveUtil.showSearchRankKey,
-                        value: _showSearchRank);
+                    HiveUtil.put(HiveUtil.showSearchRankKey, _showSearchRank);
                   });
                 },
               ),
@@ -227,9 +219,8 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                 onTap: () {
                   setState(() {
                     _showCollectionPreNext = !_showCollectionPreNext;
-                    HiveUtil.put(
-                        key: HiveUtil.showCollectionPreNextKey,
-                        value: _showCollectionPreNext);
+                    HiveUtil.put(HiveUtil.showCollectionPreNextKey,
+                        _showCollectionPreNext);
                   });
                 },
               ),
@@ -242,8 +233,7 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                 onTap: () {
                   setState(() {
                     _showDownload = !_showDownload;
-                    HiveUtil.put(
-                        key: HiveUtil.showDownloadKey, value: _showDownload);
+                    HiveUtil.put(HiveUtil.showDownloadKey, _showDownload);
                   });
                 },
               ),

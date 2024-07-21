@@ -1,5 +1,5 @@
 name: loftify
-version: 1.8.0
+version: 1.9.0
 description: An third-party application for LOFTER
 
 environment:
@@ -27,8 +27,8 @@ dependencies:
   custom_sliding_segmented_control: ^1.8.3 # 分段控制器
   flutter_inappwebview: ^6.0.0 # Webview
   extended_nested_scroll_view: ^6.2.1 # 嵌套滚动
-  super_tooltip:
-    path: third-party/super_tooltip
+#  super_tooltip:
+#    path: third-party/super_tooltip
   # 系统
   provider: ^6.0.5 # 状态管理
   local_auth: ^2.2.0 # 指纹验证
@@ -59,6 +59,7 @@ dependencies:
   dio_cookie_manager: ^3.1.1 # dio cookie管理
   cached_network_image: ^3.2.1 # 网络图片缓存
   flutter_cache_manager: ^3.3.1 # 缓存管理
+  process_run: ^1.0.0+1 # 运行
   # 工具
   intl:
   html: ^0.15.0
@@ -74,14 +75,14 @@ dependencies:
   tray_manager: ^0.2.3 # 托盘图标
   flutter_resizable_container: ^2.0.0 # 可调整大小的容器
   window_manager: ^0.3.9 # 窗口管理
-  desktop_multi_window: # 多窗口
-    path: third-party/desktop_multi_window
-  window_size: # 窗口大小
-    git:
-      url: https://github.com/google/flutter-desktop-embedding.git
-      path: plugins/window_size
-      ref: a738913c8ce2c9f47515382d40827e794a334274
-  texture_rgba_renderer: ^0.0.16 # 纹理渲染
+#  desktop_multi_window: # 多窗口
+#    path: third-party/desktop_multi_window
+#  window_size: # 窗口大小
+#    git:
+#      url: https://github.com/google/flutter-desktop-embedding.git
+#      path: plugins/window_size
+#      ref: a738913c8ce2c9f47515382d40827e794a334274
+#  texture_rgba_renderer: ^0.0.16 # 纹理渲染
 
 dev_dependencies:
   flutter_test:

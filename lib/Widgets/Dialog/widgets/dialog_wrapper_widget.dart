@@ -6,9 +6,7 @@ import 'package:loftify/Widgets/Item/item_builder.dart';
 import '../../../Utils/route_util.dart';
 import '../../../Utils/utils.dart';
 
-GlobalKey<NavigatorState> dialogNavigatorKey = GlobalKey<NavigatorState>();
-
-class DialogWrapperWidget extends StatelessWidget {
+class DialogWrapperWidget extends StatefulWidget {
   final Widget child;
   final double? preferMinWidth;
   final double? preferMinHeight;
@@ -23,11 +21,28 @@ class DialogWrapperWidget extends StatelessWidget {
   });
 
   @override
+  State<StatefulWidget> createState() => DialogWrapperWidgetState();
+}
+
+class DialogWrapperWidgetState extends State<DialogWrapperWidget> {
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+
+  NavigatorState? get _navigatorState => _navigatorKey.currentState;
+
+  popPage() {
+    if (_navigatorState!.canPop()) {
+      _navigatorState?.pop();
+    } else {
+      Navigator.pop(context);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     double width = MediaQuery.sizeOf(context).width - 60;
     double height = MediaQuery.sizeOf(context).height - 60;
-    double preferWidth = min(width, preferMinWidth ?? 540);
-    double preferHeight = min(width, preferMinHeight ?? 500);
+    double preferWidth = min(width, widget.preferMinWidth ?? 540);
+    double preferHeight = min(width, widget.preferMinHeight ?? 500);
     double preferHorizontalMargin =
         width > preferWidth ? (width - preferWidth) / 2 : 0;
     double preferVerticalMargin =
@@ -57,23 +72,21 @@ class DialogWrapperWidget extends StatelessWidget {
             child: Stack(
               children: [
                 Navigator(
-                  key: dialogNavigatorKey,
-                  onGenerateRoute: (settings) => RouteUtil.getFadeRoute(child),
+                  key: _navigatorKey,
+                  onGenerateRoute: (settings) =>
+                      RouteUtil.getFadeRoute(widget.child),
                 ),
-                if (showClose)
+                if (widget.showClose)
                   Positioned(
                     right: 6,
                     top: 6,
                     child: ItemBuilder.buildIconButton(
-                        context: context,
-                        icon: const Icon(Icons.close_rounded),
-                        onTap: () {
-                          if (dialogNavigatorKey.currentState!.canPop()) {
-                            dialogNavigatorKey.currentState?.pop();
-                          } else {
-                            Navigator.pop(context);
-                          }
-                        }),
+                      context: context,
+                      icon: const Icon(Icons.close_rounded),
+                      onTap: () {
+                        popPage();
+                      },
+                    ),
                   ),
               ],
             ),

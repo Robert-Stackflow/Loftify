@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
@@ -12,7 +10,6 @@ import 'package:hive/hive.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:loftify/Database/database_manager.dart';
 import 'package:loftify/Models/recommend_response.dart';
-import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Screens/Info/favorite_folder_list_screen.dart';
 import 'package:loftify/Screens/Info/history_screen.dart';
 import 'package:loftify/Screens/Info/share_screen.dart';
@@ -34,6 +31,7 @@ import 'package:loftify/Screens/Setting/select_theme_screen.dart';
 import 'package:loftify/Screens/Setting/setting_screen.dart';
 import 'package:loftify/Screens/Setting/tagshield_setting_screen.dart';
 import 'package:loftify/Screens/Setting/userdynamicshield_setting_screen.dart';
+import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/fontsize_util.dart';
 import 'package:loftify/Utils/request_header_util.dart';
@@ -49,79 +47,51 @@ import 'Screens/Navigation/dynamic_screen.dart';
 import 'Screens/Navigation/home_screen.dart';
 import 'Screens/Setting/about_setting_screen.dart';
 import 'Screens/main_screen.dart';
-import 'Utils/enums.dart';
 import 'Utils/notification_util.dart';
 import 'Utils/responsive_util.dart';
 import 'generated/l10n.dart';
-
-int? kWindowId;
-MultiWindowType? kWindowType;
-late List<String> kBootArgs;
 
 Future<void> main(List<String> args) async {
   runMyApp(args);
 }
 
 Future<void> runMyApp(List<String> args) async {
-  if (args.isNotEmpty && args.first == 'multi_window') {
-    await initApp();
-    kWindowId = int.parse(args[1]);
-    WindowController.fromWindowId(kWindowId!).showTitleBar(true);
-    final argument = args[2].isEmpty
-        ? <String, dynamic>{}
-        : jsonDecode(args[2]) as Map<String, dynamic>;
-    int type = argument['type'] ?? -1;
-    argument['windowId'] = kWindowId;
-    kWindowType = type.windowType;
-    runMultiWindow(argument, kWindowType!);
-  } else {
-    await initApp();
-    if (ResponsiveUtil.isMobile()) {
-      await initDisplayMode();
-      if (ResponsiveUtil.isAndroid()) {
-        await RequestHeaderUtil.initAndroidInfo();
-        SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-            statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.dark);
-        SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-      }
+  await initApp();
+  if (ResponsiveUtil.isMobile()) {
+    await initDisplayMode();
+    if (ResponsiveUtil.isAndroid()) {
+      await RequestHeaderUtil.initAndroidInfo();
+      SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark);
+      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
-    if (ResponsiveUtil.isDesktop()) {
-      await initWindow();
-      initTray();
-    }
-    runApp(const MyApp());
-    FlutterNativeSplash.remove();
   }
+  if (ResponsiveUtil.isDesktop()) {
+    await initWindow();
+    initTray();
+    await HotKeyManager.instance.unregisterAll();
+  }
+  runApp(const MyApp());
+  FlutterNativeSplash.remove();
 }
 
 Future<void> initApp() async {
+  FlutterError.onError = onError;
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-  await HotKeyManager.instance.unregisterAll();
   imageCache.maximumSizeBytes = 1024 * 1024 * 1024 * 2;
   PaintingBinding.instance.imageCache.maximumSizeBytes = 1024 * 1024 * 1024 * 2;
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   await DatabaseManager.getDataBase();
   Hive.defaultDirectory = await FileUtil.getApplicationDir();
   NotificationUtil.init();
-  FlutterError.onError = (FlutterErrorDetails details) async {
-    File errorFile = File("${await FileUtil.getApplicationDir()}/error.log");
-    if (!errorFile.existsSync()) {
-      errorFile.createSync();
-    }
-    errorFile
-        .writeAsStringSync(errorFile.readAsStringSync() + details.toString());
-    if (details.stack != null) {
-      Zone.current.handleUncaughtError(details.exception, details.stack!);
-    }
-  };
 }
 
 Future<void> initWindow() async {
   await windowManager.ensureInitialized();
   WindowOptions windowOptions = const WindowOptions(
     size: Size(1120, 740),
-    minimumSize: Size(670, 520),
+    minimumSize: Size(700, 700),
     center: true,
     backgroundColor: Colors.transparent,
     skipTaskbar: false,
@@ -145,6 +115,10 @@ Future<void> initTray() async {
         key: 'show_window',
         label: '显示 Loftify',
       ),
+      MenuItem(
+        key: 'lock_window',
+        label: '锁定 Loftify',
+      ),
       MenuItem.separator(),
       MenuItem(
         key: 'show_official_website',
@@ -164,39 +138,30 @@ Future<void> initTray() async {
   await trayManager.setContextMenu(menu);
 }
 
-void runMultiWindow(
-  Map<String, dynamic> argument,
-  MultiWindowType appType,
-) async {
-  late String title;
-  late Widget widget;
-  switch (appType) {
-    case MultiWindowType.Main:
-      title = "Loftify";
-      widget = const MainScreen();
-      break;
-    case MultiWindowType.Setting:
-      title = "设置 - Loftify";
-      widget = const SettingScreen();
-      break;
-    default:
-      break;
-  }
-  runApp(MyApp(title: title, home: widget));
-  WindowController.fromWindowId(kWindowId!).show();
-}
-
 Future<void> initDisplayMode() async {
   await FlutterDisplayMode.setHighRefreshRate();
   await FlutterDisplayMode.setPreferredMode(await FlutterDisplayMode.preferred);
+}
+
+Future<void> onError(FlutterErrorDetails details) async {
+  File errorFile = File("${await FileUtil.getApplicationDir()}/error.log");
+  if (!errorFile.existsSync()) errorFile.createSync();
+  errorFile
+      .writeAsStringSync(errorFile.readAsStringSync() + details.toString());
+  if (details.stack != null) {
+    Zone.current.handleUncaughtError(details.exception, details.stack!);
+  }
 }
 
 class MyApp extends StatelessWidget {
   final Widget home;
   final String title;
 
-  const MyApp(
-      {super.key, this.home = const MainScreen(), this.title = 'Loftify'});
+  const MyApp({
+    super.key,
+    this.home = const MainScreen(),
+    this.title = 'Loftify',
+  });
 
   @override
   Widget build(BuildContext context) {

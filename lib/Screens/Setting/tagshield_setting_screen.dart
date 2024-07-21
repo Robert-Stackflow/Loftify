@@ -128,7 +128,7 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
           Expanded(
             child: Text(tag),
           ),
-          ItemBuilder.buildFramedButton(
+          ItemBuilder.buildFramedDoubleButton(
             context: context,
             isFollowed: false,
             positiveText: "解除屏蔽",

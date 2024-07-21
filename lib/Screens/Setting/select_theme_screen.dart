@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Resources/theme_color_data.dart';
+import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/hive_util.dart';
 
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';

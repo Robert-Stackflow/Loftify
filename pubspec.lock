@@ -353,13 +353,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.7.10"
-  desktop_multi_window:
-    dependency: "direct main"
-    description:
-      path: "third-party/desktop_multi_window"
-      relative: true
-    source: path
-    version: "0.1.0"
   device_info_plus:
     dependency: "direct main"
     description:
@@ -1300,6 +1293,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.5.1"
+  process_run:
+    dependency: "direct main"
+    description:
+      name: process_run
+      sha256: "6052115540ad88715d6bcee60656970f70c68c85846d1948b92e435f0382899e"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.0.0+1"
   provider:
     dependency: "direct main"
     description:
@@ -1505,13 +1506,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.2.0"
-  super_tooltip:
-    dependency: "direct main"
-    description:
-      path: "third-party/super_tooltip"
-      relative: true
-    source: path
-    version: "2.0.8"
   synchronized:
     dependency: transitive
     description:
@@ -1536,14 +1530,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.7.0"
-  texture_rgba_renderer:
-    dependency: "direct main"
-    description:
-      name: texture_rgba_renderer
-      sha256: cb048abdd800468ca40749ca10d1db9d1e6a055d1cde6234c05191293f0c7d61
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "0.0.16"
   timezone:
     dependency: transitive
     description:
@@ -1872,15 +1858,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.3.9"
-  window_size:
-    dependency: "direct main"
-    description:
-      path: "plugins/window_size"
-      ref: a738913c8ce2c9f47515382d40827e794a334274
-      resolved-ref: a738913c8ce2c9f47515382d40827e794a334274
-      url: "https://github.com/google/flutter-desktop-embedding.git"
-    source: git
-    version: "0.1.0"
   xdg_directories:
     dependency: transitive
     description:

@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:loftify/Models/github_response.dart';
 import 'package:loftify/Utils/constant.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/responsive_util.dart';
@@ -258,8 +259,7 @@ class FileUtil {
     Illust illust, {
     bool showToast = true,
   }) async {
-    String fileNameFormat = HiveUtil.getString(
-            key: HiveUtil.filenameFormatKey,
+    String fileNameFormat = HiveUtil.getString(HiveUtil.filenameFormatKey,
             defaultValue: defaultFilenameFormat) ??
         defaultFilenameFormat;
     String fileName = fileNameFormat
@@ -307,7 +307,7 @@ class FileUtil {
 
   static Future<String?> checkSaveDirectory(BuildContext context) async {
     if (ResponsiveUtil.isDesktop()) {
-      String? saveDirectory = HiveUtil.getString(key: HiveUtil.savePathKey);
+      String? saveDirectory = HiveUtil.getString(HiveUtil.savePathKey);
       if (Utils.isEmpty(saveDirectory)) {
         await Future.delayed(const Duration(milliseconds: 300), () async {
           String? selectedDirectory =
@@ -317,7 +317,7 @@ class FileUtil {
           );
           if (selectedDirectory != null) {
             saveDirectory = selectedDirectory;
-            HiveUtil.put(key: HiveUtil.savePathKey, value: selectedDirectory);
+            HiveUtil.put(HiveUtil.savePathKey, selectedDirectory);
           }
         });
       }
@@ -376,5 +376,23 @@ class FileUtil {
       IToast.showTop("保存失败，请重试");
       return false;
     }
+  }
+
+  static ReleaseAsset getAndroidAsset(ReleaseItem item) {
+    return item.assets.firstWhere((element) =>
+        element.contentType == "application/vnd.android.package-archive" &&
+        element.name.endsWith(".zip"));
+  }
+
+  static ReleaseAsset getWindowsPortableAsset(ReleaseItem item) {
+    return item.assets.firstWhere((element) =>
+        element.contentType == "application/x-zip-compressed" &&
+        element.name.endsWith(".zip"));
+  }
+
+  static ReleaseAsset getWindowsInstallerAsset(ReleaseItem item) {
+    return item.assets.firstWhere((element) =>
+        element.contentType == "application/x-msdownload" &&
+        element.name.endsWith(".exe"));
   }
 }

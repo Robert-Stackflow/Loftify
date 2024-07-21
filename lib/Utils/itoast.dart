@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:loftify/Utils/route_util.dart';
+
+import 'app_provider.dart';
 
 class IToast {
   static FToast show(
@@ -9,16 +10,16 @@ class IToast {
     int seconds = 2,
     ToastGravity gravity = ToastGravity.TOP,
   }) {
-    FToast toast = FToast().init(RouteUtil.getRootContext());
+    FToast toast = FToast().init(rootContext);
     toast.showToast(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          color: Theme.of(RouteUtil.getRootContext()).canvasColor,
+          color: Theme.of(rootContext).canvasColor,
           boxShadow: [
             BoxShadow(
-              color: Theme.of(RouteUtil.getRootContext()).shadowColor,
+              color: Theme.of(rootContext).shadowColor,
               offset: const Offset(0, 4),
               blurRadius: 10,
               spreadRadius: 1,
@@ -28,7 +29,7 @@ class IToast {
         child: Text(
           text,
           textAlign: TextAlign.center,
-          style: Theme.of(RouteUtil.getRootContext()).textTheme.bodyMedium,
+          style: Theme.of(rootContext).textTheme.bodyMedium,
         ),
       ),
       gravity: gravity,

@@ -43,20 +43,12 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
       FavoriteFolderDetailLayoutMode.nineGrid;
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
-  final ScrollController _scrollController = ScrollController();
   bool _noMore = false;
 
   @override
   void initState() {
     super.initState();
     favoriteFolderId = widget.favoriteFolderId;
-    _scrollController.addListener(() {
-      if (!_noMore &&
-          _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
-        _fetchDetail();
-      }
-    });
   }
 
   _fetchDetail({bool refresh = false}) async {
@@ -184,37 +176,40 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
   }
 
   Widget _buildNineGrid(int startIndex, int count) {
-    return GridView.extent(
-      controller: _scrollController,
-      padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
-      shrinkWrap: true,
-      maxCrossAxisExtent: 160,
-      mainAxisSpacing: 6,
-      crossAxisSpacing: 6,
-      physics: const NeverScrollableScrollPhysics(),
-      children: List.generate(count, (index) {
-        int trueIndex = startIndex + index;
-        return GestureDetector(
-          child: FavoriteFolderPostItemBuilder.buildNineGridPostItem(
-              context, _posts[trueIndex],
-              wh: 160),
-          onTap: () {
-            if (FavoriteFolderPostItemBuilder.isInvalid(_posts[trueIndex])) {
-              IToast.showTop("无效内容");
-            } else {
-              RouteUtil.pushCupertinoRoute(
-                context,
-                PostDetailScreen(
-                  favoritePostDetailData: _posts[trueIndex],
-                  isArticle: FavoriteFolderPostItemBuilder.getPostType(
-                          _posts[index]) ==
-                      PostType.article,
-                ),
-              );
-            }
-          },
-        );
-      }),
+    return ItemBuilder.buildLoadMoreNotification(
+      child: GridView.extent(
+        padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
+        shrinkWrap: true,
+        maxCrossAxisExtent: 160,
+        mainAxisSpacing: 6,
+        crossAxisSpacing: 6,
+        physics: const NeverScrollableScrollPhysics(),
+        children: List.generate(count, (index) {
+          int trueIndex = startIndex + index;
+          return GestureDetector(
+            child: FavoriteFolderPostItemBuilder.buildNineGridPostItem(
+                context, _posts[trueIndex],
+                wh: 160),
+            onTap: () {
+              if (FavoriteFolderPostItemBuilder.isInvalid(_posts[trueIndex])) {
+                IToast.showTop("无效内容");
+              } else {
+                RouteUtil.pushCupertinoRoute(
+                  context,
+                  PostDetailScreen(
+                    favoritePostDetailData: _posts[trueIndex],
+                    isArticle: FavoriteFolderPostItemBuilder.getPostType(
+                            _posts[index]) ==
+                        PostType.article,
+                  ),
+                );
+              }
+            },
+          );
+        }),
+      ),
+      noMore: _noMore,
+      onLoad: _onLoad,
     );
   }
 

@@ -70,8 +70,8 @@ class SearchPostFlowItemBuilder {
       photoCount: item.photoPostView?.photoLinks.length ?? 0,
       tags: item.tagList,
       bigAvaImg: item.blogInfo.bigAvaImg,
-      showArticle: HiveUtil.getBool(key: HiveUtil.showRecommendArticleKey),
-      showVideo: HiveUtil.getBool(key: HiveUtil.showRecommendVideoKey),
+      showArticle: HiveUtil.getBool(HiveUtil.showRecommendArticleKey),
+      showVideo: HiveUtil.getBool(HiveUtil.showRecommendVideoKey),
     );
   }
 

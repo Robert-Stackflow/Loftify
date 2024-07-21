@@ -1,25 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:loftify/Widgets/Dialog/widgets/dialog_wrapper_widget.dart';
 import 'package:tuple/tuple.dart';
 
 import '../Models/nav_entry.dart';
+import '../generated/l10n.dart';
 import 'enums.dart';
 import 'hive_util.dart';
-import '../generated/l10n.dart';
 
 GlobalKey<NavigatorState> desktopNavigatorKey = GlobalKey<NavigatorState>();
+
 GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>();
+
+NavigatorState? get desktopNavigatorState => desktopNavigatorKey.currentState;
+
+NavigatorState? get globalNavigatorState => globalNavigatorKey.currentState;
+
+GlobalKey<DialogWrapperWidgetState> dialogNavigatorKey =
+    GlobalKey<DialogWrapperWidgetState>();
+
+DialogWrapperWidgetState? get dialogNavigatorState =>
+    dialogNavigatorKey.currentState;
+
+BuildContext get rootContext => globalNavigatorState!.context;
+
+bool get canPopByKey =>
+    desktopNavigatorState != null && desktopNavigatorState!.canPop();
+
 AppProvider appProvider = AppProvider();
 
 class AppProvider with ChangeNotifier {
-  static NavigatorState? get desktopNavigatorState =>
-      desktopNavigatorKey.currentState;
-
-  static NavigatorState? get globalNavigatorState =>
-      globalNavigatorKey.currentState;
-
-  static bool get canPop =>
-      desktopNavigatorState != null && desktopNavigatorState!.canPop();
-
   String _captchaToken = "";
 
   String get captchaToken => _captchaToken;
@@ -29,12 +38,12 @@ class AppProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  bool _desktopCanpop = false;
+  bool _canPopByProvider = false;
 
-  bool get desktopCanpop => _desktopCanpop;
+  bool get canPopByProvider => _canPopByProvider;
 
-  set desktopCanpop(bool value) {
-    _desktopCanpop = value;
+  set canPopByProvider(bool value) {
+    _canPopByProvider = value;
     notifyListeners();
   }
 
@@ -108,7 +117,7 @@ class AppProvider with ChangeNotifier {
   }
 
   List<String> _searchHistoryList =
-      HiveUtil.getStringList(key: HiveUtil.searchHistoryKey, defaultValue: [])!;
+      HiveUtil.getStringList(HiveUtil.searchHistoryKey)!;
 
   List<String> get searchHistoryList => _searchHistoryList;
 
@@ -116,7 +125,7 @@ class AppProvider with ChangeNotifier {
     if (value != _searchHistoryList) {
       _searchHistoryList = value;
       notifyListeners();
-      HiveUtil.put(key: HiveUtil.searchHistoryKey, value: value);
+      HiveUtil.put(HiveUtil.searchHistoryKey, value);
     }
   }
 
@@ -139,7 +148,7 @@ class AppProvider with ChangeNotifier {
     ];
   }
 
-  int _autoLockTime = HiveUtil.getInt(key: HiveUtil.autoLockTimeKey);
+  int _autoLockTime = HiveUtil.getInt(HiveUtil.autoLockTimeKey);
 
   int get autoLockTime => _autoLockTime;
 
@@ -147,7 +156,7 @@ class AppProvider with ChangeNotifier {
     if (value != _autoLockTime) {
       _autoLockTime = value;
       notifyListeners();
-      HiveUtil.put(key: HiveUtil.autoLockTimeKey, value: value);
+      HiveUtil.put(HiveUtil.autoLockTimeKey, value);
     }
   }
 
@@ -177,13 +186,13 @@ class AppProvider with ChangeNotifier {
     }
   }
 
-  String _token = HiveUtil.getString(key: HiveUtil.tokenKey) ?? "";
+  String _token = HiveUtil.getString(HiveUtil.tokenKey) ?? "";
 
   String get token => _token;
 
   set token(String value) {
     if (value != _token) {
-      HiveUtil.put(key: HiveUtil.tokenKey, value: value);
+      HiveUtil.put(HiveUtil.tokenKey, value);
       _token = value;
       notifyListeners();
     }
