@@ -561,9 +561,13 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
                         jumpToTag: false,
                       ),
                       const SizedBox(width: 6),
-                      Text(
-                        "${Utils.formatCount(item.cardInfo!.postCard!.postHot)}热度",
-                        style: Theme.of(context).textTheme.labelMedium,
+                      Flexible(
+                        child: Text(
+                          "${Utils.formatCount(item.cardInfo!.postCard!.postHot)}热度",
+                          style: Theme.of(context).textTheme.labelMedium,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   )

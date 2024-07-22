@@ -5,6 +5,7 @@ import 'package:loftify/Utils/itoast.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:tuple/tuple.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../../Utils/app_provider.dart';
 import '../../Utils/enums.dart';
@@ -38,6 +39,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
   ReleaseItem? latestReleaseItem;
   bool autoCheckUpdate = HiveUtil.getBool(HiveUtil.autoCheckUpdateKey);
   bool enableCloseToTray = HiveUtil.getBool(HiveUtil.enableCloseToTrayKey);
+  bool recordWindowState = HiveUtil.getBool(HiveUtil.recordWindowStateKey);
   bool enableCloseNotice = HiveUtil.getBool(HiveUtil.enableCloseNoticeKey);
   int doubleTapAction = Utils.patchEnum(
       HiveUtil.getInt(HiveUtil.doubleTapActionKey, defaultValue: 1),
@@ -157,7 +159,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                     });
                   },
                 ),
-              if (ResponsiveUtil.isDesktop()) ..._traySetting(),
+              if (ResponsiveUtil.isDesktop()) ..._desktopSetting(),
               const SizedBox(height: 10),
               ItemBuilder.buildRadioItem(
                 value: autoCheckUpdate,
@@ -275,7 +277,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
     );
   }
 
-  _traySetting() {
+  _desktopSetting() {
     return [
       const SizedBox(height: 10),
       ItemBuilder.buildEntryItem(
@@ -283,7 +285,6 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
         title: "关闭主界面时",
         tip: enableCloseToTray ? "最小化到系统托盘" : "退出Loftify",
         topRadius: true,
-        bottomRadius: true,
         onTap: () {
           List<Tuple2<String, dynamic>> options = [
             const Tuple2("最小化到系统托盘", 0),
@@ -291,9 +292,9 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
           ];
           BottomSheetBuilder.showListBottomSheet(
             context,
-            (sheetContext) => TileList.fromOptions(
+                (sheetContext) => TileList.fromOptions(
               options,
-              (idx) {
+                  (idx) {
                 Navigator.pop(sheetContext);
                 if (idx == 0) {
                   setState(() {
@@ -316,6 +317,21 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
             ),
           );
+        },
+      ),
+      ItemBuilder.buildRadioItem(
+        context: context,
+        title: "记忆窗口位置和大小",
+        value: recordWindowState,
+        description: "关闭后，每次打开Loftify都会居中显示且具有默认窗口大小",
+        bottomRadius: true,
+        onTap: () async {
+          setState(() {
+            recordWindowState = !recordWindowState;
+            HiveUtil.put(HiveUtil.recordWindowStateKey, recordWindowState);
+          });
+          HiveUtil.setWindowSize(await windowManager.getSize());
+          HiveUtil.setWindowPosition(await windowManager.getPosition());
         },
       ),
     ];

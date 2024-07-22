@@ -56,7 +56,7 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(20),
         ),
-        color: MyTheme.getBackground(context),
+        color: Theme.of(context).canvasColor,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

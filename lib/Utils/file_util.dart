@@ -259,9 +259,16 @@ class FileUtil {
     Illust illust, {
     bool showToast = true,
   }) async {
+    return saveImage(context, illust.url,
+        fileName: getFileNameByIllust(illust), showToast: showToast);
+  }
+
+  static getFileNameByIllust(Illust illust) {
     String fileNameFormat = HiveUtil.getString(HiveUtil.filenameFormatKey,
             defaultValue: defaultFilenameFormat) ??
         defaultFilenameFormat;
+    illust.originalName =
+        illust.originalName.replaceAll(".${illust.extension}", "");
     String fileName = fileNameFormat
         .replaceAll(FilenameField.blogNickName.format, illust.blogNickName)
         .replaceAll(FilenameField.blogId.format, illust.blogId.toString())
@@ -271,9 +278,7 @@ class FileUtil {
         .replaceAll(FilenameField.postId.format, illust.postId.toString())
         .replaceAll(FilenameField.timestamp.format,
             DateTime.now().millisecondsSinceEpoch.toString());
-    fileName = '$fileName.${illust.extension}';
-    return saveImage(context, illust.url,
-        fileName: fileName, showToast: showToast);
+    return '$fileName.${illust.extension}';
   }
 
   static Future<bool> saveIllusts(
@@ -329,10 +334,26 @@ class FileUtil {
     return null;
   }
 
+  static Future<bool> saveVideoByIllust(
+    BuildContext context,
+    Illust illust, {
+    bool showToast = true,
+    Function(int, int)? onReceiveProgress,
+  }) async {
+    return saveVideo(
+      context,
+      illust.url,
+      fileName: getFileNameByIllust(illust),
+      showToast: showToast,
+      onReceiveProgress: onReceiveProgress,
+    );
+  }
+
   static Future<bool> saveVideo(
     BuildContext context,
     String videoUrl, {
     bool showToast = true,
+    String? fileName,
     Function(int, int)? onReceiveProgress,
   }) async {
     try {
@@ -343,7 +364,7 @@ class FileUtil {
       if (ResponsiveUtil.isMobile()) {
         var result = await ImageGallerySaver.saveFile(
           savePath,
-          name: FileUtil.extractFileNameFromUrl(videoUrl),
+          name: fileName ?? FileUtil.extractFileNameFromUrl(videoUrl),
         );
         bool success = result != null && result['isSuccess'];
         if (showToast) {
@@ -358,7 +379,7 @@ class FileUtil {
         String? saveDirectory = await checkSaveDirectory(context);
         if (Utils.isNotEmpty(saveDirectory)) {
           String newPath =
-              '$saveDirectory/${FileUtil.extractFileNameFromUrl(videoUrl)}';
+              '$saveDirectory/${fileName ?? FileUtil.extractFileNameFromUrl(videoUrl)}';
           await File(savePath).copy(newPath);
           if (showToast) {
             IToast.showTop("视频已保存至$saveDirectory");

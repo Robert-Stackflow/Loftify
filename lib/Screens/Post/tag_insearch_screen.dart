@@ -35,6 +35,7 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
   final FocusNode _focusNode = FocusNode();
   int _offset = 0;
   bool _loading = false;
+  bool _noMore = false;
 
   @override
   void initState() {
@@ -46,9 +47,6 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
       }
     });
     _fetchRelatedTag();
-    // WidgetsBinding.instance.addPostFrameCallback((_) {
-    //   FocusScope.of(context).requestFocus(_focusNode);
-    // });
     Future.delayed(const Duration(milliseconds: 200), () {
       FocusScope.of(context).requestFocus(_focusNode);
     });
@@ -125,6 +123,7 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
 
   _fetchResult(String key, {bool refresh = false}) async {
     if (_loading) return;
+    if (refresh) _noMore = false;
     _loading = true;
     return await TagApi.getSearchPostList(
       tag: widget.tag,
@@ -153,6 +152,7 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
           }
           if (mounted) setState(() {});
           if (tmp.isEmpty) {
+            _noMore = true;
             return IndicatorResult.noMore;
           } else {
             return IndicatorResult.success;
@@ -178,46 +178,52 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
         return await _fetchResult(_searchController.text);
       },
       triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => WaterfallFlow.builder(
-        physics: physics,
-        cacheExtent: 9999,
-        padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-        gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-          mainAxisSpacing: 6,
-          crossAxisSpacing: 6,
-          maxCrossAxisExtent: 300,
-        ),
-        itemBuilder: (BuildContext context, int index) {
-          return GestureDetector(
-            child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
-              context,
-              _postList[index],
-              onLikeTap: () async {
-                var item = _postList[index];
-                HapticFeedback.mediumImpact();
-                return await PostApi.likeOrUnLike(
-                        isLike: !item.favorite,
-                        postId: item.itemId,
-                        blogId: item.blogInfo!.blogId)
-                    .then((value) {
-                  setState(() {
-                    if (value['meta']['status'] != 200) {
-                      IToast.showTop(
-                          value['meta']['desc'] ?? value['meta']['msg']);
-                    } else {
-                      item.favorite = !item.favorite;
-                      item.postData!.postCount!.favoriteCount +=
-                          item.favorite ? 1 : -1;
-                    }
-                  });
-                  return value['meta']['status'];
-                });
-              },
-              excludeTag: widget.tag,
-            ),
-          );
+      childBuilder: (context, physics) => ItemBuilder.buildLoadMoreNotification(
+        noMore: _noMore,
+        onLoad: () async {
+          return await _fetchResult(_searchController.text);
         },
-        itemCount: _postList.length,
+        child: WaterfallFlow.builder(
+          physics: physics,
+          cacheExtent: 9999,
+          padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+          gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+            mainAxisSpacing: 6,
+            crossAxisSpacing: 6,
+            maxCrossAxisExtent: 300,
+          ),
+          itemBuilder: (BuildContext context, int index) {
+            return GestureDetector(
+              child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
+                context,
+                _postList[index],
+                onLikeTap: () async {
+                  var item = _postList[index];
+                  HapticFeedback.mediumImpact();
+                  return await PostApi.likeOrUnLike(
+                          isLike: !item.favorite,
+                          postId: item.itemId,
+                          blogId: item.blogInfo!.blogId)
+                      .then((value) {
+                    setState(() {
+                      if (value['meta']['status'] != 200) {
+                        IToast.showTop(
+                            value['meta']['desc'] ?? value['meta']['msg']);
+                      } else {
+                        item.favorite = !item.favorite;
+                        item.postData!.postCount!.favoriteCount +=
+                            item.favorite ? 1 : -1;
+                      }
+                    });
+                    return value['meta']['status'];
+                  });
+                },
+                excludeTag: widget.tag,
+              ),
+            );
+          },
+          itemCount: _postList.length,
+        ),
       ),
     );
   }

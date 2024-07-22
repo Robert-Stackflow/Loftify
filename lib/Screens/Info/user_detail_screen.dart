@@ -31,7 +31,7 @@ import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
 import '../../Widgets/Custom/custom_tab_indicator.dart';
-import '../../Widgets/Custom/sliver_appbar_delegate.dart';
+import '../../Widgets/Custom/hero_photo_view_screen.dart';
 import '../../Widgets/Dialog/custom_dialog.dart';
 import '../../Widgets/Dialog/dialog_builder.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
@@ -66,6 +66,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
   String _followButtonText = "关注";
   Color? _followButtonColor;
   SubordinateScrollController? controller;
+  double _expandedHeight = 270;
 
   InfoMode get infoMode => isMe == true ? InfoMode.me : InfoMode.other;
 
@@ -116,12 +117,11 @@ class UserDetailScreenState extends State<UserDetailScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: MyTheme.getBackground(context),
       resizeToAvoidBottomInset: false,
       body: _fullBlogData != null
           ? ExtendedNestedScrollView(
               headerSliverBuilder: (_, __) => _buildHeaderSlivers(),
-              body: _tmp())
+              body: _mainContent())
           : ItemBuilder.buildLoadingDialog(
               context,
               background: MyTheme.getBackground(context),
@@ -129,24 +129,13 @@ class UserDetailScreenState extends State<UserDetailScreen>
     );
   }
 
-  _tmp() {
-    return Builder(builder: (BuildContext context) {
-      final parentController = PrimaryScrollController.of(context);
-      if (controller?.parent != parentController) {
-        controller?.dispose();
-        controller = SubordinateScrollController(parentController);
-      }
-      return _mainContent();
-    });
-  }
-
   _buildHeaderSlivers() {
     return <Widget>[
       ItemBuilder.buildSliverAppBar(
         context: context,
-        expandedHeight: 200,
+        expandedHeight: _expandedHeight,
         collapsedHeight: 56,
-        backgroundWidget: _buildBackground(true),
+        backgroundWidget: _buildBackground(height: _expandedHeight + 60),
         actions: _appBarActions(),
         center: true,
         title: Text(
@@ -157,7 +146,12 @@ class UserDetailScreenState extends State<UserDetailScreen>
               ),
         ),
         flexibleSpace: FlexibleSpaceBar(
-          background: _buildBackground(false),
+          background: Stack(
+            children: [
+              _buildBackground(height: _expandedHeight + 60),
+              _buildInfo(),
+            ],
+          ),
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(40),
@@ -195,50 +189,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
   }
 
   Widget _mainContent() {
-    return CustomScrollView(
-      controller: controller,
-      slivers: [
-        SliverToBoxAdapter(
-          child: _buildInfo(),
-        ),
-        SliverPersistentHeader(
-          delegate: SliverHeaderDelegate.fixedHeight(
-            height: 40,
-            child: Container(
-              decoration: BoxDecoration(
-                color: MyTheme.getBackground(context),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                overlayColor: WidgetStateProperty.all(Colors.transparent),
-                tabs: tabList,
-                labelPadding: const EdgeInsets.symmetric(horizontal: 12),
-                dividerHeight: 0,
-                physics: const BouncingScrollPhysics(),
-                labelStyle: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.apply(fontWeightDelta: 2),
-                unselectedLabelStyle: Theme.of(context)
-                    .textTheme
-                    .titleMedium
-                    ?.apply(color: Colors.grey),
-                indicator: CustomTabIndicator(
-                  borderColor: Theme.of(context).primaryColor,
-                ),
-              ),
-            ),
-          ),
-        ),
-        SliverFillRemaining(
-          child: _buildTabView(),
-        ),
-      ],
-    );
+    return _buildTabView();
   }
 
   _appBarActions() {
@@ -247,15 +198,12 @@ class UserDetailScreenState extends State<UserDetailScreen>
         context: context,
         onTap: () {
           List<Tuple2<String, dynamic>> options = [
+            const Tuple2("查看主题背景", -1),
             const Tuple2("复制主页链接", 0),
             const Tuple2("在浏览器打开", 1),
             const Tuple2("分享到其他应用", 2),
           ];
-          if (infoMode == InfoMode.me) {
-            options.addAll([
-              const Tuple2("编辑个人资料", -1),
-            ]);
-          } else if (infoMode == InfoMode.other) {
+          if (infoMode == InfoMode.other) {
             if (Utils.isNotEmpty(_fullBlogData!.blogInfo.avatarBoxImage)) {
               options.add(
                 Tuple2(
@@ -290,6 +238,18 @@ class UserDetailScreenState extends State<UserDetailScreen>
               (idx) async {
                 Navigator.pop(sheetContext);
                 if (idx == -1) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => HeroPhotoViewScreen(
+                        tagPrefix: Utils.getRandomString(),
+                        imageUrls: [Utils.removeImageParam(backgroudUrl)],
+                        useMainColor: false,
+                        title: "主题背景",
+                        captions: ["「${_fullBlogData!.blogInfo.blogNickName}」"],
+                      ),
+                    ),
+                  );
                 } else if (idx == 0) {
                   Utils.copy(context, _fullBlogData!.blogInfo.homePageUrl);
                 } else if (idx == 1) {
@@ -412,6 +372,9 @@ class UserDetailScreenState extends State<UserDetailScreen>
             .map((e) => ShowCaseItem.fromJson(e))
             .toList();
         updateFollowStatus();
+        if (showCases.isNotEmpty) {
+          _expandedHeight = 430;
+        }
         setState(() {});
       }
     });
@@ -429,10 +392,11 @@ class UserDetailScreenState extends State<UserDetailScreen>
   Widget _buildInfo() {
     bool hasRemarkName = Utils.isNotEmpty(_fullBlogData!.blogInfo.remarkName);
     return Container(
+      margin: EdgeInsets.only(
+          top: kToolbarHeight + MediaQuery.of(context).padding.top),
       padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: MyTheme.getBackground(context),
-        borderRadius: const BorderRadius.only(
+      decoration: const BoxDecoration(
+        borderRadius: BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
         ),
@@ -441,75 +405,133 @@ class UserDetailScreenState extends State<UserDetailScreen>
       child: Column(
         children: [
           const SizedBox(height: 10),
-          ItemBuilder.buildAvatar(
-            context: context,
-            size: 80,
-            showBorder: false,
-            showDetailMode: ShowDetailMode.avatar,
-            imageUrl: Utils.removeImageParam(_fullBlogData!.blogInfo.bigAvaImg),
-            avatarBoxImageUrl: getAvatarBoxImage(),
-            title: "个人头像",
-            caption: "「${_fullBlogData!.blogInfo.blogNickName}」",
-            tagPrefix: Utils.getRandomString(),
-          ),
-          const SizedBox(height: 12),
-          ItemBuilder.buildCopyItem(
-            context,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(
-                _fullBlogData!.blogInfo.blogNickName,
-                style: Theme.of(context).textTheme.titleLarge?.apply(
-                      fontSizeDelta: 2,
-                    ),
-              ),
-            ),
-            copyText: _fullBlogData!.blogInfo.blogNickName,
-            toastText: "已复制昵称",
-          ),
-          const SizedBox(height: 12),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              ItemBuilder.buildCopyItem(
-                context,
-                child: Text(
-                  textAlign: TextAlign.center,
-                  'ID: ${_fullBlogData!.blogInfo.blogName}',
-                  style: Theme.of(context).textTheme.labelMedium,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                copyText: _fullBlogData!.blogInfo.blogName,
-                toastText: "已复制LofterID",
+              const SizedBox(width: 12),
+              ItemBuilder.buildAvatar(
+                context: context,
+                size: Utils.isNotEmpty(getAvatarBoxImage()) ? 54 : 80,
+                showBorder: false,
+                showDetailMode: ShowDetailMode.avatar,
+                imageUrl:
+                    Utils.removeImageParam(_fullBlogData!.blogInfo.bigAvaImg),
+                avatarBoxImageUrl: getAvatarBoxImage(),
+                title: "个人头像",
+                caption: "「${_fullBlogData!.blogInfo.blogNickName}」",
+                tagPrefix: Utils.getRandomString(),
               ),
-              if (hasRemarkName)
-                ItemBuilder.buildCopyItem(
-                  context,
-                  child: Text(
-                    textAlign: TextAlign.center,
-                    ' | 备注: ${_fullBlogData!.blogInfo.remarkName}',
-                    style: Theme.of(context).textTheme.labelMedium,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ItemBuilder.buildCopyItem(
+                    context,
+                    child: Text(
+                      _fullBlogData!.blogInfo.blogNickName,
+                      style: Theme.of(context).textTheme.titleLarge?.apply(
+                            fontSizeDelta: 2,
+                            color: Colors.white,
+                          ),
+                    ),
+                    copyText: _fullBlogData!.blogInfo.blogNickName,
+                    toastText: "已复制昵称",
                   ),
-                  copyText: _fullBlogData!.blogInfo.remarkName,
-                  toastText: "已复制备注",
-                ),
+                  const SizedBox(height: 5),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ItemBuilder.buildCopyItem(
+                        context,
+                        child: Text(
+                          textAlign: TextAlign.center,
+                          'ID: ${_fullBlogData!.blogInfo.blogName}',
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelMedium
+                              ?.apply(color: Colors.white70),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        copyText: _fullBlogData!.blogInfo.blogName,
+                        toastText: "已复制LofterID",
+                      ),
+                      if (hasRemarkName)
+                        ItemBuilder.buildCopyItem(
+                          context,
+                          child: Text(
+                            textAlign: TextAlign.center,
+                            ' | 备注: ${_fullBlogData!.blogInfo.remarkName}',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.apply(color: Colors.white70),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          copyText: _fullBlogData!.blogInfo.remarkName,
+                          toastText: "已复制备注",
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+                  Row(
+                    children: [
+                      Text(
+                        textAlign: TextAlign.center,
+                        '性别: ${_fullBlogData!.blogInfo.gendar == 1 ? "男" : _fullBlogData!.blogInfo.gendar == 2 ? "女" : "保密"}  |  IP属地: ${_fullBlogData!.blogInfo.ipLocation}',
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelMedium
+                            ?.apply(color: Colors.white70),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(width: 5),
+                      if (Utils.isNotEmpty(
+                          Utils.clearBlank(_fullBlogData!.blogInfo.selfIntro)))
+                        ItemBuilder.buildClickItem(
+                          GestureDetector(
+                            onTap: () {
+                              DialogBuilder.showInfoDialog(
+                                context,
+                                buttonText: "确认",
+                                title:
+                                    "${_fullBlogData!.blogInfo.blogNickName}的个人介绍",
+                                message: _fullBlogData!.blogInfo.selfIntro,
+                                onTapDismiss: () {},
+                                customDialogType: CustomDialogType.normal,
+                              );
+                            },
+                            child: Text.rich(
+                              TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: "更多信息",
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelMedium
+                                        ?.apply(color: Colors.white),
+                                  ),
+                                  const WidgetSpan(
+                                    child: Icon(
+                                      Icons.keyboard_arrow_down_rounded,
+                                      size: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  )
+                ],
+              ),
             ],
           ),
-          const SizedBox(height: 2),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Text(
-              textAlign: TextAlign.center,
-              '性别：${_fullBlogData!.blogInfo.gendar == 1 ? "男" : _fullBlogData!.blogInfo.gendar == 2 ? "女" : "保密"}  |  IP属地: ${_fullBlogData!.blogInfo.ipLocation}${Utils.clearBlank(_fullBlogData!.blogInfo.selfIntro).isNotEmpty ? "  |  简介: ${Utils.clearBlank(_fullBlogData!.blogInfo.selfIntro)}" : ""}',
-              style: Theme.of(context).textTheme.labelMedium,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -517,6 +539,8 @@ class UserDetailScreenState extends State<UserDetailScreen>
                 context,
                 title: '关注',
                 count: _fullBlogData!.blogInfo.blogStat.followingCount,
+                countColor: Colors.white,
+                labelColor: Colors.white.withOpacity(0.9),
                 onTap: () {
                   if (_fullBlogData!.showFollow == 1 ||
                       infoMode == InfoMode.me) {
@@ -541,6 +565,8 @@ class UserDetailScreenState extends State<UserDetailScreen>
                 context,
                 title: '粉丝',
                 count: _fullBlogData!.blogInfo.blogStat.followedCount,
+                countColor: Colors.white,
+                labelColor: Colors.white.withOpacity(0.9),
                 onTap: () {
                   if (_fullBlogData!.showFans == 1 || infoMode == InfoMode.me) {
                     RouteUtil.pushCupertinoRoute(
@@ -562,6 +588,8 @@ class UserDetailScreenState extends State<UserDetailScreen>
                 context,
                 title: '热度',
                 count: _fullBlogData!.blogInfo.hot.hotCount,
+                countColor: Colors.white,
+                labelColor: Colors.white.withOpacity(0.9),
                 onTap: () {
                   DialogBuilder.showInfoDialog(
                     context,
@@ -602,6 +630,8 @@ class UserDetailScreenState extends State<UserDetailScreen>
                 context,
                 title: '支持者',
                 count: _fullBlogData!.blogInfo.blogStat.supporterCount,
+                countColor: Colors.white,
+                labelColor: Colors.white.withOpacity(0.9),
                 onTap: () {
                   if (_fullBlogData!.showSupport == 1 ||
                       infoMode == InfoMode.me) {
@@ -617,41 +647,26 @@ class UserDetailScreenState extends State<UserDetailScreen>
                   }
                 },
               ),
+              if (infoMode == InfoMode.other)
+                ItemBuilder.buildRoundButton(
+                  context,
+                  onTap: _processFollow,
+                  text: _followButtonText,
+                  background: _followButtonColor,
+                  fontSizeDelta: 2,
+                ),
+              if (infoMode == InfoMode.me)
+                ItemBuilder.buildRoundButton(
+                  context,
+                  onTap: () {},
+                  text: "编辑资料",
+                  background: Colors.white.withOpacity(0.2),
+                  fontSizeDelta: 2,
+                ),
             ],
           ),
           const SizedBox(height: 16),
-          if (infoMode == InfoMode.other)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 50),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Expanded(
-                    child: ItemBuilder.buildRoundButton(
-                      context,
-                      onTap: _processFollow,
-                      text: _followButtonText,
-                      background: _followButtonColor,
-                      fontSizeDelta: 2,
-                    ),
-                  ),
-                  const SizedBox(width: 15),
-                  Expanded(
-                    child: ItemBuilder.buildRoundButton(
-                      context,
-                      onTap: () {
-                        IToast.showTop("暂不支持聊天");
-                      },
-                      text: "聊天",
-                      fontSizeDelta: 2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          if (infoMode == InfoMode.other) const SizedBox(height: 12),
           if (showCases.isNotEmpty) _buildShowCases(),
-          const SizedBox(height: 12),
         ],
       ),
     );
@@ -660,14 +675,14 @@ class UserDetailScreenState extends State<UserDetailScreen>
   updateFollowStatus() {
     if (_fullBlogData!.following) {
       _followButtonText = _fullBlogData!.specialfollowing ? "已特别关注" : "已关注";
-      _followButtonColor = null;
+      _followButtonColor = Colors.white.withOpacity(0.4);
     } else {
-      _followButtonText = "关注";
-      _followButtonColor = Theme.of(context).primaryColor;
+      _followButtonText = " 关注 ";
+      _followButtonColor = Colors.white.withOpacity(0.2);
     }
     if (_fullBlogData!.isBlackBlog) {
       _followButtonText = "已拉黑";
-      _followButtonColor = null;
+      _followButtonColor = Colors.red.withOpacity(0.4);
     }
     setState(() {});
   }
@@ -815,11 +830,9 @@ class UserDetailScreenState extends State<UserDetailScreen>
   }
 
   _buildTabView() {
-    ScrollController controller = ScrollController();
     List<Widget> children = [];
     children.add(
       PostScreen(
-        scrollController: controller,
         infoMode: InfoMode.other,
         blogId: _fullBlogData!.blogInfo.blogId,
         blogName: _fullBlogData!.blogInfo.blogName,
@@ -828,7 +841,6 @@ class UserDetailScreenState extends State<UserDetailScreen>
     if (_fullBlogData!.showLike == 1) {
       children.add(
         LikeScreen(
-          scrollController: controller,
           infoMode: InfoMode.other,
           blogId: _fullBlogData!.blogInfo.blogId,
           blogName: _fullBlogData!.blogInfo.blogName,
@@ -838,7 +850,6 @@ class UserDetailScreenState extends State<UserDetailScreen>
     if (_fullBlogData!.showShare == 1) {
       children.add(
         ShareScreen(
-          scrollController: controller,
           infoMode: InfoMode.other,
           blogId: _fullBlogData!.blogInfo.blogId,
           blogName: _fullBlogData!.blogInfo.blogName,
@@ -847,7 +858,6 @@ class UserDetailScreenState extends State<UserDetailScreen>
     }
     children.add(
       CollectionScreen(
-        scrollController: controller,
         infoMode: InfoMode.other,
         blogId: _fullBlogData!.blogInfo.blogId,
         blogName: _fullBlogData!.blogInfo.blogName,
@@ -857,7 +867,6 @@ class UserDetailScreenState extends State<UserDetailScreen>
     if (_fullBlogData!.showFoods == 1) {
       children.add(
         GrainScreen(
-          scrollController: controller,
           infoMode: InfoMode.other,
           blogId: _fullBlogData!.blogInfo.blogId,
           blogName: _fullBlogData!.blogInfo.blogName,
@@ -875,20 +884,20 @@ class UserDetailScreenState extends State<UserDetailScreen>
 
   _buildShowCases() {
     return Container(
-      margin: const EdgeInsets.only(left: 16, right: 16, top: 8),
+      margin: const EdgeInsets.only(left: 12, right: 12),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: Colors.white.withOpacity(0.2),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.workspace_premium_rounded,
                 size: 16,
-                color: MyColors.getHotTagTextColor(context),
+                color: Colors.white,
               ),
               const SizedBox(width: 3),
               Expanded(
@@ -897,7 +906,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                   style: Theme.of(context)
                       .textTheme
                       .titleSmall
-                      ?.apply(fontSizeDelta: -1),
+                      ?.apply(fontSizeDelta: -1, color: Colors.white),
                 ),
               ),
             ],
@@ -958,147 +967,137 @@ class UserDetailScreenState extends State<UserDetailScreen>
         );
       };
     }
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 100,
-        width: 100,
-        margin: const EdgeInsets.only(right: 10),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Utils.isNotEmpty(backgroundUrl)
-                  ? ItemBuilder.buildCachedImage(
-                      context: context,
-                      imageUrl: backgroundUrl,
-                      height: 100,
-                      width: 100,
-                      fit: BoxFit.cover,
-                      showLoading: false,
-                      placeholderBackground: Colors.transparent,
-                    )
-                  : AssetUtil.loadDouble(
-                      context,
-                      AssetUtil.lofterDarkIllust,
-                      AssetUtil.lofterDarkIllust,
-                      size: 100,
-                      fit: BoxFit.cover,
-                    ),
-            ),
-            Container(
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
+    return ItemBuilder.buildClickItem(
+      GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 100,
+          width: 100,
+          margin: const EdgeInsets.only(right: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.1),
-                    Colors.black.withOpacity(0.4),
+                child: Utils.isNotEmpty(backgroundUrl)
+                    ? ItemBuilder.buildCachedImage(
+                        context: context,
+                        imageUrl: backgroundUrl,
+                        height: 100,
+                        width: 100,
+                        fit: BoxFit.cover,
+                        showLoading: false,
+                        placeholderBackground: Colors.transparent,
+                      )
+                    : AssetUtil.loadDouble(
+                        context,
+                        AssetUtil.lofterDarkIllust,
+                        AssetUtil.lofterDarkIllust,
+                        size: 100,
+                        fit: BoxFit.cover,
+                      ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withOpacity(0.1),
+                      Colors.black.withOpacity(0.4),
+                    ],
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
+                    const Spacer(),
+                    Center(
+                      child: Text(
+                        title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleSmall?.apply(
+                              color: Colors.white,
+                            ),
+                      ),
+                    ),
+                    const Spacer(),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.local_fire_department_rounded,
+                          size: 12,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 3),
+                        Expanded(
+                          child: Text(
+                            hotCount,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.apply(fontSizeDelta: -1, color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
-                  const Spacer(),
-                  Center(
-                    child: Text(
-                      title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall?.apply(
-                            color: Colors.white,
-                          ),
-                    ),
-                  ),
-                  const Spacer(),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.local_fire_department_rounded,
-                        size: 12,
-                        color: Colors.white,
-                      ),
-                      const SizedBox(width: 3),
-                      Expanded(
-                        child: Text(
-                          hotCount,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
-                              ?.apply(fontSizeDelta: -1, color: Colors.white),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              top: -4,
-              right: -6,
-              child: ItemBuilder.buildCachedImage(
-                context: context,
-                imageUrl: item.icon,
-                width: 40,
-                height: 40,
-                showLoading: false,
-                placeholderBackground: Colors.transparent,
-              ),
-            ),
-            if (item.postCollection != null)
               Positioned(
-                top: 6,
-                left: 6,
-                child: AssetUtil.load(
-                  AssetUtil.collectionWhiteIcon,
-                  size: 12,
+                top: -4,
+                right: -6,
+                child: ItemBuilder.buildCachedImage(
+                  context: context,
+                  imageUrl: item.icon,
+                  width: 40,
+                  height: 40,
+                  showLoading: false,
+                  placeholderBackground: Colors.transparent,
                 ),
               ),
-          ],
+              if (item.postCollection != null)
+                Positioned(
+                  top: 6,
+                  left: 6,
+                  child: AssetUtil.load(
+                    AssetUtil.collectionWhiteIcon,
+                    size: 12,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildBackground(bool blur, {double? height}) {
-    String backgroudUrl = _fullBlogData!.blogcover.customBlogCover ??
-        _fullBlogData!.blogcover.url;
-    if (blur) {
-      return Blur(
-        blur: 10,
-        blurColor: Colors.black12,
-        child: ItemBuilder.buildCachedImage(
-          context: context,
-          imageUrl: Utils.removeImageParam(backgroudUrl),
-          fit: BoxFit.cover,
-          width: MediaQuery.sizeOf(context).width * 2,
-          height: height ?? 300,
-          placeholderBackground: Theme.of(context).textTheme.labelSmall?.color,
-          bottomPadding: 50,
-          showLoading: false,
-        ),
-      );
-    } else {
-      return ItemBuilder.buildHeroCachedImage(
+  String get backgroudUrl =>
+      _fullBlogData!.blogcover.customBlogCover ?? _fullBlogData!.blogcover.url;
+
+  Widget _buildBackground({
+    double blurRadius = 10,
+    double? height,
+  }) {
+    return Blur(
+      blur: blurRadius,
+      blurColor: Colors.black12,
+      child: ItemBuilder.buildCachedImage(
         context: context,
         imageUrl: Utils.removeImageParam(backgroudUrl),
         fit: BoxFit.cover,
         width: MediaQuery.sizeOf(context).width * 2,
-        height: 300,
+        height: height ?? 600,
         placeholderBackground: Theme.of(context).textTheme.labelSmall?.color,
         bottomPadding: 50,
         showLoading: false,
-        title: "主题背景",
-        tagPrefix: Utils.getRandomString(),
-        caption: "「${_fullBlogData!.blogInfo.blogNickName}」",
-      );
-    }
+      ),
+    );
   }
 }

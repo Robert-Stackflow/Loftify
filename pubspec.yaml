@@ -1,5 +1,5 @@
 name: loftify
-version: 1.9.0
+version: 1.10.0
 description: An third-party application for LOFTER
 
 environment:
@@ -19,6 +19,10 @@ dependencies:
   card_swiper: ^3.0.1 # 卡片滑动
   modal_bottom_sheet: ^3.0.0 # 底部弹窗
   video_player: ^2.9.1 # 视频播放
+  video_player_media_kit: ^1.0.5 # 视频播放
+  media_kit_libs_android_video: any
+  media_kit_libs_macos_video: any
+  media_kit_libs_windows_video: any
   like_button: ^2.0.5 # 点赞按钮
   sliding_up_panel: ^2.0.0+1 # 滑动面板
   blur: ^3.1.0 # 模糊
@@ -27,8 +31,6 @@ dependencies:
   custom_sliding_segmented_control: ^1.8.3 # 分段控制器
   flutter_inappwebview: ^6.0.0 # Webview
   extended_nested_scroll_view: ^6.2.1 # 嵌套滚动
-#  super_tooltip:
-#    path: third-party/super_tooltip
   # 系统
   provider: ^6.0.5 # 状态管理
   local_auth: ^2.2.0 # 指纹验证
@@ -83,6 +85,9 @@ dependencies:
 #      path: plugins/window_size
 #      ref: a738913c8ce2c9f47515382d40827e794a334274
 #  texture_rgba_renderer: ^0.0.16 # 纹理渲染
+
+dependency_overrides:
+  webview_flutter_android: 3.16.1
 
 dev_dependencies:
   flutter_test:

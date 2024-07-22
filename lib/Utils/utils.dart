@@ -471,7 +471,8 @@ class Utils {
     String currentVersion = (await PackageInfo.fromPlatform()).version;
     onGetCurrentVersion?.call(currentVersion);
     String latestVersion = currentVersion;
-    GithubApi.getReleases("Robert-Stackflow", "Loftify").then((releases) async {
+    await GithubApi.getReleases("Robert-Stackflow", "Loftify")
+        .then((releases) async {
       onGetReleases?.call(releases);
       ReleaseItem? latestReleaseItem;
       for (var release in releases) {

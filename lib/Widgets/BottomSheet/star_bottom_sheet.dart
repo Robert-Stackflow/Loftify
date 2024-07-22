@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
-
-import '../../Resources/theme.dart';
 
 class StarBottomSheet extends StatefulWidget {
   const StarBottomSheet({
@@ -30,7 +29,7 @@ class StarBottomSheetState extends State<StarBottomSheet> {
       children: [
         Container(
           decoration: BoxDecoration(
-            color: MyTheme.getBackground(context),
+            color: Theme.of(context).canvasColor,
             borderRadius: BorderRadius.vertical(
                 top: const Radius.circular(20),
                 bottom: ResponsiveUtil.isLandscape()
@@ -98,24 +97,29 @@ class StarBottomSheetState extends State<StarBottomSheet> {
           const SizedBox(height: 12),
           Row(
             mainAxisSize: MainAxisSize.min,
-            children: List.generate(5, (index) {
-              return GestureDetector(
-                child: Icon(
-                  index < currentStar
-                      ? Icons.star_rate_rounded
-                      : Icons.star_border_purple500_rounded,
-                  color: Colors.yellow,
-                  size: 40,
-                ),
-                onTap: () {
-                  HapticFeedback.mediumImpact();
-                  setState(() {
-                    currentStar = index + 1;
-                    updateComment();
-                  });
-                },
-              );
-            }),
+            children: List.generate(
+              5,
+              (index) {
+                return ItemBuilder.buildClickItem(
+                  GestureDetector(
+                    child: Icon(
+                      index < currentStar
+                          ? Icons.star_rate_rounded
+                          : Icons.star_border_purple500_rounded,
+                      color: Colors.yellow,
+                      size: 40,
+                    ),
+                    onTap: () {
+                      HapticFeedback.mediumImpact();
+                      setState(() {
+                        currentStar = index + 1;
+                        updateComment();
+                      });
+                    },
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -152,7 +156,12 @@ class StarBottomSheetState extends State<StarBottomSheet> {
                 background: Theme.of(context).primaryColor,
                 text: " 确定 ",
                 onTap: () {
-                  Navigator.of(context).pop();
+                  if (currentStar != 0) {
+                    IToast.showTop("感谢您的评分");
+                    Navigator.of(context).pop();
+                  } else {
+                    IToast.showTop("请点击评分");
+                  }
                 },
                 fontSizeDelta: 2,
               ),

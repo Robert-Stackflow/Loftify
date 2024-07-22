@@ -26,6 +26,8 @@ BuildContext get rootContext => globalNavigatorState!.context;
 bool get canPopByKey =>
     desktopNavigatorState != null && desktopNavigatorState!.canPop();
 
+RouteObserver<PageRoute> routeObserver = RouteObserver();
+
 AppProvider appProvider = AppProvider();
 
 class AppProvider with ChangeNotifier {

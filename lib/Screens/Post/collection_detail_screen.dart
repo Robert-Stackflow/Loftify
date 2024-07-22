@@ -187,6 +187,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
     return <Widget>[
       ItemBuilder.buildSliverAppBar(
         context: context,
+        expandedHeight: 265,
         backgroundWidget: _buildBackground(),
         actions: [
           ItemBuilder.buildIconButton(
@@ -251,7 +252,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
           ),
         ),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(40),
+          preferredSize: const Size.fromHeight(0),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             decoration: BoxDecoration(
@@ -278,7 +279,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
                               color:
                                   Theme.of(context).textTheme.bodySmall?.color,
                             ),
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -304,7 +305,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
                     ),
                   ],
                 ),
-                if (Utils.isNotEmpty(postCollection!.tags)) _buildTagList(),
+                // if (Utils.isNotEmpty(postCollection!.tags)) _buildTagList(),
                 const SizedBox(height: 8),
                 ItemBuilder.buildDivider(
                   context,

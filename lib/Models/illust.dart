@@ -18,4 +18,9 @@ class Illust {
     required this.blogNickName,
     required this.part,
   });
+
+  @override
+  String toString() {
+    return 'Illust{originalName: $originalName, blogId: $blogId, blogLofterId: $blogLofterId, blogNickName: $blogNickName, part: $part, postId: $postId, url: $url, extension: $extension}';
+  }
 }

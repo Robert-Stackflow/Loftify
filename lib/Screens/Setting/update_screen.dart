@@ -35,7 +35,6 @@ enum DownloadState { normal, downloading, toInstall, installing }
 
 class _UpdateScreenState extends State<UpdateScreen>
     with TickerProviderStateMixin {
-  String releaseUrl = "https://github.com/Robert-Stackflow/Loftify/releases";
   late String currentVersion;
 
   late String latestVersion;

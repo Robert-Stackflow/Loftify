@@ -33,6 +33,7 @@ import '../../Resources/theme.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/asset_util.dart';
 import '../../Utils/constant.dart';
+import '../../Utils/iprint.dart';
 import '../../Utils/lottie_util.dart';
 import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
@@ -843,12 +844,13 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             margin: EdgeInsets.only(
               left: isTablet ? 0 : MediaQuery.sizeOf(context).width / 5,
               right: isTablet ? 0 : MediaQuery.sizeOf(context).width / 5,
-              top: 20,
+              top: 12,
               bottom: isTablet ? 20 : 0,
             ),
             width: isTablet ? 240 : null,
             child: ItemBuilder.buildRoundButton(
               context,
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
               text: "查看全部评论",
               onTap: () {
                 BottomSheetBuilder.showBottomSheet(

@@ -177,75 +177,77 @@ class _CollectionScreenState extends State<CollectionScreen>
     double verticalPadding = 12,
   }) {
     List<String> tags = collection.tags.split(",");
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        color: Colors.transparent,
-        padding:
-            EdgeInsets.symmetric(vertical: verticalPadding, horizontal: 16),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: ItemBuilder.buildCachedImage(
-                    context: context,
-                    imageUrl: collection.coverUrl,
-                    width: 80,
-                    height: 80,
-                    fit: BoxFit.cover,
-                    showLoading: false,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: SizedBox(
-                    height: 80,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          collection.name,
-                          style: Theme.of(context).textTheme.titleMedium,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          "${collection.postCount}篇 · 更新于${Utils.formatTimestamp(collection.lastPublishTime)}",
-                          style: Theme.of(context).textTheme.labelMedium,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        SizedBox(
-                          height: 20,
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            cacheExtent: 9999,
-                            children: [
-                              ...List.generate(
-                                tags.length,
-                                (index) => Container(
-                                  margin: const EdgeInsets.only(right: 5),
-                                  child: ItemBuilder.buildSmallTagItem(
-                                    context,
-                                    tags[index],
-                                    showIcon: false,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+    return ItemBuilder.buildClickItem(
+      GestureDetector(
+        onTap: onTap,
+        child: Container(
+          color: Colors.transparent,
+          padding:
+              EdgeInsets.symmetric(vertical: verticalPadding, horizontal: 16),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: ItemBuilder.buildCachedImage(
+                      context: context,
+                      imageUrl: collection.coverUrl,
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                      showLoading: false,
                     ),
                   ),
-                ),
-              ],
-            )
-          ],
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: SizedBox(
+                      height: 80,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            collection.name,
+                            style: Theme.of(context).textTheme.titleMedium,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            "${collection.postCount}篇 · 更新于${Utils.formatTimestamp(collection.lastPublishTime)}",
+                            style: Theme.of(context).textTheme.labelMedium,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(
+                            height: 20,
+                            child: ListView(
+                              scrollDirection: Axis.horizontal,
+                              cacheExtent: 9999,
+                              children: [
+                                ...List.generate(
+                                  tags.length,
+                                  (index) => Container(
+                                    margin: const EdgeInsets.only(right: 5),
+                                    child: ItemBuilder.buildSmallTagItem(
+                                      context,
+                                      tags[index],
+                                      showIcon: false,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            ],
+          ),
         ),
       ),
     );

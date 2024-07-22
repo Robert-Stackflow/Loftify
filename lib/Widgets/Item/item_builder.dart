@@ -1992,106 +1992,110 @@ class ItemBuilder {
     Function()? onTap,
     bool useBackground = false,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          image: useBackground
-              ? DecorationImage(
-                  image: AssetImage(Utils.isDark(context)
-                      ? AssetUtil.tagRowBgDarkMess
-                      : AssetUtil.tagRowBgMess),
-                  fit: BoxFit.cover,
-                )
-              : null,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.all(Radius.circular(12)),
-                image: DecorationImage(
-                  image: AssetImage(AssetUtil.tagIconBgMess),
-                  fit: BoxFit.cover,
+    return ItemBuilder.buildClickItem(
+      GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            image: useBackground
+                ? DecorationImage(
+                    image: AssetImage(Utils.isDark(context)
+                        ? AssetUtil.tagRowBgDarkMess
+                        : AssetUtil.tagRowBgMess),
+                    fit: BoxFit.cover,
+                  )
+                : null,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.all(Radius.circular(12)),
+                  image: DecorationImage(
+                    image: AssetImage(AssetUtil.tagIconBgMess),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                child: Text(
+                  textAlign: TextAlign.center,
+                  tag.tagName,
+                  style: Theme.of(context).textTheme.titleSmall?.apply(
+                        color: Colors.white,
+                      ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              child: Text(
-                textAlign: TextAlign.center,
-                tag.tagName,
-                style: Theme.of(context).textTheme.titleSmall?.apply(
-                      color: Colors.white,
-                    ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          "#${tag.tagName}",
-                          style: Theme.of(context).textTheme.titleMedium,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 5),
-                      if (Utils.isNotEmpty(tag.rankName))
-                        ItemBuilder.buildRoundButton(
-                          context,
-                          text: tag.rankName!,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 3,
-                            vertical: 2,
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            "#${tag.tagName}",
+                            style: Theme.of(context).textTheme.titleMedium,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          radius: 3,
-                          color: MyColors.likeButtonColor,
-                          fontSizeDelta: -2,
                         ),
-                      if (tag.subscribed) const SizedBox(width: 5),
-                      if (tag.subscribed)
-                        ItemBuilder.buildRoundButton(
-                          context,
-                          text: "已订阅",
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 3, vertical: 2),
-                          radius: 3,
-                          color: Theme.of(context).primaryColor,
-                          fontSizeDelta: -2,
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    "${tag.joinCount}人参与",
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.apply(fontWeightDelta: 1),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                        const SizedBox(width: 5),
+                        if (Utils.isNotEmpty(tag.rankName))
+                          ItemBuilder.buildRoundButton(
+                            context,
+                            text: tag.rankName!,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 3,
+                              vertical: 2,
+                            ),
+                            radius: 3,
+                            color: MyColors.likeButtonColor,
+                            fontSizeDelta: -2,
+                          ),
+                        if (tag.subscribed) const SizedBox(width: 5),
+                        if (tag.subscribed)
+                          ItemBuilder.buildRoundButton(
+                            context,
+                            text: "已订阅",
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 3, vertical: 2),
+                            radius: 3,
+                            color: Theme.of(context).primaryColor,
+                            fontSizeDelta: -2,
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      "${tag.joinCount}人参与",
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.apply(fontWeightDelta: 1),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            ItemBuilder.buildRoundButton(
-              context,
-              text: "进入",
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              color: Theme.of(context).primaryColor,
-            ),
-          ],
+              ItemBuilder.buildRoundButton(
+                context,
+                text: "进入",
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                color: Theme.of(context).primaryColor,
+                onTap: onTap,
+              ),
+            ],
+          ),
         ),
       ),
     );

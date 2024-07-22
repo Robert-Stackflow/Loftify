@@ -19,7 +19,6 @@ class UpdateLogScreen extends StatefulWidget {
 
 class _UpdateLogScreenState extends State<UpdateLogScreen>
     with TickerProviderStateMixin {
-  String releaseUrl = "https://github.com/Robert-Stackflow/Loftify/releases";
   List<ReleaseItem> releaseItems = [];
   final EasyRefreshController _refreshController = EasyRefreshController();
   String currentVersion = "";

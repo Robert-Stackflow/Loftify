@@ -8,6 +8,7 @@ import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/utils.dart';
 
 import '../Models/nav_entry.dart';
+import 'constant.dart';
 
 class HiveUtil {
   //Database
@@ -28,6 +29,9 @@ class HiveUtil {
 
   //General
   static const String localeKey = "locale";
+  static const String recordWindowStateKey = "recordWindowState";
+  static const String windowSizeKey = "windowSize";
+  static const String windowPositionKey = "windowPosition";
   static const String enableCloseToTrayKey = "enableCloseToTray";
   static const String enableCloseNoticeKey = "enableCloseNotice";
   static const String autoCheckUpdateKey = "autoCheckUpdate";
@@ -104,6 +108,42 @@ class HiveUtil {
         HiveUtil.longPressLinkButtonImageQualityKey, ImageQuality.raw.index);
     HiveUtil.put(HiveUtil.followMainColorKey, true);
     HiveUtil.put(HiveUtil.inappWebviewKey, true);
+  }
+
+  static void setWindowSize(Size size) {
+    HiveUtil.put(HiveUtil.windowSizeKey, "${size.width},${size.height}");
+  }
+
+  static Size getWindowSize() {
+    if (!HiveUtil.getBool(HiveUtil.recordWindowStateKey)) return defaultWindowSize;
+    String? size = HiveUtil.getString(HiveUtil.windowSizeKey);
+    if (size == null || size.isEmpty) {
+      return defaultWindowSize;
+    }
+    try {
+      List<String> list = size.split(",");
+      return Size(double.parse(list[0]), double.parse(list[1]));
+    } catch (e) {
+      return defaultWindowSize;
+    }
+  }
+
+  static void setWindowPosition(Offset offset) {
+    HiveUtil.put(HiveUtil.windowPositionKey, "${offset.dx},${offset.dy}");
+  }
+
+  static Offset getWindowPosition() {
+    if (!HiveUtil.getBool(HiveUtil.recordWindowStateKey)) return Offset.zero;
+    String? position = HiveUtil.getString(HiveUtil.windowPositionKey);
+    if (position == null || position.isEmpty) {
+      return Offset.zero;
+    }
+    try {
+      List<String> list = position.split(",");
+      return Offset(double.parse(list[0]), double.parse(list[1]));
+    } catch (e) {
+      return Offset.zero;
+    }
   }
 
   static bool isFirstLogin() {
@@ -276,10 +316,12 @@ class HiveUtil {
       HiveUtil.put(HiveUtil.darkThemeIndexKey, index);
 
   static bool shouldAutoLock() =>
+      canLock() && HiveUtil.getBool(HiveUtil.autoLockKey);
+
+  static bool canLock() =>
       HiveUtil.getBool(HiveUtil.enableGuesturePasswdKey) &&
       HiveUtil.getString(HiveUtil.guesturePasswdKey) != null &&
-      HiveUtil.getString(HiveUtil.guesturePasswdKey)!.isNotEmpty &&
-      HiveUtil.getBool(HiveUtil.autoLockKey);
+      HiveUtil.getString(HiveUtil.guesturePasswdKey)!.isNotEmpty;
 
   static List<SortableItem> getSortableItems(
     String key,

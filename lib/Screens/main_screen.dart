@@ -12,6 +12,7 @@ import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
 import 'package:loftify/Screens/Navigation/dynamic_screen.dart';
 import 'package:loftify/Screens/Navigation/home_screen.dart';
 import 'package:loftify/Utils/asset_util.dart';
+import 'package:loftify/Utils/constant.dart';
 import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Utils/uri_util.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
@@ -102,6 +103,18 @@ class MainScreenState extends State<MainScreen>
   void onWindowFocus() {
     cancleTimer();
     super.onWindowFocus();
+  }
+
+  @override
+  Future<void> onWindowResized() async {
+    super.onWindowResized();
+    HiveUtil.setWindowSize(await windowManager.getSize());
+  }
+
+  @override
+  Future<void> onWindowMoved() async {
+    super.onWindowMoved();
+    HiveUtil.setWindowPosition(await windowManager.getPosition());
   }
 
   @override
@@ -740,12 +753,24 @@ class MainScreenState extends State<MainScreen>
       windowManager.focus();
       windowManager.restore();
     } else if (menuItem.key == 'lock_window') {
-      jumpToPinVerify();
+      if (HiveUtil.canLock()) {
+        _hasJumpedToPinVerify = true;
+        RouteUtil.pushCupertinoRoute(
+            context,
+            PinVerifyScreen(
+              onSuccess: () {},
+              isModal: true,
+              autoAuth: false,
+            ), onThen: (_) {
+          _hasJumpedToPinVerify = false;
+        });
+      } else {
+        IToast.showTop("尚未设置手势密码");
+      }
     } else if (menuItem.key == 'show_official_website') {
-      UriUtil.launchUrlUri(context, "https://apps.cloudchewie.com/loftify");
+      UriUtil.launchUrlUri(context, officialWebsite);
     } else if (menuItem.key == 'show_github_repo') {
-      UriUtil.launchUrlUri(
-          context, "https://github.com/Robert-Stackflow/Loftify");
+      UriUtil.launchUrlUri(context, repoUrl);
     } else if (menuItem.key == 'exit_app') {
       windowManager.close();
     }

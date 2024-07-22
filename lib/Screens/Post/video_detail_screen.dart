@@ -11,15 +11,19 @@ import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Models/search_response.dart';
 import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Screens/Post/video_list_controller.dart';
+import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
+import 'package:loftify/Utils/iprint.dart';
 import 'package:loftify/Utils/itoast.dart';
+import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Utils/route_util.dart';
 import 'package:loftify/Widgets/PostItem/general_post_item_builder.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:video_player/video_player.dart';
 
+import '../../Models/Illust.dart';
 import '../../Resources/colors.dart';
 import '../../Resources/theme.dart';
 import '../../Utils/constant.dart';
@@ -71,7 +75,7 @@ class VideoDetailScreen extends StatefulWidget {
 }
 
 class _VideoDetailScreenState extends State<VideoDetailScreen>
-    with TickerProviderStateMixin, WidgetsBindingObserver {
+    with TickerProviderStateMixin, WidgetsBindingObserver, RouteAware {
   PostListItem? _currentPostItem;
   final List<PostListItem> _postItemList = [];
   String permalink = "";
@@ -87,15 +91,28 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
   @override
   void dispose() {
     _scrollController.dispose();
+    routeObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
     _videoListController.dispose();
     super.dispose();
   }
 
   @override
+  void didChangeDependencies() {
+    routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
+    super.didChangeDependencies();
+  }
+
+  @override
+  void didPushNext() {
+    IPrint.debug("push");
+  }
+
+  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
       case AppLifecycleState.inactive:
+        _videoListController.currentPlayer.pause();
         break;
       case AppLifecycleState.resumed:
         break;
@@ -250,7 +267,8 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
         child: Stack(
           children: [
             _buildBody(),
-            SafeArea(child: _buildTopWidget()),
+            if (!ResponsiveUtil.isLandscape())
+              SafeArea(child: _buildTopWidget()),
           ],
         ),
       ),
@@ -259,7 +277,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
 
   Widget _buildBody() {
     return PageView.builder(
-      physics: const QuickerScrollPhysics(),
+      physics: const ClampingScrollPhysics(),
       controller: _pageController,
       scrollDirection: Axis.vertical,
       itemCount: _videoListController.videoCount,
@@ -272,7 +290,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
         return _buildVideoPage(
           player.videoInfo!,
           hidePauseIcon: !player.showPauseIcon.value,
-          aspectRatio: 9 / 16.0,
+          aspectRatio: 1,
           bottomPadding: 16.0,
           onSingleTap: () async {
             if (player.controller.value.isPlaying) {
@@ -310,10 +328,12 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
           width: double.infinity,
           color: Colors.black,
           alignment: Alignment.center,
-          child: AspectRatio(
-            aspectRatio: aspectRatio,
-            child: video,
-          ),
+          child: aspectRatio == 1
+              ? video
+              : AspectRatio(
+                  aspectRatio: aspectRatio,
+                  child: video,
+                ),
         ),
         if (!hidePauseIcon)
           Container(
@@ -434,10 +454,9 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
             downloadProgress: downloadProgress,
             onDownload: () {
               if (downloadProgress == null) {
-                FileUtil.saveVideo(
+                FileUtil.saveVideoByIllust(
                   context,
-                  postListItem
-                      .postData!.postView.videoPostView!.videoInfo.originUrl,
+                  getIllust(postListItem),
                   onReceiveProgress: (count, total) {
                     downloadProgress = count / total;
                     setState(() {});
@@ -451,6 +470,21 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
           ),
         ],
       ),
+    );
+  }
+
+  getIllust(PostListItem postListItem) {
+    String rawUrl =
+        postListItem.postData!.postView.videoPostView!.videoInfo.originUrl;
+    return Illust(
+      extension: FileUtil.extractFileExtensionFromUrl(rawUrl),
+      originalName: FileUtil.extractFileNameFromUrl(rawUrl),
+      blogId: postListItem.blogInfo!.blogId,
+      blogLofterId: postListItem.blogInfo!.blogName,
+      blogNickName: postListItem.blogInfo!.blogNickName,
+      postId: postListItem.itemId,
+      part: 0,
+      url: rawUrl,
     );
   }
 
@@ -531,11 +565,12 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
 
   Widget _buildTopWidget() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
       child: Row(
         children: [
-          IconButton(
-            onPressed: () {
+          ItemBuilder.buildIconButton(
+            context: context,
+            onTap: () {
               Navigator.pop(context);
             },
             icon: const Icon(
@@ -614,23 +649,27 @@ class VideoListButtonColumn extends StatelessWidget {
                   left: 0,
                   right: 0,
                   child: Center(
-                    child: GestureDetector(
-                      onTap: onFollow,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(50),
-                          border: Border.all(
-                            color:
-                                Theme.of(context).primaryColor.withAlpha(127),
-                            width: 0.5,
+                    child: ItemBuilder.buildClickItem(
+                      GestureDetector(
+                        onTap: onFollow,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(50),
+                            border: Border.all(
+                              color:
+                                  Theme.of(context).primaryColor.withAlpha(127),
+                              width: 0.5,
+                            ),
                           ),
-                        ),
-                        child: Icon(
-                          isFollowing ? Icons.check_rounded : Icons.add_rounded,
-                          size: 12,
-                          color: Theme.of(context).primaryColor,
+                          child: Icon(
+                            isFollowing
+                                ? Icons.check_rounded
+                                : Icons.add_rounded,
+                            size: 12,
+                            color: Theme.of(context).primaryColor,
+                          ),
                         ),
                       ),
                     ),
@@ -701,15 +740,6 @@ class _IconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var shadowStyle = TextStyle(
-      shadows: [
-        Shadow(
-          color: Colors.black.withOpacity(0.15),
-          offset: const Offset(0, 1),
-          blurRadius: 1,
-        ),
-      ],
-    );
     Widget body = Column(
       children: <Widget>[
         GestureDetector(
@@ -722,17 +752,15 @@ class _IconButton extends StatelessWidget {
         Text(
           text ?? '??',
           style: const TextStyle(
-            fontWeight: FontWeight.normal,
             fontSize: 13,
             color: Colors.white,
           ),
         ),
       ],
     );
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: DefaultTextStyle(
-        style: shadowStyle,
+    return ItemBuilder.buildClickItem(
+      Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
         child: body,
       ),
     );

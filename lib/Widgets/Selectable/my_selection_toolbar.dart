@@ -664,7 +664,8 @@ class _MobileTextSelectionToolbarContentState
 
   @override
   Widget build(BuildContext context) {
-    final Color chevronColor = _kToolbarTextColor.resolveFrom(context);
+    final Color chevronColor = Theme.of(context).iconTheme.color ??
+        _kToolbarTextColor.resolveFrom(context);
 
     // Wrap the children and the chevron painters in Center with widthFactor
     // and heightFactor of 1.0 so _CupertinoTextSelectionToolbarItems can get

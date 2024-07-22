@@ -142,61 +142,63 @@ class _SupporterScreenState extends State<SupporterScreen>
   }
 
   _buildItem(int index, SupporterItem item) {
-    return GestureDetector(
-      onTap: () {
-        RouteUtil.pushCupertinoRoute(
-          context,
-          UserDetailScreen(
-            blogId: item.blogInfo.blogId,
-            blogName: item.blogInfo.blogName,
-          ),
-        );
-      },
-      child: Container(
-        color: Colors.transparent,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        child: Row(
-          children: [
-            ItemBuilder.buildAvatar(
-              context: context,
-              size: 40,
-              imageUrl: item.blogInfo.bigAvaImg,
-              tagPrefix: "$index",
+    return ItemBuilder.buildClickItem(
+      GestureDetector(
+        onTap: () {
+          RouteUtil.pushCupertinoRoute(
+            context,
+            UserDetailScreen(
+              blogId: item.blogInfo.blogId,
+              blogName: item.blogInfo.blogName,
             ),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.blogInfo.blogNickName,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  if (item.blogInfo.selfIntro!.isNotEmpty)
-                    const SizedBox(height: 5),
-                  if (item.blogInfo.selfIntro!.isNotEmpty)
+          );
+        },
+        child: Container(
+          color: Colors.transparent,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          child: Row(
+            children: [
+              ItemBuilder.buildAvatar(
+                context: context,
+                size: 40,
+                imageUrl: item.blogInfo.bigAvaImg,
+                tagPrefix: "$index",
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      item.blogInfo.selfIntro!,
-                      style: Theme.of(context).textTheme.labelMedium,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      item.blogInfo.blogNickName,
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
-                ],
+                    if (item.blogInfo.selfIntro!.isNotEmpty)
+                      const SizedBox(height: 5),
+                    if (item.blogInfo.selfIntro!.isNotEmpty)
+                      Text(
+                        item.blogInfo.selfIntro!,
+                        style: Theme.of(context).textTheme.labelMedium,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
               ),
-            ),
-            Container(
-              margin: const EdgeInsets.only(right: 5),
-              child: Icon(
-                Icons.workspace_premium_rounded,
-                size: 22,
-                color: MyColors.getHotTagTextColor(context),
+              Container(
+                margin: const EdgeInsets.only(right: 5),
+                child: Icon(
+                  Icons.workspace_premium_rounded,
+                  size: 22,
+                  color: MyColors.getHotTagTextColor(context),
+                ),
               ),
-            ),
-            Text(
-              item.score.toString(),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ],
+              Text(
+                item.score.toString(),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ],
+          ),
         ),
       ),
     );

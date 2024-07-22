@@ -97,7 +97,7 @@ class _WebviewScreenState extends State<WebviewScreen>
       },
       child: Scaffold(
         backgroundColor: showAppBar
-            ? null
+            ? MyTheme.getBackground(context)
             : Utils.isDark(context)
                 ? const Color(0xFF151515)
                 : const Color(0xFFF5F5F5),
@@ -105,6 +105,7 @@ class _WebviewScreenState extends State<WebviewScreen>
             ? ItemBuilder.buildAppBar(
                 context: context,
                 leading: Icons.close_rounded,
+                backgroundColor: MyTheme.getBackground(context),
                 onLeadingTap: () {
                   Navigator.pop(context);
                 },

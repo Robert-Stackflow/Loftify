@@ -34,9 +34,11 @@ import 'package:loftify/Screens/Setting/userdynamicshield_setting_screen.dart';
 import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/fontsize_util.dart';
+import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/request_header_util.dart';
 import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
+import 'package:video_player_media_kit/video_player_media_kit.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'Screens/Info/favorite_folder_detail_screen.dart';
@@ -47,6 +49,7 @@ import 'Screens/Navigation/dynamic_screen.dart';
 import 'Screens/Navigation/home_screen.dart';
 import 'Screens/Setting/about_setting_screen.dart';
 import 'Screens/main_screen.dart';
+import 'Utils/constant.dart';
 import 'Utils/notification_util.dart';
 import 'Utils/responsive_util.dart';
 import 'generated/l10n.dart';
@@ -85,14 +88,22 @@ Future<void> initApp() async {
   await DatabaseManager.getDataBase();
   Hive.defaultDirectory = await FileUtil.getApplicationDir();
   NotificationUtil.init();
+  VideoPlayerMediaKit.ensureInitialized(
+    android: true,
+    iOS: false,
+    macOS: false,
+    windows: true,
+    linux: false,
+  );
 }
 
 Future<void> initWindow() async {
   await windowManager.ensureInitialized();
-  WindowOptions windowOptions = const WindowOptions(
-    size: Size(1120, 740),
-    minimumSize: Size(700, 700),
-    center: true,
+  Offset position = HiveUtil.getWindowPosition();
+  WindowOptions windowOptions = WindowOptions(
+    size: HiveUtil.getWindowSize(),
+    minimumSize: minimumSize,
+    center: position == Offset.zero,
     backgroundColor: Colors.transparent,
     skipTaskbar: false,
     titleBarStyle: TitleBarStyle.hidden,
@@ -100,6 +111,7 @@ Future<void> initWindow() async {
   await windowManager.waitUntilReadyToShow(windowOptions, () async {
     await windowManager.show();
     await windowManager.focus();
+    if (position != Offset.zero) await windowManager.setPosition(position);
   });
 }
 
@@ -172,6 +184,7 @@ class MyApp extends StatelessWidget {
       child: Consumer<AppProvider>(
         builder: (context, globalProvider, child) => MaterialApp(
           navigatorKey: globalNavigatorKey,
+          navigatorObservers: [routeObserver],
           title: title,
           theme: globalProvider.getBrightness() == null ||
                   globalProvider.getBrightness() == Brightness.light
