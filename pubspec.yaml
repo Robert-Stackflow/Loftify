@@ -19,10 +19,8 @@ dependencies:
   card_swiper: ^3.0.1 # 卡片滑动
   modal_bottom_sheet: ^3.0.0 # 底部弹窗
   video_player: ^2.9.1 # 视频播放
-  video_player_media_kit: ^1.0.5 # 视频播放
-  media_kit_libs_android_video: any
-  media_kit_libs_macos_video: any
-  media_kit_libs_windows_video: any
+#  video_player_media_kit: ^1.0.5 # 视频播放
+#  media_kit_libs_windows_video: ^1.0.9
   like_button: ^2.0.5 # 点赞按钮
   sliding_up_panel: ^2.0.0+1 # 滑动面板
   blur: ^3.1.0 # 模糊

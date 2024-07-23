@@ -7,10 +7,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   hotkey_manager_windows
   isar_flutter_libs
   local_auth_windows
-  media_kit_libs_windows_video
-  media_kit_video
   permission_handler_windows
-  screen_brightness_windows
   screen_retriever
   share_plus
   tray_manager
@@ -19,7 +16,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
-  media_kit_native_event_loop
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)

@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Loftify"
-#define MyAppVersion "1.9.0"
+#define MyAppVersion "1.10.0"
 #define MyAppPublisher "Cloudchewie"
 #define MyAppURL "https://apps.cloudchewie.com/loftify"
 #define MyAppExeName "Loftify.exe"

@@ -38,7 +38,6 @@ import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/request_header_util.dart';
 import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
-import 'package:video_player_media_kit/video_player_media_kit.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'Screens/Info/favorite_folder_detail_screen.dart';
@@ -88,13 +87,13 @@ Future<void> initApp() async {
   await DatabaseManager.getDataBase();
   Hive.defaultDirectory = await FileUtil.getApplicationDir();
   NotificationUtil.init();
-  VideoPlayerMediaKit.ensureInitialized(
-    android: true,
-    iOS: false,
-    macOS: false,
-    windows: true,
-    linux: false,
-  );
+  // VideoPlayerMediaKit.ensureInitialized(
+  //   android: false,
+  //   iOS: false,
+  //   macOS: false,
+  //   windows: true,
+  //   linux: false,
+  // );
 }
 
 Future<void> initWindow() async {

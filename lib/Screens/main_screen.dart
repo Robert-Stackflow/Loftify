@@ -765,6 +765,9 @@ class MainScreenState extends State<MainScreen>
           _hasJumpedToPinVerify = false;
         });
       } else {
+        windowManager.show();
+        windowManager.focus();
+        windowManager.restore();
         IToast.showTop("尚未设置手势密码");
       }
     } else if (menuItem.key == 'show_official_website') {
