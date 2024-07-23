@@ -101,10 +101,12 @@ class ResponsiveUtil {
     return !kIsWeb &&
         (Platform.isIOS || Platform.isAndroid) &&
         sizeCondition &&
-        orientation == Orientation.portrait;
+        orientation == Orientation.landscape;
   }
 
   static bool isLandscape() {
-    return isWeb() || isDesktop() || isTablet();
+    return isWeb() ||
+        isDesktop() ||
+        (appProvider.enableLandscapeInTablet && isTablet());
   }
 }

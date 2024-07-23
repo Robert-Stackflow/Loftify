@@ -1,14 +1,15 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/login_api.dart';
-import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/crypt_util.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 
 import '../../Resources/theme.dart';
+import '../../Utils/app_provider.dart';
 import '../../Utils/utils.dart';
 
 class SlideCaptchaBottomSheet extends StatefulWidget {
@@ -25,7 +26,7 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
   String? front;
   String? id;
   double frontLeftOffset = 0;
-  double scale = 1.03;
+  double scale = 1.1;
   Uint8List? bg64;
   Uint8List? front64;
   String secret =
@@ -33,6 +34,7 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
   String status = "";
   Color statusBackground = Colors.green;
   bool showStatus = false;
+  ImageInfo? bgInfo;
 
   @override
   void initState() {
@@ -52,6 +54,7 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
           id = value['data']['id'];
           bg64 = base64Decode(bg!);
           front64 = base64Decode(front!);
+          getImageInfo(Image.memory(bg64!));
         }
       } catch (_) {
         IToast.showTop("滑块验证码获取失败");
@@ -61,47 +64,48 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
     });
   }
 
+  double get preferWidth =>
+      bgInfo != null ? bgInfo!.image.width.toDouble() : 320;
+
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      runAlignment: WrapAlignment.center,
-      children: [
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 30),
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).canvasColor,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildHeader(),
-              ItemBuilder.buildDivider(context, horizontal: 12, vertical: 0),
-              Stack(
-                children: [
-                  ItemBuilder.buildLoadingDialog(
-                    context,
-                    text: "加载中...",
-                    background: Colors.transparent,
-                    size: 40,
-                    topPadding: 77,
-                    bottomPadding: 77,
-                  ),
-                  Column(
-                    children: [
-                      if (bg64 != null && front64 != null) _buildCaptcha(),
-                      if (bg64 != null && front64 != null) _buildDragHandle(),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          ),
+    return Center(
+      child: Container(
+        width: preferWidth,
+        margin: const EdgeInsets.symmetric(horizontal: 30),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).canvasColor,
+          borderRadius: BorderRadius.circular(12),
         ),
-      ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildHeader(),
+            ItemBuilder.buildDivider(context, horizontal: 12, vertical: 0),
+            Stack(
+              children: [
+                ItemBuilder.buildLoadingDialog(
+                  context,
+                  text: "加载中...",
+                  background: Colors.transparent,
+                  size: 40,
+                  topPadding: 77,
+                  bottomPadding: 77,
+                ),
+                Column(
+                  children: [
+                    if (bg64 != null && front64 != null) _buildCaptcha(),
+                    if (bg64 != null && front64 != null) _buildDragHandle(),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -154,6 +158,17 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
     }
   }
 
+  getImageInfo(Image image) async {
+    var completer = Completer<ImageInfo>();
+    image.image
+        .resolve(const ImageConfiguration())
+        .addListener(ImageStreamListener((imageInfo, _) {
+      completer.complete(imageInfo);
+    }));
+    bgInfo = await completer.future;
+    setState(() {});
+  }
+
   _buildCaptcha() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -161,17 +176,12 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.memory(
-              bg64!,
-            ),
+            child: Image.memory(bg64!),
           ),
           Positioned(
             left: frontLeftOffset,
             top: 0,
-            child: Image.memory(
-              front64!,
-              scale: scale,
-            ),
+            child: Image.memory(front64!, scale: scale),
           ),
           Positioned(
             right: 5,
@@ -193,7 +203,7 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
               child: Container(
                 height: 40,
                 alignment: Alignment.center,
-                width: MediaQuery.sizeOf(context).width - 92,
+                width: preferWidth - 32,
                 decoration: BoxDecoration(
                     color: statusBackground,
                     borderRadius: const BorderRadius.vertical(
@@ -216,12 +226,13 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
 
   _buildDragHandle() {
     return Container(
+      width: preferWidth,
       margin: const EdgeInsets.only(left: 16, right: 16, top: 6, bottom: 6),
       child: Stack(
         children: [
           Container(
             height: 40,
-            width: MediaQuery.sizeOf(context).width - 92,
+            width: preferWidth,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
               color: Theme.of(context).dividerColor,
@@ -247,7 +258,7 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
               onHorizontalDragUpdate: (details) {
                 setState(() {
                   double newOffset = frontLeftOffset + details.delta.dx;
-                  double maxOffset = MediaQuery.of(context).size.width - 132;
+                  double maxOffset = preferWidth - 72;
                   if (newOffset >= 0 && newOffset <= maxOffset) {
                     frontLeftOffset = newOffset;
                   }

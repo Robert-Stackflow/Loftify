@@ -7,6 +7,7 @@ import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Screens/Post/grain_detail_screen.dart';
 import 'package:loftify/Utils/hive_util.dart';
+import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Utils/enums.dart';
 import '../../Utils/itoast.dart';
@@ -140,12 +141,13 @@ class _GrainScreenState extends State<GrainScreen>
     return ItemBuilder.buildLoadMoreNotification(
       noMore: _noMore,
       onLoad: _onLoad,
-      child: ListView.builder(
+      child: WaterfallFlow.extent(
+        maxCrossAxisExtent: 560,
         physics: physics,
         padding: EdgeInsets.zero,
-        itemCount: _grainList.length,
-        itemBuilder: (context, index) {
-          return _buildGrainRow(
+        children: List.generate(
+          _grainList.length,
+          (index) => _buildGrainRow(
             _grainList[index],
             verticalPadding: 8,
             onTap: () {
@@ -157,8 +159,8 @@ class _GrainScreenState extends State<GrainScreen>
                 ),
               );
             },
-          );
-        },
+          ),
+        ),
       ),
     );
   }

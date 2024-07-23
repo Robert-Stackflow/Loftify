@@ -1381,7 +1381,7 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
         );
       },
       child: Container(
-        height: 96,
+        height: 125,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         color: Colors.transparent,
         child: Row(
@@ -1399,8 +1399,8 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
                 child: ItemBuilder.buildCachedImage(
                   imageUrl: item.grain.coverUrl,
                   context: context,
-                  width: 80,
-                  height: 80,
+                  width: 100,
+                  height: 100,
                   fit: BoxFit.cover,
                   showLoading: false,
                 ),
@@ -1421,13 +1421,16 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
                         ?.apply(fontWeightDelta: 2),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    Utils.isNotEmpty(item.latestPost.title)
-                        ? item.latestPost.title
-                        : item.latestPost.digest,
-                    style: Theme.of(context).textTheme.labelMedium,
+                  Flexible(
+                    child: Text(
+                      Utils.isNotEmpty(item.latestPost.title)
+                          ? item.latestPost.title
+                          : item.latestPost.digest,
+                      style: Theme.of(context).textTheme.labelMedium,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
+                    ),
                   ),
-                  const Spacer(),
                 ],
               ),
             ),

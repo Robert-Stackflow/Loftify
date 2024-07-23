@@ -27,6 +27,7 @@ import '../Widgets/Dialog/custom_dialog.dart';
 import '../Widgets/Dialog/dialog_builder.dart';
 import '../generated/l10n.dart';
 import 'app_provider.dart';
+import 'iprint.dart';
 import 'itoast.dart';
 
 class Utils {
@@ -490,6 +491,13 @@ class Utils {
     String latestVersion = "0.0.0";
     await GithubApi.getReleases("Robert-Stackflow", "Loftify")
         .then((releases) async {
+      if (showLoading) {
+        CustomLoadingDialog.dismissLoading();
+      }
+      if (releases.isEmpty) {
+        if (showNoUpdateToast) IToast.showTop("检查更新失败");
+        return;
+      }
       onGetReleases?.call(releases);
       ReleaseItem? latestReleaseItem;
       for (var release in releases) {
@@ -501,9 +509,6 @@ class Utils {
         }
       }
       onGetLatestRelease?.call(latestVersion, latestReleaseItem!);
-      if (showLoading) {
-        CustomLoadingDialog.dismissLoading();
-      }
       if (compareVersion(latestVersion, currentVersion) > 0) {
         onUpdate?.call(latestVersion, latestReleaseItem!);
         if (showUpdateDialog && latestReleaseItem != null) {

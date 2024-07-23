@@ -295,8 +295,9 @@ class MainScreenState extends State<MainScreen>
   }
 
   void onBottomNavigationBarItemTap(int index) {
-    bool canRefresh = (ResponsiveUtil.isMobile() ||
-            (ResponsiveUtil.isLandscape() && !canPopByKey)) &&
+    bool canRefresh = ((ResponsiveUtil.isMobile() &&
+                !ResponsiveUtil.isLandscape()) ||
+            (ResponsiveUtil.isLandscape() && !appProvider.canPopByProvider)) &&
         _bottomBarSelectedIndex == index;
     if (canRefresh) {
       var page = _pageList[index];
@@ -366,7 +367,16 @@ class MainScreenState extends State<MainScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return _buildBodyByPlatform();
+    return PopScope(
+      canPop: !appProvider.canPopByProvider,
+      onPopInvoked: (_) {
+        if (canPopByKey) {
+          desktopNavigatorState?.pop();
+        }
+        appProvider.canPopByProvider = canPopByKey;
+      },
+      child: _buildBodyByPlatform(),
+    );
   }
 
   _buildBodyByPlatform() {

@@ -14,6 +14,7 @@ import 'package:loftify/Screens/Info/supporter_screen.dart';
 import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
+import 'package:loftify/Utils/iprint.dart';
 import 'package:loftify/Utils/uri_util.dart';
 import 'package:loftify/Widgets/BottomSheet/input_bottom_sheet.dart';
 import 'package:loftify/Widgets/Custom/subordinate_scroll_controller.dart';
@@ -85,7 +86,9 @@ class UserDetailScreenState extends State<UserDetailScreen>
           _fetchShowCases();
           setState(() {});
         }
-      } catch (e) {
+      } catch (e, t) {
+        IPrint.debug(e);
+        IPrint.debug(t);
         if (mounted) IToast.showTop("加载失败");
       }
       if (mounted) setState(() {});
@@ -487,7 +490,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                         fit: FlexFit.loose,
                         child: Text(
                           textAlign: TextAlign.center,
-                          '性别: ${_fullBlogData!.blogInfo.gendar == 1 ? "男" : _fullBlogData!.blogInfo.gendar == 2 ? "女" : "保密"}  |  IP属地: ${_fullBlogData!.blogInfo.ipLocation}',
+                          '性别: ${_fullBlogData!.blogInfo.gendar == 1 ? "男" : _fullBlogData!.blogInfo.gendar == 2 ? "女" : "保密"}${Utils.isNotEmpty(_fullBlogData!.blogInfo.ipLocation) ? "  |  IP属地: ${_fullBlogData!.blogInfo.ipLocation}" : ""}',
                           style: Theme.of(context)
                               .textTheme
                               .labelMedium

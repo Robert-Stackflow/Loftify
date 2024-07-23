@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Widgets/Dialog/widgets/dialog_wrapper_widget.dart';
 import 'package:tuple/tuple.dart';
 
@@ -37,6 +38,19 @@ class AppProvider with ChangeNotifier {
 
   set captchaToken(String value) {
     _captchaToken = value;
+    notifyListeners();
+  }
+
+  bool _enableLandscapeInTablet =
+      HiveUtil.getBool(HiveUtil.enableLandscapeInTabletKey);
+
+  bool get enableLandscapeInTablet => _enableLandscapeInTablet;
+
+  set enableLandscapeInTablet(bool value) {
+    _enableLandscapeInTablet = value;
+    HiveUtil.put(HiveUtil.enableLandscapeInTabletKey, value).then((value) {
+      ResponsiveUtil.restartApp(rootContext);
+    });
     notifyListeners();
   }
 

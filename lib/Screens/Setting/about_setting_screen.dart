@@ -96,7 +96,7 @@ class _AboutSettingScreenState extends State<AboutSettingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: ResponsiveUtil.isDesktop()
+      appBar: ResponsiveUtil.isLandscape()
           ? null
           : ItemBuilder.buildSimpleAppBar(
               transparent: true,

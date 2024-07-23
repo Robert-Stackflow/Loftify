@@ -103,6 +103,7 @@ class _WebviewScreenState extends State<WebviewScreen>
                 : const Color(0xFFF5F5F5),
         appBar: showAppBar
             ? ItemBuilder.buildAppBar(
+                forceShowClose: true,
                 context: context,
                 leading: Icons.close_rounded,
                 backgroundColor: MyTheme.getBackground(context),

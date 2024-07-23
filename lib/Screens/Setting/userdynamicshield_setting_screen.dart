@@ -105,7 +105,7 @@ class _UserDynamicShieldSettingScreenState
           border: Border(
             bottom: BorderSide(
               color: Theme.of(context).dividerColor,
-              width: 1,
+              width: 0.5,
             ),
           ),
         ),

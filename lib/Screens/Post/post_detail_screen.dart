@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
@@ -33,7 +34,6 @@ import '../../Resources/theme.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/asset_util.dart';
 import '../../Utils/constant.dart';
-import '../../Utils/iprint.dart';
 import '../../Utils/lottie_util.dart';
 import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
@@ -686,7 +686,10 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         .then((value) {
       setState(() {
         if (value['meta']['status'] != 200) {
-          IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+          if (Utils.isNotEmpty(value['meta']['desc']) &&
+              Utils.isNotEmpty(value['meta']['msg'])) {
+            IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+          }
           if (value['meta']['status'] == 4071) {
             Utils.validSlideCaptcha(context);
           }
@@ -721,7 +724,10 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         .then((value) {
       setState(() {
         if (value['meta']['status'] != 200) {
-          IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+          if (Utils.isNotEmpty(value['meta']['desc']) &&
+              Utils.isNotEmpty(value['meta']['msg'])) {
+            IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+          }
           if (value['meta']['status'] == 4071) {
             Utils.validSlideCaptcha(context);
           }

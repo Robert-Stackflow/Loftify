@@ -3,6 +3,7 @@ import 'package:loftify/Resources/fonts.dart';
 import 'package:loftify/Screens/Setting/select_theme_screen.dart';
 import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/hive_util.dart';
+import 'package:loftify/Utils/responsive_util.dart';
 import 'package:provider/provider.dart';
 
 import '../../Utils/enums.dart';
@@ -25,6 +26,8 @@ class AppearanceSettingScreen extends StatefulWidget {
 
 class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
     with TickerProviderStateMixin {
+  bool _enableLandscapeInTablet =
+      HiveUtil.getBool(HiveUtil.enableLandscapeInTabletKey, defaultValue: true);
   bool _showRecommendVideo =
       HiveUtil.getBool(HiveUtil.showRecommendVideoKey, defaultValue: false);
   bool _showRecommendArticle =
@@ -128,6 +131,23 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                   );
                 },
               ),
+              if (ResponsiveUtil.isTablet()) const SizedBox(height: 10),
+              if (ResponsiveUtil.isTablet())
+                ItemBuilder.buildRadioItem(
+                  value: _enableLandscapeInTablet,
+                  context: context,
+                  title: "横屏时启用桌面端布局",
+                  description: "更改后需要重启",
+                  topRadius: true,
+                  bottomRadius: true,
+                  onTap: () {
+                    setState(() {
+                      _enableLandscapeInTablet = !_enableLandscapeInTablet;
+                      appProvider.enableLandscapeInTablet =
+                          _enableLandscapeInTablet;
+                    });
+                  },
+                ),
               const SizedBox(height: 10),
               ItemBuilder.buildCaptionItem(context: context, title: "首页"),
               ItemBuilder.buildRadioItem(

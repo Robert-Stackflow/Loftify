@@ -100,8 +100,10 @@ class ItemBuilder {
     required BuildContext context,
     bool transparent = false,
     Color? backgroundColor,
+    bool forceShowClose = false,
   }) {
-    bool showLeading = leading != null && !ResponsiveUtil.isLandscape();
+    bool showLeading =
+        leading != null && (!ResponsiveUtil.isLandscape() || forceShowClose);
     // center = ResponsiveUtil.isDesktop() ? false : center;
     return MyAppBar(
       key: key,
@@ -2440,45 +2442,51 @@ class ItemBuilder {
           onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
       child: GestureDetector(
         onTap: onTap,
-        child: Column(
-          children: [
-            count != null
-                ? Row(
-                    children: [
-                      Text(
-                        countWithScale['count'],
-                        style: Theme.of(context).textTheme.titleLarge?.apply(
-                            color: countColor,
-                            fontWeightDelta: countFontWeightDelta),
-                      ),
-                      if (countWithScale.containsKey("scale"))
-                        const SizedBox(width: 2),
-                      if (countWithScale.containsKey("scale"))
+        child: Container(
+          color: Colors.transparent,
+          child: Column(
+            children: [
+              count != null
+                  ? Row(
+                      children: [
                         Text(
-                          countWithScale['scale'],
-                          style: Theme.of(context).textTheme.titleSmall?.apply(
-                              fontSizeDelta: -2,
+                          countWithScale['count'],
+                          style: Theme.of(context).textTheme.titleLarge?.apply(
                               color: countColor,
                               fontWeightDelta: countFontWeightDelta),
                         ),
-                    ],
-                  )
-                : Text(
-                    "-",
-                    style: Theme.of(context).textTheme.titleLarge?.apply(
-                        color: countColor,
-                        fontWeightDelta: countFontWeightDelta),
-                  ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.labelMedium?.apply(
-                    fontSizeDelta: -1,
-                    color: labelColor,
-                    fontWeightDelta: labelFontWeightDelta,
-                  ),
-            ),
-          ],
+                        if (countWithScale.containsKey("scale"))
+                          const SizedBox(width: 2),
+                        if (countWithScale.containsKey("scale"))
+                          Text(
+                            countWithScale['scale'],
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.apply(
+                                    fontSizeDelta: -2,
+                                    color: countColor,
+                                    fontWeightDelta: countFontWeightDelta),
+                          ),
+                      ],
+                    )
+                  : Text(
+                      "-",
+                      style: Theme.of(context).textTheme.titleLarge?.apply(
+                          color: countColor,
+                          fontWeightDelta: countFontWeightDelta),
+                    ),
+              const SizedBox(height: 4),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.labelMedium?.apply(
+                      fontSizeDelta: -1,
+                      color: labelColor,
+                      fontWeightDelta: labelFontWeightDelta,
+                    ),
+              ),
+            ],
+          ),
         ),
       ),
     );

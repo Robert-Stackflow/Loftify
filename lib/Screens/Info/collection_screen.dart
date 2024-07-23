@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:loftify/Api/user_api.dart';
 import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Utils/hive_util.dart';
+import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Models/post_detail_response.dart';
 import '../../Utils/enums.dart';
@@ -146,12 +147,13 @@ class _CollectionScreenState extends State<CollectionScreen>
     return ItemBuilder.buildLoadMoreNotification(
       noMore: _noMore,
       onLoad: _onLoad,
-      child: ListView.builder(
+      child: WaterfallFlow.extent(
+        maxCrossAxisExtent: 560,
         physics: physics,
         padding: const EdgeInsets.only(bottom: 20),
-        itemCount: _collectionList.length,
-        itemBuilder: (context, index) {
-          return _buildCollectionRow(
+        children: List.generate(
+          _collectionList.length,
+          (index) => _buildCollectionRow(
             _collectionList[index],
             verticalPadding: 8,
             onTap: () {
@@ -165,8 +167,8 @@ class _CollectionScreenState extends State<CollectionScreen>
                 ),
               );
             },
-          );
-        },
+          ),
+        ),
       ),
     );
   }

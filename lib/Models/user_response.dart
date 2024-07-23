@@ -228,7 +228,7 @@ class BlogInfoWithHot {
       imageDigitStamp: json['imageDigitStamp'],
       imageProtected: json['imageProtected'],
       imageStamp: json['imageStamp'],
-      ipLocation: json['ipLocation'],
+      ipLocation: json['ipLocation'] ?? "",
       isOriginalAuthor: json['isOriginalAuthor'],
       keyTag: json['keyTag'] ?? "",
       novisible: json['novisible'],
