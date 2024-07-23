@@ -455,6 +455,23 @@ class Utils {
     }
   }
 
+  static compareVersion(String a, String b) {
+    try {
+      List<String> aList = a.split(".");
+      List<String> bList = b.split(".");
+      for (int i = 0; i < aList.length; i++) {
+        if (int.parse(aList[i]) > int.parse(bList[i])) {
+          return 1;
+        } else if (int.parse(aList[i]) < int.parse(bList[i])) {
+          return -1;
+        }
+      }
+      return 0;
+    } catch (e) {
+      return a.compareTo(b);
+    }
+  }
+
   static getReleases({
     required BuildContext context,
     Function(String)? onGetCurrentVersion,
@@ -470,7 +487,7 @@ class Utils {
     }
     String currentVersion = (await PackageInfo.fromPlatform()).version;
     onGetCurrentVersion?.call(currentVersion);
-    String latestVersion = currentVersion;
+    String latestVersion = "0.0.0";
     await GithubApi.getReleases("Robert-Stackflow", "Loftify")
         .then((releases) async {
       onGetReleases?.call(releases);
@@ -478,7 +495,7 @@ class Utils {
       for (var release in releases) {
         String tagName = release.tagName;
         tagName = tagName.replaceAll(RegExp(r'[a-zA-Z]'), '');
-        if (latestVersion.compareTo(tagName) <= 0) {
+        if (compareVersion(latestVersion, tagName) <= 0) {
           latestVersion = tagName;
           latestReleaseItem = release;
         }
@@ -487,7 +504,7 @@ class Utils {
       if (showLoading) {
         CustomLoadingDialog.dismissLoading();
       }
-      if (latestVersion.compareTo(currentVersion) > 0) {
+      if (compareVersion(latestVersion, currentVersion) > 0) {
         onUpdate?.call(latestVersion, latestReleaseItem!);
         if (showUpdateDialog && latestReleaseItem != null) {
           if (ResponsiveUtil.isMobile()) {

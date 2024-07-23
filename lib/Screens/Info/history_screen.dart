@@ -7,11 +7,8 @@ import 'package:loftify/Models/history_response.dart';
 import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:tuple/tuple.dart';
-import 'package:waterfall_flow/waterfall_flow.dart';
 
-import '../../Api/post_api.dart';
 import '../../Models/post_detail_response.dart';
-import '../../Utils/enums.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
@@ -37,7 +34,6 @@ class _HistoryScreenState extends State<HistoryScreen>
   final List<ArchiveData> _archiveDataList = [];
   int _total = 0;
   int _recordHistory = 0;
-  HistoryLayoutMode _layoutMode = HistoryLayoutMode.nineGrid;
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
@@ -122,18 +118,9 @@ class _HistoryScreenState extends State<HistoryScreen>
         onRefresh: _onRefresh,
         onLoad: _onLoad,
         triggerAxis: Axis.vertical,
-        child: _buildBody(),
+        child: _buildNineGridGroup(),
       ),
     );
-  }
-
-  Widget _buildBody() {
-    switch (_layoutMode) {
-      case HistoryLayoutMode.waterFlow:
-        return _buildWaterflow();
-      case HistoryLayoutMode.nineGrid:
-        return _buildNineGridGroup();
-    }
   }
 
   Widget _buildNineGridGroup() {
@@ -186,56 +173,7 @@ class _HistoryScreenState extends State<HistoryScreen>
     );
   }
 
-  Widget _buildWaterflow() {
-    return ItemBuilder.buildLoadMoreNotification(
-      noMore: _noMore,
-      onLoad: _onLoad,
-      child: WaterfallFlow.builder(
-        cacheExtent: 9999,
-        padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-        gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-          mainAxisSpacing: 6,
-          crossAxisSpacing: 6,
-          maxCrossAxisExtent: 300,
-        ),
-        itemBuilder: (BuildContext context, int index) {
-          return CommonInfoItemBuilder.buildWaterfallFlowPostItem(
-              context, _histories[index], onLikeTap: () async {
-            var item = _histories[index];
-            HapticFeedback.mediumImpact();
-            return await PostApi.likeOrUnLike(
-              isLike: !(item.liked == true),
-              postId: item.post!.id,
-              blogId: item.post!.blogId,
-            ).then((value) {
-              setState(() {
-                if (value['meta']['status'] != 200) {
-                  IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-                } else {
-                  item.liked = !(item.liked == true);
-                  item.post!.postCount?.favoriteCount +=
-                      item.liked == true ? 1 : -1;
-                }
-              });
-              return value['meta']['status'];
-            });
-          });
-        },
-        itemCount: _histories.length,
-      ),
-    );
-  }
-
   PreferredSizeWidget _buildAppBar() {
-    IconData icon = Icons.transform_rounded;
-    switch (_layoutMode) {
-      case HistoryLayoutMode.waterFlow:
-        icon = Icons.layers_outlined;
-        break;
-      case HistoryLayoutMode.nineGrid:
-        icon = Icons.grid_3x3_rounded;
-        break;
-    }
     return ItemBuilder.buildAppBar(
       context: context,
       leading: Icons.arrow_back_rounded,
@@ -245,15 +183,6 @@ class _HistoryScreenState extends State<HistoryScreen>
       },
       title: Text("我的足迹", style: Theme.of(context).textTheme.titleLarge),
       actions: [
-        ItemBuilder.buildIconButton(
-            context: context,
-            icon: Icon(icon, color: Theme.of(context).iconTheme.color),
-            onTap: () {
-              _layoutMode = HistoryLayoutMode.values[
-                  (_layoutMode.index + 1) % HistoryLayoutMode.values.length];
-              setState(() {});
-            }),
-        const SizedBox(width: 5),
         ItemBuilder.buildIconButton(
             context: context,
             icon: Icon(Icons.more_vert_rounded,

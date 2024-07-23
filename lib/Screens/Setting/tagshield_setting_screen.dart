@@ -88,7 +88,7 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
                     });
                   },
                 ),
-                preferMinWidth: 300,
+                preferMinWidth: 400,
                 responsive: true,
               );
             },

@@ -111,9 +111,9 @@ class _UpdateLogScreenState extends State<UpdateLogScreen>
                         ?.apply(fontSizeDelta: 1),
                   ),
                   const SizedBox(width: 6),
-                  if (item.tagName
-                          .replaceAll(RegExp(r'[a-zA-Z]'), '')
-                          .compareTo(currentVersion) ==
+                  if (Utils.compareVersion(
+                          item.tagName.replaceAll(RegExp(r'[a-zA-Z]'), ''),
+                          currentVersion) ==
                       0)
                     ItemBuilder.buildRoundButton(
                       context,

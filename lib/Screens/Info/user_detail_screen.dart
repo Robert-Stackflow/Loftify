@@ -134,6 +134,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
       ItemBuilder.buildSliverAppBar(
         context: context,
         expandedHeight: _expandedHeight,
+        systemOverlayStyle: SystemUiOverlayStyle.light,
         collapsedHeight: 56,
         backgroundWidget: _buildBackground(height: _expandedHeight + 60),
         actions: _appBarActions(),
@@ -298,7 +299,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                         });
                       },
                     ),
-                    preferMinWidth: 300,
+                    preferMinWidth: 400,
                     responsive: true,
                   );
                 } else if (idx == 5) {
@@ -437,15 +438,56 @@ class UserDetailScreenState extends State<UserDetailScreen>
                     copyText: _fullBlogData!.blogInfo.blogNickName,
                     toastText: "已复制昵称",
                   ),
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        WidgetSpan(
+                          child: ItemBuilder.buildCopyItem(
+                            context,
+                            child: Text(
+                              textAlign: TextAlign.center,
+                              'ID: ${_fullBlogData!.blogInfo.blogName}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelMedium
+                                  ?.apply(color: Colors.white70),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            copyText: _fullBlogData!.blogInfo.blogName,
+                            toastText: "已复制LofterID",
+                          ),
+                        ),
+                        if (hasRemarkName)
+                          WidgetSpan(
+                            child: ItemBuilder.buildCopyItem(
+                              context,
+                              child: Text(
+                                textAlign: TextAlign.center,
+                                ' | 备注: ${_fullBlogData!.blogInfo.remarkName}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelMedium
+                                    ?.apply(color: Colors.white70),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              copyText: _fullBlogData!.blogInfo.remarkName,
+                              toastText: "已复制备注",
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 5),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      ItemBuilder.buildCopyItem(
-                        context,
+                      Flexible(
+                        fit: FlexFit.loose,
                         child: Text(
                           textAlign: TextAlign.center,
-                          'ID: ${_fullBlogData!.blogInfo.blogName}',
+                          '性别: ${_fullBlogData!.blogInfo.gendar == 1 ? "男" : _fullBlogData!.blogInfo.gendar == 2 ? "女" : "保密"}  |  IP属地: ${_fullBlogData!.blogInfo.ipLocation}',
                           style: Theme.of(context)
                               .textTheme
                               .labelMedium
@@ -453,39 +495,6 @@ class UserDetailScreenState extends State<UserDetailScreen>
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        copyText: _fullBlogData!.blogInfo.blogName,
-                        toastText: "已复制LofterID",
-                      ),
-                      if (hasRemarkName)
-                        ItemBuilder.buildCopyItem(
-                          context,
-                          child: Text(
-                            textAlign: TextAlign.center,
-                            ' | 备注: ${_fullBlogData!.blogInfo.remarkName}',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelMedium
-                                ?.apply(color: Colors.white70),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          copyText: _fullBlogData!.blogInfo.remarkName,
-                          toastText: "已复制备注",
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 5),
-                  Row(
-                    children: [
-                      Text(
-                        textAlign: TextAlign.center,
-                        '性别: ${_fullBlogData!.blogInfo.gendar == 1 ? "男" : _fullBlogData!.blogInfo.gendar == 2 ? "女" : "保密"}  |  IP属地: ${_fullBlogData!.blogInfo.ipLocation}',
-                        style: Theme.of(context)
-                            .textTheme
-                            .labelMedium
-                            ?.apply(color: Colors.white70),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(width: 5),
                       if (Utils.isNotEmpty(

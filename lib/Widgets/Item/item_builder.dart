@@ -152,10 +152,12 @@ class ItemBuilder {
     bool center = false,
     double expandedHeight = 320,
     double? collapsedHeight,
+    SystemUiOverlayStyle? systemOverlayStyle,
   }) {
     bool showLeading = !ResponsiveUtil.isLandscape();
     center = ResponsiveUtil.isLandscape() ? false : center;
     return MySliverAppBar(
+      systemOverlayStyle: systemOverlayStyle,
       expandedHeight: expandedHeight,
       collapsedHeight: collapsedHeight ??
           max(100, kToolbarHeight + MediaQuery.of(context).padding.top),
@@ -2613,6 +2615,8 @@ class ItemBuilder {
           child: Text(
             str,
             style: Theme.of(context).textTheme.titleSmall,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ),

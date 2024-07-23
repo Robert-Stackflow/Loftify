@@ -6,9 +6,7 @@ import 'package:loftify/Api/user_api.dart';
 import 'package:loftify/Models/history_response.dart';
 import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Utils/hive_util.dart';
-import 'package:waterfall_flow/waterfall_flow.dart';
 
-import '../../Api/post_api.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/itoast.dart';
@@ -47,7 +45,6 @@ class _PostScreenState extends State<PostScreen>
   PostDetailData? _topPost;
   final List<PostDetailData> _postList = [];
   List<ArchiveData> _archiveDataList = [];
-  HistoryLayoutMode _layoutMode = HistoryLayoutMode.nineGrid;
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
@@ -187,19 +184,10 @@ class _PostScreenState extends State<PostScreen>
         onLoad: _onLoad,
         triggerAxis: Axis.vertical,
         childBuilder: (context, physics) {
-          return _buildBody(physics);
+          return _buildNineGridGroup(physics);
         },
       ),
     );
-  }
-
-  Widget _buildBody(ScrollPhysics physics) {
-    switch (_layoutMode) {
-      case HistoryLayoutMode.waterFlow:
-        return _buildWaterflow(physics);
-      case HistoryLayoutMode.nineGrid:
-        return _buildNineGridGroup(physics);
-    }
   }
 
   Widget _buildNineGridGroup(ScrollPhysics physics) {
@@ -251,57 +239,7 @@ class _PostScreenState extends State<PostScreen>
     );
   }
 
-  Widget _buildWaterflow(ScrollPhysics physics) {
-    return ItemBuilder.buildLoadMoreNotification(
-      noMore: _noMore,
-      onLoad: _onLoad,
-      child: WaterfallFlow.builder(
-        physics: physics,
-        cacheExtent: 9999,
-        padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-        gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-          mainAxisSpacing: 6,
-          crossAxisSpacing: 6,
-          maxCrossAxisExtent: 300,
-        ),
-        itemBuilder: (BuildContext context, int index) {
-          return CommonInfoItemBuilder.buildWaterfallFlowPostItem(
-              context, _postList[index], onLikeTap: () async {
-            var item = _postList[index];
-            HapticFeedback.mediumImpact();
-            return await PostApi.likeOrUnLike(
-                    isLike: !(item.liked == true),
-                    postId: item.post!.id,
-                    blogId: item.post!.blogId)
-                .then((value) {
-              setState(() {
-                if (value['meta']['status'] != 200) {
-                  IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-                } else {
-                  item.liked = !(item.liked == true);
-                  item.post!.postCount?.favoriteCount +=
-                      item.liked == true ? 1 : -1;
-                }
-              });
-              return value['meta']['status'];
-            });
-          });
-        },
-        itemCount: _postList.length,
-      ),
-    );
-  }
-
   PreferredSizeWidget _buildAppBar() {
-    IconData icon = Icons.transform_rounded;
-    switch (_layoutMode) {
-      case HistoryLayoutMode.waterFlow:
-        icon = Icons.layers_outlined;
-        break;
-      case HistoryLayoutMode.nineGrid:
-        icon = Icons.grid_3x3_rounded;
-        break;
-    }
     return ItemBuilder.buildAppBar(
       context: context,
       leading: Icons.arrow_back_rounded,
@@ -311,15 +249,6 @@ class _PostScreenState extends State<PostScreen>
       },
       title: Text("我的作品", style: Theme.of(context).textTheme.titleLarge),
       actions: [
-        ItemBuilder.buildIconButton(
-            context: context,
-            icon: Icon(icon, color: Theme.of(context).iconTheme.color),
-            onTap: () {
-              _layoutMode = HistoryLayoutMode.values[
-                  (_layoutMode.index + 1) % HistoryLayoutMode.values.length];
-              setState(() {});
-            }),
-        const SizedBox(width: 5),
         // ItemBuilder.buildIconButton(
         //     context: context,
         //     icon: Icon(Icons.more_vert_rounded,

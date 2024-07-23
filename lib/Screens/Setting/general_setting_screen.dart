@@ -177,10 +177,10 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                 context: context,
                 title: S.current.checkUpdates,
                 bottomRadius: true,
-                description: latestVersion.compareTo(currentVersion) > 0
+                description: Utils.compareVersion(latestVersion,currentVersion) > 0
                     ? "新版本：$latestVersion"
                     : S.current.checkUpdatesAlreadyLatest,
-                descriptionColor: latestVersion.compareTo(currentVersion) > 0
+                descriptionColor: Utils.compareVersion(latestVersion,currentVersion) > 0
                     ? Colors.redAccent
                     : null,
                 tip: currentVersion,
