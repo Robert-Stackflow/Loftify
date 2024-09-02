@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:local_auth/local_auth.dart';
-import 'package:loftify/Screens/Setting/fontweight_screen.dart';
 import 'package:provider/provider.dart';
 
 import '../../Utils/app_provider.dart';
@@ -60,17 +59,6 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
             padding: const EdgeInsets.symmetric(horizontal: 10),
             children: [
               ..._privacySettings(),
-              const SizedBox(height: 10),
-              ItemBuilder.buildEntryItem(
-                context: context,
-                title: "查看字重",
-                topRadius: true,
-                bottomRadius: true,
-                onTap: () {
-                  RouteUtil.pushCupertinoRoute(
-                      context, const FontWeightScreen());
-                },
-              ),
               const SizedBox(height: 30),
             ],
           ),

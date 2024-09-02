@@ -8,6 +8,7 @@ import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/utils.dart';
 
 import '../Models/nav_entry.dart';
+import '../Resources/fonts.dart';
 import 'constant.dart';
 
 class HiveUtil {
@@ -19,6 +20,7 @@ class HiveUtil {
 
   //Auth
   static const String userIdKey = "userId";
+  static const String phoneKey = "phone";
   static const String userInfoKey = "userInfo";
   static const String deviceIdKey = "deviceId";
   static const String tokenKey = "token";
@@ -42,6 +44,7 @@ class HiveUtil {
   //Appearance
   static const String enableLandscapeInTabletKey = "enableLandscapeInTablet";
   static const String fontFamilyKey = "fontFamily";
+  static const String customFontsKey = "customFonts";
   static const String lightThemeIndexKey = "lightThemeIndex";
   static const String darkThemeIndexKey = "darkThemeIndex";
   static const String lightThemePrimaryColorIndexKey =
@@ -116,7 +119,8 @@ class HiveUtil {
   }
 
   static Size getWindowSize() {
-    if (!HiveUtil.getBool(HiveUtil.recordWindowStateKey)) return defaultWindowSize;
+    if (!HiveUtil.getBool(HiveUtil.recordWindowStateKey))
+      return defaultWindowSize;
     String? size = HiveUtil.getString(HiveUtil.windowSizeKey);
     if (size == null || size.isEmpty) {
       return defaultWindowSize;
@@ -144,6 +148,21 @@ class HiveUtil {
       return Offset(double.parse(list[0]), double.parse(list[1]));
     } catch (e) {
       return Offset.zero;
+    }
+  }
+
+  static void setCustomFonts(List<CustomFont> fonts) {
+    HiveUtil.put(HiveUtil.customFontsKey,
+        jsonEncode(fonts.map((e) => e.toJson()).toList()));
+  }
+
+  static List<CustomFont> getCustomFonts() {
+    String? json = HiveUtil.getString(HiveUtil.customFontsKey);
+    if (json == null || json.isEmpty) {
+      return [];
+    } else {
+      List<dynamic> list = jsonDecode(json);
+      return list.map((e) => CustomFont.fromJson(e)).toList();
     }
   }
 
@@ -354,6 +373,18 @@ class HiveUtil {
       }
     }
     return map;
+  }
+
+  static dynamic get(
+    String key, {
+    String boxName = HiveUtil.settingsBox,
+    int defaultValue = 0,
+  }) {
+    final Box box = Hive.box(name: boxName);
+    if (!box.containsKey(key)) {
+      put(key, defaultValue, boxName: boxName);
+    }
+    return box.get(key);
   }
 
   static int getInt(

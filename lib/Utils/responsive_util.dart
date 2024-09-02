@@ -1,9 +1,9 @@
 import 'dart:io';
 
+import 'package:loftify/Utils/route_util.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:loftify/Utils/route_util.dart';
 import 'package:restart_app/restart_app.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -20,7 +20,6 @@ class ResponsiveUtil {
 
   static Future<void> returnToMainScreen(BuildContext context) async {
     if (ResponsiveUtil.isDesktop()) {
-      appProvider.canPopByProvider = false;
       desktopNavigatorKey = GlobalKey<NavigatorState>();
       globalNavigatorState?.pushAndRemoveUntil(
         RouteUtil.getFadeRoute(const MainScreen(), duration: Duration.zero),
@@ -90,23 +89,37 @@ class ResponsiveUtil {
     }
   }
 
+  static bool isLandscapeTablet() {
+    Orientation orientation = MediaQuery.of(rootContext).orientation;
+    return isTablet() && orientation == Orientation.landscape;
+  }
+
   static bool isTablet() {
     double shortestThreshold = 600;
     double longestThreshold = 900;
     double longestSide = MediaQuery.sizeOf(rootContext).longestSide;
     double shortestSide = MediaQuery.sizeOf(rootContext).shortestSide;
-    Orientation orientation = MediaQuery.of(rootContext).orientation;
     bool sizeCondition =
         longestSide >= longestThreshold && shortestSide >= shortestThreshold;
-    return !kIsWeb &&
-        (Platform.isIOS || Platform.isAndroid) &&
-        sizeCondition &&
-        orientation == Orientation.landscape;
+    return !kIsWeb && (Platform.isIOS || Platform.isAndroid) && sizeCondition;
   }
 
-  static bool isLandscape() {
+  static bool isPortaitTablet() {
+    Orientation orientation = MediaQuery.of(rootContext).orientation;
+    return isTablet() && orientation == Orientation.portrait;
+  }
+
+  static bool isLandscape([bool useAppProvider = true]) {
     return isWeb() ||
         isDesktop() ||
-        (appProvider.enableLandscapeInTablet && isTablet());
+        (useAppProvider &&
+            appProvider.enableLandscapeInTablet &&
+            isLandscapeTablet());
+  }
+
+  static bool isWideLandscape([bool useAppProvider = true]) {
+    return isWeb() ||
+        isDesktop() ||
+        (useAppProvider && appProvider.enableLandscapeInTablet && isTablet());
   }
 }

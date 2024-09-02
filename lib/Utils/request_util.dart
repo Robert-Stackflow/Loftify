@@ -136,6 +136,11 @@ class RequestUtil {
     Response? response;
     [params, options] = _processRequest(params: params, options: options);
     try {
+      if (data is Map<String, Object>) {
+        data.addAll({
+          "portrait": RequestHeaderUtil.getPortrait(),
+        } as Map<String, Object>);
+      }
       response = await dio.post(
         url,
         queryParameters: params,

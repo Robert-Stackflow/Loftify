@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Loftify"
-#define MyAppVersion "1.10.0"
+#define MyAppVersion "1.12.0"
 #define MyAppPublisher "Cloudchewie"
 #define MyAppURL "https://apps.cloudchewie.com/loftify"
 #define MyAppExeName "Loftify.exe"
@@ -33,7 +33,7 @@ DisableProgramGroupPage=yes
 LicenseFile=D:\Repositories\Loftify\LICENSE
 ; Remove the following line to run in administrative install mode (install for all users.)
 PrivilegesRequiredOverridesAllowed=commandline
-OutputDir=D:\Ruida\Downloads
+OutputDir=D:\Ruida\Downloads\{#MyAppVersion}
 OutputBaseFilename={#MyAppName}-{#MyAppVersion}
 SetupIconFile=D:\Repositories\Loftify\assets\logo-transparent-big.ico
 Compression=lzma
@@ -41,6 +41,7 @@ SolidCompression=yes
 WizardStyle=modern
 
 [Languages]
+Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]

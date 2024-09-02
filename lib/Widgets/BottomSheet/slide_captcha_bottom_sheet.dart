@@ -292,21 +292,23 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
                   }
                 });
               },
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: MyTheme.getBackground(context),
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 5,
-                      spreadRadius: 1,
-                    ),
-                  ],
+              child: ItemBuilder.buildClickItem(
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: MyTheme.getBackground(context),
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 5,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.keyboard_double_arrow_right_rounded),
                 ),
-                child: const Icon(Icons.keyboard_double_arrow_right_rounded),
               ),
             ),
           ),

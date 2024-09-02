@@ -58,6 +58,8 @@ class AssetUtil {
   static const String tagGreyIcon = "assets/icon/tag_grey.png";
   static const String tagLightIcon = "assets/icon/tag_light.png";
   static const String tagWhiteIcon = "assets/icon/tag_white.png";
+  static const String pinDarkIcon = "assets/icon/pin_dark.png";
+  static const String pinLightIcon = "assets/icon/pin_light.png";
 
   static const String collectionDarkIllust =
       "assets/illust/collection_dark.webp";

@@ -40,7 +40,7 @@ class TagApi {
       "/newtag/getFavoriteTags.json",
       data: {
         "offset": offset,
-        "page": 0,
+        "page": "$page",
       },
     );
   }

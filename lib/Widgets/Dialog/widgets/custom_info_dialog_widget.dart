@@ -1,10 +1,10 @@
+import 'package:loftify/Resources/theme.dart';
+import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:flutter/material.dart';
 
-import '../../../Utils/asset_util.dart';
-import '../../../Utils/utils.dart';
+import '../../../../Utils/utils.dart';
 import '../colors.dart';
 import '../custom_dialog.dart';
-import '../widgets/custom_dialog_button.dart';
 
 class CustomInfoDialogWidget extends StatelessWidget {
   final String? title;
@@ -20,9 +20,12 @@ class CustomInfoDialogWidget extends StatelessWidget {
   final Color? buttonTextColor;
   final EdgeInsets? padding;
   final EdgeInsets? margin;
+  final TextAlign? messageTextAlign;
+  final bool bottomRadius;
+  final bool topRadius;
 
   /// If you don't want any icon or image, you toggle it to true.
-  final bool noImage;
+  final bool renderHtml;
 
   final Alignment align;
 
@@ -41,47 +44,36 @@ class CustomInfoDialogWidget extends StatelessWidget {
     this.imagePath,
     this.padding = const EdgeInsets.all(24),
     this.margin = const EdgeInsets.all(24),
-    required this.noImage,
+    required this.renderHtml,
     this.align = Alignment.bottomCenter,
+    this.messageTextAlign = TextAlign.center,
+    this.topRadius = true,
+    this.bottomRadius = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
+    Theme.of(context);
     return Align(
       alignment: align,
       child: Material(
         color: Colors.transparent,
         child: Container(
-          constraints: const BoxConstraints(
-            maxWidth: 340,
-          ),
+          // constraints: const BoxConstraints(maxWidth: 400),
           margin: margin ?? const EdgeInsets.all(24),
           padding: padding ?? const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: backgroundColor ?? theme.scaffoldBackgroundColor,
-            borderRadius: BorderRadius.circular(15),
+            color: backgroundColor ?? MyTheme.getCardBackground(context),
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(bottomRadius ? 10 : 0),
+              top: Radius.circular(topRadius ? 10 : 0),
+            ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.end,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if (!noImage)
-                Image.asset(
-                  imagePath ?? AssetUtil.infoIcon,
-                  package: imagePath != null ? null : 'panara_dialogs',
-                  width: 84,
-                  height: 84,
-                  color: imagePath != null
-                      ? null
-                      : CustomDialogColors.getBgColor(
-                          context,
-                          customDialogType,
-                          color,
-                        ),
-                ),
-              if (!noImage) const SizedBox(height: 24),
               if (title != null)
                 Text(
                   title ?? "",
@@ -95,33 +87,50 @@ class CustomInfoDialogWidget extends StatelessWidget {
                 ),
               if (Utils.isNotEmpty(title)) const SizedBox(height: 20),
               if (Utils.isNotEmpty(message))
-                Text(
-                  message!,
-                  style: TextStyle(
-                    color: textColor ??
-                        Theme.of(context).textTheme.labelMedium?.color,
-                    height: 1.5,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w400,
-                  ),
-                  textAlign: TextAlign.start,
-                ),
+                renderHtml
+                    ? ItemBuilder.buildHtmlWidget(
+                        context,
+                        message!,
+                        textStyle: TextStyle(
+                          color: textColor ??
+                              Theme.of(context).textTheme.bodySmall?.color,
+                          height: 1.5,
+                          fontSize: 15,
+                        ),
+                      )
+                    : Text(
+                        message!,
+                        style: TextStyle(
+                          color: textColor ??
+                              Theme.of(context).textTheme.bodySmall?.color,
+                          height: 1.5,
+                          fontSize: 15,
+                        ),
+                        textAlign: messageTextAlign,
+                      ),
               if (messageChild != null) messageChild!,
               const SizedBox(height: 15),
-              CustomDialogButton(
-                buttonTextColor: buttonTextColor ?? Colors.white,
-                text: buttonText,
-                onTap: () {
-                  onTapDismiss.call();
-                  Navigator.pop(context);
-                },
-                bgColor: CustomDialogColors.getBgColor(
-                  context,
-                  customDialogType,
-                  color ?? Theme.of(context).primaryColor,
-                ),
-                isOutlined: false,
-              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: ItemBuilder.buildRoundButton(
+                      context,
+                      color: buttonTextColor ?? Colors.white,
+                      text: buttonText,
+                      fontSizeDelta: 2,
+                      onTap: () {
+                        onTapDismiss.call();
+                        Navigator.pop(context);
+                      },
+                      background: CustomDialogColors.getBgColor(
+                        context,
+                        customDialogType,
+                        color ?? Theme.of(context).primaryColor,
+                      ),
+                    ),
+                  ),
+                ],
+              )
             ],
           ),
         ),

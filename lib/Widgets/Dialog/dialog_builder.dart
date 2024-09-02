@@ -4,33 +4,36 @@ import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Widgets/Dialog/widgets/dialog_wrapper_widget.dart';
 import 'package:loftify/Widgets/General/Animation/animated_fade.dart';
 
+import '../../generated/l10n.dart';
 import 'custom_dialog.dart';
 
 class DialogBuilder {
   static showConfirmDialog(
     BuildContext context, {
     String? title,
-    required String message,
+    String? message,
     String? imagePath,
-    required String confirmButtonText,
-    required String cancelButtonText,
-    required VoidCallback onTapConfirm,
-    required VoidCallback onTapCancel,
-    required CustomDialogType customDialogType,
+    TextAlign messageTextAlign = TextAlign.center,
+    String? confirmButtonText,
+    String? cancelButtonText,
+    VoidCallback? onTapConfirm,
+    VoidCallback? onTapCancel,
+    CustomDialogType? customDialogType,
     Color? color,
     Color? textColor,
     Color? buttonTextColor,
     EdgeInsets? margin,
     EdgeInsets? padding,
     bool barrierDismissible = true,
-    bool noImage = true,
+    bool renderHtml = true,
     Alignment align = Alignment.bottomCenter,
     bool responsive = true,
   }) {
-    if (responsive && ResponsiveUtil.isLandscape()) {
+    if (responsive && ResponsiveUtil.isWideLandscape()) {
       CustomConfirmDialog.show(
         context,
-        message: message,
+        message: message ?? "",
+        messageTextAlign: messageTextAlign,
         imagePath: imagePath,
         title: title,
         color: color,
@@ -39,33 +42,34 @@ class DialogBuilder {
         margin: margin,
         padding: padding,
         barrierDismissible: barrierDismissible,
-        noImage: noImage,
+        renderHtml: renderHtml,
         align: Alignment.center,
-        confirmButtonText: confirmButtonText,
-        cancelButtonText: cancelButtonText,
-        onTapConfirm: onTapConfirm,
-        onTapCancel: onTapCancel,
-        customDialogType: customDialogType,
+        confirmButtonText: confirmButtonText ?? S.current.confirm,
+        cancelButtonText: cancelButtonText ?? S.current.cancel,
+        onTapConfirm: onTapConfirm ?? () {},
+        onTapCancel: onTapCancel ?? () {},
+        customDialogType: customDialogType ?? CustomDialogType.normal,
       );
     } else {
       CustomConfirmDialog.showAnimatedFromBottom(
         context,
-        message: message,
+        message: message ?? "",
         imagePath: imagePath,
         title: title,
+        messageTextAlign: messageTextAlign,
         color: color,
         textColor: textColor,
         buttonTextColor: buttonTextColor,
         margin: margin,
         padding: padding,
         barrierDismissible: barrierDismissible,
-        noImage: noImage,
+        renderHtml: renderHtml,
         align: Alignment.bottomCenter,
-        confirmButtonText: confirmButtonText,
-        cancelButtonText: cancelButtonText,
-        onTapConfirm: onTapConfirm,
-        onTapCancel: onTapCancel,
-        customDialogType: customDialogType,
+        confirmButtonText: confirmButtonText ?? S.current.confirm,
+        cancelButtonText: cancelButtonText ?? S.current.cancel,
+        onTapConfirm: onTapConfirm ?? () {},
+        onTapCancel: onTapCancel ?? () {},
+        customDialogType: customDialogType ?? CustomDialogType.normal,
       );
     }
   }
@@ -76,56 +80,63 @@ class DialogBuilder {
     String? message,
     Widget? messageChild,
     String? imagePath,
-    required String buttonText,
-    required VoidCallback onTapDismiss,
-    required CustomDialogType customDialogType,
+    String? buttonText,
+    VoidCallback? onTapDismiss,
+    CustomDialogType? customDialogType,
     Color? color,
     Color? textColor,
     Color? buttonTextColor,
     EdgeInsets? margin,
     EdgeInsets? padding,
     bool barrierDismissible = true,
-    bool noImage = true,
+    bool renderHtml = true,
     Alignment align = Alignment.bottomCenter,
     bool responsive = true,
+    bool topRadius = true,
+    bool bottomRadius = true,
+    bool forceNoMarginAtMobile = false,
   }) {
-    if (responsive && ResponsiveUtil.isLandscape()) {
+    if (responsive && ResponsiveUtil.isWideLandscape()) {
       CustomInfoDialog.show(
         context,
-        buttonText: buttonText,
+        buttonText: buttonText ?? S.current.confirm,
         message: message,
         messageChild: messageChild,
         imagePath: imagePath,
+        bottomRadius: bottomRadius,
+        margin: margin,
+        topRadius: topRadius,
         title: title,
         color: color,
         textColor: textColor,
         buttonTextColor: buttonTextColor,
-        margin: margin,
         padding: padding,
         barrierDismissible: barrierDismissible,
-        noImage: noImage,
+        renderHtml: renderHtml,
         align: Alignment.center,
-        customDialogType: customDialogType,
-        onTapDismiss: onTapDismiss,
+        customDialogType: customDialogType ?? CustomDialogType.normal,
+        onTapDismiss: onTapDismiss ?? () {},
       );
     } else {
       CustomInfoDialog.showAnimatedFromBottom(
         context,
-        buttonText: buttonText,
+        buttonText: buttonText ?? S.current.confirm,
         message: message,
         messageChild: messageChild,
         imagePath: imagePath,
         title: title,
         color: color,
+        bottomRadius: forceNoMarginAtMobile ? false : bottomRadius,
+        margin: forceNoMarginAtMobile ? EdgeInsets.zero : margin,
+        topRadius: topRadius,
         textColor: textColor,
         buttonTextColor: buttonTextColor,
-        margin: margin,
         padding: padding,
         barrierDismissible: barrierDismissible,
-        noImage: noImage,
+        renderHtml: renderHtml,
         align: Alignment.bottomCenter,
-        customDialogType: customDialogType,
-        onTapDismiss: onTapDismiss,
+        customDialogType: customDialogType ?? CustomDialogType.normal,
+        onTapDismiss: onTapDismiss ?? () {},
       );
     }
   }
@@ -135,12 +146,18 @@ class DialogBuilder {
     required Widget child,
     bool barrierDismissible = true,
     bool showClose = true,
+    Function(dynamic)? onThen,
+    double? preferMinWidth,
+    double? preferMinHeight,
+    GlobalKey<DialogWrapperWidgetState>? overrideDialogNavigatorKey,
   }) {
     showGeneralDialog(
       barrierDismissible: barrierDismissible,
       context: context,
       barrierLabel: '',
-      barrierColor: Colors.black.withOpacity(0.35),
+      barrierColor: overrideDialogNavigatorKey != null
+          ? Colors.black.withOpacity(0.15)
+          : Colors.black.withOpacity(0.35),
       transitionDuration: const Duration(milliseconds: 300),
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         return AnimatedFade(
@@ -150,7 +167,12 @@ class DialogBuilder {
       },
       pageBuilder: (context, animation, secondaryAnimation) =>
           DialogWrapperWidget(
-              key: dialogNavigatorKey, showClose: showClose, child: child),
-    );
+        key: overrideDialogNavigatorKey ?? dialogNavigatorKey,
+        showClose: showClose,
+        preferMinWidth: preferMinWidth,
+        preferMinHeight: preferMinHeight,
+        child: child,
+      ),
+    ).then(onThen ?? (_) => {});
   }
 }

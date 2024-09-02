@@ -7,6 +7,7 @@ import 'package:loftify/Utils/utils.dart';
 
 import 'app_provider.dart';
 import 'hive_util.dart';
+import 'jwt_decoder.dart';
 
 class RequestHeaderUtil {
   static const String defaultMarket = "xiaomi";
@@ -14,8 +15,10 @@ class RequestHeaderUtil {
       "LOFTER-Android 7.8.6 (23127PN0CC; Android 14; null) WIFI";
   static const String defaultProduct = "lofter-android-7.8.6";
   static const String defaultLofProduct = "lofter-android-7.8.6";
-  static const String defaultDeviceId = "4151dea95acc4a53";
-  static const String defaultAndroidId = "4151dea95acc4a53";
+  static const String defaultDeviceId = "3451efd56bgg6h47";
+  static const String defaultAndroidId = "3451efd56bgg6h47";
+  static const String defaultOaid = "32b4d2c348650842";
+  static const String defaultPhone = "15934867293";
   static const String defaultDaDeviceId =
       "2ef9ea6c17b7c6881c71915a4fefd932edc01af0";
   static AndroidDeviceInfo? androidInfo;
@@ -60,6 +63,7 @@ class RequestHeaderUtil {
       "dadeviceid": getDaDeviceId(),
       "androidid": getAndroidId(),
       "x-reqid": getXReqId(),
+      "portrait": getPortrait(),
     };
     if (Utils.isNotEmpty(appProvider.captchaToken)) {
       headers.addAll({"capttoken": appProvider.captchaToken});
@@ -69,6 +73,16 @@ class RequestHeaderUtil {
       headers.addAll(authHeader);
     }
     return headers;
+  }
+
+  static String getPortrait() {
+    return JwtDecoder.encodePayload({
+      "imei": getAndroidId(),
+      "androidId": getAndroidId(),
+      "oaid": defaultOaid,
+      "mac": "02:00:00:00:00:00",
+      "phone": defaultPhone,
+    });
   }
 
   static String getXDevice() {

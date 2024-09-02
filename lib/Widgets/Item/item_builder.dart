@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:group_button/group_button.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:like_button/like_button.dart';
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Models/search_response.dart';
@@ -12,6 +13,7 @@ import 'package:loftify/Resources/theme_color_data.dart';
 import 'package:loftify/Utils/lottie_util.dart';
 import 'package:loftify/Widgets/Selectable/my_context_menu_item.dart';
 import 'package:provider/provider.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../../Api/post_api.dart';
 import '../../Api/user_api.dart';
@@ -20,6 +22,7 @@ import '../../Models/collection_response.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Models/user_response.dart';
 import '../../Resources/colors.dart';
+import '../../Resources/fonts.dart';
 import '../../Screens/Info/user_detail_screen.dart';
 import '../../Screens/Login/login_by_captcha_screen.dart';
 import '../../Screens/Post/search_result_screen.dart';
@@ -34,12 +37,15 @@ import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
+import '../../generated/l10n.dart';
 import '../Custom/hero_photo_view_screen.dart';
 import '../Dialog/dialog_builder.dart';
 import '../Scaffold/my_appbar.dart';
 import '../Selectable/my_selection_area.dart';
 import '../Selectable/my_selection_toolbar.dart';
 import '../Selectable/selection_transformer.dart';
+import '../Window/window_button.dart';
+import '../Window/window_caption.dart';
 
 enum TailingType { none, clear, password, icon, text, widget }
 
@@ -246,6 +252,7 @@ class ItemBuilder {
     required dynamic icon,
     required Function()? onTap,
     Function()? onLongPress,
+    EdgeInsets? padding,
   }) {
     return Material(
       color: Colors.transparent,
@@ -255,7 +262,7 @@ class ItemBuilder {
         onTap: onTap,
         onLongPress: onLongPress,
         child: Container(
-          padding: const EdgeInsets.all(8),
+          padding: padding ?? const EdgeInsets.all(8),
           child: icon ?? emptyWidget,
         ),
       ),
@@ -697,6 +704,180 @@ class ItemBuilder {
           ),
         ),
         child: child,
+      ),
+    );
+  }
+
+  static Widget buildFontItem({
+    required CustomFont font,
+    required CustomFont currentFont,
+    required BuildContext context,
+    required Function(CustomFont?)? onChanged,
+    Function(CustomFont?)? onDelete,
+    bool showDelete = false,
+    double width = 110,
+    double height = 160,
+  }) {
+    bool exist = true;
+    TextTheme textTheme = Theme.of(context).textTheme;
+    return SizedBox(
+      width: width,
+      child: Column(
+        children: [
+          Container(
+            width: width,
+            height: height,
+            padding:
+                const EdgeInsets.only(top: 10, bottom: 5, left: 10, right: 10),
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              borderRadius: const BorderRadius.all(Radius.circular(10)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  height: height - 65,
+                  child: FutureBuilder(
+                    future: Future<CustomFont>.sync(() async {
+                      exist = await CustomFont.isFontFileExist(font);
+                      return font;
+                    }),
+                    builder: (context, snapshot) {
+                      return exist
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AutoSizeText(
+                                  "AaBbCcDd",
+                                  style: textTheme.titleMedium?.apply(
+                                    fontFamily: font.fontFamily,
+                                    letterSpacingDelta: 1,
+                                  ),
+                                  maxLines: 1,
+                                ),
+                                AutoSizeText(
+                                  "AaBbCcDd",
+                                  style: textTheme.titleLarge?.apply(
+                                    fontFamily: font.fontFamily,
+                                    letterSpacingDelta: 1,
+                                  ),
+                                  maxLines: 1,
+                                ),
+                                AutoSizeText(
+                                  "你好世界",
+                                  style: textTheme.titleMedium?.apply(
+                                    fontFamily: font.fontFamily,
+                                    letterSpacingDelta: 1,
+                                  ),
+                                  maxLines: 1,
+                                ),
+                                AutoSizeText(
+                                  "你好世界",
+                                  style: textTheme.titleLarge?.apply(
+                                    fontFamily: font.fontFamily,
+                                    letterSpacingDelta: 1,
+                                  ),
+                                  maxLines: 1,
+                                ),
+                              ],
+                            )
+                          : Text(
+                              S.current.fontNotExist,
+                              style: textTheme.titleLarge?.apply(
+                                fontFamily: font.fontFamily,
+                                fontWeightDelta: 0,
+                              ),
+                            );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Radio(
+                      value: font,
+                      groupValue: currentFont,
+                      onChanged: onChanged,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      fillColor: WidgetStateProperty.resolveWith((states) {
+                        if (states.contains(WidgetState.selected)) {
+                          return Theme.of(context).primaryColor;
+                        } else {
+                          return Theme.of(context).textTheme.bodySmall?.color;
+                        }
+                      }),
+                    ),
+                    if (showDelete) const SizedBox(width: 5),
+                    if (showDelete)
+                      ItemBuilder.buildIconButton(
+                        context: context,
+                        icon: const Icon(
+                          Icons.delete_outline_rounded,
+                          color: Colors.red,
+                          size: 21,
+                        ),
+                        padding: const EdgeInsets.all(10),
+                        onTap: () {
+                          onDelete?.call(font);
+                        },
+                      ),
+                  ],
+                )
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            font.intlFontName,
+            style: Theme.of(context).textTheme.bodySmall?.apply(
+                  fontFamily: font.fontFamily,
+                ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Widget buildEmptyFontItem({
+    required BuildContext context,
+    required Function()? onTap,
+    double width = 110,
+    double height = 160,
+  }) {
+    return SizedBox(
+      width: width,
+      child: Column(
+        children: [
+          ItemBuilder.buildClickItem(
+            GestureDetector(
+              onTap: onTap,
+              child: Container(
+                width: width,
+                height: height,
+                padding: const EdgeInsets.only(
+                    top: 5, bottom: 5, left: 10, right: 10),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  borderRadius: const BorderRadius.all(Radius.circular(10)),
+                ),
+                child: Icon(
+                  Icons.add_rounded,
+                  size: 40,
+                  color: Theme.of(context).textTheme.labelSmall?.color,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            S.current.loadFontFamily,
+            style: Theme.of(context).textTheme.bodySmall,
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -2564,7 +2745,7 @@ class ItemBuilder {
       maxSelected: 1,
       controller: controller,
       buttons: buttons,
-      buttonBuilder: (selected, label, context) {
+      buttonBuilder: (selected, label, context, _, __) {
         return SizedBox(
           width: 80,
           child: ItemBuilder.buildRoundButton(
@@ -3460,6 +3641,108 @@ class ItemBuilder {
     return MouseRegion(
       cursor: clickable ? SystemMouseCursors.click : SystemMouseCursors.basic,
       child: child,
+    );
+  }
+
+  static buildWindowTitle(
+    BuildContext context, {
+    Color? backgroundColor,
+    List<Widget> leftWidgets = const [],
+    List<Widget> rightButtons = const [],
+    required bool isStayOnTop,
+    required bool isMaximized,
+    required Function() onStayOnTopTap,
+    bool showAppName = false,
+    bool forceClose = false,
+  }) {
+    return Container(
+      color: backgroundColor ?? Theme.of(context).scaffoldBackgroundColor,
+      child: WindowTitleBar(
+        useMoveHandle: ResponsiveUtil.isDesktop(),
+        titleBarHeightDelta: 34,
+        margin: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            ...leftWidgets,
+            if (showAppName) ...[
+              const SizedBox(width: 4),
+              // IgnorePointer(
+              //   child: ClipRRect(
+              //     borderRadius: BorderRadius.circular(10),
+              //     clipBehavior: Clip.antiAlias,
+              //     child: Container(
+              //       width: 24,
+              //       height: 24,
+              //       decoration: const BoxDecoration(
+              //         image: DecorationImage(
+              //           image: AssetImage('assets/logo-transparent.png'),
+              //           fit: BoxFit.contain,
+              //         ),
+              //       ),
+              //     ),
+              //   ),
+              // ),
+              const SizedBox(width: 8),
+              Text(
+                S.current.appName,
+                style: Theme.of(context).textTheme.titleSmall?.apply(
+                      fontSizeDelta: 4,
+                      fontWeightDelta: 2,
+                    ),
+              ),
+            ],
+            const Spacer(),
+            Row(
+              children: [
+                ...rightButtons,
+                StayOnTopWindowButton(
+                  context: context,
+                  rotateAngle: isStayOnTop ? 0 : -pi / 4,
+                  colors: isStayOnTop
+                      ? MyColors.getStayOnTopButtonColors(context)
+                      : MyColors.getNormalButtonColors(context),
+                  borderRadius: BorderRadius.circular(8),
+                  onPressed: onStayOnTopTap,
+                ),
+                const SizedBox(width: 3),
+                MinimizeWindowButton(
+                  colors: MyColors.getNormalButtonColors(context),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                const SizedBox(width: 3),
+                isMaximized
+                    ? RestoreWindowButton(
+                        colors: MyColors.getNormalButtonColors(context),
+                        borderRadius: BorderRadius.circular(8),
+                        onPressed: ResponsiveUtil.maximizeOrRestore,
+                      )
+                    : MaximizeWindowButton(
+                        colors: MyColors.getNormalButtonColors(context),
+                        borderRadius: BorderRadius.circular(8),
+                        onPressed: ResponsiveUtil.maximizeOrRestore,
+                      ),
+                const SizedBox(width: 3),
+                CloseWindowButton(
+                  colors: MyColors.getCloseButtonColors(context),
+                  borderRadius: BorderRadius.circular(8),
+                  onPressed: () {
+                    if (forceClose) {
+                      windowManager.close();
+                    } else {
+                      if (HiveUtil.getBool(HiveUtil.enableCloseToTrayKey)) {
+                        windowManager.hide();
+                      } else {
+                        windowManager.close();
+                      }
+                    }
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(width: 8),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -4,6 +4,8 @@ import 'package:loftify/Widgets/Dialog/widgets/dialog_wrapper_widget.dart';
 import 'package:tuple/tuple.dart';
 
 import '../Models/nav_entry.dart';
+import '../Resources/fonts.dart';
+import '../Resources/theme_color_data.dart';
 import '../generated/l10n.dart';
 import 'enums.dart';
 import 'hive_util.dart';
@@ -63,23 +65,42 @@ class AppProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  ThemeData _lightTheme = HiveUtil.getLightTheme().toThemeData();
+  CustomFont _currentFont = CustomFont.getCurrentFont();
 
-  ThemeData get lightTheme => _lightTheme;
+  CustomFont get currentFont => _currentFont;
 
-  setLightTheme(int index) {
-    HiveUtil.setLightTheme(index);
-    _lightTheme = HiveUtil.getLightTheme().toThemeData();
+  set currentFont(CustomFont value) {
+    _currentFont = value;
     notifyListeners();
   }
 
-  ThemeData _darkTheme = HiveUtil.getDarkTheme().toThemeData();
+  ThemeColorData _lightTheme = HiveUtil.getLightTheme();
 
-  ThemeData get darkTheme => _darkTheme;
+  ThemeColorData get lightTheme => _lightTheme;
+
+  set lightTheme(ThemeColorData value) {
+    _lightTheme = value;
+    notifyListeners();
+  }
+
+  setLightTheme(int index) {
+    HiveUtil.setLightTheme(index);
+    _lightTheme = HiveUtil.getLightTheme();
+    notifyListeners();
+  }
+
+  ThemeColorData _darkTheme = HiveUtil.getDarkTheme();
+
+  ThemeColorData get darkTheme => _darkTheme;
+
+  set darkTheme(ThemeColorData value) {
+    _darkTheme = value;
+    notifyListeners();
+  }
 
   setDarkTheme(int index) {
     HiveUtil.setDarkTheme(index);
-    _darkTheme = HiveUtil.getDarkTheme().toThemeData();
+    _darkTheme = HiveUtil.getDarkTheme();
     notifyListeners();
   }
 

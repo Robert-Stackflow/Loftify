@@ -82,7 +82,7 @@ class _PreferredAppBarSize extends Size {
 /// the [Scaffold.appBar] property. When animating an [MyAppBar], unexpected
 /// [MediaQuery] changes (as is common in [Hero] animations) may cause the content
 /// to suddenly jump. Wrap the [MyAppBar] in a [MediaQuery] widget, and adjust its
-/// padding such that the animation is sloftifyth.
+/// padding such that the animation is scloudotpth.
 ///
 /// ![The leading widget is in the top left, the actions are in the top right,
 /// the title is between them. The bottom is, naturally, at the bottom, and the
@@ -196,6 +196,7 @@ class MyAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.forceMaterialTransparency = false,
     this.clipBehavior,
     this.backgroundWidget,
+    this.useBackdropFilter = false,
   })  : assert(elevation == null || elevation >= 0.0),
         preferredSize =
             _PreferredAppBarSize(toolbarHeight, bottom?.preferredSize.height);
@@ -500,6 +501,8 @@ class MyAppBar extends StatefulWidget implements PreferredSizeWidget {
   final Color? backgroundColor;
 
   final Widget? backgroundWidget;
+
+  final bool useBackdropFilter;
 
   /// {@template flutter.material.appbar.foregroundColor}
   /// The default color for [Text] and [Icon]s within the app bar.
@@ -1082,12 +1085,11 @@ class _MyAppBarState extends State<MyAppBar> {
         bottom: false,
         child: appBar,
       );
+      appBar = Align(
+        alignment: Alignment.topCenter,
+        child: appBar,
+      );
     }
-
-    appBar = Align(
-      alignment: Alignment.topCenter,
-      child: appBar,
-    );
 
     if (widget.flexibleSpace != null) {
       appBar = Stack(
@@ -1122,6 +1124,26 @@ class _MyAppBarState extends State<MyAppBar> {
           theme.useMaterial3 ? const Color(0x00000000) : null,
         );
 
+    var wrapper = Material(
+      color: widget.backgroundWidget != null
+          ? Colors.transparent
+          : backgroundColor,
+      elevation: effectiveElevation,
+      type: widget.forceMaterialTransparency
+          ? MaterialType.transparency
+          : MaterialType.canvas,
+      shadowColor:
+          widget.shadowColor ?? appBarTheme.shadowColor ?? defaults.shadowColor,
+      surfaceTintColor: widget.surfaceTintColor ??
+          appBarTheme.surfaceTintColor ??
+          defaults.surfaceTintColor,
+      shape: widget.shape ?? appBarTheme.shape ?? defaults.shape,
+      child: Semantics(
+        explicitChildNodes: true,
+        child: appBar,
+      ),
+    );
+
     return Semantics(
       container: true,
       child: AnnotatedRegion<SystemUiOverlayStyle>(
@@ -1129,26 +1151,14 @@ class _MyAppBarState extends State<MyAppBar> {
         child: Stack(
           children: [
             if (widget.backgroundWidget != null) widget.backgroundWidget!,
-            Material(
-              color: widget.backgroundWidget != null
-                  ? Colors.transparent
-                  : backgroundColor,
-              elevation: effectiveElevation,
-              type: widget.forceMaterialTransparency
-                  ? MaterialType.transparency
-                  : MaterialType.canvas,
-              shadowColor: widget.shadowColor ??
-                  appBarTheme.shadowColor ??
-                  defaults.shadowColor,
-              surfaceTintColor: widget.surfaceTintColor ??
-                  appBarTheme.surfaceTintColor ??
-                  defaults.surfaceTintColor,
-              shape: widget.shape ?? appBarTheme.shape ?? defaults.shape,
-              child: Semantics(
-                explicitChildNodes: true,
-                child: appBar,
-              ),
-            ),
+            widget.useBackdropFilter
+                ? ClipRRect(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: wrapper,
+                    ),
+                  )
+                : wrapper,
           ],
         ),
       ),
@@ -1500,6 +1510,7 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
     required this.variant,
     required this.accessibleNavigation,
     required this.backgroundWidget,
+    this.useBackdropFilter = false,
   })  : assert(primary || topPadding == 0.0),
         _bottomHeight = bottom?.preferredSize.height ?? 0.0;
 
@@ -1539,6 +1550,7 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   final Clip? clipBehavior;
   final _SliverAppVariant variant;
   final bool accessibleNavigation;
+  final bool useBackdropFilter;
 
   @override
   double get minExtent => collapsedHeight;
@@ -1584,8 +1596,13 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
         ? clampDouble(
             visibleToolbarHeight / (toolbarHeight ?? kToolbarHeight), 0.0, 1.0)
         : 1.0;
-    final Widget? effectiveTitle = switch (variant) {
-      _SliverAppVariant.small => title,
+    double opacity = const Interval(0.25, 1.0, curve: Curves.fastOutSlowIn)
+        .transform(toolbarOpacity);
+    final Widget effectiveTitle = switch (variant) {
+      _SliverAppVariant.small => Opacity(
+          opacity: opacity,
+          child: title,
+        ),
       _SliverAppVariant.medium || _SliverAppVariant.large => AnimatedOpacity(
           opacity: isScrolledUnder ? 1 : 0,
           duration: const Duration(milliseconds: 500),
@@ -1604,6 +1621,7 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
       child: MyAppBar(
         clipBehavior: clipBehavior,
         leading: leading,
+        useBackdropFilter: useBackdropFilter,
         automaticallyImplyLeading: automaticallyImplyLeading,
         title: effectiveTitle,
         actions: actions,
@@ -1816,6 +1834,7 @@ class MySliverAppBar extends StatefulWidget {
     this.titleTextStyle,
     this.systemOverlayStyle,
     this.forceMaterialTransparency = false,
+    this.useBackdropFilter = false,
     this.clipBehavior,
     this.backgroundWidget,
   })  : assert(floating || !snap,
@@ -1884,6 +1903,7 @@ class MySliverAppBar extends StatefulWidget {
       this.leadingWidth,
       this.toolbarTextStyle,
       this.titleTextStyle,
+      this.useBackdropFilter = false,
       this.systemOverlayStyle,
       this.forceMaterialTransparency = false,
       this.clipBehavior,
@@ -1957,6 +1977,7 @@ class MySliverAppBar extends StatefulWidget {
     this.titleTextStyle,
     this.systemOverlayStyle,
     this.forceMaterialTransparency = false,
+    this.useBackdropFilter = false,
     this.clipBehavior,
   })  : assert(floating || !snap,
             'The "snap" argument only makes sense for floating app bars.'),
@@ -1986,6 +2007,8 @@ class MySliverAppBar extends StatefulWidget {
   ///
   /// This property is used to configure an [AppBar].
   final List<Widget>? actions;
+
+  final bool useBackdropFilter;
 
   /// {@macro flutter.material.appbar.flexibleSpace}
   ///
@@ -2348,6 +2371,7 @@ class _MySliverAppBarState extends State<MySliverAppBar>
           automaticallyImplyLeading: widget.automaticallyImplyLeading,
           title: widget.title,
           actions: widget.actions,
+          useBackdropFilter: widget.useBackdropFilter,
           flexibleSpace: effectiveFlexibleSpace,
           bottom: widget.bottom,
           elevation: widget.elevation,

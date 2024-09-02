@@ -1,6 +1,7 @@
 name: loftify
-version: 1.11.0
+version: 1.12.0+1120
 description: An third-party application for LOFTER
+publish_to: none
 
 environment:
   sdk: '>=3.1.4 <4.0.0'
@@ -15,17 +16,21 @@ dependencies:
   animations: ^2.0.11 # 动画
   fluttertoast: ^8.2.6 # 吐司
   waterfall_flow: ^3.0.3 # 瀑布流
+  auto_size_text: ^3.0.0 # 自适应文本
   flutter_widget_from_html: ^0.15.0 # 将HTML渲染成组件
   card_swiper: ^3.0.1 # 卡片滑动
   modal_bottom_sheet: ^3.0.0 # 底部弹窗
   video_player: ^2.9.1 # 视频播放
-#  video_player_media_kit: ^1.0.5 # 视频播放
-#  media_kit_libs_windows_video: ^1.0.9
+  #  video_player_media_kit: ^1.0.5 # 视频播放
+  #  media_kit_libs_windows_video: ^1.0.9
   like_button: ^2.0.5 # 点赞按钮
   sliding_up_panel: ^2.0.0+1 # 滑动面板
   blur: ^3.1.0 # 模糊
   path_drawing: ^1.0.1
-  group_button: ^5.3.4 # 分组按钮
+  group_button:
+    path: third-party/group_button
+  context_menus:
+    path: third-party/context_menus
   custom_sliding_segmented_control: ^1.8.3 # 分段控制器
   flutter_inappwebview: ^6.0.0 # Webview
   extended_nested_scroll_view: ^6.2.1 # 嵌套滚动
@@ -48,6 +53,7 @@ dependencies:
   # 存储/网络
   path:
   http: ^1.2.1
+  logger: ^2.4.0 # 日志
   dio: ^5.4.3+1 # 网络请求
   hive: ^4.0.0-dev.2 # 轻量存储
   isar_flutter_libs: ^4.0.0-dev.13
@@ -102,7 +108,7 @@ msix_config:
   identity_name: com.cloudchewie.loftify
   msix_version: 1.8.0.0
   logo_path: D:\Repositories\Loftify\assets\logo-transparent-big.ico
-#  trim_logo: false
+  #  trim_logo: false
   output_path: D:\Ruida\Downloads
   output_name: Loftify
   build_windows: false

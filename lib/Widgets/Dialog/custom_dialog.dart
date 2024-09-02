@@ -1,7 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:loftify/Widgets/Dialog/widgets/loading_dialog_widget.dart';
+import 'package:flutter/material.dart';
+import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
 import '../../Utils/app_provider.dart';
+import '../Custom/floating_modal.dart';
 import './animations.dart';
 import './widgets/custom_confirm_dialog_widget.dart';
 import './widgets/custom_info_dialog_widget.dart';
@@ -24,8 +26,10 @@ class CustomInfoDialog {
     EdgeInsets? margin,
     EdgeInsets? padding,
     bool barrierDismissible = true,
-    bool noImage = true,
+    bool renderHtml = true,
     Alignment align = Alignment.bottomCenter,
+    bool topRadius = true,
+    bool bottomRadius = true,
   }) =>
       showDialog<T>(
         barrierDismissible: barrierDismissible,
@@ -43,8 +47,10 @@ class CustomInfoDialog {
           imagePath: imagePath,
           margin: margin,
           padding: padding,
-          noImage: noImage,
+          renderHtml: renderHtml,
           align: align,
+          bottomRadius: bottomRadius,
+          topRadius: topRadius,
         ),
       );
 
@@ -63,7 +69,7 @@ class CustomInfoDialog {
     EdgeInsets? margin,
     EdgeInsets? padding,
     bool barrierDismissible = true,
-    bool noImage = true,
+    bool renderHtml = true,
     Alignment align = Alignment.bottomCenter,
   }) =>
       showGeneralDialog<T>(
@@ -71,7 +77,7 @@ class CustomInfoDialog {
         context: context,
         barrierColor: Colors.black.withOpacity(0.35),
         barrierLabel: '',
-        transitionDuration: const Duration(milliseconds: 300),
+        transitionDuration: const Duration(milliseconds: 400),
         transitionBuilder: (context, animation, secondaryAnimation, child) {
           return CustomDialogAnimations.fromLeft(
             animation,
@@ -93,7 +99,7 @@ class CustomInfoDialog {
           buttonTextColor: buttonTextColor,
           margin: margin,
           padding: padding,
-          noImage: noImage,
+          renderHtml: renderHtml,
           align: align,
         ),
       );
@@ -113,7 +119,7 @@ class CustomInfoDialog {
     EdgeInsets? margin,
     EdgeInsets? padding,
     bool barrierDismissible = true,
-    bool noImage = true,
+    bool renderHtml = true,
     Alignment align = Alignment.bottomCenter,
   }) =>
       showGeneralDialog<T>(
@@ -121,7 +127,7 @@ class CustomInfoDialog {
         context: context,
         barrierColor: Colors.black.withOpacity(0.35),
         barrierLabel: '',
-        transitionDuration: const Duration(milliseconds: 300),
+        transitionDuration: const Duration(milliseconds: 400),
         transitionBuilder: (context, animation, secondaryAnimation, child) {
           return CustomDialogAnimations.fromRight(
             animation,
@@ -143,7 +149,7 @@ class CustomInfoDialog {
           buttonTextColor: buttonTextColor,
           margin: margin,
           padding: padding,
-          noImage: noImage,
+          renderHtml: renderHtml,
           align: align,
         ),
       );
@@ -163,7 +169,7 @@ class CustomInfoDialog {
     EdgeInsets? margin,
     EdgeInsets? padding,
     bool barrierDismissible = true,
-    bool noImage = true,
+    bool renderHtml = true,
     Alignment align = Alignment.bottomCenter,
   }) =>
       showGeneralDialog<T>(
@@ -171,7 +177,7 @@ class CustomInfoDialog {
         context: context,
         barrierColor: Colors.black.withOpacity(0.35),
         barrierLabel: '',
-        transitionDuration: const Duration(milliseconds: 300),
+        transitionDuration: const Duration(milliseconds: 400),
         transitionBuilder: (context, animation, secondaryAnimation, child) {
           return CustomDialogAnimations.fromTop(
             animation,
@@ -193,7 +199,7 @@ class CustomInfoDialog {
           buttonTextColor: buttonTextColor,
           margin: margin,
           padding: padding,
-          noImage: noImage,
+          renderHtml: renderHtml,
           align: align,
         ),
       );
@@ -213,15 +219,17 @@ class CustomInfoDialog {
     EdgeInsets? margin,
     EdgeInsets? padding,
     bool barrierDismissible = true,
-    bool noImage = true,
+    bool renderHtml = true,
     Alignment align = Alignment.bottomCenter,
+    bool topRadius = true,
+    bool bottomRadius = true,
   }) =>
       showGeneralDialog<T>(
         barrierDismissible: barrierDismissible,
         context: context,
         barrierLabel: '',
         barrierColor: Colors.black.withOpacity(0.35),
-        transitionDuration: const Duration(milliseconds: 300),
+        transitionDuration: const Duration(milliseconds: 400),
         transitionBuilder: (context, animation, secondaryAnimation, child) {
           return CustomDialogAnimations.fromBottom(
             animation,
@@ -243,8 +251,10 @@ class CustomInfoDialog {
           buttonTextColor: buttonTextColor,
           margin: margin,
           padding: padding,
-          noImage: noImage,
+          renderHtml: renderHtml,
           align: align,
+          bottomRadius: bottomRadius,
+          topRadius: topRadius,
         ),
       );
 
@@ -263,7 +273,7 @@ class CustomInfoDialog {
     EdgeInsets? margin,
     EdgeInsets? padding,
     bool barrierDismissible = true,
-    bool noImage = true,
+    bool renderHtml = true,
     Alignment align = Alignment.bottomCenter,
   }) =>
       showGeneralDialog<T>(
@@ -271,7 +281,7 @@ class CustomInfoDialog {
         context: context,
         barrierLabel: '',
         barrierColor: Colors.black.withOpacity(0.35),
-        transitionDuration: const Duration(milliseconds: 300),
+        transitionDuration: const Duration(milliseconds: 400),
         transitionBuilder: (context, animation, secondaryAnimation, child) {
           return CustomDialogAnimations.grow(
             animation,
@@ -293,7 +303,7 @@ class CustomInfoDialog {
           buttonTextColor: buttonTextColor,
           margin: margin,
           padding: padding,
-          noImage: noImage,
+          renderHtml: renderHtml,
           align: align,
         ),
       );
@@ -313,7 +323,7 @@ class CustomInfoDialog {
     EdgeInsets? margin,
     EdgeInsets? padding,
     bool barrierDismissible = true,
-    bool noImage = true,
+    bool renderHtml = true,
     Alignment align = Alignment.bottomCenter,
   }) =>
       showGeneralDialog<T>(
@@ -321,7 +331,7 @@ class CustomInfoDialog {
         context: context,
         barrierColor: Colors.black.withOpacity(0.35),
         barrierLabel: '',
-        transitionDuration: const Duration(milliseconds: 300),
+        transitionDuration: const Duration(milliseconds: 400),
         transitionBuilder: (context, animation, secondaryAnimation, child) {
           return CustomDialogAnimations.shrink(
             animation,
@@ -343,7 +353,7 @@ class CustomInfoDialog {
           buttonTextColor: buttonTextColor,
           margin: margin,
           padding: padding,
-          noImage: noImage,
+          renderHtml: renderHtml,
           align: align,
         ),
       );
@@ -355,6 +365,7 @@ class CustomConfirmDialog {
     String? title,
     required String message,
     String? imagePath,
+    TextAlign messageTextAlign = TextAlign.center,
     required String confirmButtonText,
     required String cancelButtonText,
     required VoidCallback onTapConfirm,
@@ -366,16 +377,17 @@ class CustomConfirmDialog {
     EdgeInsets? margin,
     EdgeInsets? padding,
     bool barrierDismissible = true,
-    bool noImage = true,
+    bool renderHtml = true,
     Alignment align = Alignment.bottomCenter,
   }) =>
       showDialog<T>(
         barrierDismissible: barrierDismissible,
         context: context,
         builder: (context) => CustomConfirmDialogWidget(
-          noImage: noImage,
+          renderHtml: renderHtml,
           title: title,
           message: message,
+          messageTextAlign: messageTextAlign,
           confirmButtonText: confirmButtonText,
           cancelButtonText: cancelButtonText,
           onTapConfirm: onTapConfirm,
@@ -397,6 +409,7 @@ class CustomConfirmDialog {
     required String message,
     String? imagePath,
     required String confirmButtonText,
+    TextAlign messageTextAlign = TextAlign.center,
     required String cancelButtonText,
     required VoidCallback onTapConfirm,
     required VoidCallback onTapCancel,
@@ -407,7 +420,7 @@ class CustomConfirmDialog {
     EdgeInsets? margin,
     EdgeInsets? padding,
     bool barrierDismissible = true,
-    bool noImage = true,
+    bool renderHtml = true,
     Alignment align = Alignment.bottomCenter,
   }) =>
       showGeneralDialog<T>(
@@ -415,7 +428,7 @@ class CustomConfirmDialog {
         context: context,
         barrierColor: Colors.black.withOpacity(0.35),
         barrierLabel: '',
-        transitionDuration: const Duration(milliseconds: 300),
+        transitionDuration: const Duration(milliseconds: 400),
         transitionBuilder: (context, animation, secondaryAnimation, child) {
           return CustomDialogAnimations.fromLeft(
             animation,
@@ -430,6 +443,7 @@ class CustomConfirmDialog {
           confirmButtonText: confirmButtonText,
           cancelButtonText: cancelButtonText,
           onTapConfirm: onTapConfirm,
+          messageTextAlign: messageTextAlign,
           onTapCancel: onTapCancel,
           customDialogType: customDialogType,
           color: color,
@@ -438,7 +452,7 @@ class CustomConfirmDialog {
           imagePath: imagePath,
           margin: margin,
           padding: padding,
-          noImage: noImage,
+          renderHtml: renderHtml,
           align: align,
         ),
       );
@@ -450,6 +464,7 @@ class CustomConfirmDialog {
     String? imagePath,
     required String confirmButtonText,
     required String cancelButtonText,
+    TextAlign messageTextAlign = TextAlign.center,
     required VoidCallback onTapConfirm,
     required VoidCallback onTapCancel,
     required CustomDialogType customDialogType,
@@ -459,7 +474,7 @@ class CustomConfirmDialog {
     EdgeInsets? margin,
     EdgeInsets? padding,
     bool barrierDismissible = true,
-    bool noImage = true,
+    bool renderHtml = true,
     Alignment align = Alignment.bottomCenter,
   }) =>
       showGeneralDialog<T>(
@@ -467,7 +482,7 @@ class CustomConfirmDialog {
         context: context,
         barrierColor: Colors.black.withOpacity(0.35),
         barrierLabel: '',
-        transitionDuration: const Duration(milliseconds: 300),
+        transitionDuration: const Duration(milliseconds: 400),
         transitionBuilder: (context, animation, secondaryAnimation, child) {
           return CustomDialogAnimations.fromRight(
             animation,
@@ -488,9 +503,10 @@ class CustomConfirmDialog {
           textColor: textColor,
           buttonTextColor: buttonTextColor,
           imagePath: imagePath,
+          messageTextAlign: messageTextAlign,
           margin: margin,
           padding: padding,
-          noImage: noImage,
+          renderHtml: renderHtml,
           align: align,
         ),
       );
@@ -499,6 +515,7 @@ class CustomConfirmDialog {
     BuildContext context, {
     String? title,
     required String message,
+    TextAlign messageTextAlign = TextAlign.center,
     String? imagePath,
     required String confirmButtonText,
     required String cancelButtonText,
@@ -511,7 +528,7 @@ class CustomConfirmDialog {
     EdgeInsets? margin,
     EdgeInsets? padding,
     bool barrierDismissible = true,
-    bool noImage = true,
+    bool renderHtml = true,
     Alignment align = Alignment.bottomCenter,
   }) =>
       showGeneralDialog<T>(
@@ -519,7 +536,7 @@ class CustomConfirmDialog {
         context: context,
         barrierColor: Colors.black.withOpacity(0.35),
         barrierLabel: '',
-        transitionDuration: const Duration(milliseconds: 300),
+        transitionDuration: const Duration(milliseconds: 400),
         transitionBuilder: (context, animation, secondaryAnimation, child) {
           return CustomDialogAnimations.fromTop(
             animation,
@@ -540,9 +557,10 @@ class CustomConfirmDialog {
           textColor: textColor,
           buttonTextColor: buttonTextColor,
           imagePath: imagePath,
+          messageTextAlign: messageTextAlign,
           margin: margin,
           padding: padding,
-          noImage: noImage,
+          renderHtml: renderHtml,
           align: align,
         ),
       );
@@ -553,6 +571,7 @@ class CustomConfirmDialog {
     required String message,
     String? imagePath,
     required String confirmButtonText,
+    TextAlign messageTextAlign = TextAlign.center,
     required String cancelButtonText,
     required VoidCallback onTapConfirm,
     required VoidCallback onTapCancel,
@@ -563,7 +582,7 @@ class CustomConfirmDialog {
     EdgeInsets? margin,
     EdgeInsets? padding,
     bool barrierDismissible = true,
-    bool noImage = true,
+    bool renderHtml = true,
     Alignment align = Alignment.bottomCenter,
   }) =>
       showGeneralDialog<T>(
@@ -571,7 +590,7 @@ class CustomConfirmDialog {
         context: context,
         barrierLabel: '',
         barrierColor: Colors.black.withOpacity(0.35),
-        transitionDuration: const Duration(milliseconds: 300),
+        transitionDuration: const Duration(milliseconds: 400),
         transitionBuilder: (context, animation, secondaryAnimation, child) {
           return CustomDialogAnimations.fromBottom(
             animation,
@@ -592,9 +611,10 @@ class CustomConfirmDialog {
           textColor: textColor,
           buttonTextColor: buttonTextColor,
           imagePath: imagePath,
+          messageTextAlign: messageTextAlign,
           margin: margin,
           padding: padding,
-          noImage: noImage,
+          renderHtml: renderHtml,
           align: align,
         ),
       );
@@ -605,6 +625,7 @@ class CustomConfirmDialog {
     required String message,
     String? imagePath,
     required String confirmButtonText,
+    TextAlign messageTextAlign = TextAlign.center,
     required String cancelButtonText,
     required VoidCallback onTapConfirm,
     required VoidCallback onTapCancel,
@@ -615,7 +636,7 @@ class CustomConfirmDialog {
     EdgeInsets? margin,
     EdgeInsets? padding,
     bool barrierDismissible = true,
-    bool noImage = true,
+    bool renderHtml = true,
     Alignment align = Alignment.bottomCenter,
   }) =>
       showGeneralDialog<T>(
@@ -623,7 +644,7 @@ class CustomConfirmDialog {
         context: context,
         barrierColor: Colors.black.withOpacity(0.35),
         barrierLabel: '',
-        transitionDuration: const Duration(milliseconds: 300),
+        transitionDuration: const Duration(milliseconds: 400),
         transitionBuilder: (context, animation, secondaryAnimation, child) {
           return CustomDialogAnimations.grow(
             animation,
@@ -636,6 +657,7 @@ class CustomConfirmDialog {
           title: title,
           message: message,
           confirmButtonText: confirmButtonText,
+          messageTextAlign: messageTextAlign,
           cancelButtonText: cancelButtonText,
           onTapConfirm: onTapConfirm,
           onTapCancel: onTapCancel,
@@ -646,7 +668,7 @@ class CustomConfirmDialog {
           imagePath: imagePath,
           margin: margin,
           padding: padding,
-          noImage: noImage,
+          renderHtml: renderHtml,
           align: align,
         ),
       );
@@ -658,6 +680,7 @@ class CustomConfirmDialog {
     String? imagePath,
     required String confirmButtonText,
     required String cancelButtonText,
+    TextAlign messageTextAlign = TextAlign.center,
     required VoidCallback onTapConfirm,
     required VoidCallback onTapCancel,
     required CustomDialogType customDialogType,
@@ -667,7 +690,7 @@ class CustomConfirmDialog {
     EdgeInsets? margin,
     EdgeInsets? padding,
     bool barrierDismissible = true,
-    bool noImage = true,
+    bool renderHtml = true,
     Alignment align = Alignment.bottomCenter,
   }) =>
       showGeneralDialog<T>(
@@ -675,7 +698,7 @@ class CustomConfirmDialog {
         barrierColor: Colors.black.withOpacity(0.35),
         context: context,
         barrierLabel: '',
-        transitionDuration: const Duration(milliseconds: 300),
+        transitionDuration: const Duration(milliseconds: 400),
         transitionBuilder: (context, animation, secondaryAnimation, child) {
           return CustomDialogAnimations.shrink(
             animation,
@@ -687,6 +710,7 @@ class CustomConfirmDialog {
             CustomConfirmDialogWidget(
           title: title,
           message: message,
+          messageTextAlign: messageTextAlign,
           confirmButtonText: confirmButtonText,
           cancelButtonText: cancelButtonText,
           onTapConfirm: onTapConfirm,
@@ -698,7 +722,7 @@ class CustomConfirmDialog {
           imagePath: imagePath,
           margin: margin,
           padding: padding,
-          noImage: noImage,
+          renderHtml: renderHtml,
           align: align,
         ),
       );
@@ -709,21 +733,23 @@ class CustomLoadingDialog {
     bool dismissible = false,
     String? title,
     double size = 40,
+    double scale = 1,
   }) {
     showDialog(
-        barrierDismissible: dismissible,
-        context: globalNavigatorKey.currentState!.context,
-        builder: (context) {
-          return LoadingDialogWidget(
-            dismissible: dismissible,
-            title: title,
-            size: size,
-          );
-        });
+      barrierDismissible: dismissible,
+      context: rootContext,
+      builder: (context) {
+        return LoadingDialogWidget(
+          dismissible: dismissible,
+          title: title,
+          size: size,
+        );
+      },
+    );
   }
 
   static Future<void> dismissLoading() async {
-    return Future.sync(
-        () => Navigator.pop(globalNavigatorKey.currentState!.context));
+    return Future.sync(() => Navigator.pop(rootContext));
   }
 }
+

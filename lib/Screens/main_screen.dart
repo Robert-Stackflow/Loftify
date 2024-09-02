@@ -193,7 +193,7 @@ class MainScreenState extends State<MainScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     initDeepLinks();
-    FontEnum.downloadFont(showToast: false);
+    CustomFont.downloadFont(showToast: false);
     if (ResponsiveUtil.isLandscape()) _fetchUserInfo();
     if (ResponsiveUtil.isDesktop()) initHotKey();
     if (HiveUtil.getBool(HiveUtil.autoCheckUpdateKey)) fetchReleases();
@@ -559,125 +559,80 @@ class MainScreenState extends State<MainScreen>
     return Expanded(
       child: Column(
         children: [
-          WindowTitleBar(
-            useMoveHandle: ResponsiveUtil.isDesktop(),
-            titleBarHeightDelta: 34,
-            margin: const EdgeInsets.symmetric(vertical: 12),
-            child: Row(
-              children: [
-                Selector<AppProvider, bool>(
-                  selector: (context, globalProvider) =>
-                      globalProvider.canPopByProvider,
-                  builder: (context, desktopCanpop, child) => MouseRegion(
-                    cursor: desktopCanpop
-                        ? SystemMouseCursors.click
-                        : SystemMouseCursors.basic,
-                    child: ItemBuilder.buildRoundIconButton(
-                      context: context,
-                      disabled: !desktopCanpop,
-                      normalBackground: Colors.grey.withAlpha(40),
-                      icon: Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        size: 20,
-                        color: desktopCanpop
-                            ? Theme.of(context).iconTheme.color
-                            : Colors.grey,
-                      ),
-                      onTap: () {
-                        if (canPopByKey) {
-                          desktopNavigatorState?.pop();
-                        }
-                        appProvider.canPopByProvider = canPopByKey;
-                      },
+          ItemBuilder.buildWindowTitle(
+            context,
+            isStayOnTop: _isStayOnTop,
+            isMaximized: _isMaximized,
+            leftWidgets: [
+              Selector<AppProvider, bool>(
+                selector: (context, globalProvider) =>
+                globalProvider.canPopByProvider,
+                builder: (context, desktopCanpop, child) => MouseRegion(
+                  cursor: desktopCanpop
+                      ? SystemMouseCursors.click
+                      : SystemMouseCursors.basic,
+                  child: ItemBuilder.buildRoundIconButton(
+                    context: context,
+                    disabled: !desktopCanpop,
+                    normalBackground: Colors.grey.withAlpha(40),
+                    icon: Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      size: 20,
+                      color: desktopCanpop
+                          ? Theme.of(context).iconTheme.color
+                          : Colors.grey,
                     ),
+                    onTap: () {
+                      if (canPopByKey) {
+                        desktopNavigatorState?.pop();
+                      }
+                      appProvider.canPopByProvider = canPopByKey;
+                    },
                   ),
                 ),
-                const SizedBox(width: 8),
-                // ItemBuilder.buildRoundIconButton(
-                //   context: context,
-                //   normalBackground: Colors.grey.withAlpha(40),
-                //   icon: Icon(
-                //     Icons.home_filled,
-                //     size: 20,
-                //     color: Theme.of(context).iconTheme.color,
-                //   ),
-                //   onTap: () {
-                //     ProviderManager.globalProvider.desktopCanpop = false;
-                //     desktopNavigatorKey =
-                //         GlobalKey<NavigatorState>();
-                //   },
-                // ),
-                // const SizedBox(width: 8),
-                SizedBox(
-                  width: min(300, MediaQuery.sizeOf(context).width - 240),
-                  child: ItemBuilder.buildDesktopSearchBar(
-                      context: context,
-                      controller: TextEditingController(),
-                      background: Colors.grey.withAlpha(40),
-                      hintText: "搜索感兴趣的内容",
-                      borderRadius: 8,
-                      bottomMargin: 18,
-                      hintFontSizeDelta: 1,
-                      onSubmitted: (text) {
-                        if (Utils.isNotEmpty(text)) {
-                          RouteUtil.pushDesktopFadeRoute(
-                              SearchResultScreen(searchKey: text));
-                        } else {
-                          RouteUtil.pushDesktopFadeRoute(const SearchScreen());
-                        }
-                      }),
-                ),
-                const Spacer(),
-                if (ResponsiveUtil.isDesktop())
-                  Row(
-                    children: [
-                      StayOnTopWindowButton(
-                        rotateAngle: _isStayOnTop ? pi / 4 : 0,
-                        colors: _isStayOnTop
-                            ? MyColors.getStayOnTopButtonColors(context)
-                            : MyColors.getNormalButtonColors(context),
-                        borderRadius: BorderRadius.circular(10),
-                        onPressed: () {
-                          setState(() {
-                            _isStayOnTop = !_isStayOnTop;
-                            windowManager.setAlwaysOnTop(_isStayOnTop);
-                          });
-                        },
-                      ),
-                      const SizedBox(width: 3),
-                      MinimizeWindowButton(
-                        colors: MyColors.getNormalButtonColors(context),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      const SizedBox(width: 3),
-                      _isMaximized
-                          ? RestoreWindowButton(
-                              colors: MyColors.getNormalButtonColors(context),
-                              borderRadius: BorderRadius.circular(10),
-                              onPressed: ResponsiveUtil.maximizeOrRestore,
-                            )
-                          : MaximizeWindowButton(
-                              colors: MyColors.getNormalButtonColors(context),
-                              borderRadius: BorderRadius.circular(10),
-                              onPressed: ResponsiveUtil.maximizeOrRestore,
-                            ),
-                      const SizedBox(width: 3),
-                      CloseWindowButton(
-                        colors: MyColors.getNormalButtonColors(context),
-                        borderRadius: BorderRadius.circular(10),
-                        onPressed: () {
-                          if (HiveUtil.getBool(HiveUtil.enableCloseToTrayKey)) {
-                            windowManager.hide();
-                          } else {
-                            windowManager.close();
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                const SizedBox(width: 10),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              // ItemBuilder.buildRoundIconButton(
+              //   context: context,
+              //   normalBackground: Colors.grey.withAlpha(40),
+              //   icon: Icon(
+              //     Icons.home_filled,
+              //     size: 20,
+              //     color: Theme.of(context).iconTheme.color,
+              //   ),
+              //   onTap: () {
+              //     ProviderManager.globalProvider.desktopCanpop = false;
+              //     desktopNavigatorKey =
+              //         GlobalKey<NavigatorState>();
+              //   },
+              // ),
+              // const SizedBox(width: 8),
+              SizedBox(
+                width: min(300, MediaQuery.sizeOf(context).width - 240),
+                child: ItemBuilder.buildDesktopSearchBar(
+                    context: context,
+                    controller: TextEditingController(),
+                    background: Colors.grey.withAlpha(40),
+                    hintText: "搜索感兴趣的内容",
+                    borderRadius: 8,
+                    bottomMargin: 18,
+                    hintFontSizeDelta: 1,
+                    onSubmitted: (text) {
+                      if (Utils.isNotEmpty(text)) {
+                        RouteUtil.pushDesktopFadeRoute(
+                            SearchResultScreen(searchKey: text));
+                      } else {
+                        RouteUtil.pushDesktopFadeRoute(const SearchScreen());
+                      }
+                    }),
+              ),
+            ],
+            onStayOnTopTap: () {
+              setState(() {
+                _isStayOnTop = !_isStayOnTop;
+                windowManager.setAlwaysOnTop(_isStayOnTop);
+              });
+            },
           ),
           Expanded(
             child: Container(

@@ -2,10 +2,11 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
+
+import './ilogger.dart';
+import 'file_util.dart';
 
 enum _FontSource { asset, file, url }
 
@@ -43,9 +44,8 @@ class FontUtil {
           loader.addFont(fontData);
           await loader.load();
           return true;
-        } catch (e) {
-          debugPrint("Font asset error!!!");
-          debugPrint(e.toString());
+        } catch (e, t) {
+          ILogger.error("Failed to load font asset", e, t);
           return false;
         }
       case _FontSource.file:
@@ -56,15 +56,14 @@ class FontUtil {
             fontFamily: fontFamily,
           );
           return true;
-        } catch (e) {
-          debugPrint("Font file error!!!");
-          debugPrint(e.toString());
+        } catch (e, t) {
+          ILogger.error("Failed to load font file", e, t);
           return false;
         }
       case _FontSource.url:
         try {
           await loadFontFromList(
-            await downloadFont(
+            await downloadFontFile(
               uri,
               overwrite: overwrite ?? false,
               onReceiveProgress: onReceiveProgress,
@@ -72,24 +71,22 @@ class FontUtil {
             fontFamily: fontFamily,
           );
           return true;
-        } catch (e, s) {
-          debugPrint("Font download failed!!!");
-          debugPrint(e.toString());
-          debugPrint(s.toString());
+        } catch (e, t) {
+          ILogger.error("Failed to download font", e, t);
           return false;
         }
     }
   }
 }
 
-Future<Uint8List> downloadFont(
-  String url, {
-  bool overwrite = false,
-  Function(double)? onReceiveProgress,
-}) async {
+Future<Uint8List> downloadFontFile(
+    String url, {
+      bool overwrite = false,
+      Function(double)? onReceiveProgress,
+    }) async {
   final uri = Uri.parse(url);
   final filename = uri.pathSegments.last;
-  final dir = (await getApplicationSupportDirectory()).path;
+  final dir = await FileUtil.getFontDir();
   final file = File('$dir/$filename');
 
   if (await file.exists() && !overwrite) {
@@ -101,8 +98,11 @@ Future<Uint8List> downloadFont(
   return bytes;
 }
 
-Future<void> downloadFontTo(String url,
-    {required String filepath, bool overwrite = false}) async {
+Future<void> downloadFontFileTo(
+    String url, {
+      required String filepath,
+      bool overwrite = false,
+    }) async {
   final uri = Uri.parse(url);
   final file = File(filepath);
 
@@ -111,13 +111,13 @@ Future<void> downloadFontTo(String url,
 }
 
 Future<Uint8List> downloadBytes(
-  Uri uri, {
-  Function(double)? onReceiveProgress,
-}) async {
+    Uri uri, {
+      Function(double)? onReceiveProgress,
+    }) async {
   final client = http.Client();
   final request = http.Request('GET', uri);
   final response =
-      await client.send(request).timeout(const Duration(seconds: 5));
+  await client.send(request).timeout(const Duration(seconds: 5));
 
   if (response.statusCode != 200) {
     throw HttpException("status code ${response.statusCode}");
@@ -129,12 +129,13 @@ Future<Uint8List> downloadBytes(
     bytes.addAll(chunk);
 
     if (response.contentLength == null) {
-      debugPrint('download font: ${bytes.length} bytes');
+      ILogger.info('Download font: ${bytes.length} bytes');
     } else {
       final percent = (bytes.length / response.contentLength!);
       onReceiveProgress?.call(percent);
       if (percent - prevPercent > 15 || percent > 99) {
-        debugPrint('download font: ${(percent * 100).toStringAsFixed(1)}%');
+        ILogger.info(
+            'Downloading font: ${(percent * 100).toStringAsFixed(1)}%');
         prevPercent = percent;
       }
     }

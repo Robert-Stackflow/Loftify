@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:loftify/Resources/fonts.dart';
+import 'package:loftify/Screens/Setting/select_font_screen.dart';
 import 'package:loftify/Screens/Setting/select_theme_screen.dart';
 import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/responsive_util.dart';
 import 'package:provider/provider.dart';
 
+import '../../Resources/theme_color_data.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/route_util.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
@@ -44,7 +46,6 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
       HiveUtil.getBool(HiveUtil.showCollectionPreNextKey, defaultValue: true);
   bool _showDownload =
       HiveUtil.getBool(HiveUtil.showDownloadKey, defaultValue: true);
-  FontEnum _currentFont = FontEnum.getCurrentFont();
 
   @override
   void initState() {
@@ -98,38 +99,36 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                   },
                 ),
               ),
-              ItemBuilder.buildEntryItem(
-                context: context,
-                title: S.current.selectTheme,
-                onTap: () {
-                  RouteUtil.pushCupertinoRoute(
-                      context, const SelectThemeScreen());
-                },
+              Selector<AppProvider, ThemeColorData>(
+                selector: (context, appProvider) => appProvider.lightTheme,
+                builder: (context, lightTheme, child) =>
+                    Selector<AppProvider, ThemeColorData>(
+                  selector: (context, appProvider) => appProvider.darkTheme,
+                  builder: (context, darkTheme, child) =>
+                      ItemBuilder.buildEntryItem(
+                    context: context,
+                    title: S.current.selectTheme,
+                    tip: "${lightTheme.name}/${darkTheme.name}",
+                    onTap: () {
+                      RouteUtil.pushCupertinoRoute(
+                          context, const SelectThemeScreen());
+                    },
+                  ),
+                ),
               ),
-              ItemBuilder.buildEntryItem(
-                context: context,
-                title: "选择字体",
-                bottomRadius: true,
-                tip: _currentFont.fontName,
-                onTap: () {
-                  BottomSheetBuilder.showListBottomSheet(
-                    context,
-                    (sheetContext) => TileList.fromOptions(
-                      FontEnum.getFontList(),
-                      (item2) async {
-                        FontEnum t = item2 as FontEnum;
-                        _currentFont = t;
-                        Navigator.pop(sheetContext);
-                        setState(() {});
-                        FontEnum.loadFont(context, t, autoRestartApp: true);
-                      },
-                      selected: _currentFont,
-                      context: context,
-                      title: "选择字体",
-                      onCloseTap: () => Navigator.pop(context),
-                    ),
-                  );
-                },
+              Selector<AppProvider, CustomFont>(
+                selector: (context, appProvider) => appProvider.currentFont,
+                builder: (context, currentFont, child) =>
+                    ItemBuilder.buildEntryItem(
+                  context: context,
+                  title: S.current.chooseFontFamily,
+                  tip: currentFont.intlFontName,
+                  bottomRadius: true,
+                  onTap: () {
+                    RouteUtil.pushCupertinoRoute(
+                        context, const SelectFontScreen());
+                  },
+                ),
               ),
               if (ResponsiveUtil.isTablet()) const SizedBox(height: 10),
               if (ResponsiveUtil.isTablet())

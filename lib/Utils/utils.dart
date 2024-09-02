@@ -27,10 +27,14 @@ import '../Widgets/Dialog/custom_dialog.dart';
 import '../Widgets/Dialog/dialog_builder.dart';
 import '../generated/l10n.dart';
 import 'app_provider.dart';
-import 'iprint.dart';
+import 'ilogger.dart';
 import 'itoast.dart';
 
 class Utils {
+  static String getFormattedDate(DateTime dateTime) {
+    return DateFormat("yyyy-MM-dd-HH-mm-ss").format(dateTime);
+  }
+
   static Brightness currentBrightness(BuildContext context) {
     return appProvider.getBrightness() ??
         MediaQuery.of(context).platformBrightness;
@@ -520,21 +524,20 @@ class Utils {
                   "是否立即更新？${Utils.isNotEmpty(latestReleaseItem.body) ? "更新日志如下：\n${latestReleaseItem.body}" : ""}",
               confirmButtonText: "立即下载",
               cancelButtonText: "暂不更新",
-              onTapConfirm: () {
-                if (ResponsiveUtil.isDesktop()) {
+              onTapConfirm: () async {
+                if (ResponsiveUtil.isAndroid()) {
+                  ReleaseAsset androidAssset = await FileUtil.getAndroidAsset(
+                      latestVersion, latestReleaseItem!);
+                  ILogger.info("Get android asset: $androidAssset");
+                  FileUtil.downloadAndUpdate(
+                    context,
+                    androidAssset.browserDownloadUrl,
+                    latestReleaseItem.htmlUrl,
+                    version: latestVersion,
+                  );
+                } else {
                   UriUtil.openExternal(latestReleaseItem!.htmlUrl);
                   return;
-                } else {
-                  ReleaseAsset androidAssset =
-                      FileUtil.getAndroidAsset(latestReleaseItem!);
-                  if (ResponsiveUtil.isAndroid()) {
-                    FileUtil.downloadAndUpdate(
-                      context,
-                      androidAssset.browserDownloadUrl,
-                      latestReleaseItem.htmlUrl,
-                      version: latestVersion,
-                    );
-                  }
                 }
               },
               onTapCancel: () {},

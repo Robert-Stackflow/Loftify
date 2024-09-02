@@ -65,10 +65,15 @@ class HomeScreenState extends State<HomeScreen>
   _fetchData({bool refresh = false}) async {
     if (_loading) return;
     _loading = true;
-    if (!refresh) _currentFeed++;
+    if (!refresh) {
+      _currentFeed++;
+    } else {
+      _currentFeed = 0;
+      _currentOffset = 0;
+    }
     _currentPage++;
     return await RecommendApi.getExploreRecomend(
-      offset: refresh ? 0 : _currentOffset,
+      offset: _currentOffset,
       page: _currentPage,
       feed: _currentFeed,
     ).then((value) {
@@ -99,7 +104,6 @@ class HomeScreenState extends State<HomeScreen>
   }
 
   _onRefresh() async {
-    _currentFeed = 0;
     return await _fetchData(refresh: true);
   }
 

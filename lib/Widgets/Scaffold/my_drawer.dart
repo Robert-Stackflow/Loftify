@@ -369,7 +369,7 @@ class MyDrawerController extends StatefulWidget {
   /// where a down event is first detected.
   ///
   /// In general, setting this to [DragStartBehavior.start] will make drag
-  /// animation sloftifyther and setting it to [DragStartBehavior.down] will make
+  /// animation scloudotpther and setting it to [DragStartBehavior.down] will make
   /// drag behavior feel slightly more reactive.
   ///
   /// By default, the drag start behavior is [DragStartBehavior.start].
