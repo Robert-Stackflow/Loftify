@@ -65,7 +65,7 @@ class LoginApi {
     return RequestUtil.post(
       domainType: DomainType.www,
       "/lpt/photoCaptcha/getPhotoCaptcha.do",
-      data: {"width": 270, "height": 126},
+      data: {"width": "270", "height": "126"},
       options: Options(
         responseType: ResponseType.bytes,
       ),

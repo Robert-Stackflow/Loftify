@@ -3659,8 +3659,8 @@ class ItemBuilder {
       color: backgroundColor ?? Theme.of(context).scaffoldBackgroundColor,
       child: WindowTitleBar(
         useMoveHandle: ResponsiveUtil.isDesktop(),
-        titleBarHeightDelta: 34,
-        margin: const EdgeInsets.symmetric(vertical: 12),
+        titleBarHeightDelta: 26,
+        margin: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
             ...leftWidgets,

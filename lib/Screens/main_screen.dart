@@ -148,7 +148,7 @@ class MainScreenState extends State<MainScreen>
             return IndicatorResult.fail;
           } else {
             AccountResponse accountResponse =
-                AccountResponse.fromJson(value['response']);
+            AccountResponse.fromJson(value['response']);
             await HiveUtil.setUserInfo(accountResponse.blogs[0].blogInfo);
             setState(() {
               blogInfo = accountResponse.blogs[0].blogInfo;
@@ -240,13 +240,17 @@ class MainScreenState extends State<MainScreen>
           .then((value) => setState(() => _isMaximized = value));
     }
     ResponsiveUtil.checkSizeCondition();
-    EasyRefresh.defaultHeaderBuilder = () => LottieCupertinoHeader(
-          backgroundColor: Theme.of(context).canvasColor,
+    EasyRefresh.defaultHeaderBuilder = () =>
+        LottieCupertinoHeader(
+          backgroundColor: Theme
+              .of(context)
+              .canvasColor,
           indicator: LottieUtil.load(LottieUtil.getLoadingPath(context)),
           hapticFeedback: true,
           triggerOffset: 40,
         );
-    EasyRefresh.defaultFooterBuilder = () => LottieCupertinoFooter(
+    EasyRefresh.defaultFooterBuilder = () =>
+        LottieCupertinoFooter(
           indicator: LottieUtil.load(LottieUtil.getLoadingPath(context)),
         );
     if (ResponsiveUtil.isMobile()) {
@@ -296,8 +300,8 @@ class MainScreenState extends State<MainScreen>
 
   void onBottomNavigationBarItemTap(int index) {
     bool canRefresh = ((ResponsiveUtil.isMobile() &&
-                !ResponsiveUtil.isLandscape()) ||
-            (ResponsiveUtil.isLandscape() && !appProvider.canPopByProvider)) &&
+        !ResponsiveUtil.isLandscape()) ||
+        (ResponsiveUtil.isLandscape() && !appProvider.canPopByProvider)) &&
         _bottomBarSelectedIndex == index;
     if (canRefresh) {
       var page = _pageList[index];
@@ -395,34 +399,44 @@ class MainScreenState extends State<MainScreen>
   _buildMobileBody() {
     return FutureBuilder(
       future: Future.sync(() => initData()),
-      builder: (_, __) => MyScaffold(
-        body: pageView,
-        bottomNavigationBar: MyBottomNavigationBar(
-          currentIndex: _bottomBarSelectedIndex,
-          backgroundColor: Theme.of(context).canvasColor,
-          items: _navigationBarItemList,
-          elevation: 0,
-          unselectedItemColor: Theme.of(context).textTheme.labelSmall?.color,
-          selectedItemColor: Theme.of(context).primaryColor,
-          unselectedLabelStyle: const TextStyle(fontSize: 10),
-          selectedLabelStyle:
+      builder: (_, __) =>
+          MyScaffold(
+            body: pageView,
+            bottomNavigationBar: MyBottomNavigationBar(
+              currentIndex: _bottomBarSelectedIndex,
+              backgroundColor: Theme
+                  .of(context)
+                  .canvasColor,
+              items: _navigationBarItemList,
+              elevation: 0,
+              unselectedItemColor: Theme
+                  .of(context)
+                  .textTheme
+                  .labelSmall
+                  ?.color,
+              selectedItemColor: Theme
+                  .of(context)
+                  .primaryColor,
+              unselectedLabelStyle: const TextStyle(fontSize: 10),
+              selectedLabelStyle:
               const TextStyle(fontWeight: FontWeight.w500, fontSize: 10),
-          onTap: onBottomNavigationBarItemTap,
-          onDoubleTap: onBottomNavigationBarItemTap,
-        ),
-      ),
+              onTap: onBottomNavigationBarItemTap,
+              onDoubleTap: onBottomNavigationBarItemTap,
+            ),
+          ),
     );
   }
 
   _buildDesktopBody() {
     return FutureBuilder(
       future: Future.sync(() => initData()),
-      builder: (_, __) => MyScaffold(
-        resizeToAvoidBottomInset: false,
-        body: Row(
-          children: [_sideBar(), _desktopMainContent()],
-        ),
-      ),
+      builder: (_, __) =>
+          MyScaffold(
+            resizeToAvoidBottomInset: false,
+            body: Row(
+              children: [_sideBar(), _desktopMainContent()],
+            ),
+          ),
     );
   }
 
@@ -438,7 +452,7 @@ class MainScreenState extends State<MainScreen>
 
   _sideBar() {
     return SizedBox(
-      width: 65,
+      width: 56,
       child: Container(
         color: Colors.transparent,
         child: Stack(
@@ -449,14 +463,22 @@ class MainScreenState extends State<MainScreen>
                 const SizedBox(height: 80),
                 MyBottomNavigationBar(
                   currentIndex: _bottomBarSelectedIndex,
-                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                  backgroundColor: Theme
+                      .of(context)
+                      .scaffoldBackgroundColor,
                   items: _navigationBarItemList,
                   clearNavSelectState: clearNavSelectState,
                   direction: Axis.vertical,
                   elevation: 0,
                   unselectedItemColor:
-                      Theme.of(context).textTheme.labelSmall?.color,
-                  selectedItemColor: Theme.of(context).primaryColor,
+                  Theme
+                      .of(context)
+                      .textTheme
+                      .labelSmall
+                      ?.color,
+                  selectedItemColor: Theme
+                      .of(context)
+                      .primaryColor,
                   unselectedLabelStyle: const TextStyle(fontSize: 12),
                   selectedLabelStyle: const TextStyle(fontSize: 12),
                   onTap: onBottomNavigationBarItemTap,
@@ -526,7 +548,10 @@ class MainScreenState extends State<MainScreen>
                       context: context,
                       icon: Icon(
                         Icons.mail_outline_rounded,
-                        color: Theme.of(context).iconTheme.color,
+                        color: Theme
+                            .of(context)
+                            .iconTheme
+                            .color,
                       ),
                       onTap: () {
                         RouteUtil.pushDesktopFadeRoute(
@@ -544,7 +569,7 @@ class MainScreenState extends State<MainScreen>
                         RouteUtil.pushDesktopFadeRoute(const SettingScreen());
                       },
                     ),
-                    const SizedBox(height: 15),
+                    const SizedBox(height: 5),
                   ],
                 ),
               ],
@@ -567,29 +592,33 @@ class MainScreenState extends State<MainScreen>
               Selector<AppProvider, bool>(
                 selector: (context, globalProvider) =>
                 globalProvider.canPopByProvider,
-                builder: (context, desktopCanpop, child) => MouseRegion(
-                  cursor: desktopCanpop
-                      ? SystemMouseCursors.click
-                      : SystemMouseCursors.basic,
-                  child: ItemBuilder.buildRoundIconButton(
-                    context: context,
-                    disabled: !desktopCanpop,
-                    normalBackground: Colors.grey.withAlpha(40),
-                    icon: Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      size: 20,
-                      color: desktopCanpop
-                          ? Theme.of(context).iconTheme.color
-                          : Colors.grey,
+                builder: (context, desktopCanpop, child) =>
+                    MouseRegion(
+                      cursor: desktopCanpop
+                          ? SystemMouseCursors.click
+                          : SystemMouseCursors.basic,
+                      child: ItemBuilder.buildRoundIconButton(
+                        context: context,
+                        disabled: !desktopCanpop,
+                        normalBackground: Colors.grey.withAlpha(40),
+                        icon: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          size: 20,
+                          color: desktopCanpop
+                              ? Theme
+                              .of(context)
+                              .iconTheme
+                              .color
+                              : Colors.grey,
+                        ),
+                        onTap: () {
+                          if (canPopByKey) {
+                            desktopNavigatorState?.pop();
+                          }
+                          appProvider.canPopByProvider = canPopByKey;
+                        },
+                      ),
                     ),
-                    onTap: () {
-                      if (canPopByKey) {
-                        desktopNavigatorState?.pop();
-                      }
-                      appProvider.canPopByProvider = canPopByKey;
-                    },
-                  ),
-                ),
               ),
               const SizedBox(width: 8),
               // ItemBuilder.buildRoundIconButton(
@@ -608,7 +637,9 @@ class MainScreenState extends State<MainScreen>
               // ),
               // const SizedBox(width: 8),
               SizedBox(
-                width: min(300, MediaQuery.sizeOf(context).width - 240),
+                width: min(300, MediaQuery
+                    .sizeOf(context)
+                    .width - 240),
                 child: ItemBuilder.buildDesktopSearchBar(
                     context: context,
                     controller: TextEditingController(),
@@ -661,7 +692,7 @@ class MainScreenState extends State<MainScreen>
     if (!_hasJumpedToPinVerify) {
       _timer = Timer(
         Duration(minutes: appProvider.autoLockTime),
-        () {
+            () {
           jumpToPinVerify();
         },
       );

@@ -15,7 +15,7 @@ class LocaleUtil with ChangeNotifier {
     const Tuple2("Türkçe", Locale("tr")),
     const Tuple2("Українська", Locale("uk")),
     const Tuple2("简体中文", Locale("zh", "CN")),
-    const Tuple2("繁体中文", Locale("zh", "CN")),
+    const Tuple2("繁體中文", Locale("zh", "TW")),
   ];
 
   static Tuple2<String, Locale?>? getTuple(Locale? locale) {
