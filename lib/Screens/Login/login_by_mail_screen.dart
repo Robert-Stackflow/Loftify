@@ -9,65 +9,85 @@ import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Widgets/Custom/no_shadow_scroll_behavior.dart';
 
-import '../../Models/login_lofterid_response.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/request_util.dart';
 import '../../Utils/route_util.dart';
 import '../../Widgets/Item/item_builder.dart';
-import 'login_by_mail_screen.dart';
+import 'login_by_lofterid_screen.dart';
 
-class LoginByLofterIDScreen extends StatefulWidget {
-  const LoginByLofterIDScreen({super.key, this.initPassword});
+class LoginByMailScreen extends StatefulWidget {
+  const LoginByMailScreen({super.key, this.initPassword});
 
-  static const String routeName = "/login/lofterID";
+  static const String routeName = "/login/mail";
 
   final String? initPassword;
 
   @override
-  State<LoginByLofterIDScreen> createState() => _LoginByLofterIDScreenState();
+  State<LoginByMailScreen> createState() => _LoginByMailScreenState();
 }
 
-class _LoginByLofterIDScreenState extends State<LoginByLofterIDScreen>
+class _LoginByMailScreenState extends State<LoginByMailScreen>
     with TickerProviderStateMixin {
-  late TextEditingController _lofterIDController;
+  late TextEditingController _mailController;
   late TextEditingController _passwordController;
+  var mailPower = {};
 
   @override
   void initState() {
     super.initState();
-    _lofterIDController = TextEditingController();
+    _mailController = TextEditingController();
     _passwordController = TextEditingController();
-    _lofterIDController.text = defaultLofterID;
+    _mailController.text = defaultMail;
     _passwordController.text = widget.initPassword ?? defaultPassword;
   }
 
-  void _login() {
-    String lofterID = _lofterIDController.text;
-    String password = _passwordController.text;
-    if (lofterID.isEmpty || password.isEmpty) {
-      IToast.showTop("LofterID或密码不能为空");
-      return;
-    }
-    LoginApi.loginByLofterID(lofterID, password).then((value) async {
-      try{
-        LoginLofterIDResponse loginResponse =
-        LoginLofterIDResponse.fromJson(value);
-        if (loginResponse.status != 200) {
-          IToast.showTop(loginResponse.desc);
-        } else {
+  Future<void> _login() async {
+    try {
+      String mail = _mailController.text;
+      String password = _passwordController.text;
+      if (mail.isEmpty || password.isEmpty) {
+        IToast.showTop("邮箱或密码不能为空");
+        return;
+      }
+      var resPower = await LoginApi.getMailPower(mail);
+      if (resPower['ret'] == "201") {
+        mailPower = resPower['pVInfo'];
+      } else {
+        IToast.showTop("邮箱不存在");
+        return;
+      }
+      var resGt = await LoginApi.loginByMailGt(mail);
+      if (resGt['ret'] == "201") {
+        String tk = resGt['tk'];
+        var resL = await LoginApi.loginByMailL(mail, password, tk);
+        if (resL['ret'] == "200") {
           IToast.showTop("登录成功");
-          appProvider.token = loginResponse.token ?? "";
+          appProvider.token = resL['token'] ?? "";
           await RequestUtil.clearCookie();
-          await HiveUtil.put(HiveUtil.userIdKey, loginResponse.userId);
-          await HiveUtil.put(HiveUtil.tokenKey, loginResponse.token);
+          await HiveUtil.put(HiveUtil.userIdKey, resL['userId']);
+          await HiveUtil.put(HiveUtil.tokenKey, resL['token']);
           await HiveUtil.put(HiveUtil.tokenTypeKey, TokenType.lofterID.index);
           ResponsiveUtil.returnToMainScreen(context);
+        } else if (resL['ret'] == "413" && resL['dt'] == "01") {
+          IToast.showTop("您登录密码错误次数过多，请稍后再试");
+        } else if (resL['ret'] == "413" && resL['dt'] == "02") {
+          IToast.showTop("您登录密码错误次数过多，请明天再试");
+        } else if (resL['ret'] == "413" && resL['dt'] == "02") {
+          IToast.showTop("您的IP登录密码错误次数过多，请稍后再试");
+        } else if (resL['ret'] == "413") {
+          IToast.showTop("账号或密码错误");
+        } else if (resL['ret'] == "447") {
+          IToast.showTop("操作频繁，请稍后再试");
+        } else {
+          IToast.showTop("密码错误");
         }
-      }catch(e,t){
-        ILogger.error( "Failed to login by LofterID", e, t);
+      } else {
+        IToast.showTop("未知错误");
       }
-    });
+    } catch (e, t) {
+      ILogger.error("Failed to login by mail", e, t);
+    }
   }
 
   @override
@@ -78,7 +98,7 @@ class _LoginByLofterIDScreenState extends State<LoginByLofterIDScreen>
         resizeToAvoidBottomInset: false,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: ItemBuilder.buildSimpleAppBar(
-          title: "LofterID登录",
+          title: "邮箱登录",
           context: context,
           leading: Icons.close_rounded,
           transparent: true,
@@ -94,11 +114,11 @@ class _LoginByLofterIDScreenState extends State<LoginByLofterIDScreen>
                     const SizedBox(height: 50),
                     ItemBuilder.buildInputItem(
                       context: context,
-                      hint: "输入LofterID",
+                      hint: "输入邮箱",
                       textInputAction: TextInputAction.next,
-                      controller: _lofterIDController,
+                      controller: _mailController,
                       tailingType: TailingType.clear,
-                      leadingIcon: Icons.card_membership_rounded,
+                      leadingIcon: Icons.mail_outline_rounded,
                     ),
                     ItemBuilder.buildInputItem(
                       context: context,
@@ -160,18 +180,18 @@ class _LoginByLofterIDScreenState extends State<LoginByLofterIDScreen>
                                 ),
                               );
                             }),
-                        // const SizedBox(width: 30),
-                        // ItemBuilder.buildSmallIcon(
-                        //     context: context,
-                        //     icon: Icons.mail_outline_rounded,
-                        //     onTap: () {
-                        //       RouteUtil.pushCupertinoRoute(
-                        //         context,
-                        //         LoginByMailScreen(
-                        //           initPassword: _passwordController.text,
-                        //         ),
-                        //       );
-                        //     }),
+                        const SizedBox(width: 30),
+                        ItemBuilder.buildSmallIcon(
+                            context: context,
+                            icon: Icons.card_membership_rounded,
+                            onTap: () {
+                              RouteUtil.pushCupertinoRoute(
+                                context,
+                                LoginByLofterIDScreen(
+                                  initPassword: _passwordController.text,
+                                ),
+                              );
+                            }),
                       ],
                     ),
                   ],

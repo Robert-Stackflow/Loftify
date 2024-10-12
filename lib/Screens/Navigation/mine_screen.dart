@@ -20,6 +20,7 @@ import 'package:responsive_builder/responsive_builder.dart';
 
 import '../../Models/user_response.dart';
 import '../../Utils/app_provider.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
@@ -105,14 +106,16 @@ class _MineScreenState extends State<MineScreen>
                   });
                   return IndicatorResult.success;
                 }
-              } catch (_) {
-                if (mounted) IToast.showTop("加载失败");
+              } catch (e,t) {
+                IToast.showTop("加载失败");
+                ILogger.error("Failed to load me info", e, t);
                 return IndicatorResult.fail;
               }
             });
           }
-        } catch (_) {
-          if (mounted) IToast.showTop("加载失败");
+        } catch (e,t) {
+          IToast.showTop("加载失败");
+          ILogger.error("Failed to load user info", e, t);
           return IndicatorResult.fail;
         } finally {
           _loading = false;
@@ -264,8 +267,9 @@ class _MineScreenState extends State<MineScreen>
         if (mounted) setState(() {});
         return IndicatorResult.success;
       }
-    } catch (e) {
-      if (mounted) IToast.showTop("加载失败");
+    } catch (e,t) {
+      IToast.showTop("加载失败");
+      ILogger.error("Failed to load $followingMode result", e, t);
       return IndicatorResult.fail;
     } finally {
       if (mounted) setState(() {});

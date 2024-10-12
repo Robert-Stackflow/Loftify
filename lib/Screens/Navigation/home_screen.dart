@@ -14,6 +14,7 @@ import '../../Api/post_api.dart';
 import '../../Models/recommend_response.dart';
 import '../../Utils/asset_util.dart';
 import '../../Utils/constant.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/iprint.dart';
 import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
@@ -91,10 +92,9 @@ class HomeScreenState extends State<HomeScreen>
               .addAll(tmp.map((e) => PostListItem.fromJson(e)).toList());
           return IndicatorResult.success;
         }
-      } catch (e, t) {
-        IPrint.debug(e);
-        IPrint.debug(t);
-        if (mounted) IToast.showTop("加载失败");
+      } catch (e,t) {
+        IToast.showTop("加载失败");
+        ILogger.error("Failed to load data", e, t);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});

@@ -9,13 +9,16 @@ import 'package:window_manager/window_manager.dart';
 
 import '../../Utils/app_provider.dart';
 import '../../Utils/enums.dart';
+import '../../Utils/file_util.dart';
 import '../../Utils/hive_util.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/locale_util.dart';
 import '../../Utils/responsive_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
 import '../../Widgets/Dialog/custom_dialog.dart';
+import '../../Widgets/Dialog/dialog_builder.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../generated/l10n.dart';
@@ -47,10 +50,19 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
   int downloadSuccessAction = Utils.patchEnum(
       HiveUtil.getInt(HiveUtil.downloadSuccessActionKey),
       DownloadSuccessAction.values.length);
+  String _logSize = "";
+
+  Future<void> getLogSize() async {
+    double size = await FileOutput.getLogsSize();
+    setState(() {
+      _logSize = CacheUtil.renderSize(size);
+    });
+  }
 
   @override
   void initState() {
     super.initState();
+    getLogSize();
     filterLocale();
     if (ResponsiveUtil.isMobile()) getCacheSize();
     fetchReleases(false);
@@ -269,12 +281,54 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                     });
                   },
                 ),
+              ..._logSetting(),
               const SizedBox(height: 10),
             ],
           ),
         ),
       ),
     );
+  }
+
+  _logSetting(){
+    return [
+      const SizedBox(height: 10),
+      ItemBuilder.buildEntryItem(
+        context: context,
+        title: S.current.exportLog,
+        description: S.current.exportLogHint,
+        topRadius: true,
+        onTap: () {
+          FileUtil.exportLogs();
+        },
+      ),
+      ItemBuilder.buildEntryItem(
+        context: context,
+        title: S.current.clearLog,
+        bottomRadius: true,
+        tip: _logSize,
+        onTap: () async {
+          DialogBuilder.showConfirmDialog(
+            context,
+            title: S.current.clearLogTitle,
+            message: S.current.clearLogHint,
+            onTapConfirm: () async {
+              CustomLoadingDialog.showLoading(title: S.current.clearingLog);
+              try {
+                await FileOutput.clearLogs();
+                await getLogSize();
+                IToast.showTop(S.current.clearLogSuccess);
+              } catch (e, t) {
+                ILogger.error( "Failed to clear logs", e, t);
+                IToast.showTop(S.current.clearLogFailed);
+              } finally {
+                CustomLoadingDialog.dismissLoading();
+              }
+            },
+          );
+        },
+      ),
+    ];
   }
 
   _desktopSetting() {

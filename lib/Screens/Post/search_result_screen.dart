@@ -16,6 +16,7 @@ import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Api/post_api.dart';
 import '../../Utils/constant.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/uri_util.dart';
@@ -155,8 +156,9 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           if (mounted) setState(() {});
           return IndicatorResult.success;
         }
-      } catch (_) {
+      } catch (e, t) {
         IToast.showTop("加载失败");
+        ILogger.error("Failed to load all result", e, t);
         return IndicatorResult.fail;
       } finally {
         _allResultLoading = false;
@@ -188,8 +190,9 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           if (noMore) return IndicatorResult.noMore;
           return IndicatorResult.success;
         }
-      } catch (_) {
+      } catch (e, t) {
         IToast.showTop("加载失败");
+        ILogger.error("Failed to load all post result", e, t);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -237,8 +240,9 @@ class _SearchResultScreenState extends State<SearchResultScreen>
             return IndicatorResult.success;
           }
         }
-      } catch (_) {
+      } catch (e, t) {
         IToast.showTop("加载失败");
+        ILogger.error("Failed to load tag result", e, t);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -283,8 +287,9 @@ class _SearchResultScreenState extends State<SearchResultScreen>
             return IndicatorResult.success;
           }
         }
-      } catch (_) {
+      } catch (e, t) {
         IToast.showTop("加载失败");
+        ILogger.error("Failed to load collection result", e, t);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -329,8 +334,9 @@ class _SearchResultScreenState extends State<SearchResultScreen>
             return IndicatorResult.success;
           }
         }
-      } catch (_) {
+      } catch (e, t) {
         IToast.showTop("加载失败");
+        ILogger.error("Failed to load post result", e, t);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -375,8 +381,9 @@ class _SearchResultScreenState extends State<SearchResultScreen>
             return IndicatorResult.success;
           }
         }
-      } catch (_) {
+      } catch (e, t) {
         IToast.showTop("加载失败");
+        ILogger.error("Failed to load grain result", e, t);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -422,8 +429,9 @@ class _SearchResultScreenState extends State<SearchResultScreen>
             return IndicatorResult.success;
           }
         }
-      } catch (_) {
+      } catch (e,t) {
         IToast.showTop("加载失败");
+        ILogger.error("Failed to load user result", e, t);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});

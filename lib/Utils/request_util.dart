@@ -4,15 +4,19 @@ import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
+import 'package:loftify/Utils/ilogger.dart';
 import 'package:loftify/Utils/iprint.dart';
 import 'package:loftify/Utils/request_header_util.dart';
 
-enum DomainType { api, www, da, short, image, captcha }
+enum DomainType { api, www, da, short, image, captcha, passport }
 
 class RequestUtil {
   static RequestUtil instance = RequestUtil();
   static RequestUtil wwwInstance = RequestUtil(domainType: DomainType.www);
+  static RequestUtil passportInstance =
+      RequestUtil(domainType: DomainType.passport);
   static RequestUtil daInstance = RequestUtil(domainType: DomainType.da);
   static RequestUtil shortInstance = RequestUtil(domainType: DomainType.short);
   static RequestUtil imageInstance = RequestUtil(domainType: DomainType.image);
@@ -20,10 +24,11 @@ class RequestUtil {
       RequestUtil(domainType: DomainType.captcha);
   late Dio dio;
   late BaseOptions options;
-  CookieJar? cookieJar;
-  CookieManager? cookieManager;
+  static CookieJar? cookieJar;
+  static CookieManager? cookieManager;
   static const String apiUrl = "https://api.lofter.com";
   static const String wwwUrl = "https://www.lofter.com";
+  static const String passportUrl = "https://passport.www.lofter.com";
   static const String daUrl = "https://da.lofter.com";
   static const String shortUrl = "https://s.lofter.com";
   static const String captchaUrl = "https://captcha.lofter.com";
@@ -44,7 +49,16 @@ class RequestUtil {
         return imageInstance;
       case DomainType.captcha:
         return captchaInstance;
+      case DomainType.passport:
+        return passportInstance;
     }
+  }
+
+  static init() async {
+    cookieJar = PersistCookieJar(
+      storage: FileStorage(await FileUtil.getCookiesDir()),
+    );
+    cookieManager = CookieManager(cookieJar!);
   }
 
   RequestUtil({DomainType domainType = DomainType.api}) {
@@ -68,6 +82,9 @@ class RequestUtil {
       case DomainType.captcha:
         baseURL = captchaUrl;
         break;
+      case DomainType.passport:
+        baseURL = passportUrl;
+        break;
     }
     options = BaseOptions(
       baseUrl: baseURL,
@@ -79,8 +96,6 @@ class RequestUtil {
     dio = Dio(options);
     (dio.httpClientAdapter as IOHttpClientAdapter).validateCertificate =
         (X509Certificate? cert, String host, int port) => true;
-    cookieJar = CookieJar();
-    cookieManager = CookieManager(cookieJar!);
     dio.interceptors.add(cookieManager!);
     dio.interceptors.add(
       InterceptorsWrapper(
@@ -97,7 +112,7 @@ class RequestUtil {
     );
   }
 
-  Future<void> clearCookie() async {
+  static Future<void> clearCookie() async {
     cookieJar?.deleteAll();
   }
 
@@ -116,8 +131,8 @@ class RequestUtil {
         options: options,
       );
       _processResponse(response);
-    } on DioException catch (e) {
-      formatError(e);
+    } on DioException catch (e, t) {
+      _printError(e, t);
     }
     if (getFullResponse) {
       return response;
@@ -132,14 +147,17 @@ class RequestUtil {
     data,
     options,
     bool stream = false,
+    DomainType domainType = DomainType.api,
   }) async {
     Response? response;
-    [params, options] = _processRequest(params: params, options: options);
     try {
-      if (data is Map<String, Object>) {
-        data.addAll({
-          "portrait": RequestHeaderUtil.getPortrait(),
-        } as Map<String, Object>);
+      if (domainType != DomainType.passport) {
+        [params, options] = _processRequest(params: params, options: options);
+        if (data is Map<String, Object>) {
+          data.addAll({
+            "portrait": RequestHeaderUtil.getPortrait(),
+          } as Map<String, Object>);
+        }
       }
       response = await dio.post(
         url,
@@ -150,8 +168,8 @@ class RequestUtil {
         options: options,
       );
       _processResponse(response);
-    } on DioException catch (e) {
-      formatError(e);
+    } on DioException catch (e, t) {
+      _printError(e, t);
     }
     return response?.data;
   }
@@ -198,7 +216,6 @@ class RequestUtil {
       list['Request Body'] = response.requestOptions.data;
     }
     if (response.data is Map<dynamic, dynamic>) {
-      // list['splitter'] = "";
       if (response.data['code'] != null) {
         list['Code'] = response.data['code'];
       }
@@ -213,17 +230,13 @@ class RequestUtil {
           response.data['meta']['msg'] != null) {
         list['Message'] = response.data['meta']['msg'];
       }
-      // if (response.data['data'] != null) {
-      //   list['Data'] = response.data['data'];
-      // }
-      // if (response.data['response'] != null) {
-      //   list['Data'] = response.data['response'];
-      // }
+      list['Data'] = response.data;
     }
     IPrint.format(
       tag: response.requestOptions.method,
       status: "Success",
       list: list,
+      useLogger: true,
     );
   }
 
@@ -256,24 +269,25 @@ class RequestUtil {
       data: data,
       options: options,
       stream: stream,
+      domainType: domainType,
     );
   }
 
-  void formatError(DioException e) {
+  void _printError(DioException e, [StackTrace? t]) {
     String info =
-        '[${e.requestOptions.method}] [${e.requestOptions.uri}] [${e.requestOptions.headers}] ';
+        '[${e.requestOptions.method}] [${e.requestOptions.uri}] [${e.requestOptions.headers}] [${e.requestOptions.data}] [${e.response?.statusCode}] [${e.response?.data}] [$t]';
     if (e.type == DioExceptionType.connectionTimeout) {
-      IPrint.debug("$info:连接超时");
+      ILogger.error("DioException", "$info: 连接超时");
     } else if (e.type == DioExceptionType.sendTimeout) {
-      IPrint.debug("$info:请求超时");
+      ILogger.error("DioException", "$info: 请求超时");
     } else if (e.type == DioExceptionType.receiveTimeout) {
-      IPrint.debug("$info:响应超时");
+      ILogger.error("DioException", "$info: 响应超时");
     } else if (e.type == DioExceptionType.badResponse) {
-      IPrint.debug("$info:出现异常");
+      ILogger.error("DioException", "$info: 出现异常");
     } else if (e.type == DioExceptionType.cancel) {
-      IPrint.debug("$info:请求取消");
+      ILogger.error("DioException", "$info: 请求取消");
     } else {
-      IPrint.debug("$info:$e");
+      ILogger.error("DioException", "$info: $e");
     }
   }
 }

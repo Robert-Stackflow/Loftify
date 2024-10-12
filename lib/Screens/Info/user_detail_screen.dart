@@ -14,7 +14,7 @@ import 'package:loftify/Screens/Info/supporter_screen.dart';
 import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
-import 'package:loftify/Utils/iprint.dart';
+import 'package:loftify/Utils/ilogger.dart';
 import 'package:loftify/Utils/uri_util.dart';
 import 'package:loftify/Widgets/BottomSheet/input_bottom_sheet.dart';
 import 'package:loftify/Widgets/Custom/subordinate_scroll_controller.dart';
@@ -87,8 +87,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
           setState(() {});
         }
       } catch (e, t) {
-        IPrint.debug(e);
-        IPrint.debug(t);
+        ILogger.error("Failed to get user detail", e, t);
         if (mounted) IToast.showTop("加载失败");
       }
       if (mounted) setState(() {});

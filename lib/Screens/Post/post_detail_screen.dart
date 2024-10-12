@@ -18,6 +18,7 @@ import 'package:loftify/Resources/colors.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
+import 'package:loftify/Utils/ilogger.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Widgets/BottomSheet/collection_bottom_sheet.dart';
 import 'package:loftify/Widgets/BottomSheet/comment_bottom_sheet.dart';
@@ -317,8 +318,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           }
           return IndicatorResult.success;
         }
-      } catch (_) {
+      } catch (e, t) {
         IToast.showTop("评论加载失败");
+        ILogger.error("Failed to load hot comment", e, t);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -348,8 +350,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           }
           return IndicatorResult.success;
         }
-      } catch (_) {
+      } catch (e, t) {
         IToast.showTop("评论加载失败");
+        ILogger.error("Failed to load l2 comment", e, t);
         return IndicatorResult.fail;
       } finally {
         currentComment.l2CommentLoading = false;
@@ -414,8 +417,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               .addAll(tmp.map((e) => PostListItem.fromJson(e)).toList());
           return IndicatorResult.success;
         }
-      } catch (e) {
+      } catch (e, t) {
         if (mounted) IToast.showTop("加载失败");
+        ILogger.error("Failed to load recommend post", e, t);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});

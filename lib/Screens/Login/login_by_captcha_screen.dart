@@ -19,6 +19,7 @@ import '../../Utils/request_util.dart';
 import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
 import '../../Widgets/Item/item_builder.dart';
+import 'login_by_mail_screen.dart';
 
 class LoginByCaptchaScreen extends StatefulWidget {
   const LoginByCaptchaScreen({super.key, this.initPhone});
@@ -120,7 +121,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
       } else {
         IToast.showTop("登录成功");
         appProvider.token = loginResponse.token ?? "";
-        await RequestUtil.getInstance().clearCookie();
+        await RequestUtil.clearCookie();
         await HiveUtil.put(HiveUtil.userIdKey, loginResponse.userid);
         await HiveUtil.put(HiveUtil.tokenKey, loginResponse.token);
         await HiveUtil.put(HiveUtil.deviceIdKey, loginResponse.deviceid);
@@ -249,6 +250,16 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
                                 const LoginByLofterIDScreen(),
                               );
                             }),
+                        // const SizedBox(width: 30),
+                        // ItemBuilder.buildSmallIcon(
+                        //     context: context,
+                        //     icon: Icons.mail_outline_rounded,
+                        //     onTap: () {
+                        //       RouteUtil.pushCupertinoRoute(
+                        //         context,
+                        //         const LoginByMailScreen(),
+                        //       );
+                        //     }),
                       ],
                     ),
                   ],

@@ -1,9 +1,10 @@
 import 'dart:io';
 
-import 'package:loftify/Utils/route_util.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:loftify/Utils/route_util.dart';
 import 'package:restart_app/restart_app.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -11,6 +12,71 @@ import '../Screens/main_screen.dart';
 import 'app_provider.dart';
 
 class ResponsiveUtil {
+  static String deviceName = "";
+  static String deviceDescription = "";
+
+  static String get platformName {
+    if (Platform.isAndroid) {
+      return "Android";
+    } else if (Platform.isIOS) {
+      return "iOS";
+    } else if (Platform.isMacOS) {
+      return "MacOS";
+    } else if (Platform.isWindows) {
+      return "Windows";
+    } else if (Platform.isLinux) {
+      return "Linux";
+    } else {
+      return "Unknown";
+    }
+  }
+
+  static init() async {
+    deviceName = await getDeviceName();
+    deviceDescription = await getDeviceDescription();
+  }
+
+  static Future<String> getDeviceName() async {
+    DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+    if (Platform.isAndroid) {
+      return "Android-${(await deviceInfo.androidInfo).brand}-${(await deviceInfo.androidInfo).model}";
+    } else if (Platform.isIOS) {
+      return "iOS-${(await deviceInfo.iosInfo).name}";
+    } else if (Platform.isMacOS) {
+      return "MacOS-${(await deviceInfo.macOsInfo).computerName}";
+    } else if (Platform.isWindows) {
+      return "Windows-${(await deviceInfo.windowsInfo).computerName}";
+    } else if (Platform.isLinux) {
+      return "Linux-${(await deviceInfo.linuxInfo).prettyName}";
+    } else {
+      return "Unknown";
+    }
+  }
+
+  static Future<String> getDeviceDescription() async {
+    try {
+      DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+      String deviceOverview = await getDeviceName();
+      String deviceDescription = "";
+      if (Platform.isAndroid) {
+        deviceDescription = (await deviceInfo.androidInfo).data.toString();
+      } else if (Platform.isIOS) {
+        deviceDescription = (await deviceInfo.iosInfo).data.toString();
+      } else if (Platform.isMacOS) {
+        deviceDescription = (await deviceInfo.macOsInfo).data.toString();
+      } else if (Platform.isWindows) {
+        deviceDescription = (await deviceInfo.windowsInfo).data.toString();
+      } else if (Platform.isLinux) {
+        deviceDescription = (await deviceInfo.linuxInfo).data.toString();
+      } else {
+        deviceDescription = "Unknown";
+      }
+      return "Device overview:$deviceOverview\nDevice description:$deviceDescription";
+    } catch (e) {
+      return "Get Device Description Error: $e";
+    }
+  }
+
   static Future<void> restartApp(BuildContext context) async {
     if (ResponsiveUtil.isDesktop()) {
     } else {

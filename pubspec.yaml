@@ -72,6 +72,7 @@ dependencies:
   tuple: ^2.0.0 # 元组
   crypto: ^3.0.3 # 加密
   encrypt: ^5.0.3 # 加密
+  dart_sm: ^0.1.5 # 加密
   flutter_native_splash: ^2.4.1 # Splash屏
   palette_generator: ^0.3.3+3 # 获取主色调
   vector_math: ^2.1.4

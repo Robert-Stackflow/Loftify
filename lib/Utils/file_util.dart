@@ -124,7 +124,7 @@ class FileUtil {
     if (ResponsiveUtil.isDesktop()) {
       String? filePath = await FileUtil.saveFile(
         dialogTitle: S.current.exportLog,
-        fileName: "CloudOTP-Logs-${Utils.getFormattedDate(DateTime.now())}.zip",
+        fileName: "Loftify-Logs-${Utils.getFormattedDate(DateTime.now())}.zip",
         type: FileType.custom,
         allowedExtensions: ['zip'],
         lockParentWindow: true,
@@ -164,7 +164,7 @@ class FileUtil {
         String? filePath = await FileUtil.saveFile(
           dialogTitle: S.current.exportLog,
           fileName:
-              "CloudOTP-Logs-${Utils.getFormattedDate(DateTime.now())}.zip",
+              "Loftify-Logs-${Utils.getFormattedDate(DateTime.now())}.zip",
           type: FileType.custom,
           allowedExtensions: ['zip'],
           lockParentWindow: true,
@@ -225,6 +225,14 @@ class FileUtil {
 
   static Future<String> getLogDir() async {
     Directory directory = Directory(join(await getApplicationDir(), "Logs"));
+    if (!await directory.exists()) {
+      await directory.create(recursive: true);
+    }
+    return directory.path;
+  }
+
+  static Future<String> getCookiesDir() async {
+    Directory directory = Directory(join(await getApplicationDir(), "Cookies"));
     if (!await directory.exists()) {
       await directory.create(recursive: true);
     }
@@ -627,20 +635,20 @@ class FileUtil {
       String latestVersion, ReleaseItem item) async {
     List<ReleaseAsset> assets = item.assets
         .where((element) =>
-    element.contentType == "application/vnd.android.package-archive" &&
-        element.name.endsWith(".apk"))
+            element.contentType == "application/vnd.android.package-archive" &&
+            element.name.endsWith(".apk"))
         .toList();
     ReleaseAsset generalAsset = assets.firstWhere(
-            (element) => element.name == "CloudOTP-$latestVersion.apk",
+        (element) => element.name == "Loftify-$latestVersion.apk",
         orElse: () => assets.first);
     try {
       DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
       AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
       List<String> supportedAbis =
-      androidInfo.supportedAbis.map((e) => e.toLowerCase()).toList();
+          androidInfo.supportedAbis.map((e) => e.toLowerCase()).toList();
       for (var asset in assets) {
         String abi =
-            asset.name.split("CloudOTP-$latestVersion-").last.split(".").first;
+            asset.name.split("Loftify-$latestVersion-").last.split(".").first;
         if (supportedAbis.contains(abi.toLowerCase())) {
           return asset;
         }
@@ -651,13 +659,13 @@ class FileUtil {
 
   static ReleaseAsset getWindowsPortableAsset(ReleaseItem item) {
     return item.assets.firstWhere((element) =>
-    element.contentType == "application/x-zip-compressed" &&
+        element.contentType == "application/x-zip-compressed" &&
         element.name.endsWith(".zip"));
   }
 
   static ReleaseAsset getWindowsInstallerAsset(ReleaseItem item) {
     return item.assets.firstWhere((element) =>
-    element.contentType == "application/x-msdownload" &&
+        element.contentType == "application/x-msdownload" &&
         element.name.endsWith(".exe"));
   }
 }

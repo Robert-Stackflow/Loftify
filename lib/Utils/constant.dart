@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 const defaultPhone = "";
 const defaultPassword = "";
 const defaultLofterID = "";
+const defaultMail = "";
 
 const defaultFilenameFormat = "{original_name}";
 

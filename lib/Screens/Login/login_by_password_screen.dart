@@ -3,6 +3,7 @@ import 'package:loftify/Api/login_api.dart';
 import 'package:loftify/Models/login_response.dart';
 import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
 import 'package:loftify/Screens/Login/login_by_lofterid_screen.dart';
+import 'package:loftify/Screens/Login/login_by_mail_screen.dart';
 import 'package:loftify/Utils/constant.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
@@ -10,6 +11,7 @@ import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Widgets/Custom/no_shadow_scroll_behavior.dart';
 
 import '../../Utils/app_provider.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/request_util.dart';
 import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
@@ -49,18 +51,22 @@ class _LoginByPasswordScreenState extends State<LoginByPasswordScreen>
       return;
     }
     LoginApi.loginByPassword(mobile, password).then((value) async {
-      LoginResponse loginResponse = LoginResponse.fromJson(value);
-      if (loginResponse.result != 0) {
-        IToast.showTop(loginResponse.desc);
-      } else {
-        IToast.showTop("登录成功");
-        appProvider.token = loginResponse.token ?? "";
-        await RequestUtil.getInstance().clearCookie();
-        await HiveUtil.put(HiveUtil.userIdKey, loginResponse.userid);
-        await HiveUtil.put(HiveUtil.tokenKey, loginResponse.token);
-        await HiveUtil.put(HiveUtil.deviceIdKey, loginResponse.deviceid);
-        await HiveUtil.put(HiveUtil.tokenTypeKey, TokenType.password.index);
-        ResponsiveUtil.returnToMainScreen(context);
+      try {
+        LoginResponse loginResponse = LoginResponse.fromJson(value);
+        if (loginResponse.result != 0) {
+          IToast.showTop(loginResponse.desc);
+        } else {
+          IToast.showTop("登录成功");
+          appProvider.token = loginResponse.token ?? "";
+          await RequestUtil.clearCookie();
+          await HiveUtil.put(HiveUtil.userIdKey, loginResponse.userid);
+          await HiveUtil.put(HiveUtil.tokenKey, loginResponse.token);
+          await HiveUtil.put(HiveUtil.deviceIdKey, loginResponse.deviceid);
+          await HiveUtil.put(HiveUtil.tokenTypeKey, TokenType.password.index);
+          ResponsiveUtil.returnToMainScreen(context);
+        }
+      } catch (e, t) {
+        ILogger.error("Failed to login by LofterID", e, t);
       }
     });
   }
@@ -157,6 +163,18 @@ class _LoginByPasswordScreenState extends State<LoginByPasswordScreen>
                                 ),
                               );
                             }),
+                        // const SizedBox(width: 30),
+                        // ItemBuilder.buildSmallIcon(
+                        //     context: context,
+                        //     icon: Icons.mail_outline_rounded,
+                        //     onTap: () {
+                        //       RouteUtil.pushCupertinoRoute(
+                        //         context,
+                        //         LoginByMailScreen(
+                        //           initPassword: _passwordController.text,
+                        //         ),
+                        //       );
+                        //     }),
                       ],
                     ),
                   ],

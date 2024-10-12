@@ -36,6 +36,8 @@ import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/fontsize_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/request_header_util.dart';
+import 'package:loftify/Utils/request_util.dart';
+import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
@@ -87,6 +89,8 @@ Future<void> initApp() async {
   await DatabaseManager.getDataBase();
   Hive.defaultDirectory = await FileUtil.getApplicationDir();
   NotificationUtil.init();
+  await ResponsiveUtil.init();
+  await RequestUtil.init();
   // VideoPlayerMediaKit.ensureInitialized(
   //   android: false,
   //   iOS: false,
@@ -155,10 +159,9 @@ Future<void> initDisplayMode() async {
 }
 
 Future<void> onError(FlutterErrorDetails details) async {
-  File errorFile = File("${await FileUtil.getApplicationDir()}/error.log");
+  File errorFile = File(join(await FileUtil.getLogDir(), "error.log"));
   if (!errorFile.existsSync()) errorFile.createSync();
-  errorFile
-      .writeAsStringSync(errorFile.readAsStringSync() + details.toString());
+  errorFile.writeAsStringSync(details.toString(), mode: FileMode.append);
   if (details.stack != null) {
     Zone.current.handleUncaughtError(details.exception, details.stack!);
   }

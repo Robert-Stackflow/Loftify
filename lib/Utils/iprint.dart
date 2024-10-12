@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:loftify/Utils/ilogger.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -27,22 +28,29 @@ class IPrint {
     String rd = "】",
     bool showTopLine = true,
     bool showBottomLine = true,
+    bool useLogger = false,
   }) {
+    String res = "";
     String text = "";
     String line =
         "====================================================================================================================================";
-    if (showTopLine) debug("$line\n");
+    if (showTopLine) res += "$line\n";
     text += "$ld$tag$rd $ld$status$rd ";
     for (var e in list.entries) {
       if (e.key.startsWith("splitter")) {
-        debug(text);
+        res += text;
         text = "";
       } else {
         text += "$ld${e.key}：${e.value}$rd ";
       }
     }
-    debug(text);
-    if (showBottomLine) debug("\n$line");
+    res += text;
+    if (showBottomLine) res += "\n$line";
+    if (useLogger) {
+      ILogger.info(res);
+    } else {
+      debug(res);
+    }
   }
 
   static f(i) async {

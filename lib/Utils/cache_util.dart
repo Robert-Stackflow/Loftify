@@ -7,7 +7,7 @@ class CacheUtil {
     Directory tempDir = await getTemporaryDirectory();
     double value = await _getTotalSizeOfFilesInDir(tempDir);
     tempDir.list(followLinks: false, recursive: true).listen((file) {});
-    return _renderSize(value);
+    return renderSize(value);
   }
 
   static Future<double> _getTotalSizeOfFilesInDir(
@@ -37,7 +37,7 @@ class CacheUtil {
     await file.delete();
   }
 
-  static _renderSize(double value) {
+  static renderSize(double value) {
     List<String> unitArr = ['B', 'K', 'M', 'G'];
     int index = 0;
     while (value > 1024) {

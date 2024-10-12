@@ -20,6 +20,7 @@ import '../../Resources/colors.dart';
 import '../../Resources/theme.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/constant.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/responsive_util.dart';
 import '../../Utils/utils.dart';
@@ -229,8 +230,9 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
             return IndicatorResult.success;
           }
         }
-      } catch (_) {
+      } catch (e,t) {
         IToast.showTop("加载失败");
+        ILogger.error("Failed to load tag dynamic", e, t);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -828,8 +830,9 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
             return IndicatorResult.success;
           }
         }
-      } catch (_) {
+      } catch (e,t) {
         IToast.showTop("加载失败");
+        ILogger.error("Failed to load collection dynamic", e, t);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -1311,8 +1314,9 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
             return IndicatorResult.success;
           }
         }
-      } catch (_) {
+      } catch (e,t) {
         IToast.showTop("加载失败");
+        ILogger.error("Failed to load grain dynamic", e, t);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
