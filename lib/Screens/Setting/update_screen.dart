@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Utils/app_provider.dart';
-import 'package:loftify/Utils/iprint.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/responsive_util.dart';
 import 'package:path_provider/path_provider.dart';
@@ -135,8 +134,8 @@ class _UpdateScreenState extends State<UpdateScreen>
                 try {
                   late ReleaseAsset asset;
                   if (ResponsiveUtil.isWindows()) {
-                    asset =
-                        FileUtil.getWindowsInstallerAsset(latestReleaseItem);
+                    asset = FileUtil.getWindowsInstallerAsset(
+                        latestVersion, latestReleaseItem);
                   }
                   String url = asset.browserDownloadUrl;
                   var appDocDir = await getDownloadsDirectory();
