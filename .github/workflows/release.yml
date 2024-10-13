@@ -6,7 +6,7 @@ on:
     branches:
       - '**'
     tags:
-      - 'V*'
+      - 'v*'
 
 # If previous workflow is still running, we push again, we will cancel the previous workflow
 concurrency:
