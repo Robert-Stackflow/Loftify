@@ -27,10 +27,15 @@ import '../Widgets/Dialog/custom_dialog.dart';
 import '../Widgets/Dialog/dialog_builder.dart';
 import '../generated/l10n.dart';
 import 'app_provider.dart';
+import 'constant.dart';
 import 'ilogger.dart';
 import 'itoast.dart';
 
 class Utils {
+  static getDownloadUrl(String version, String name) {
+    return "$downloadPkgsUrl/$version/$name";
+  }
+
   static String getFormattedDate(DateTime dateTime) {
     return DateFormat("yyyy-MM-dd-HH-mm-ss").format(dateTime);
   }

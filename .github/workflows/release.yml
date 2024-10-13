@@ -1,0 +1,180 @@
+name: Build & Release
+
+# Trigger on push to master branch or with a tag
+on:
+  push:
+    branches:
+      - '**'
+    tags:
+      - 'V*'
+
+# If previous workflow is still running, we push again, we will cancel the previous workflow
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  Build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: Android
+            os: ubuntu-latest
+            artifact_name: release-Android
+            artifact_path: build/app/outputs/flutter-apk/*.apk
+          - target: Windows
+            os: windows-latest
+            artifact_name: release-Windows
+            artifact_path: |
+              build/windows/outputs/*.zip
+              build/windows/outputs/*.exe
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+      date: ${{ steps.get_version.outputs.date}}
+    runs-on: ${{ matrix.os }}
+    env:
+      FLUTTER_VERSION: 3.24.0
+    steps:
+      # Checkout branch
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Add Android keystore
+      - name: Setup Android keystore
+        if: matrix.target == 'Android'
+        run: |
+          echo "${{ secrets.ENCODED_KEYSTORE }}" | base64 -di > android/app/cloudchewie.jks
+          echo "${{ secrets.KEY_PROPERTIES }}" > android/key.properties
+
+      # Setup Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2.16.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+
+      # Setup JDK
+      - name: Setup JDK 17 (Android)
+        if: matrix.target == 'Android'
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: gradle
+
+      # Flutter Pub Get
+      - name: Flutter Pub Get
+        run: |
+          git config --global core.longpaths true
+          flutter doctor -v
+          flutter pub get
+          dart run intl_utils:generate
+
+      # Get app version
+      - name: Get app version
+        id: get_version
+        shell: bash
+        run: |
+          echo "version=$(head -n 2 pubspec.yaml | tail -n 1 | cut -d ' ' -f 2 | cut -d '+' -f 1)" >> $GITHUB_OUTPUT
+          echo "date=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
+
+      # Build Android .apk
+      - name: Build Android
+        if: matrix.target == 'Android'
+        run: |
+          flutter build apk --release
+          flutter build apk --release --split-per-abi
+          cd build/app/outputs/flutter-apk
+          mv app-release.apk Loftify-${{ steps.get_version.outputs.version }}-android-universal.apk
+          mv app-arm64-v8a-release.apk Loftify-${{ steps.get_version.outputs.version }}-android-arm64-v8a.apk
+          mv app-armeabi-v7a-release.apk Loftify-${{ steps.get_version.outputs.version }}-android-armeabi-v7a.apk
+          mv app-x86_64-release.apk Loftify-${{ steps.get_version.outputs.version }}-android-x86_64.apk
+
+      # Build Windows .zip
+      - name: Build Windows
+        if: matrix.target == 'Windows'
+        run: |
+          flutter build windows --release
+          $DestDir = "build\windows\outputs\Loftify-${{ steps.get_version.outputs.version }}-windows-x86_64"
+          $SrcDir = "build\windows\x64\runner\Release"
+          $dllDir = "tools\windows_dll"
+          
+          Copy-Item -Filter *.dll -Path $dllDir\* -Destination $SrcDir -Force
+          New-Item -Path $DestDir -ItemType Directory
+          Copy-Item $SrcDir\* -Recurse $DestDir
+          
+          Compress-Archive $DestDir build\windows\outputs\Loftify-${{ steps.get_version.outputs.version }}-windows-x86_64.zip
+          
+          (Get-Content tools/windows_tools/Loftify.iss) -replace '#define MyAppVersion ".*"', '#define MyAppVersion "${{ steps.get_version.outputs.version }}"' | Set-Content tools/windows_tools/Loftify.iss
+
+      # Build Windows .exe
+      - name: Build Windows Installer
+        if: matrix.target == 'Windows'
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.5
+        with:
+          path: tools/windows_tools/Loftify.iss
+
+      # Upload Artifacts
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_path }}
+
+  Publish:
+    if: startsWith(github.ref, 'refs/tags/')
+    name: Publish
+    needs: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Get app version
+        id: get_version
+        shell: bash
+        run: |
+          echo "version=$(head -n 2 pubspec.yaml | tail -n 1 | cut -d ' ' -f 2 | cut -d '+' -f 1)" >> $GITHUB_OUTPUT
+      - name: Make tmp dir
+        run: mkdir /tmp/artifacts
+      - name: Download all Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: /tmp/artifacts
+      - name: List and move all Artifacts
+        run: |
+          mkdir -p /tmp/artifacts/final
+          mv /tmp/artifacts/release-Android/*.apk /tmp/artifacts/final/
+          mv /tmp/artifacts/release-Windows/*.zip /tmp/artifacts/final/
+          mv /tmp/artifacts/release-Windows/*.exe /tmp/artifacts/final/
+
+          cd /tmp/artifacts/final
+          for file in *; do
+            if [ -f "$file" ]; then
+              sha1sum "$file" | awk '{ print $1 }' > "$file.sha1"
+            fi
+          done
+          ls -R /tmp/artifacts/final
+
+      - name: Upload to S3
+        uses: Robert-Stackflow/upload-s3-action@master
+        with:
+          endpoint: ${{ secrets.AWS_ENDPOINT }}
+          aws_key_id: ${{ secrets.AWS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
+          aws_bucket: ${{ secrets.AWS_BUCKET }}
+          source_dir: /tmp/artifacts/final
+          destination_dir: Loftify/${{ steps.get_version.outputs.version }}
+      - name: Upload to release
+        uses: Robert-Stackflow/release-action@master
+        with:
+          tag: ${{ github.ref_name }}
+          allowUpdates: true
+          generateReleaseNotes: true
+          artifacts: /tmp/artifacts/final/*
+          artifactErrorsFailBuild: true
+          replacesArtifacts: true
+          makeLatest: true
+          draft: true
+          updateOnlyUnreleased: true

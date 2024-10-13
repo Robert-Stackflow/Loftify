@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Loftify"
-#define MyAppVersion "1.12.0"
+#define MyAppVersion "2.4.2"
 #define MyAppPublisher "Cloudchewie"
 #define MyAppURL "https://apps.cloudchewie.com/loftify"
 #define MyAppExeName "Loftify.exe"
@@ -30,31 +30,36 @@ ArchitecturesAllowed=x64compatible
 ; the 64-bit view of the registry.
 ArchitecturesInstallIn64BitMode=x64compatible
 DisableProgramGroupPage=yes
-LicenseFile=D:\Repositories\Loftify\LICENSE
+LicenseFile=..\..\LICENSE
 ; Remove the following line to run in administrative install mode (install for all users.)
 PrivilegesRequiredOverridesAllowed=commandline
-OutputDir=D:\Ruida\Downloads\{#MyAppVersion}
-OutputBaseFilename={#MyAppName}-{#MyAppVersion}
-SetupIconFile=D:\Repositories\Loftify\assets\logo-transparent-big.ico
+OutputDir=..\..\build\windows\outputs
+OutputBaseFilename={#MyAppName}-{#MyAppVersion}-windows-x86_64
+SetupIconFile=..\..\assets\logo-transparent-big.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
 
 [Languages]
-Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
+Name: "chinesesimplified"; MessagesFile: "ChineseSimplified.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "D:\Repositories\Loftify\build\windows\x64\runner\Release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "D:\Repositories\Loftify\build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\..\build\windows\x64\runner\Release\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+
+[Registry]
+; Registry
+Root: HKLM; Subkey: "SOFTWARE\{#MyAppPublisher}\{#MyAppName}"; ValueType: string; ValueName: "InstallPath"; ValueData: "{app}"; Flags: uninsdeletekey
+Root: HKLM; Subkey: "SOFTWARE\{#MyAppPublisher}\{#MyAppName}"; ValueType: string; ValueName: "Version"; ValueData: "{#MyAppVersion}"; Flags: uninsdeletevalue
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent

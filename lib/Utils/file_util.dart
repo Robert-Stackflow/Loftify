@@ -1,8 +1,10 @@
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:ffi/ffi.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -19,6 +21,7 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:win32/win32.dart';
 
 import '../Models/Illust.dart';
 import '../Widgets/Dialog/custom_dialog.dart';
@@ -29,6 +32,8 @@ import 'ilogger.dart';
 import 'iprint.dart';
 import 'itoast.dart';
 import 'notification_util.dart';
+
+enum WindowsVersion { installed, portable }
 
 class FileUtil {
   static Future<FilePickerResult?> pickFiles({
@@ -633,39 +638,103 @@ class FileUtil {
 
   static Future<ReleaseAsset> getAndroidAsset(
       String latestVersion, ReleaseItem item) async {
-    List<ReleaseAsset> assets = item.assets
-        .where((element) =>
-            element.contentType == "application/vnd.android.package-archive" &&
-            element.name.endsWith(".apk"))
-        .toList();
-    ReleaseAsset generalAsset = assets.firstWhere(
-        (element) => element.name == "Loftify-$latestVersion.apk",
-        orElse: () => assets.first);
+    ReleaseAsset? resAsset;
+    List<ReleaseAsset> assets = item.assets.where((element) {
+      return ["application/vnd.android.package-archive", "raw"]
+              .contains(element.contentType) &&
+          element.name.endsWith(".apk");
+    }).toList();
+    ReleaseAsset generalAsset = assets.firstWhere((element) {
+      return [
+        'Loftify-$latestVersion.apk',
+        'Loftify-$latestVersion-android-universal.apk'
+      ].contains(element.name);
+    }, orElse: () => assets.first);
     try {
-      DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-      AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+      AndroidDeviceInfo androidInfo = await DeviceInfoPlugin().androidInfo;
       List<String> supportedAbis =
           androidInfo.supportedAbis.map((e) => e.toLowerCase()).toList();
       for (var asset in assets) {
         String abi =
             asset.name.split("Loftify-$latestVersion-").last.split(".").first;
-        if (supportedAbis.contains(abi.toLowerCase())) {
-          return asset;
+        for (var supportedAbi in supportedAbis) {
+          if (abi.toLowerCase().contains(supportedAbi)) {
+            resAsset = asset;
+            break;
+          }
         }
       }
     } finally {}
-    return generalAsset;
+    resAsset ??= generalAsset;
+    resAsset.pkgsDownloadUrl =
+        Utils.getDownloadUrl(latestVersion, resAsset.name);
+    return resAsset;
   }
 
-  static ReleaseAsset getWindowsPortableAsset(ReleaseItem item) {
-    return item.assets.firstWhere((element) =>
-        element.contentType == "application/x-zip-compressed" &&
-        element.name.endsWith(".zip"));
+  static WindowsVersion checkWindowsVersion() {
+    WindowsVersion tmp = WindowsVersion.portable;
+
+    final key = calloc<IntPtr>();
+    final installPathPtr = calloc<Uint16>(260);
+    final dataSize = calloc<Uint32>();
+    dataSize.value = 260 * 2;
+
+    final result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, TEXT(windowsKeyPath), 0,
+        REG_SAM_FLAGS.KEY_READ, key);
+    if (result == WIN32_ERROR.ERROR_SUCCESS) {
+      final queryResult = RegQueryValueEx(key.value, TEXT('InstallPath'),
+          nullptr, nullptr, installPathPtr.cast(), dataSize);
+
+      if (queryResult == WIN32_ERROR.ERROR_SUCCESS) {
+        final currentPath = Platform.resolvedExecutable;
+        final installPath =
+            "${installPathPtr.cast<Utf16>().toDartString()}\\Loftify.exe";
+        ILogger.info("Loftify",
+            "Get install path: $installPath and current path: $currentPath");
+        tmp = installPath == currentPath
+            ? WindowsVersion.installed
+            : WindowsVersion.portable;
+      } else {
+        tmp = WindowsVersion.portable;
+      }
+    }
+    RegCloseKey(key.value);
+    calloc.free(key);
+    calloc.free(installPathPtr);
+    calloc.free(dataSize);
+    return tmp;
   }
 
-  static ReleaseAsset getWindowsInstallerAsset(ReleaseItem item) {
-    return item.assets.firstWhere((element) =>
-        element.contentType == "application/x-msdownload" &&
-        element.name.endsWith(".exe"));
+  static ReleaseAsset getWindowsAsset(String latestVersion, ReleaseItem item) {
+    final windowsVersion = FileUtil.checkWindowsVersion();
+    if (windowsVersion == WindowsVersion.installed) {
+      return getWindowsInstallerAsset(latestVersion, item);
+    } else {
+      return getWindowsPortableAsset(latestVersion, item);
+    }
+  }
+
+  static ReleaseAsset getWindowsPortableAsset(
+      String latestVersion, ReleaseItem item) {
+    var asset = item.assets.firstWhere((element) {
+      return ["application/zip", "application/x-zip-compressed", "raw"]
+              .contains(element.contentType) &&
+          element.name.contains("windows") &&
+          element.name.endsWith(".zip");
+    });
+    asset.pkgsDownloadUrl = Utils.getDownloadUrl(latestVersion, asset.name);
+    return asset;
+  }
+
+  static ReleaseAsset getWindowsInstallerAsset(
+      String latestVersion, ReleaseItem item) {
+    var asset = item.assets.firstWhere((element) {
+      return ["application/x-msdownload", "application/x-msdos-program", "raw"]
+              .contains(element.contentType) &&
+          element.name.contains("windows") &&
+          element.name.endsWith(".exe");
+    });
+    asset.pkgsDownloadUrl = Utils.getDownloadUrl(latestVersion, asset.name);
+    return asset;
   }
 }
