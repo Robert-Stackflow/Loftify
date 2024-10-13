@@ -68,6 +68,7 @@ dependencies:
   process_run: ^1.0.0+1 # 运行
   # 工具
   intl:
+  intl_utils: ^2.8.7
   html: ^0.15.0
   tuple: ^2.0.0 # 元组
   crypto: ^3.0.3 # 加密
