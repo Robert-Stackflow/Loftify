@@ -10,7 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:loftify/Models/Illust.dart';
+import 'package:loftify/Models/illust.dart';
 import 'package:loftify/Models/github_response.dart';
 import 'package:loftify/Screens/Setting/update_screen.dart';
 import 'package:loftify/Utils/enums.dart';

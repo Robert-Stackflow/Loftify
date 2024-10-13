@@ -8,7 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_resizable_container/flutter_resizable_container.dart';
 import 'package:loftify/Api/post_api.dart';
 import 'package:loftify/Api/user_api.dart';
-import 'package:loftify/Models/Illust.dart';
+import 'package:loftify/Models/illust.dart';
 import 'package:loftify/Models/grain_response.dart';
 import 'package:loftify/Models/message_response.dart';
 import 'package:loftify/Models/post_detail_response.dart';

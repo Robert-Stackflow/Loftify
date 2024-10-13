@@ -23,7 +23,7 @@ import 'package:loftify/Widgets/PostItem/general_post_item_builder.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:video_player/video_player.dart';
 
-import '../../Models/Illust.dart';
+import '../../Models/illust.dart';
 import '../../Resources/colors.dart';
 import '../../Resources/theme.dart';
 import '../../Utils/constant.dart';

@@ -17,7 +17,7 @@ import 'package:window_manager/window_manager.dart';
 
 import '../../Api/post_api.dart';
 import '../../Api/user_api.dart';
-import '../../Models/Illust.dart';
+import '../../Models/illust.dart';
 import '../../Models/collection_response.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Models/user_response.dart';

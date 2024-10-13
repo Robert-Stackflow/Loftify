@@ -23,7 +23,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:win32/win32.dart';
 
-import '../Models/Illust.dart';
+import '../Models/illust.dart';
 import '../Widgets/Dialog/custom_dialog.dart';
 import '../Widgets/Item/item_builder.dart';
 import '../generated/l10n.dart';
