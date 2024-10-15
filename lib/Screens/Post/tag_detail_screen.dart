@@ -12,6 +12,7 @@ import 'package:loftify/Screens/Post/tag_insearch_screen.dart';
 import 'package:loftify/Screens/Post/tag_related_screen.dart';
 import 'package:loftify/Utils/asset_util.dart';
 import 'package:loftify/Utils/enums.dart';
+import 'package:loftify/Utils/ilogger.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/route_util.dart';
 import 'package:tuple/tuple.dart';
@@ -121,8 +122,9 @@ class _TagDetailScreenState extends State<TagDetailScreen>
           }
           if (mounted) setState(() {});
         }
-      } catch (_) {
+      } catch (e, t) {
         IToast.showTop("加载失败");
+        ILogger.error("Failed to load tag", e, t);
       }
     });
   }
@@ -752,7 +754,8 @@ class RecommendTabState extends State<RecommendTab>
             return IndicatorResult.success;
           }
         }
-      } catch (_) {
+      } catch (e,t) {
+        ILogger.error("Failed to load tag recommend result list", e, t);
         IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
@@ -891,8 +894,8 @@ class HottestTabState extends State<HottestTab>
             return IndicatorResult.success;
           }
         }
-      } catch (_) {
-        IToast.showTop("加载失败");
+      } catch (e,t) {
+        ILogger.error("Failed to load tag hottest result list", e, t);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -1030,7 +1033,8 @@ class NewestTabState extends State<NewestTab>
             return IndicatorResult.success;
           }
         }
-      } catch (_) {
+      } catch (e,t) {
+        ILogger.error("Failed to load tag newest result list", e, t);
         IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {

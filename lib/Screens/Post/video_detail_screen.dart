@@ -27,6 +27,7 @@ import '../../Models/illust.dart';
 import '../../Resources/colors.dart';
 import '../../Resources/theme.dart';
 import '../../Utils/constant.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
@@ -105,7 +106,6 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
 
   @override
   void didPushNext() {
-    IPrint.debug("push");
   }
 
   @override
@@ -218,7 +218,8 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
           }
           setState(() {});
         }
-      } catch (e) {
+      } catch (e,t) {
+        ILogger.error("Failed to load video detail", e, t);
         if (mounted) IToast.showTop("加载失败");
       }
       if (mounted) setState(() {});

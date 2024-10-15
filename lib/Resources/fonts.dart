@@ -157,8 +157,8 @@ class CustomFont {
       FontUtil.file(filepath: newPath, fontFamily: fontFamily).load();
       return CustomFont(
           fontName: fontName, fontFamily: fontFamily, fontUrl: fileName);
-    } catch (e) {
-      ILogger.error("Failed to copy font file", e);
+    } catch (e,t) {
+      ILogger.error("Failed to copy font file", e,t);
       return null;
     }
   }

@@ -8,6 +8,7 @@ import 'package:loftify/Utils/asset_util.dart';
 
 import '../../Models/history_response.dart';
 import '../../Resources/theme.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
@@ -133,7 +134,8 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
             return IndicatorResult.success;
           }
         }
-      } catch (e) {
+      } catch (e,t) {
+        ILogger.error("Failed to load collection detail list", e, t);
         if (mounted) IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {

@@ -15,6 +15,7 @@ import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../Utils/hive_util.dart';
+import '../../Utils/ilogger.dart';
 
 class PinChangeScreen extends StatefulWidget {
   const PinChangeScreen({super.key});
@@ -85,16 +86,16 @@ class PinChangeScreenState extends State<PinChangeScreen> {
           _gestureUnlockView.currentState?.updateStatus(UnlockStatus.normal);
         }
       });
-    } on PlatformException catch (e) {
+    } on PlatformException catch (e,t) {
       if (e.code == auth_error.notAvailable) {
-        IPrint.debug("not avaliable");
+        ILogger.error("not avaliable",e,t);
       } else if (e.code == auth_error.notEnrolled) {
-        IPrint.debug("not enrolled");
+        ILogger.error("not enrolled",e,t);
       } else if (e.code == auth_error.lockedOut ||
           e.code == auth_error.permanentlyLockedOut) {
-        IPrint.debug("locked out");
+        ILogger.error("locked out",e,t);
       } else {
-        IPrint.debug("other reason:$e");
+        ILogger.error("other reason:$e",e,t);
       }
     }
   }

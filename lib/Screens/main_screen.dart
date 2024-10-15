@@ -28,6 +28,7 @@ import '../Resources/fonts.dart';
 import '../Utils/app_provider.dart';
 import '../Utils/enums.dart';
 import '../Utils/hive_util.dart';
+import '../Utils/ilogger.dart';
 import '../Utils/iprint.dart';
 import '../Utils/itoast.dart';
 import '../Utils/lottie_util.dart';
@@ -155,7 +156,8 @@ class MainScreenState extends State<MainScreen>
             });
             return IndicatorResult.success;
           }
-        } catch (_) {
+        } catch (e,t) {
+          ILogger.error("Failed to load user info", e, t);
           if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
         } finally {}
@@ -171,7 +173,7 @@ class MainScreenState extends State<MainScreen>
         UriUtil.processUrl(context, uri.toString(), pass: false);
       }
     }, onError: (Object err) {
-      IPrint.debug('Failed to get URI: $err');
+      ILogger.error('Failed to get URI: $err');
     });
   }
 

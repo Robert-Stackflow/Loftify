@@ -8,6 +8,7 @@ import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Api/post_api.dart';
 import '../../Utils/enums.dart';
+import '../../Utils/ilogger.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
@@ -84,7 +85,8 @@ class _TagRelatedScreenState extends State<TagRelatedScreen>
             return IndicatorResult.success;
           }
         }
-      } catch (_) {
+      } catch (e,t) {
+        ILogger.error("Failed to load tag related tag post result list", e, t);
         IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {

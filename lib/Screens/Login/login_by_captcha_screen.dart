@@ -61,7 +61,6 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
   }
 
   void _fetchCaptchaCode() {
-    IPrint.debug("text");
     String mobile = _mobileController.text;
     String captcha = _captchaController.text;
     if (mobile.isEmpty) {

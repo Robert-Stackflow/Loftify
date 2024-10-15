@@ -9,6 +9,7 @@ import 'package:loftify/Utils/hive_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Utils/enums.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Widgets/Custom/hero_photo_view_screen.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
@@ -70,7 +71,8 @@ class _DressDetailScreenState extends State<DressDetailScreen>
           if (mounted) setState(() {});
           return IndicatorResult.success;
         }
-      } catch (e) {
+      } catch (e,t) {
+        ILogger.error("Failed to load dress detail", e, t);
         if (mounted) IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {

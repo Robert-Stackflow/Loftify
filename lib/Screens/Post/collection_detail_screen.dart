@@ -15,6 +15,7 @@ import '../../Models/post_detail_response.dart';
 import '../../Models/recommend_response.dart';
 import '../../Utils/asset_util.dart';
 import '../../Utils/enums.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/uri_util.dart';
@@ -71,7 +72,8 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
             collectionUrl = value['data']['collectionLink'];
           }
         }
-      } catch (e) {
+      } catch (e,t) {
+        ILogger.error("Failed to load collection url", e, t);
         if (mounted) IToast.showTop("获取链接失败");
         return IndicatorResult.fail;
       }
@@ -139,7 +141,8 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
             return IndicatorResult.success;
           }
         }
-      } catch (e) {
+      } catch (e,t) {
+        ILogger.error("Failed to load collection detail", e, t);
         if (mounted) IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {

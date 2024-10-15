@@ -19,6 +19,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../../Utils/constant.dart';
+import '../../../Utils/ilogger.dart';
 import 'drag_and_drop_builder_parameters.dart';
 import 'drag_and_drop_item.dart';
 import 'drag_and_drop_item_target.dart';
@@ -751,7 +752,9 @@ class DragAndDropListsState extends State<DragAndDropLists> {
                 _scrollListHorizontalRtl(topLeftOffset, bottomRightOffset);
           }
         }
-      } catch (_) {}
+      } catch (e,t) {
+        ILogger.error("Failed to drag and drop", e, t);
+      }
 
       if (newOffset != null) {
         _scrolling = true;

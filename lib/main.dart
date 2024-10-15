@@ -51,6 +51,7 @@ import 'Screens/Navigation/home_screen.dart';
 import 'Screens/Setting/about_setting_screen.dart';
 import 'Screens/main_screen.dart';
 import 'Utils/constant.dart';
+import 'Utils/ilogger.dart';
 import 'Utils/notification_util.dart';
 import 'Utils/responsive_util.dart';
 import 'generated/l10n.dart';
@@ -161,7 +162,7 @@ Future<void> initDisplayMode() async {
 Future<void> onError(FlutterErrorDetails details) async {
   File errorFile = File(join(await FileUtil.getLogDir(), "error.log"));
   if (!errorFile.existsSync()) errorFile.createSync();
-  errorFile.writeAsStringSync(details.toString(), mode: FileMode.append);
+  errorFile.writeAsStringSync(details.toDiagnosticsNode().toStringDeep(), mode: FileMode.append);
   if (details.stack != null) {
     Zone.current.handleUncaughtError(details.exception, details.stack!);
   }
@@ -213,7 +214,8 @@ class MyApp extends StatelessWidget {
             } else {
               try {
                 return Localizations.localeOf(context);
-              } catch (_) {
+              } catch (e,t) {
+                ILogger.error("Failed to load locale", e, t);
                 return const Locale("en", "US");
               }
             }

@@ -1,6 +1,7 @@
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Utils/iprint.dart';
 
+import '../Utils/ilogger.dart';
 import '../Utils/utils.dart';
 import 'account_response.dart';
 
@@ -286,8 +287,8 @@ class PostDetail {
     if (Utils.isNotEmpty(embed)) {
       try {
         videoInfo = VideoInfo.fromJson(Utils.parseJson(embed ?? "{}"));
-      } catch (e, s) {
-        IPrint.debug(s);
+      } catch (e,t) {
+        ILogger.error("Failed to init videoInfo from $embed", e, t);
       }
     }
   }

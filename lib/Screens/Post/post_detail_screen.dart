@@ -8,8 +8,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_resizable_container/flutter_resizable_container.dart';
 import 'package:loftify/Api/post_api.dart';
 import 'package:loftify/Api/user_api.dart';
-import 'package:loftify/Models/illust.dart';
 import 'package:loftify/Models/grain_response.dart';
+import 'package:loftify/Models/illust.dart';
 import 'package:loftify/Models/message_response.dart';
 import 'package:loftify/Models/post_detail_response.dart';
 import 'package:loftify/Models/recommend_response.dart';
@@ -121,6 +121,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   late dynamic downloadIcon;
   DownloadState downloadState = DownloadState.none;
   bool isArticle = false;
+  InitPhase _inited = InitPhase.haveNotConnected;
 
   @override
   void initState() {
@@ -136,10 +137,10 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     super.initState();
     setDownloadState(DownloadState.none, recover: false);
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-      Future.delayed(const Duration(milliseconds: 300), initLottie);
+      Future.delayed(const Duration(milliseconds: 500), initLottie);
       initLottie();
       if (isArticle) {
-        Future.delayed(const Duration(milliseconds: 300), initData);
+        Future.delayed(const Duration(milliseconds: 500), initData);
       } else {
         initData();
       }
@@ -177,49 +178,56 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   initData() {
+    _inited = InitPhase.connecting;
+    setState(() {});
     _initParams();
     _fetchPostDetail();
     _fetchRecommendPosts();
-    return Future(() => null);
+    setState(() {});
   }
 
   _initParams() {
-    if (widget.postItem != null) {
-      postId = widget.postItem!.postData!.postView.id;
-      blogId = widget.postItem!.blogInfo!.blogId;
-      blogName = widget.postItem!.blogInfo!.blogName;
-    } else if (widget.showCaseItem != null) {
-      postId = widget.showCaseItem!.itemId;
-      blogId = widget.showCaseItem!.postSimpleData!.postView.blogId;
-      blogName = widget.showCaseItem!.postSimpleData!.postView.blogName;
-    } else if (widget.postDetailData != null) {
-      postId = widget.postDetailData!.post!.id;
-      blogId = widget.postDetailData!.post!.blogId;
-      blogName = widget.postDetailData!.post!.blogInfo!.blogName;
-    } else if (widget.simpleMessagePost != null) {
-      postId = widget.simpleMessagePost!.postId;
-      blogId = widget.simpleMessagePost!.blogId;
-      blogName = widget.simpleMessagePost!.blogName;
-    } else if (widget.favoritePostDetailData != null) {
-      postId = widget.favoritePostDetailData!.post!.id;
-      blogId = widget.favoritePostDetailData!.post!.blogId;
-      blogName = widget.favoritePostDetailData!.postData!.blogInfo.blogName;
-    } else if (widget.meta != null) {
-      postId = Utils.hexToInt(widget.meta!['postId']!);
-      blogId = Utils.hexToInt(widget.meta!['blogId']!);
-      blogName = widget.meta!['blogName']!;
-    } else if (widget.searchPost != null) {
-      postId = widget.searchPost!.id;
-      blogId = widget.searchPost!.blogId;
-      blogName = widget.searchPost!.blogInfo.blogName;
-    } else if (widget.grainPostItem != null) {
-      postId = widget.grainPostItem!.postData.postView.id;
-      blogId = widget.grainPostItem!.postData.postView.blogId;
-      blogName = widget.grainPostItem!.postData.blogInfo.blogName;
-    } else if (widget.generalPostItem != null) {
-      postId = widget.generalPostItem!.postId;
-      blogId = widget.generalPostItem!.blogId;
-      blogName = widget.generalPostItem!.blogName;
+    try {
+      if (widget.postItem != null) {
+        postId = widget.postItem!.postData!.postView.id;
+        blogId = widget.postItem!.blogInfo!.blogId;
+        blogName = widget.postItem!.blogInfo!.blogName;
+      } else if (widget.showCaseItem != null) {
+        postId = widget.showCaseItem!.itemId;
+        blogId = widget.showCaseItem!.postSimpleData!.postView.blogId;
+        blogName = widget.showCaseItem!.postSimpleData!.postView.blogName;
+      } else if (widget.postDetailData != null) {
+        postId = widget.postDetailData!.post!.id;
+        blogId = widget.postDetailData!.post!.blogId;
+        blogName = widget.postDetailData!.post!.blogInfo!.blogName;
+      } else if (widget.simpleMessagePost != null) {
+        postId = widget.simpleMessagePost!.postId;
+        blogId = widget.simpleMessagePost!.blogId;
+        blogName = widget.simpleMessagePost!.blogName;
+      } else if (widget.favoritePostDetailData != null) {
+        postId = widget.favoritePostDetailData!.post!.id;
+        blogId = widget.favoritePostDetailData!.post!.blogId;
+        blogName = widget.favoritePostDetailData!.postData!.blogInfo.blogName;
+      } else if (widget.meta != null) {
+        postId = Utils.hexToInt(widget.meta!['postId']!);
+        blogId = Utils.hexToInt(widget.meta!['blogId']!);
+        blogName = widget.meta!['blogName']!;
+      } else if (widget.searchPost != null) {
+        postId = widget.searchPost!.id;
+        blogId = widget.searchPost!.blogId;
+        blogName = widget.searchPost!.blogInfo.blogName;
+      } else if (widget.grainPostItem != null) {
+        postId = widget.grainPostItem!.postData.postView.id;
+        blogId = widget.grainPostItem!.postData.postView.blogId;
+        blogName = widget.grainPostItem!.postData.blogInfo.blogName;
+      } else if (widget.generalPostItem != null) {
+        postId = widget.generalPostItem!.postId;
+        blogId = widget.generalPostItem!.blogId;
+        blogName = widget.generalPostItem!.blogName;
+      }
+    } catch (e, t) {
+      _inited = InitPhase.failed;
+      ILogger.error("Failed to init param", e, t);
     }
   }
 
@@ -241,29 +249,38 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   _fetchPostDetail() async {
     if (_loadingInfo) return;
     _loadingInfo = true;
-    var t1 = await PostApi.getDetail(
-      postId: postId,
-      blogId: blogId,
-      blogName: blogName,
-    ).then((value) {
-      if (value['meta']['status'] != 200) {
-        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-        return IndicatorResult.fail;
-      } else {
-        _postDetailData =
-            PostDetailData.fromJson(value['response']['posts'][0]);
-        _updateMeta(swipeToFirst: false);
-        if (mounted) setState(() {});
-        _uploadHistory();
-        return IndicatorResult.success;
-      }
-    });
-    var t2 = await _fetchGift();
-    await _fetchHotComments();
-    _loadingInfo = false;
-    return t1 == IndicatorResult.success && t2 == IndicatorResult.success
-        ? IndicatorResult.success
-        : IndicatorResult.fail;
+    try {
+      var t1 = await PostApi.getDetail(
+        postId: postId,
+        blogId: blogId,
+        blogName: blogName,
+      ).then((value) {
+        if (value['meta']['status'] != 200) {
+          IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+          return IndicatorResult.fail;
+        } else {
+          _postDetailData =
+              PostDetailData.fromJson(value['response']['posts'][0]);
+          _updateMeta(swipeToFirst: false);
+          if (mounted) setState(() {});
+          _uploadHistory();
+          return IndicatorResult.success;
+        }
+      });
+      var t2 = await _fetchGift();
+      await _fetchHotComments();
+      _inited = InitPhase.successful;
+      return t1 == IndicatorResult.success && t2 == IndicatorResult.success
+          ? IndicatorResult.success
+          : IndicatorResult.fail;
+    } catch (e, t) {
+      _inited = InitPhase.failed;
+      ILogger.error("Failed to fetch post detail", e, t);
+      return IndicatorResult.fail;
+    } finally {
+      _loadingInfo = false;
+      if (mounted) setState(() {});
+    }
   }
 
   _fetchGift() async {
@@ -429,6 +446,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   _updateMeta({bool swipeToFirst = true}) {
+    if (_postDetailData == null) return;
     setState(() {
       isArticle = _postDetailData!.post!.type == 1;
     });
@@ -500,59 +518,74 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     );
   }
 
-  Widget _buildBody() {
+  _buildBody() {
+    switch (_inited) {
+      case InitPhase.connecting:
+      case InitPhase.haveNotConnected:
+        return ItemBuilder.buildLoadingDialog(
+          context,
+          background: MyTheme.getBackground(context),
+        );
+      case InitPhase.successful:
+        if (_postDetailData != null) {
+          return _buildNormalBody();
+        } else {
+          return ItemBuilder.buildError(
+            context: context,
+            onTap: initData,
+          );
+        }
+      case InitPhase.failed:
+        return ItemBuilder.buildError(
+          context: context,
+          onTap: initData,
+        );
+    }
+  }
+
+  Widget _buildNormalBody() {
     return ScreenTypeLayout.builder(
       mobile: (context) => EasyRefresh.builder(
         onRefresh: _onRefresh,
         onLoad: _onLoad,
         triggerAxis: Axis.vertical,
-        childBuilder: (context, physics) => _postDetailData != null
-            ? Stack(
-                children: [
-                  AbsorbPointer(
-                    absorbing: false,
-                    child: _buildMainBody(physics),
-                  ),
-                  Visibility(
-                    visible: _showDoubleTapLike,
-                    child: Positioned(
-                      left: doubleTapDx,
-                      top: doubleTapDy,
-                      child: IgnorePointer(
-                        child: doubleTapLikeWidget,
-                      ),
-                    ),
-                  ),
-                ],
-              )
-            : ItemBuilder.buildLoadingDialog(
-                context,
-                background: MyTheme.getBackground(context),
-              ),
-      ),
-      tablet: (context) => _postDetailData != null
-          ? Stack(
-              children: [
-                AbsorbPointer(
-                  absorbing: false,
-                  child: _buildMainBody(const ScrollPhysics()),
-                ),
-                Visibility(
-                  visible: _showDoubleTapLike,
-                  child: Positioned(
-                    left: doubleTapDx,
-                    top: doubleTapDy,
-                    child: IgnorePointer(
-                      child: doubleTapLikeWidget,
-                    ),
-                  ),
-                ),
-              ],
-            )
-          : ItemBuilder.buildLoadingDialog(
-              context,
-              background: MyTheme.getBackground(context),
+        childBuilder: (context, physics) => Stack(
+          children: [
+            AbsorbPointer(
+              absorbing: false,
+              child: _buildMainBody(physics),
             ),
+            Visibility(
+              visible: _showDoubleTapLike,
+              child: Positioned(
+                left: doubleTapDx,
+                top: doubleTapDy,
+                child: IgnorePointer(
+                  child: doubleTapLikeWidget,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      tablet: (context) => Stack(
+        children: [
+          AbsorbPointer(
+            absorbing: false,
+            child: _buildMainBody(const ScrollPhysics()),
+          ),
+          Visibility(
+            visible: _showDoubleTapLike,
+            child: Positioned(
+              left: doubleTapDx,
+              top: doubleTapDy,
+              child: IgnorePointer(
+                child: doubleTapLikeWidget,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -10,6 +10,7 @@ import 'package:tuple/tuple.dart';
 
 import '../../Models/post_detail_response.dart';
 import '../../Utils/enums.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
@@ -124,7 +125,8 @@ class _LikeScreenState extends State<LikeScreen>
               return IndicatorResult.success;
             }
           }
-        } catch (e) {
+        } catch (e,t) {
+          ILogger.error("Failed to load like list", e, t);
           if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
         } finally {

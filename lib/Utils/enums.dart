@@ -162,3 +162,10 @@ enum FilenameField {
   final String label;
   final String description;
 }
+
+enum InitPhase {
+  haveNotConnected,
+  connecting,
+  successful,
+  failed;
+}

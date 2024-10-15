@@ -6,6 +6,7 @@ import 'package:loftify/Utils/route_util.dart';
 
 import '../../Api/setting_api.dart';
 import '../../Resources/theme.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Widgets/Dialog/custom_dialog.dart';
 import '../../Widgets/Dialog/dialog_builder.dart';
@@ -52,7 +53,8 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
           }
           return IndicatorResult.success;
         }
-      } catch (_) {
+      } catch (e,t) {
+        ILogger.error("Failed to load blacklist", e, t);
         IToast.showTop("黑名单加载失败");
         return IndicatorResult.fail;
       } finally {

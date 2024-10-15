@@ -9,6 +9,7 @@ import '../../Resources/theme.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/hive_util.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
@@ -101,7 +102,8 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
               return IndicatorResult.success;
             }
           }
-        } catch (e) {
+        } catch (e,t) {
+          ILogger.error("Failed to load folder detail", e, t);
           if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
         } finally {

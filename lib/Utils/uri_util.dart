@@ -17,7 +17,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../Screens/Info/user_detail_screen.dart';
 import '../Screens/Post/post_detail_screen.dart';
 import '../Widgets/Dialog/custom_dialog.dart';
-import 'iprint.dart';
+import 'ilogger.dart';
 
 class UriUtil {
   static String? encodeQueryParameters(Map<String, String> params) {
@@ -43,7 +43,8 @@ class UriUtil {
       )) {
         Clipboard.setData(ClipboardData(text: email));
       }
-    } on PlatformException catch (_) {
+    } on PlatformException catch (e, t) {
+      ILogger.error("Failed to load email application", e, t);
       IToast.showTop("尚未安装邮箱程序，已复制Email地址到剪贴板");
     }
     return true;
@@ -330,12 +331,13 @@ class UriUtil {
             }
           } else {
             IToast.showTop("不支持的URI：$url");
-            IPrint.debug("不支持的URI：$url");
+            ILogger.info("不支持的URI：$url");
           }
         }
         return false;
       }
-    } catch (e) {
+    } catch (e, t) {
+      ILogger.error("Failed to resolve url $url", e, t);
       if (!quiet) await CustomLoadingDialog.dismissLoading();
       if (!quiet) Share.share(url);
       return false;

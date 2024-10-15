@@ -15,7 +15,6 @@ import '../../Utils/constant.dart';
 import '../../Utils/request_util.dart';
 import '../../Utils/route_util.dart';
 import '../../Widgets/Item/item_builder.dart';
-import 'login_by_mail_screen.dart';
 
 class LoginByLofterIDScreen extends StatefulWidget {
   const LoginByLofterIDScreen({super.key, this.initPassword});
@@ -50,9 +49,9 @@ class _LoginByLofterIDScreenState extends State<LoginByLofterIDScreen>
       return;
     }
     LoginApi.loginByLofterID(lofterID, password).then((value) async {
-      try{
+      try {
         LoginLofterIDResponse loginResponse =
-        LoginLofterIDResponse.fromJson(value);
+            LoginLofterIDResponse.fromJson(value);
         if (loginResponse.status != 200) {
           IToast.showTop(loginResponse.desc);
         } else {
@@ -64,8 +63,8 @@ class _LoginByLofterIDScreenState extends State<LoginByLofterIDScreen>
           await HiveUtil.put(HiveUtil.tokenTypeKey, TokenType.lofterID.index);
           ResponsiveUtil.returnToMainScreen(context);
         }
-      }catch(e,t){
-        ILogger.error( "Failed to login by LofterID", e, t);
+      } catch (e, t) {
+        ILogger.error("Failed to login by LofterID", e, t);
       }
     });
   }

@@ -10,6 +10,7 @@ import 'package:loftify/Utils/utils.dart';
 import '../Models/nav_entry.dart';
 import '../Resources/fonts.dart';
 import 'constant.dart';
+import 'ilogger.dart';
 
 class HiveUtil {
   //Database
@@ -119,8 +120,9 @@ class HiveUtil {
   }
 
   static Size getWindowSize() {
-    if (!HiveUtil.getBool(HiveUtil.recordWindowStateKey))
+    if (!HiveUtil.getBool(HiveUtil.recordWindowStateKey)) {
       return defaultWindowSize;
+    }
     String? size = HiveUtil.getString(HiveUtil.windowSizeKey);
     if (size == null || size.isEmpty) {
       return defaultWindowSize;
@@ -128,7 +130,8 @@ class HiveUtil {
     try {
       List<String> list = size.split(",");
       return Size(double.parse(list[0]), double.parse(list[1]));
-    } catch (e) {
+    } catch (e,t) {
+      ILogger.error("Failed to get window size", e, t);
       return defaultWindowSize;
     }
   }
@@ -146,7 +149,8 @@ class HiveUtil {
     try {
       List<String> list = position.split(",");
       return Offset(double.parse(list[0]), double.parse(list[1]));
-    } catch (e) {
+    } catch (e,t) {
+      ILogger.error("Failed to get window position", e, t);
       return Offset.zero;
     }
   }

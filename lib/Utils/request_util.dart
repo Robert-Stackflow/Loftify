@@ -207,6 +207,7 @@ class RequestUtil {
     }
     list["Content-Length"] = response.requestOptions.headers['Content-Length'];
     list["Content-Type"] = response.requestOptions.contentType;
+    list['Headers'] = response.requestOptions.headers;
     if (response.requestOptions.headers['authorization'] != null) {
       list['Authorization'] =
           response.requestOptions.headers['authorization'] != null ? "有" : "无";
@@ -275,19 +276,19 @@ class RequestUtil {
 
   void _printError(DioException e, [StackTrace? t]) {
     String info =
-        '[${e.requestOptions.method}] [${e.requestOptions.uri}] [${e.requestOptions.headers}] [${e.requestOptions.data}] [${e.response?.statusCode}] [${e.response?.data}] [$t]';
+        '[${e.requestOptions.method}] [${e.requestOptions.uri}] [${e.requestOptions.headers}] [${e.requestOptions.data}] [${e.response?.statusCode}] [${e.response?.data}]';
     if (e.type == DioExceptionType.connectionTimeout) {
-      ILogger.error("DioException", "$info: 连接超时");
+      ILogger.error("DioException", "$info: 连接超时", t);
     } else if (e.type == DioExceptionType.sendTimeout) {
-      ILogger.error("DioException", "$info: 请求超时");
+      ILogger.error("DioException", "$info: 请求超时", t);
     } else if (e.type == DioExceptionType.receiveTimeout) {
-      ILogger.error("DioException", "$info: 响应超时");
+      ILogger.error("DioException", "$info: 响应超时", t);
     } else if (e.type == DioExceptionType.badResponse) {
-      ILogger.error("DioException", "$info: 出现异常");
+      ILogger.error("DioException", "$info: 出现异常", t);
     } else if (e.type == DioExceptionType.cancel) {
-      ILogger.error("DioException", "$info: 请求取消");
+      ILogger.error("DioException", "$info: 请求取消", t);
     } else {
-      ILogger.error("DioException", "$info: $e");
+      ILogger.error("DioException", "$info: $e", t);
     }
   }
 }

@@ -335,8 +335,8 @@ class FileUtil {
               UriUtil.openExternal(htmlUrl);
             }
           });
-        } catch (e) {
-          IPrint.debug(e);
+        } catch (e,t) {
+          ILogger.error("Failed to download",e,t);
           NotificationUtil.closeNotification(0);
           NotificationUtil.sendInfoNotification(
             2,
@@ -453,7 +453,8 @@ class FileUtil {
           return false;
         }
       }
-    } catch (e) {
+    } catch (e,t) {
+      ILogger.error("Failed to save", e, t);
       if (e is PathNotFoundException) {
         IToast.showTop("保存路径不存在");
       }
@@ -485,7 +486,8 @@ class FileUtil {
         }
       }
       return result;
-    } catch (e) {
+    } catch (e,t) {
+      ILogger.error("Failed to save", e, t);
       IToast.showTop("保存失败，请重试");
       return false;
     }
@@ -541,7 +543,8 @@ class FileUtil {
         }
       }
       return result;
-    } catch (e) {
+    } catch (e,t) {
+      ILogger.error("Failed to save", e, t);
       IToast.showTop("保存失败，请重试");
       return false;
     }
@@ -627,7 +630,8 @@ class FileUtil {
           return false;
         }
       }
-    } catch (e) {
+    } catch (e,t) {
+      ILogger.error("Failed to save", e, t);
       if (e is PathNotFoundException) {
         IToast.showTop("保存路径不存在");
       }

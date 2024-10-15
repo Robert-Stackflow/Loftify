@@ -4,6 +4,7 @@ import 'package:loftify/Models/recommend_response.dart';
 import '../../Api/setting_api.dart';
 import '../../Api/user_api.dart';
 import '../../Resources/theme.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Widgets/Dialog/custom_dialog.dart';
@@ -47,7 +48,8 @@ class _UserDynamicShieldSettingScreenState
           shieldList.addAll(tmp);
           return IndicatorResult.success;
         }
-      } catch (_) {
+      } catch (e,t) {
+        ILogger.error("Failed to load user dynamic shield list", e, t);
         IToast.showTop("不看TA的动态列表加载失败");
         return IndicatorResult.fail;
       } finally {

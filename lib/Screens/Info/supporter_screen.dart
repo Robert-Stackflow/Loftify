@@ -10,6 +10,7 @@ import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Models/user_response.dart';
 import '../../Utils/enums.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
@@ -88,7 +89,8 @@ class _SupporterScreenState extends State<SupporterScreen>
               return IndicatorResult.noMore;
             }
           }
-        } catch (e) {
+        } catch (e,t) {
+          ILogger.error("Failed to load supporter list", e, t);
           if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
         } finally {

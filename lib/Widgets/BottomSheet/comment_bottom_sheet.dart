@@ -4,6 +4,7 @@ import 'package:loftify/Models/post_detail_response.dart';
 
 import '../../Api/post_api.dart';
 import '../../Resources/theme.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../Custom/sliver_appbar_delegate.dart';
@@ -69,7 +70,8 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
           }
           return IndicatorResult.success;
         }
-      } catch (_) {
+      } catch (e,t) {
+        ILogger.error("Failed to load newest comments", e, t);
         IToast.showTop("最新评论加载失败");
         return IndicatorResult.fail;
       } finally {
@@ -102,7 +104,8 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
           }
           return IndicatorResult.success;
         }
-      } catch (_) {
+      } catch (e,t) {
+        ILogger.error("Failed to load comment reply", e, t);
         IToast.showTop("回复加载失败");
         return IndicatorResult.fail;
       } finally {

@@ -9,6 +9,7 @@ import 'package:loftify/Utils/route_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Utils/enums.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/Custom/custom_tab_indicator.dart';
 import '../../Widgets/Custom/sliver_appbar_delegate.dart';
@@ -234,7 +235,8 @@ class CollectionTabState extends State<CollectionTab>
             return IndicatorResult.success;
           }
         }
-      } catch (_) {
+      } catch (e,t) {
+        ILogger.error("Failed to load tag collection list", e, t);
         IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {
@@ -611,7 +613,8 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
             return IndicatorResult.success;
           }
         }
-      } catch (_) {
+      } catch (e,t) {
+        ILogger.error("Failed to load tag grain list", e, t);
         IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {

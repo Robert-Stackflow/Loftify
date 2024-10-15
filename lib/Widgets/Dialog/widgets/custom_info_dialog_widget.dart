@@ -1,6 +1,7 @@
-import 'package:loftify/Resources/theme.dart';
-import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:flutter/material.dart';
+import 'package:loftify/Resources/theme.dart';
+import 'package:loftify/Utils/responsive_util.dart';
+import 'package:loftify/Widgets/Item/item_builder.dart';
 
 import '../../../../Utils/utils.dart';
 import '../colors.dart';
@@ -59,7 +60,9 @@ class CustomInfoDialogWidget extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: Container(
-          // constraints: const BoxConstraints(maxWidth: 400),
+          constraints: ResponsiveUtil.isWideLandscape()
+              ? const BoxConstraints(maxWidth: 400)
+              : null,
           margin: margin ?? const EdgeInsets.all(24),
           padding: padding ?? const EdgeInsets.all(24),
           decoration: BoxDecoration(

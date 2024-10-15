@@ -8,6 +8,7 @@ import 'package:process_run/process_run.dart';
 
 import '../../Models/github_response.dart';
 import '../../Utils/file_util.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/Item/item_builder.dart';
@@ -154,7 +155,8 @@ class _UpdateScreenState extends State<UpdateScreen>
                           .runExecutableArguments(savePath, []).then((result) {
                         downloadState == DownloadState.normal;
                       });
-                    } catch (e) {
+                    } catch (e,t) {
+                      ILogger.error("Failed to install", e, t);
                       IToast.showTop(e.toString());
                       setState(() {
                         buttonText = "立即安装";
@@ -204,7 +206,8 @@ class _UpdateScreenState extends State<UpdateScreen>
                       UriUtil.openExternal(latestReleaseItem.url);
                     }
                   }
-                } catch (e) {
+                } catch (e,t) {
+                  ILogger.error("Failed to download package", e, t);
                   IToast.showTop("下载失败");
                   downloadState == DownloadState.normal;
                 }

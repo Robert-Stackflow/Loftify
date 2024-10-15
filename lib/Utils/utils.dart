@@ -280,7 +280,8 @@ class Utils {
     } else if (value is String) {
       try {
         return int.parse(value);
-      } catch (e) {
+      } catch (e,t) {
+        ILogger.error("Failed to pass int $value", e, t);
         return 0;
       }
     } else {
@@ -477,7 +478,8 @@ class Utils {
         }
       }
       return 0;
-    } catch (e) {
+    } catch (e,t) {
+      ILogger.error("Failed to compare version $a and $b", e, t);
       return a.compareTo(b);
     }
   }

@@ -10,6 +10,7 @@ import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/route_util.dart';
 
+import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/Custom/custom_tab_indicator.dart';
@@ -122,7 +123,8 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
               return IndicatorResult.success;
             }
           }
-        } catch (e) {
+        } catch (e,t) {
+          ILogger.error("Failed to load system notice list", e, t);
           if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
         } finally {
@@ -169,7 +171,8 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
               return IndicatorResult.success;
             }
           }
-        } catch (e) {
+        } catch (e,t) {
+          ILogger.error("Failed to load system notice list", e, t);
           if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
         } finally {

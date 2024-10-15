@@ -1547,6 +1547,32 @@ class ItemBuilder {
     );
   }
 
+  static buildError({
+    required BuildContext context,
+    String? text,
+    String? buttonText,
+    Function()? onTap,
+  }) {
+    return Container(
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisSize: MainAxisSize.max,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            text ?? "加载失败",
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 10),
+          ItemBuilder.buildRoundButton(context,
+              text: buttonText ?? "重试", onTap: onTap),
+        ],
+      ),
+    );
+  }
+
   static CachedNetworkImage buildCachedImage({
     required String imageUrl,
     required BuildContext context,

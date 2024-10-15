@@ -7,6 +7,7 @@ import 'package:loftify/Models/favorites_response.dart';
 import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Screens/Info/favorite_folder_detail_screen.dart';
 
+import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
@@ -66,7 +67,8 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
             return IndicatorResult.success;
           }
         }
-      } catch (e) {
+      } catch (e,t) {
+        ILogger.error("Failed to load folder list", e, t);
         if (mounted) IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {

@@ -10,6 +10,7 @@ import 'package:waterfall_flow/waterfall_flow.dart';
 import '../../Models/user_response.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/enums.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
@@ -91,7 +92,8 @@ class _FollowingFollowerScreenState extends State<FollowingFollowerScreen>
           return IndicatorResult.success;
         }
       }
-    } catch (e) {
+    } catch (e,t) {
+      ILogger.error("Failed to load following or follower", e, t);
       if (mounted) IToast.showTop("加载失败");
       return IndicatorResult.fail;
     } finally {

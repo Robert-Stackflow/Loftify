@@ -9,6 +9,7 @@ import 'package:loftify/Utils/hive_util.dart';
 import 'package:tuple/tuple.dart';
 
 import '../../Models/post_detail_response.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
@@ -87,7 +88,8 @@ class _HistoryScreenState extends State<HistoryScreen>
               return IndicatorResult.success;
             }
           }
-        } catch (e) {
+        } catch (e,t) {
+          ILogger.error("Failed to load history", e, t);
           if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
         } finally {

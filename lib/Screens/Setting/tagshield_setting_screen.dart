@@ -4,6 +4,7 @@ import 'package:loftify/Widgets/BottomSheet/input_bottom_sheet.dart';
 import 'package:loftify/Widgets/Dialog/custom_dialog.dart';
 
 import '../../Resources/theme.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/Dialog/dialog_builder.dart';
@@ -41,7 +42,8 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
               .toList();
           return IndicatorResult.success;
         }
-      } catch (_) {
+      } catch (e,t) {
+        ILogger.error("Failed to load tag shield list", e, t);
         IToast.showTop("屏蔽标签加载失败");
         return IndicatorResult.fail;
       } finally {

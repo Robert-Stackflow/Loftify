@@ -10,6 +10,7 @@ import 'package:tuple/tuple.dart';
 
 import '../../Models/post_detail_response.dart';
 import '../../Utils/enums.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
@@ -119,7 +120,8 @@ class _ShareScreenState extends State<ShareScreen>
               return IndicatorResult.success;
             }
           }
-        } catch (e) {
+        } catch (e,t) {
+          ILogger.error("Failed to load share list", e, t);
           if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
         } finally {

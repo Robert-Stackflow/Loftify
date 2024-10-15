@@ -14,6 +14,7 @@ import '../../Models/history_response.dart';
 import '../../Resources/theme.dart';
 import '../../Utils/asset_util.dart';
 import '../../Utils/enums.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/uri_util.dart';
@@ -66,7 +67,8 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
             grainUrl = value['data']['grainLink'];
           }
         }
-      } catch (e) {
+      } catch (e,t) {
+        ILogger.error("Failed to load grain detail", e, t);
         if (mounted) IToast.showTop("获取链接失败");
         return IndicatorResult.fail;
       }
@@ -131,7 +133,8 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
             return IndicatorResult.success;
           }
         }
-      } catch (e) {
+      } catch (e,t) {
+        ILogger.error("Failed to load graind detail", e, t);
         if (mounted) IToast.showTop("加载失败");
         return IndicatorResult.fail;
       } finally {

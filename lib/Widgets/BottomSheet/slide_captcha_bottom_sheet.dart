@@ -10,6 +10,7 @@ import 'package:loftify/Widgets/Item/item_builder.dart';
 
 import '../../Resources/theme.dart';
 import '../../Utils/app_provider.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/utils.dart';
 
 class SlideCaptchaBottomSheet extends StatefulWidget {
@@ -56,7 +57,8 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
           front64 = base64Decode(front!);
           getImageInfo(Image.memory(bg64!));
         }
-      } catch (_) {
+      } catch (e,t) {
+        ILogger.error("Failed to load captcha", e, t);
         IToast.showTop("滑块验证码获取失败");
       } finally {
         if (mounted) setState(() {});

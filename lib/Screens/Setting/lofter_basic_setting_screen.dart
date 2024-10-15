@@ -7,6 +7,7 @@ import '../../Api/user_api.dart';
 import '../../Models/account_response.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/hive_util.dart';
+import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Widgets/Dialog/dialog_builder.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
@@ -47,7 +48,8 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
               value['data']['showReturnGiftPreviewImg'] == 1 ? true : false;
           return IndicatorResult.success;
         }
-      } catch (_) {
+      } catch (e,t) {
+        ILogger.error("Failed to load gift config", e, t);
         IToast.showTop("礼物设置加载失败");
         return IndicatorResult.fail;
       } finally {
@@ -71,7 +73,8 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
             videoprotection = accountResponse.appVideoProtect;
             return IndicatorResult.success;
           }
-        } catch (_) {
+        } catch (e,t) {
+          ILogger.error("Failed to load user info", e, t);
           if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
         } finally {
@@ -94,7 +97,8 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
                 value['response']['personalRecommend'] == "1" ? true : false;
             return IndicatorResult.success;
           }
-        } catch (_) {
+        } catch (e,t) {
+          ILogger.error("Failed to load misc config", e, t);
           if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
         } finally {
