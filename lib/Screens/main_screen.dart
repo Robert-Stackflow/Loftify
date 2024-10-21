@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:loftify/Models/nav_entry.dart';
-import 'package:loftify/Resources/colors.dart';
 import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
 import 'package:loftify/Screens/Navigation/dynamic_screen.dart';
 import 'package:loftify/Screens/Navigation/home_screen.dart';
@@ -29,7 +28,6 @@ import '../Utils/app_provider.dart';
 import '../Utils/enums.dart';
 import '../Utils/hive_util.dart';
 import '../Utils/ilogger.dart';
-import '../Utils/iprint.dart';
 import '../Utils/itoast.dart';
 import '../Utils/lottie_util.dart';
 import '../Utils/route_util.dart';
@@ -39,7 +37,6 @@ import '../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../Widgets/General/LottieCupertinoRefresh/lottie_cupertino_refresh.dart';
 import '../Widgets/Scaffold/my_bottom_navigation_bar.dart';
 import '../Widgets/Scaffold/my_scaffold.dart';
-import '../Widgets/Window/window_button.dart';
 import 'Info/dress_screen.dart';
 import 'Info/system_notice_screen.dart';
 import 'Info/user_detail_screen.dart';
@@ -149,14 +146,14 @@ class MainScreenState extends State<MainScreen>
             return IndicatorResult.fail;
           } else {
             AccountResponse accountResponse =
-            AccountResponse.fromJson(value['response']);
+                AccountResponse.fromJson(value['response']);
             await HiveUtil.setUserInfo(accountResponse.blogs[0].blogInfo);
             setState(() {
               blogInfo = accountResponse.blogs[0].blogInfo;
             });
             return IndicatorResult.success;
           }
-        } catch (e,t) {
+        } catch (e, t) {
           ILogger.error("Failed to load user info", e, t);
           if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
@@ -242,19 +239,17 @@ class MainScreenState extends State<MainScreen>
           .then((value) => setState(() => _isMaximized = value));
     }
     ResponsiveUtil.checkSizeCondition();
-    EasyRefresh.defaultHeaderBuilder = () =>
-        LottieCupertinoHeader(
-          backgroundColor: Theme
-              .of(context)
-              .canvasColor,
-          indicator: LottieUtil.load(LottieUtil.getLoadingPath(context)),
-          hapticFeedback: true,
-          triggerOffset: 40,
-        );
-    EasyRefresh.defaultFooterBuilder = () =>
-        LottieCupertinoFooter(
-          indicator: LottieUtil.load(LottieUtil.getLoadingPath(context)),
-        );
+    if (mounted) {
+      EasyRefresh.defaultHeaderBuilder = () => LottieCupertinoHeader(
+            backgroundColor: Theme.of(context).canvasColor,
+            indicator: LottieUtil.load(LottieUtil.getLoadingPath(context)),
+            hapticFeedback: true,
+            triggerOffset: 40,
+          );
+      EasyRefresh.defaultFooterBuilder = () => LottieCupertinoFooter(
+            indicator: LottieUtil.load(LottieUtil.getLoadingPath(context)),
+          );
+    }
     if (ResponsiveUtil.isMobile()) {
       if (HiveUtil.getBool(HiveUtil.enableSafeModeKey, defaultValue: false)) {
         FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
@@ -302,8 +297,8 @@ class MainScreenState extends State<MainScreen>
 
   void onBottomNavigationBarItemTap(int index) {
     bool canRefresh = ((ResponsiveUtil.isMobile() &&
-        !ResponsiveUtil.isLandscape()) ||
-        (ResponsiveUtil.isLandscape() && !appProvider.canPopByProvider)) &&
+                !ResponsiveUtil.isLandscape()) ||
+            (ResponsiveUtil.isLandscape() && !appProvider.canPopByProvider)) &&
         _bottomBarSelectedIndex == index;
     if (canRefresh) {
       var page = _pageList[index];
@@ -401,44 +396,34 @@ class MainScreenState extends State<MainScreen>
   _buildMobileBody() {
     return FutureBuilder(
       future: Future.sync(() => initData()),
-      builder: (_, __) =>
-          MyScaffold(
-            body: pageView,
-            bottomNavigationBar: MyBottomNavigationBar(
-              currentIndex: _bottomBarSelectedIndex,
-              backgroundColor: Theme
-                  .of(context)
-                  .canvasColor,
-              items: _navigationBarItemList,
-              elevation: 0,
-              unselectedItemColor: Theme
-                  .of(context)
-                  .textTheme
-                  .labelSmall
-                  ?.color,
-              selectedItemColor: Theme
-                  .of(context)
-                  .primaryColor,
-              unselectedLabelStyle: const TextStyle(fontSize: 10),
-              selectedLabelStyle:
+      builder: (_, __) => MyScaffold(
+        body: pageView,
+        bottomNavigationBar: MyBottomNavigationBar(
+          currentIndex: _bottomBarSelectedIndex,
+          backgroundColor: Theme.of(context).canvasColor,
+          items: _navigationBarItemList,
+          elevation: 0,
+          unselectedItemColor: Theme.of(context).textTheme.labelSmall?.color,
+          selectedItemColor: Theme.of(context).primaryColor,
+          unselectedLabelStyle: const TextStyle(fontSize: 10),
+          selectedLabelStyle:
               const TextStyle(fontWeight: FontWeight.w500, fontSize: 10),
-              onTap: onBottomNavigationBarItemTap,
-              onDoubleTap: onBottomNavigationBarItemTap,
-            ),
-          ),
+          onTap: onBottomNavigationBarItemTap,
+          onDoubleTap: onBottomNavigationBarItemTap,
+        ),
+      ),
     );
   }
 
   _buildDesktopBody() {
     return FutureBuilder(
       future: Future.sync(() => initData()),
-      builder: (_, __) =>
-          MyScaffold(
-            resizeToAvoidBottomInset: false,
-            body: Row(
-              children: [_sideBar(), _desktopMainContent()],
-            ),
-          ),
+      builder: (_, __) => MyScaffold(
+        resizeToAvoidBottomInset: false,
+        body: Row(
+          children: [_sideBar(), _desktopMainContent()],
+        ),
+      ),
     );
   }
 
@@ -465,22 +450,14 @@ class MainScreenState extends State<MainScreen>
                 const SizedBox(height: 80),
                 MyBottomNavigationBar(
                   currentIndex: _bottomBarSelectedIndex,
-                  backgroundColor: Theme
-                      .of(context)
-                      .scaffoldBackgroundColor,
+                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                   items: _navigationBarItemList,
                   clearNavSelectState: clearNavSelectState,
                   direction: Axis.vertical,
                   elevation: 0,
                   unselectedItemColor:
-                  Theme
-                      .of(context)
-                      .textTheme
-                      .labelSmall
-                      ?.color,
-                  selectedItemColor: Theme
-                      .of(context)
-                      .primaryColor,
+                      Theme.of(context).textTheme.labelSmall?.color,
+                  selectedItemColor: Theme.of(context).primaryColor,
                   unselectedLabelStyle: const TextStyle(fontSize: 12),
                   selectedLabelStyle: const TextStyle(fontSize: 12),
                   onTap: onBottomNavigationBarItemTap,
@@ -550,10 +527,7 @@ class MainScreenState extends State<MainScreen>
                       context: context,
                       icon: Icon(
                         Icons.mail_outline_rounded,
-                        color: Theme
-                            .of(context)
-                            .iconTheme
-                            .color,
+                        color: Theme.of(context).iconTheme.color,
                       ),
                       onTap: () {
                         RouteUtil.pushDesktopFadeRoute(
@@ -593,34 +567,30 @@ class MainScreenState extends State<MainScreen>
             leftWidgets: [
               Selector<AppProvider, bool>(
                 selector: (context, globalProvider) =>
-                globalProvider.canPopByProvider,
-                builder: (context, desktopCanpop, child) =>
-                    MouseRegion(
-                      cursor: desktopCanpop
-                          ? SystemMouseCursors.click
-                          : SystemMouseCursors.basic,
-                      child: ItemBuilder.buildRoundIconButton(
-                        context: context,
-                        disabled: !desktopCanpop,
-                        normalBackground: Colors.grey.withAlpha(40),
-                        icon: Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          size: 20,
-                          color: desktopCanpop
-                              ? Theme
-                              .of(context)
-                              .iconTheme
-                              .color
-                              : Colors.grey,
-                        ),
-                        onTap: () {
-                          if (canPopByKey) {
-                            desktopNavigatorState?.pop();
-                          }
-                          appProvider.canPopByProvider = canPopByKey;
-                        },
-                      ),
+                    globalProvider.canPopByProvider,
+                builder: (context, desktopCanpop, child) => MouseRegion(
+                  cursor: desktopCanpop
+                      ? SystemMouseCursors.click
+                      : SystemMouseCursors.basic,
+                  child: ItemBuilder.buildRoundIconButton(
+                    context: context,
+                    disabled: !desktopCanpop,
+                    normalBackground: Colors.grey.withAlpha(40),
+                    icon: Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      size: 20,
+                      color: desktopCanpop
+                          ? Theme.of(context).iconTheme.color
+                          : Colors.grey,
                     ),
+                    onTap: () {
+                      if (canPopByKey) {
+                        desktopNavigatorState?.pop();
+                      }
+                      appProvider.canPopByProvider = canPopByKey;
+                    },
+                  ),
+                ),
               ),
               const SizedBox(width: 8),
               // ItemBuilder.buildRoundIconButton(
@@ -639,9 +609,7 @@ class MainScreenState extends State<MainScreen>
               // ),
               // const SizedBox(width: 8),
               SizedBox(
-                width: min(300, MediaQuery
-                    .sizeOf(context)
-                    .width - 240),
+                width: min(300, MediaQuery.sizeOf(context).width - 240),
                 child: ItemBuilder.buildDesktopSearchBar(
                     context: context,
                     controller: TextEditingController(),
@@ -694,7 +662,7 @@ class MainScreenState extends State<MainScreen>
     if (!_hasJumpedToPinVerify) {
       _timer = Timer(
         Duration(minutes: appProvider.autoLockTime),
-            () {
+        () {
           jumpToPinVerify();
         },
       );

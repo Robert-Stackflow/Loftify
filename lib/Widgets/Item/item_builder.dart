@@ -1,11 +1,11 @@
 import 'dart:math';
 
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:group_button/group_button.dart';
-import 'package:auto_size_text/auto_size_text.dart';
 import 'package:like_button/like_button.dart';
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Models/search_response.dart';
@@ -17,8 +17,8 @@ import 'package:window_manager/window_manager.dart';
 
 import '../../Api/post_api.dart';
 import '../../Api/user_api.dart';
-import '../../Models/illust.dart';
 import '../../Models/collection_response.dart';
+import '../../Models/illust.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Models/user_response.dart';
 import '../../Resources/colors.dart';
@@ -3721,48 +3721,52 @@ class ItemBuilder {
             Row(
               children: [
                 ...rightButtons,
-                StayOnTopWindowButton(
-                  context: context,
-                  rotateAngle: isStayOnTop ? 0 : -pi / 4,
-                  colors: isStayOnTop
-                      ? MyColors.getStayOnTopButtonColors(context)
-                      : MyColors.getNormalButtonColors(context),
-                  borderRadius: BorderRadius.circular(8),
-                  onPressed: onStayOnTopTap,
-                ),
+                if (ResponsiveUtil.isDesktop())
+                  StayOnTopWindowButton(
+                    context: context,
+                    rotateAngle: isStayOnTop ? 0 : -pi / 4,
+                    colors: isStayOnTop
+                        ? MyColors.getStayOnTopButtonColors(context)
+                        : MyColors.getNormalButtonColors(context),
+                    borderRadius: BorderRadius.circular(8),
+                    onPressed: onStayOnTopTap,
+                  ),
                 const SizedBox(width: 3),
-                MinimizeWindowButton(
-                  colors: MyColors.getNormalButtonColors(context),
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                if (ResponsiveUtil.isDesktop())
+                  MinimizeWindowButton(
+                    colors: MyColors.getNormalButtonColors(context),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 const SizedBox(width: 3),
-                isMaximized
-                    ? RestoreWindowButton(
-                        colors: MyColors.getNormalButtonColors(context),
-                        borderRadius: BorderRadius.circular(8),
-                        onPressed: ResponsiveUtil.maximizeOrRestore,
-                      )
-                    : MaximizeWindowButton(
-                        colors: MyColors.getNormalButtonColors(context),
-                        borderRadius: BorderRadius.circular(8),
-                        onPressed: ResponsiveUtil.maximizeOrRestore,
-                      ),
+                if (ResponsiveUtil.isDesktop())
+                  isMaximized
+                      ? RestoreWindowButton(
+                          colors: MyColors.getNormalButtonColors(context),
+                          borderRadius: BorderRadius.circular(8),
+                          onPressed: ResponsiveUtil.maximizeOrRestore,
+                        )
+                      : MaximizeWindowButton(
+                          colors: MyColors.getNormalButtonColors(context),
+                          borderRadius: BorderRadius.circular(8),
+                          onPressed: ResponsiveUtil.maximizeOrRestore,
+                        ),
                 const SizedBox(width: 3),
-                CloseWindowButton(
-                  colors: MyColors.getCloseButtonColors(context),
-                  borderRadius: BorderRadius.circular(8),
-                  onPressed: () {
-                    if (forceClose) {
-                      windowManager.close();
-                    } else {
-                      if (HiveUtil.getBool(HiveUtil.enableCloseToTrayKey)) {
-                        windowManager.hide();
-                      } else {
+                if (ResponsiveUtil.isDesktop())
+                  CloseWindowButton(
+                    colors: MyColors.getCloseButtonColors(context),
+                    borderRadius: BorderRadius.circular(8),
+                    onPressed: () {
+                      if (forceClose) {
                         windowManager.close();
+                      } else {
+                        if (HiveUtil.getBool(HiveUtil.enableCloseToTrayKey)) {
+                          windowManager.hide();
+                        } else {
+                          windowManager.close();
+                        }
                       }
-                    }
-                  },
-                ),
+                    },
+                  ),
               ],
             ),
             const SizedBox(width: 8),

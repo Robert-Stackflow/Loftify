@@ -219,9 +219,8 @@ class _AboutSettingScreenState extends State<AboutSettingScreen>
                       onTap: () {
                         BottomSheetBuilder.showBottomSheet(
                           context,
-                          (context) => const StarBottomSheet(),
+                              (context) => const StarBottomSheet(),
                           responsive: true,
-                          preferMinWidth: 400,
                         );
                       },
                       leading: Icons.rate_review_outlined,

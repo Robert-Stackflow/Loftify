@@ -10,18 +10,24 @@ class BottomSheetBuilder {
     WidgetBuilder builder, {
     bool enableDrag = true,
     bool responsive = false,
+    bool useWideLandscape = true,
     Color? backgroundColor,
-    double preferMinWidth = 720,
+    double? preferMinWidth,
     ShapeBorder shape = const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
   }) {
-    if (responsive && ResponsiveUtil.isLandscape()) {
+    bool isLandScape = useWideLandscape
+        ? ResponsiveUtil.isWideLandscape()
+        : ResponsiveUtil.isWideLandscape();
+    preferMinWidth ??= responsive && isLandScape ? 450 : null;
+    if (responsive && isLandScape) {
       showDialog(
         context: context,
         builder: (context) {
           return FloatingModal(
             preferMinWidth: preferMinWidth,
+            useWideLandscape: useWideLandscape,
             child: builder(context),
           );
         },
@@ -36,6 +42,7 @@ class BottomSheetBuilder {
         builder: builder,
         containerWidget: (_, animation, child) => FloatingModal(
           preferMinWidth: preferMinWidth,
+          useWideLandscape: useWideLandscape,
           child: child,
         ),
       );
@@ -56,9 +63,7 @@ class BottomSheetBuilder {
       backgroundColor: backgroundColor ?? Theme.of(context).canvasColor,
       shape: shape,
       builder: builder,
-      containerWidget: (_, animation, child) => FloatingModal(
-        child: child,
-      ),
+      containerWidget: (_, animation, child) => child,
     );
   }
 }

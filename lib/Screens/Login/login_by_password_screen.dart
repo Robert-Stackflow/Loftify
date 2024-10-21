@@ -63,7 +63,7 @@ class _LoginByPasswordScreenState extends State<LoginByPasswordScreen>
           await HiveUtil.put(HiveUtil.tokenKey, loginResponse.token);
           await HiveUtil.put(HiveUtil.deviceIdKey, loginResponse.deviceid);
           await HiveUtil.put(HiveUtil.tokenTypeKey, TokenType.password.index);
-          ResponsiveUtil.returnToMainScreen(context);
+          ResponsiveUtil.returnToMainScreen(rootContext);
         }
       } catch (e, t) {
         ILogger.error("Failed to login by LofterID", e, t);

@@ -73,7 +73,7 @@ class ResponsiveUtil {
         deviceDescription = "Unknown";
       }
       return "Device overview:$deviceOverview\nDevice description:$deviceDescription";
-    } catch (e,t) {
+    } catch (e, t) {
       ILogger.error("Failed to device description", e, t);
       return "Get Device Description Error: $e";
     }
@@ -186,8 +186,6 @@ class ResponsiveUtil {
   }
 
   static bool isWideLandscape([bool useAppProvider = true]) {
-    return isWeb() ||
-        isDesktop() ||
-        (useAppProvider && appProvider.enableLandscapeInTablet && isTablet());
+    return isWeb() || isDesktop() || (useAppProvider && isTablet());
   }
 }

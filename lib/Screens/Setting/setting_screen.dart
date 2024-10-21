@@ -203,7 +203,7 @@ class _SettingScreenState extends State<SettingScreen>
               await RequestUtil.clearCookie();
               HiveUtil.delete(HiveUtil.tokenTypeKey).then((value) {
                 IToast.showTop("退出成功");
-                ResponsiveUtil.returnToMainScreen(context);
+                ResponsiveUtil.returnToMainScreen(rootContext);
               });
             },
             onTapCancel: () {},

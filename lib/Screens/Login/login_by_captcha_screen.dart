@@ -49,10 +49,10 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
     _captchaController = TextEditingController();
     _captchaCodeController = TextEditingController();
     _mobileController.text = widget.initPhone ?? defaultPhone;
-    _refrechPhotoCaptcha();
+    _refreshPhotoCaptcha();
   }
 
-  void _refrechPhotoCaptcha() {
+  void _refreshPhotoCaptcha() {
     LoginApi.getPhotoCaptcha().then((value) {
       setState(() {
         _photoCaptcha = value;
@@ -75,7 +75,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
       SimpleResponse simpleResponse = SimpleResponse.fromJson(value);
       if (simpleResponse.result != 0) {
         IToast.showTop(simpleResponse.desc);
-        _refrechPhotoCaptcha();
+        _refreshPhotoCaptcha();
       } else {
         _isFetchingCaptchaCode = true;
         setState(() {
@@ -88,7 +88,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
               setState(() {
                 _isFetchingCaptchaCode = false;
                 _captchaText = "获取验证码";
-                _refrechPhotoCaptcha();
+                _refreshPhotoCaptcha();
                 _captchaController.text = "";
               });
             }
@@ -116,7 +116,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
       LoginResponse loginResponse = LoginResponse.fromJson(value);
       if (loginResponse.result != 0) {
         IToast.showTop(loginResponse.desc);
-        _refrechPhotoCaptcha();
+        _refreshPhotoCaptcha();
       } else {
         IToast.showTop("登录成功");
         appProvider.token = loginResponse.token ?? "";
@@ -174,7 +174,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
                       tailingWidget: _photoCaptcha != null
                           ? GestureDetector(
                               onTap: () {
-                                _refrechPhotoCaptcha();
+                                _refreshPhotoCaptcha();
                               },
                               child: ClipRRect(
                                 borderRadius:

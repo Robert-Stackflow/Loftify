@@ -948,6 +948,7 @@ class VideoInfo {
   });
 
   factory VideoInfo.fromJson(Map<String, dynamic> json) {
+    json['type'] = "uservideo";
     return VideoInfo(
       duration: Utils.parseToInt(json['duration']),
       flashurl: json['flashurl'] ?? "",

@@ -68,7 +68,7 @@ class _LoginByMailScreenState extends State<LoginByMailScreen>
           await HiveUtil.put(HiveUtil.userIdKey, resL['userId']);
           await HiveUtil.put(HiveUtil.tokenKey, resL['token']);
           await HiveUtil.put(HiveUtil.tokenTypeKey, TokenType.lofterID.index);
-          ResponsiveUtil.returnToMainScreen(context);
+          ResponsiveUtil.returnToMainScreen(rootContext);
         } else if (resL['ret'] == "413" && resL['dt'] == "01") {
           IToast.showTop("您登录密码错误次数过多，请稍后再试");
         } else if (resL['ret'] == "413" && resL['dt'] == "02") {

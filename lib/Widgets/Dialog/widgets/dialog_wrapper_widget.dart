@@ -11,6 +11,7 @@ class DialogWrapperWidget extends StatefulWidget {
   final double? preferMinWidth;
   final double? preferMinHeight;
   final bool showClose;
+  final bool fullScreen;
 
   const DialogWrapperWidget({
     super.key,
@@ -18,6 +19,7 @@ class DialogWrapperWidget extends StatefulWidget {
     this.preferMinWidth,
     this.preferMinHeight,
     this.showClose = true,
+    this.fullScreen = false,
   });
 
   @override
@@ -56,9 +58,9 @@ class DialogWrapperWidgetState extends State<DialogWrapperWidget> {
     double preferWidth = min(width, widget.preferMinWidth ?? 540);
     double preferHeight = min(width, widget.preferMinHeight ?? 720);
     double preferHorizontalMargin =
-        width > preferWidth ? (width - preferWidth) / 2 : 0;
+    width > preferWidth ? (width - preferWidth) / 2 : 0;
     double preferVerticalMargin =
-        height > preferHeight ? (height - preferHeight) / 2 : 0;
+    height > preferHeight ? (height - preferHeight) / 2 : 0;
     preferHorizontalMargin = max(preferHorizontalMargin, 20);
     preferVerticalMargin = max(preferVerticalMargin, 20);
     return PopScope(
@@ -71,14 +73,20 @@ class DialogWrapperWidgetState extends State<DialogWrapperWidget> {
         popPage();
       },
       child: Padding(
-        padding: EdgeInsets.symmetric(
-            horizontal: preferHorizontalMargin, vertical: preferVerticalMargin),
+        padding: widget.fullScreen
+            ? EdgeInsets.zero
+            : EdgeInsets.symmetric(
+            horizontal: preferHorizontalMargin,
+            vertical: preferVerticalMargin),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border:
-                Border.all(color: Theme.of(context).dividerColor, width: 0.5),
-            boxShadow: [
+            border: widget.fullScreen
+                ? null
+                : Border.all(color: Theme.of(context).dividerColor, width: 1),
+            boxShadow: widget.fullScreen
+                ? null
+                : [
               BoxShadow(
                 color: Utils.isDark(context)
                     ? Theme.of(context).shadowColor
@@ -90,7 +98,9 @@ class DialogWrapperWidgetState extends State<DialogWrapperWidget> {
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: widget.fullScreen
+                ? BorderRadius.circular(0)
+                : BorderRadius.circular(16),
             child: Stack(
               children: [
                 Navigator(

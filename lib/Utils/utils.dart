@@ -10,8 +10,8 @@ import 'package:flutter/services.dart';
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:loftify/Models/illust.dart';
 import 'package:loftify/Models/github_response.dart';
+import 'package:loftify/Models/illust.dart';
 import 'package:loftify/Screens/Setting/update_screen.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/file_util.dart';
@@ -280,7 +280,7 @@ class Utils {
     } else if (value is String) {
       try {
         return int.parse(value);
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to pass int $value", e, t);
         return 0;
       }
@@ -467,6 +467,10 @@ class Utils {
   }
 
   static compareVersion(String a, String b) {
+    if (Utils.isEmpty(a) || Utils.isEmpty(b)) {
+      ILogger.warn("Version is empty, compare failed between $a and $b");
+      return a.compareTo(b);
+    }
     try {
       List<String> aList = a.split(".");
       List<String> bList = b.split(".");
@@ -478,7 +482,7 @@ class Utils {
         }
       }
       return 0;
-    } catch (e,t) {
+    } catch (e, t) {
       ILogger.error("Failed to compare version $a and $b", e, t);
       return a.compareTo(b);
     }

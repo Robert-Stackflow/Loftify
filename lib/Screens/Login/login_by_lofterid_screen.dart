@@ -61,7 +61,7 @@ class _LoginByLofterIDScreenState extends State<LoginByLofterIDScreen>
           await HiveUtil.put(HiveUtil.userIdKey, loginResponse.userId);
           await HiveUtil.put(HiveUtil.tokenKey, loginResponse.token);
           await HiveUtil.put(HiveUtil.tokenTypeKey, TokenType.lofterID.index);
-          ResponsiveUtil.returnToMainScreen(context);
+          ResponsiveUtil.returnToMainScreen(rootContext);
         }
       } catch (e, t) {
         ILogger.error("Failed to login by LofterID", e, t);
