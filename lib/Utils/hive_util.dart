@@ -118,11 +118,7 @@ class HiveUtil {
         await RequestUtil.clearCookie();
         HiveUtil.delete(HiveUtil.tokenTypeKey).then((value) {
           IToast.showTop("退出成功");
-          if (ResponsiveUtil.isLandscape()) {
-            ResponsiveUtil.returnToMainScreen(rootContext);
-          } else {
-            ResponsiveUtil.restartApp();
-          }
+          ResponsiveUtil.returnToMainScreen(rootContext);
         });
       },
       onTapCancel: () {},

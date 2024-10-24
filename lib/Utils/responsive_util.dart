@@ -95,11 +95,12 @@ class ResponsiveUtil {
         (route) => false,
       );
     } else {
-      Navigator.pushAndRemoveUntil(
-        context,
-        CupertinoPageRoute(builder: (context) => const MainScreen()),
-        (route) => false,
-      );
+      restartApp();
+      // Navigator.pushAndRemoveUntil(
+      //   context,
+      //   CupertinoPageRoute(builder: (context) => const MainScreen()),
+      //   (route) => false,
+      // );
     }
   }
 
