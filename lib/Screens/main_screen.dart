@@ -399,18 +399,6 @@ class MainScreenState extends State<MainScreen>
     );
   }
 
-  logout() async {
-    blogInfo == null;
-    setState(() {});
-    panelScreenState?.logout();
-  }
-
-  login() async {
-    await _fetchUserInfo();
-    setState(() {});
-    panelScreenState?.login();
-  }
-
   _titleBar() {
     return (ResponsiveUtil.isDesktop())
         ? ItemBuilder.buildWindowTitle(

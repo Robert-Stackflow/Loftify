@@ -87,7 +87,6 @@ class ResponsiveUtil {
   }
 
   static Future<void> returnToMainScreen(BuildContext context) async {
-    homeScreenState?.refresh();
     if (ResponsiveUtil.isDesktop()) {
       desktopNavigatorKey = GlobalKey<NavigatorState>();
       globalNavigatorState?.pushAndRemoveUntil(

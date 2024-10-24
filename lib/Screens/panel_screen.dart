@@ -18,12 +18,12 @@ import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
 import 'package:loftify/Screens/Navigation/dynamic_screen.dart';
 import 'package:loftify/Screens/Navigation/mine_screen.dart';
 import 'package:loftify/Screens/refresh_interface.dart';
+import 'package:loftify/Utils/ilogger.dart';
 import 'package:provider/provider.dart';
 
 import '../Utils/app_provider.dart';
 import '../Utils/constant.dart';
 import '../Utils/enums.dart';
-import '../Utils/hive_util.dart';
 import '../Utils/lottie_util.dart';
 import '../Utils/responsive_util.dart';
 import '../Utils/route_util.dart';
@@ -77,7 +77,6 @@ class PanelScreenState extends State<PanelScreen>
         controller: darkModeController,
       );
     });
-    fetchUserInfo();
   }
 
   popAll() {
@@ -115,46 +114,27 @@ class PanelScreenState extends State<PanelScreen>
     }
   }
 
-  fetchUserInfo() async {
-    var userInfo = await HiveUtil.getUserInfo();
-    if (userInfo == null) {
-      logout();
-      return;
-    }
-  }
-
-  logout() {
-    unlogin = true;
-    popAll();
-    _pageList = [];
-    setState(() {});
-  }
-
-  login() {
-    unlogin = false;
-    initPage();
-    setState(() {});
-  }
-
   Future<void> initPage() async {
-    var userInfo = await HiveUtil.getUserInfo();
-    if (userInfo == null) {
-      _pageList = [];
-    } else {
-      _keyList = [
-        homeScreenKey,
-        searchScreenKey,
-        GlobalKey(),
-        GlobalKey(),
-      ];
-      _pageList = [
-        HomeScreen(key: _keyList[0]),
-        SearchScreen(key: _keyList[1]),
-        DynamicScreen(key: _keyList[2]),
-        MineScreen(key: _keyList[3]),
-      ];
-      jumpToPage(appProvider.sidebarChoice.index);
+    _keyList = [
+      homeScreenKey,
+      searchScreenKey,
+      GlobalKey(),
+      GlobalKey(),
+    ];
+    _pageList = [
+      HomeScreen(key: _keyList[0]),
+      SearchScreen(key: _keyList[1]),
+      DynamicScreen(key: _keyList[2]),
+      MineScreen(key: _keyList[3]),
+    ];
+    if (mounted) setState(() {});
+    try {
+      ILogger.debug(
+          "init panel page and jump to ${appProvider.sidebarChoice.index.clamp(0, _pageList.length - 1)}");
+    } catch (e, t) {
+      ILogger.error("Failed to init panel page", e, t);
     }
+    jumpToPage(appProvider.sidebarChoice.index.clamp(0, _pageList.length - 1));
   }
 
   void jumpToPage(int index) {
@@ -166,11 +146,11 @@ class PanelScreenState extends State<PanelScreen>
       mixin?.onTapBottomNavigation();
     } else {
       _currentIndex = index;
-      if (mounted) setState(() {});
       if (_pageController.hasClients) {
         _pageController.jumpToPage(index);
       }
     }
+    if (mounted) setState(() {});
   }
 
   void refreshScrollControllers() {

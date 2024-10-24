@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:card_swiper/card_swiper.dart';
@@ -40,7 +41,7 @@ class SearchScreenState extends State<SearchScreen>
     with
         TickerProviderStateMixin,
         AutomaticKeepAliveClientMixin,
-        ScrollToHideMixin {
+        ScrollToHideMixin,BottomNavgationMixin {
   @override
   bool get wantKeepAlive => true;
 
@@ -57,6 +58,11 @@ class SearchScreenState extends State<SearchScreen>
   final FocusNode _focusNode = FocusNode();
 
   bool get hasSearchFocus => _focusNode.hasFocus;
+
+  @override
+  FutureOr onTapBottomNavigation() {
+    FocusScope.of(context).requestFocus(_focusNode);
+  }
 
   @override
   void initState() {
