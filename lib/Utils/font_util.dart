@@ -80,10 +80,10 @@ class FontUtil {
 }
 
 Future<Uint8List> downloadFontFile(
-    String url, {
-      bool overwrite = false,
-      Function(double)? onReceiveProgress,
-    }) async {
+  String url, {
+  bool overwrite = false,
+  Function(double)? onReceiveProgress,
+}) async {
   final uri = Uri.parse(url);
   final filename = uri.pathSegments.last;
   final dir = await FileUtil.getFontDir();
@@ -99,10 +99,10 @@ Future<Uint8List> downloadFontFile(
 }
 
 Future<void> downloadFontFileTo(
-    String url, {
-      required String filepath,
-      bool overwrite = false,
-    }) async {
+  String url, {
+  required String filepath,
+  bool overwrite = false,
+}) async {
   final uri = Uri.parse(url);
   final file = File(filepath);
 
@@ -111,13 +111,13 @@ Future<void> downloadFontFileTo(
 }
 
 Future<Uint8List> downloadBytes(
-    Uri uri, {
-      Function(double)? onReceiveProgress,
-    }) async {
+  Uri uri, {
+  Function(double)? onReceiveProgress,
+}) async {
   final client = http.Client();
   final request = http.Request('GET', uri);
   final response =
-  await client.send(request).timeout(const Duration(seconds: 5));
+      await client.send(request).timeout(const Duration(seconds: 5));
 
   if (response.statusCode != 200) {
     throw HttpException("status code ${response.statusCode}");

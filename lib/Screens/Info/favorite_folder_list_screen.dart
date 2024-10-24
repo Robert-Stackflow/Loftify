@@ -67,7 +67,7 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
             return IndicatorResult.success;
           }
         }
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to load folder list", e, t);
         if (mounted) IToast.showTop("加载失败");
         return IndicatorResult.fail;
@@ -122,8 +122,7 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
         onTap: () {
           RouteUtil.pushCupertinoRoute(
             context,
-            FavoriteFolderDetailScreen(
-                favoriteFolderId: item.id ?? 0),
+            FavoriteFolderDetailScreen(favoriteFolderId: item.id ?? 0),
           );
         },
         child: Container(

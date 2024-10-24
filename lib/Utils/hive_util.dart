@@ -130,7 +130,7 @@ class HiveUtil {
     try {
       List<String> list = size.split(",");
       return Size(double.parse(list[0]), double.parse(list[1]));
-    } catch (e,t) {
+    } catch (e, t) {
       ILogger.error("Failed to get window size", e, t);
       return defaultWindowSize;
     }
@@ -149,7 +149,7 @@ class HiveUtil {
     try {
       List<String> list = position.split(",");
       return Offset(double.parse(list[0]), double.parse(list[1]));
-    } catch (e,t) {
+    } catch (e, t) {
       ILogger.error("Failed to get window position", e, t);
       return Offset.zero;
     }
@@ -400,7 +400,7 @@ class HiveUtil {
     if (!box.containsKey(key)) {
       put(key, defaultValue, boxName: boxName);
     }
-    return box.get(key);
+    return box.get(key, defaultValue: defaultValue);
   }
 
   static bool getBool(

@@ -70,7 +70,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
           }
           return IndicatorResult.success;
         }
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to load newest comments", e, t);
         IToast.showTop("最新评论加载失败");
         return IndicatorResult.fail;
@@ -104,7 +104,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
           }
           return IndicatorResult.success;
         }
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to load comment reply", e, t);
         IToast.showTop("回复加载失败");
         return IndicatorResult.fail;

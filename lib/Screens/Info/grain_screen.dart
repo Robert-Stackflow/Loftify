@@ -98,7 +98,7 @@ class _GrainScreenState extends State<GrainScreen>
               return IndicatorResult.success;
             }
           }
-        } catch (e,t) {
+        } catch (e, t) {
           ILogger.error("Failed to load grain list", e, t);
           if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;

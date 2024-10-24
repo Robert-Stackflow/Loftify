@@ -85,7 +85,7 @@ class _TagRelatedScreenState extends State<TagRelatedScreen>
             return IndicatorResult.success;
           }
         }
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to load tag related tag post result list", e, t);
         IToast.showTop("加载失败");
         return IndicatorResult.fail;

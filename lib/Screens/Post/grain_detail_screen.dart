@@ -67,7 +67,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
             grainUrl = value['data']['grainLink'];
           }
         }
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to load grain detail", e, t);
         if (mounted) IToast.showTop("获取链接失败");
         return IndicatorResult.fail;
@@ -133,7 +133,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
             return IndicatorResult.success;
           }
         }
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to load graind detail", e, t);
         if (mounted) IToast.showTop("加载失败");
         return IndicatorResult.fail;
@@ -274,9 +274,9 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
                             ? grainDetailData!.grainInfo.description
                             : "暂无简介",
                         style: Theme.of(context).textTheme.labelLarge?.apply(
-                          color:
-                          Theme.of(context).textTheme.bodySmall?.color,
-                        ),
+                              color:
+                                  Theme.of(context).textTheme.bodySmall?.color,
+                            ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),

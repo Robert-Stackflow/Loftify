@@ -189,12 +189,14 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                 context: context,
                 title: S.current.checkUpdates,
                 bottomRadius: true,
-                description: Utils.compareVersion(latestVersion,currentVersion) > 0
-                    ? "新版本：$latestVersion"
-                    : S.current.checkUpdatesAlreadyLatest,
-                descriptionColor: Utils.compareVersion(latestVersion,currentVersion) > 0
-                    ? Colors.redAccent
-                    : null,
+                description:
+                    Utils.compareVersion(latestVersion, currentVersion) > 0
+                        ? "新版本：$latestVersion"
+                        : S.current.checkUpdatesAlreadyLatest,
+                descriptionColor:
+                    Utils.compareVersion(latestVersion, currentVersion) > 0
+                        ? Colors.redAccent
+                        : null,
                 tip: currentVersion,
                 onTap: () {
                   fetchReleases(true);
@@ -290,7 +292,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
     );
   }
 
-  _logSetting(){
+  _logSetting() {
     return [
       const SizedBox(height: 10),
       ItemBuilder.buildEntryItem(
@@ -319,7 +321,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                 await getLogSize();
                 IToast.showTop(S.current.clearLogSuccess);
               } catch (e, t) {
-                ILogger.error( "Failed to clear logs", e, t);
+                ILogger.error("Failed to clear logs", e, t);
                 IToast.showTop(S.current.clearLogFailed);
               } finally {
                 CustomLoadingDialog.dismissLoading();
@@ -346,9 +348,9 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
           ];
           BottomSheetBuilder.showListBottomSheet(
             context,
-                (sheetContext) => TileList.fromOptions(
+            (sheetContext) => TileList.fromOptions(
               options,
-                  (idx) {
+              (idx) {
                 Navigator.pop(sheetContext);
                 if (idx == 0) {
                   setState(() {

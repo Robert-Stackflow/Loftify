@@ -170,19 +170,19 @@ class StayOnTopWindowButton extends WindowButton {
     bool? animate,
     double? rotateAngle,
   }) : super(
-    animate: animate ?? false,
-    padding: EdgeInsets.zero,
-    rotateAngle: rotateAngle ?? 0,
-    iconBuilder: (buttonContext) => Container(
-      padding: const EdgeInsets.all(8),
-      child: AssetUtil.loadDouble(
-        context,
-        AssetUtil.pinLightIcon,
-        AssetUtil.pinDarkIcon,
-        fit: BoxFit.cover,
-      ),
-    ),
-  );
+          animate: animate ?? false,
+          padding: EdgeInsets.zero,
+          rotateAngle: rotateAngle ?? 0,
+          iconBuilder: (buttonContext) => Container(
+            padding: const EdgeInsets.all(8),
+            child: AssetUtil.loadDouble(
+              context,
+              AssetUtil.pinLightIcon,
+              AssetUtil.pinDarkIcon,
+              fit: BoxFit.cover,
+            ),
+          ),
+        );
 }
 
 class MinimizeWindowButton extends WindowButton {

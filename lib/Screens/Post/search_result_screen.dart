@@ -429,7 +429,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
             return IndicatorResult.success;
           }
         }
-      } catch (e,t) {
+      } catch (e, t) {
         IToast.showTop("加载失败");
         ILogger.error("Failed to load user result", e, t);
         return IndicatorResult.fail;

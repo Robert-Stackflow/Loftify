@@ -754,7 +754,7 @@ class RecommendTabState extends State<RecommendTab>
             return IndicatorResult.success;
           }
         }
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to load tag recommend result list", e, t);
         IToast.showTop("加载失败");
         return IndicatorResult.fail;
@@ -894,7 +894,7 @@ class HottestTabState extends State<HottestTab>
             return IndicatorResult.success;
           }
         }
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to load tag hottest result list", e, t);
         return IndicatorResult.fail;
       } finally {
@@ -1033,7 +1033,7 @@ class NewestTabState extends State<NewestTab>
             return IndicatorResult.success;
           }
         }
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to load tag newest result list", e, t);
         IToast.showTop("加载失败");
         return IndicatorResult.fail;

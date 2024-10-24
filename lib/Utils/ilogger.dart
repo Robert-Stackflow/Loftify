@@ -121,7 +121,7 @@ class FileOutput extends LogOutput {
   static int maxLogSize = 10 * 1024 * 1024; // 10MB
   static int maxLogFileCount = 10; // 10 files
   static RegExp logFilNameRegExp =
-  RegExp(r'Loftify_(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})\.log');
+      RegExp(r'Loftify_(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})\.log');
   static RegExp errorLogFilNameRegExp = RegExp(r'error\.log');
 
   @override
@@ -144,9 +144,9 @@ class FileOutput extends LogOutput {
     files = files.whereType<File>().toList();
     files = files
         .where((element) =>
-    (logFilNameRegExp.hasMatch(element.path) ||
-        errorLogFilNameRegExp.hasMatch(element.path)) &&
-        element.path.endsWith('.log'))
+            (logFilNameRegExp.hasMatch(element.path) ||
+                errorLogFilNameRegExp.hasMatch(element.path)) &&
+            element.path.endsWith('.log'))
         .toList();
     files.sort((a, b) => a.path.compareTo(b.path));
     return files as List<File>;
@@ -204,7 +204,7 @@ class FileOutput extends LogOutput {
       }
     }
     String formattedDate =
-    DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now());
+        DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now());
     return File('${logDir.path}/Loftify_$formattedDate.log');
   }
 

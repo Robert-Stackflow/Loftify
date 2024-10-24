@@ -155,7 +155,7 @@ class _UpdateScreenState extends State<UpdateScreen>
                           .runExecutableArguments(savePath, []).then((result) {
                         downloadState == DownloadState.normal;
                       });
-                    } catch (e,t) {
+                    } catch (e, t) {
                       ILogger.error("Failed to install", e, t);
                       IToast.showTop(e.toString());
                       setState(() {
@@ -206,7 +206,7 @@ class _UpdateScreenState extends State<UpdateScreen>
                       UriUtil.openExternal(latestReleaseItem.url);
                     }
                   }
-                } catch (e,t) {
+                } catch (e, t) {
                   ILogger.error("Failed to download package", e, t);
                   IToast.showTop("下载失败");
                   downloadState == DownloadState.normal;

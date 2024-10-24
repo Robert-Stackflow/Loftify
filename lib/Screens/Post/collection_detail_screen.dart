@@ -72,7 +72,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
             collectionUrl = value['data']['collectionLink'];
           }
         }
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to load collection url", e, t);
         if (mounted) IToast.showTop("获取链接失败");
         return IndicatorResult.fail;
@@ -141,7 +141,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
             return IndicatorResult.success;
           }
         }
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to load collection detail", e, t);
         if (mounted) IToast.showTop("加载失败");
         return IndicatorResult.fail;

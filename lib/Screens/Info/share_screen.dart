@@ -120,7 +120,7 @@ class _ShareScreenState extends State<ShareScreen>
               return IndicatorResult.success;
             }
           }
-        } catch (e,t) {
+        } catch (e, t) {
           ILogger.error("Failed to load share list", e, t);
           if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;

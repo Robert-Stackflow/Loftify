@@ -752,7 +752,7 @@ class DragAndDropListsState extends State<DragAndDropLists> {
                 _scrollListHorizontalRtl(topLeftOffset, bottomRightOffset);
           }
         }
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to drag and drop", e, t);
       }
 

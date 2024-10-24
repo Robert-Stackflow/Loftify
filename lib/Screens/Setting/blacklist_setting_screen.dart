@@ -53,7 +53,7 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
           }
           return IndicatorResult.success;
         }
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to load blacklist", e, t);
         IToast.showTop("黑名单加载失败");
         return IndicatorResult.fail;

@@ -90,10 +90,10 @@ class DesktopMultiWindow {
     return ids;
   }
 
-  static final ObserverList<MultiWindowListener> _listeners = ObserverList<MultiWindowListener>();
+  static final ObserverList<MultiWindowListener> _listeners =
+      ObserverList<MultiWindowListener>();
 
   static Future<void> _windowMethodCallHandler(MethodCall call) async {
-
     for (final MultiWindowListener listener in listeners) {
       if (!_listeners.contains(listener)) {
         return;

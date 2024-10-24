@@ -57,7 +57,7 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
           front64 = base64Decode(front!);
           getImageInfo(Image.memory(bg64!));
         }
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to load captcha", e, t);
         IToast.showTop("滑块验证码获取失败");
       } finally {

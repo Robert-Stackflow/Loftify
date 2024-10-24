@@ -42,7 +42,7 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
               .toList();
           return IndicatorResult.success;
         }
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to load tag shield list", e, t);
         IToast.showTop("屏蔽标签加载失败");
         return IndicatorResult.fail;

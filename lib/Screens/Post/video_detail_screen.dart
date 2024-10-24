@@ -105,8 +105,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
   }
 
   @override
-  void didPushNext() {
-  }
+  void didPushNext() {}
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -218,7 +217,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
           }
           setState(() {});
         }
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to load video detail", e, t);
         if (mounted) IToast.showTop("加载失败");
       }

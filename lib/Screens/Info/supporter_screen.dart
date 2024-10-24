@@ -89,7 +89,7 @@ class _SupporterScreenState extends State<SupporterScreen>
               return IndicatorResult.noMore;
             }
           }
-        } catch (e,t) {
+        } catch (e, t) {
           ILogger.error("Failed to load supporter list", e, t);
           if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;

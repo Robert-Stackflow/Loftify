@@ -106,14 +106,14 @@ class _MineScreenState extends State<MineScreen>
                   });
                   return IndicatorResult.success;
                 }
-              } catch (e,t) {
+              } catch (e, t) {
                 IToast.showTop("加载失败");
                 ILogger.error("Failed to load me info", e, t);
                 return IndicatorResult.fail;
               }
             });
           }
-        } catch (e,t) {
+        } catch (e, t) {
           IToast.showTop("加载失败");
           ILogger.error("Failed to load user info", e, t);
           return IndicatorResult.fail;
@@ -267,7 +267,7 @@ class _MineScreenState extends State<MineScreen>
         if (mounted) setState(() {});
         return IndicatorResult.success;
       }
-    } catch (e,t) {
+    } catch (e, t) {
       IToast.showTop("加载失败");
       ILogger.error("Failed to load $followingMode result", e, t);
       return IndicatorResult.fail;

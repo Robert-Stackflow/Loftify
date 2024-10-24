@@ -752,4 +752,3 @@ class CustomLoadingDialog {
     return Future.sync(() => Navigator.pop(rootContext));
   }
 }
-

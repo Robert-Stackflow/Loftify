@@ -40,5 +40,4 @@ class CryptUtil {
     final encrypted = encrypter.encrypt(data);
     return encrypted.base64;
   }
-
 }

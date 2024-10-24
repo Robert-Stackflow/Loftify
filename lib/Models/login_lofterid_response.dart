@@ -13,7 +13,11 @@ class LoginLofterIDResponse {
   factory LoginLofterIDResponse.fromJson(Map<String, dynamic> json) {
     return LoginLofterIDResponse(
         status: json['status'] as int,
-        userId: json['userid'] != null ? json['userid'] as int : null,
+        userId: json['userId'] != null
+            ? json['userId'] as int
+            : json['userid'] != null
+                ? json['userid'] as int
+                : null,
         token: json['token'],
         desc: json['desc']);
   }

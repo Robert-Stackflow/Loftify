@@ -48,7 +48,7 @@ class _UserDynamicShieldSettingScreenState
           shieldList.addAll(tmp);
           return IndicatorResult.success;
         }
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to load user dynamic shield list", e, t);
         IToast.showTop("不看TA的动态列表加载失败");
         return IndicatorResult.fail;

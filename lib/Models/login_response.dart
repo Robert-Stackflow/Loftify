@@ -18,7 +18,11 @@ class LoginResponse {
     return LoginResponse(
         result: json['result'] as int,
         status: json['status'] as int,
-        userid: json['userid'] != null ? json['userid'] as int : null,
+        userid: json['userid'] != null
+            ? json['userid'] as int
+            : json['userId'] != null
+                ? json['userId'] as int
+                : null,
         deviceid: json['deviceid'],
         token: json['token'],
         desc: json['desc']);

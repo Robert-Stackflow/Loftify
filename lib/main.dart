@@ -162,7 +162,8 @@ Future<void> initDisplayMode() async {
 Future<void> onError(FlutterErrorDetails details) async {
   File errorFile = File(join(await FileUtil.getLogDir(), "error.log"));
   if (!errorFile.existsSync()) errorFile.createSync();
-  errorFile.writeAsStringSync(details.toDiagnosticsNode().toStringDeep(), mode: FileMode.append);
+  errorFile.writeAsStringSync(details.toDiagnosticsNode().toStringDeep(),
+      mode: FileMode.append);
   if (details.stack != null) {
     Zone.current.handleUncaughtError(details.exception, details.stack!);
   }
@@ -214,7 +215,7 @@ class MyApp extends StatelessWidget {
             } else {
               try {
                 return Localizations.localeOf(context);
-              } catch (e,t) {
+              } catch (e, t) {
                 ILogger.error("Failed to load locale", e, t);
                 return const Locale("en", "US");
               }

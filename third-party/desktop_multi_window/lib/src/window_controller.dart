@@ -83,7 +83,7 @@ abstract class WindowController {
   Future<void> setPreventClose(bool isPreventClose);
 
   /// Get x11 id for specific window
-  /// 
+  ///
   /// This is only valid in x11/Linux.
   Future<int> getXID();
 }

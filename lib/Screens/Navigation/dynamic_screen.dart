@@ -230,7 +230,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
             return IndicatorResult.success;
           }
         }
-      } catch (e,t) {
+      } catch (e, t) {
         IToast.showTop("加载失败");
         ILogger.error("Failed to load tag dynamic", e, t);
         return IndicatorResult.fail;
@@ -830,7 +830,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
             return IndicatorResult.success;
           }
         }
-      } catch (e,t) {
+      } catch (e, t) {
         IToast.showTop("加载失败");
         ILogger.error("Failed to load collection dynamic", e, t);
         return IndicatorResult.fail;
@@ -1314,7 +1314,7 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
             return IndicatorResult.success;
           }
         }
-      } catch (e,t) {
+      } catch (e, t) {
         IToast.showTop("加载失败");
         ILogger.error("Failed to load grain dynamic", e, t);
         return IndicatorResult.fail;

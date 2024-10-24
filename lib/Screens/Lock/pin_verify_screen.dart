@@ -78,16 +78,16 @@ class PinVerifyScreenState extends State<PinVerifyScreen> {
           _gestureUnlockView.currentState?.updateStatus(UnlockStatus.normal);
         }
       });
-    } on PlatformException catch (e,t) {
+    } on PlatformException catch (e, t) {
       if (e.code == auth_error.notAvailable) {
-        ILogger.error("not avaliable",e,t);
+        ILogger.error("not avaliable", e, t);
       } else if (e.code == auth_error.notEnrolled) {
-        ILogger.error("not enrolled",e,t);
+        ILogger.error("not enrolled", e, t);
       } else if (e.code == auth_error.lockedOut ||
           e.code == auth_error.permanentlyLockedOut) {
-        ILogger.error("locked out",e,t);
+        ILogger.error("locked out", e, t);
       } else {
-        ILogger.error("other reason:$e",e,t);
+        ILogger.error("other reason:$e", e, t);
       }
     }
   }

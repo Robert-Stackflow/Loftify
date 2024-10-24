@@ -92,7 +92,7 @@ class HomeScreenState extends State<HomeScreen>
               .addAll(tmp.map((e) => PostListItem.fromJson(e)).toList());
           return IndicatorResult.success;
         }
-      } catch (e,t) {
+      } catch (e, t) {
         IToast.showTop("加载失败");
         ILogger.error("Failed to load data", e, t);
         return IndicatorResult.fail;

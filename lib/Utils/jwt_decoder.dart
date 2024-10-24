@@ -35,7 +35,6 @@ class JwtDecoder {
     return encodedPayload;
   }
 
-
   /// Decode a string JWT token into a `Map<String, dynamic>`
   /// containing the decoded JSON payload.
   ///

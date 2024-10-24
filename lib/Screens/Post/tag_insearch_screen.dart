@@ -118,7 +118,7 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
           _relatedTagList.addAll(tmp);
           if (mounted) setState(() {});
         }
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to load tag related tag list", e, t);
       }
     });
@@ -161,7 +161,7 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
             return IndicatorResult.success;
           }
         }
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to load tag insearch result list", e, t);
         IToast.showTop("加载失败");
         return IndicatorResult.fail;

@@ -17,7 +17,7 @@ class GithubApi {
           return items;
         }
       }
-    } catch (e,t) {
+    } catch (e, t) {
       ILogger.error("Failed to load releases", e, t);
     }
     return [];

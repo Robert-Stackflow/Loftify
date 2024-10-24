@@ -287,7 +287,7 @@ class PostDetail {
     if (Utils.isNotEmpty(embed)) {
       try {
         videoInfo = VideoInfo.fromJson(Utils.parseJson(embed ?? "{}"));
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to init videoInfo from $embed", e, t);
       }
     }

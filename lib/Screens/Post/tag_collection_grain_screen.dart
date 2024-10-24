@@ -235,7 +235,7 @@ class CollectionTabState extends State<CollectionTab>
             return IndicatorResult.success;
           }
         }
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to load tag collection list", e, t);
         IToast.showTop("加载失败");
         return IndicatorResult.fail;
@@ -613,7 +613,7 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
             return IndicatorResult.success;
           }
         }
-      } catch (e,t) {
+      } catch (e, t) {
         ILogger.error("Failed to load tag grain list", e, t);
         IToast.showTop("加载失败");
         return IndicatorResult.fail;

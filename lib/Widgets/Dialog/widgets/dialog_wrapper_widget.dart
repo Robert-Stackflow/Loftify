@@ -58,9 +58,9 @@ class DialogWrapperWidgetState extends State<DialogWrapperWidget> {
     double preferWidth = min(width, widget.preferMinWidth ?? 540);
     double preferHeight = min(width, widget.preferMinHeight ?? 720);
     double preferHorizontalMargin =
-    width > preferWidth ? (width - preferWidth) / 2 : 0;
+        width > preferWidth ? (width - preferWidth) / 2 : 0;
     double preferVerticalMargin =
-    height > preferHeight ? (height - preferHeight) / 2 : 0;
+        height > preferHeight ? (height - preferHeight) / 2 : 0;
     preferHorizontalMargin = max(preferHorizontalMargin, 20);
     preferVerticalMargin = max(preferVerticalMargin, 20);
     return PopScope(
@@ -76,8 +76,8 @@ class DialogWrapperWidgetState extends State<DialogWrapperWidget> {
         padding: widget.fullScreen
             ? EdgeInsets.zero
             : EdgeInsets.symmetric(
-            horizontal: preferHorizontalMargin,
-            vertical: preferVerticalMargin),
+                horizontal: preferHorizontalMargin,
+                vertical: preferVerticalMargin),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
@@ -87,15 +87,15 @@ class DialogWrapperWidgetState extends State<DialogWrapperWidget> {
             boxShadow: widget.fullScreen
                 ? null
                 : [
-              BoxShadow(
-                color: Utils.isDark(context)
-                    ? Theme.of(context).shadowColor
-                    : Colors.transparent,
-                offset: const Offset(0, 4),
-                blurRadius: 10,
-                spreadRadius: 1,
-              ).scale(2)
-            ],
+                    BoxShadow(
+                      color: Utils.isDark(context)
+                          ? Theme.of(context).shadowColor
+                          : Colors.transparent,
+                      offset: const Offset(0, 4),
+                      blurRadius: 10,
+                      spreadRadius: 1,
+                    ).scale(2)
+                  ],
           ),
           child: ClipRRect(
             borderRadius: widget.fullScreen
