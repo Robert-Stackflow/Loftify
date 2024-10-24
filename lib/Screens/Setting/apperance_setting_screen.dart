@@ -63,15 +63,16 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
       color: Colors.transparent,
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: ItemBuilder.buildSimpleAppBar(
+        appBar: ItemBuilder.buildDesktopAppBar(
+            transparent: true,
+            showBack: true,
             title: S.current.apprearanceSetting,
-            context: context,
-            transparent: true),
+            context: context),
         body: EasyRefresh(
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             children: [
-              const SizedBox(height: 10),
+              if (ResponsiveUtil.isLandscape()) const SizedBox(height: 10),
               ItemBuilder.buildCaptionItem(
                   context: context, title: S.current.themeSetting),
               Selector<AppProvider, ActiveThemeMode>(
@@ -110,7 +111,7 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                     title: S.current.selectTheme,
                     tip: "${lightTheme.name}/${darkTheme.name}",
                     onTap: () {
-                      RouteUtil.pushCupertinoRoute(
+                      RouteUtil.pushPanelCupertinoRoute(
                           context, const SelectThemeScreen());
                     },
                   ),
@@ -125,7 +126,7 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                   tip: currentFont.intlFontName,
                   bottomRadius: true,
                   onTap: () {
-                    RouteUtil.pushCupertinoRoute(
+                    RouteUtil.pushPanelCupertinoRoute(
                         context, const SelectFontScreen());
                   },
                 ),

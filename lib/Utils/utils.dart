@@ -281,7 +281,7 @@ class Utils {
       try {
         return int.parse(value);
       } catch (e, t) {
-        ILogger.error("Failed to pass int $value", e, t);
+        ILogger.error("Failed to parse int $value", e, t);
         return 0;
       }
     } else {

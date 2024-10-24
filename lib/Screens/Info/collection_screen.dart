@@ -159,7 +159,7 @@ class _CollectionScreenState extends State<CollectionScreen>
             _collectionList[index],
             verticalPadding: 8,
             onTap: () {
-              RouteUtil.pushCupertinoRoute(
+              RouteUtil.pushPanelCupertinoRoute(
                 context,
                 CollectionDetailScreen(
                   collectionId: _collectionList[index].id,
@@ -258,29 +258,10 @@ class _CollectionScreenState extends State<CollectionScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildAppBar(
+    return ItemBuilder.buildDesktopAppBar(
       context: context,
-      leading: Icons.arrow_back_rounded,
-      backgroundColor: MyTheme.getBackground(context),
-      onLeadingTap: () {
-        Navigator.pop(context);
-      },
-      title: Text(
-        "我的合集",
-        style: Theme.of(context).textTheme.titleLarge?.apply(
-              fontWeightDelta: 2,
-            ),
-      ),
-      actions: [
-        ItemBuilder.buildBlankIconButton(context),
-        const SizedBox(width: 5),
-        // ItemBuilder.buildIconButton(
-        //     context: context,
-        //     icon: Icon(Icons.more_vert_rounded,
-        //         color: Theme.of(context).iconTheme.color),
-        //     onTap: () {}),
-        // const SizedBox(width: 5),
-      ],
+      showBack: true,
+      title: "我的合集",
     );
   }
 }

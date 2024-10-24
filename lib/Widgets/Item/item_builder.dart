@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:context_menus/context_menus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
@@ -23,6 +24,7 @@ import '../../Models/post_detail_response.dart';
 import '../../Models/user_response.dart';
 import '../../Resources/colors.dart';
 import '../../Resources/fonts.dart';
+import '../../Resources/theme.dart';
 import '../../Screens/Info/user_detail_screen.dart';
 import '../../Screens/Login/login_by_captcha_screen.dart';
 import '../../Screens/Post/search_result_screen.dart';
@@ -38,6 +40,7 @@ import '../../Utils/route_util.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../../generated/l10n.dart';
+import '../Custom/custom_tab_indicator.dart';
 import '../Custom/hero_photo_view_screen.dart';
 import '../Dialog/dialog_builder.dart';
 import '../Scaffold/my_appbar.dart';
@@ -50,6 +53,214 @@ import '../Window/window_caption.dart';
 enum TailingType { none, clear, password, icon, text, widget }
 
 class ItemBuilder {
+  static PreferredSize buildDesktopAppBar({
+    required BuildContext context,
+    String title = "",
+    Widget? titleWidget,
+    bool showBack = false,
+    double spacing = 10,
+    bool centerInMobile = false,
+    Function()? onBackTap,
+    List<Widget> actions = const [],
+    double rightPadding = 0,
+    bool? showBorder,
+    Widget? bottom,
+    double? bottomHeight,
+    bool transparent = true,
+    double? titleSpacing,
+  }) {
+    late PreferredSize topWidget;
+    if (ResponsiveUtil.isLandscape()) {
+      var finalTitle = titleWidget ??
+          Text(title, style: Theme.of(context).textTheme.titleLarge);
+      topWidget = PreferredSize(
+        preferredSize: const Size.fromHeight(56),
+        child: Container(
+          height: 56,
+          decoration: BoxDecoration(
+            color: Theme.of(context).canvasColor,
+            border: showBorder ?? true
+                ? Border(
+                    bottom: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                      width: 1,
+                    ),
+                  )
+                : null,
+          ),
+          child: SafeArea(
+            child: Stack(
+              children: [
+                if (ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
+                Center(
+                  child: Row(
+                    mainAxisAlignment:
+                        ResponsiveUtil.isMobile() && centerInMobile
+                            ? MainAxisAlignment.center
+                            : MainAxisAlignment.start,
+                    children: [
+                      if (showBack)
+                        ResponsiveUtil.isLandscape()
+                            ? Container(
+                                margin: const EdgeInsets.only(left: 10),
+                                child: ToolButton(
+                                  context: context,
+                                  onTap: onBackTap ??
+                                      () => panelScreenState?.popPage(),
+                                  iconBuilder: (_) =>
+                                      const Icon(Icons.arrow_back_rounded),
+                                ),
+                              )
+                            : Container(
+                                margin: const EdgeInsets.only(left: 10),
+                                child: ItemBuilder.buildIconButton(
+                                  context: context,
+                                  icon: const Icon(Icons.arrow_back_rounded),
+                                  onTap: () => panelScreenState?.popPage(),
+                                ),
+                              ),
+                      if ((!(titleWidget != null &&
+                                  ResponsiveUtil.isLandscape()) &&
+                              !showBack) ||
+                          showBack)
+                        SizedBox(width: spacing),
+                      ResponsiveUtil.isLandscape()
+                          ? finalTitle
+                          : Expanded(child: finalTitle),
+                      if (ResponsiveUtil.isDesktop()) Container(width: 173),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    } else {
+      topWidget = PreferredSize(
+        preferredSize: const Size.fromHeight(56),
+        child: Container(
+          decoration: BoxDecoration(
+            color: transparent
+                ? Colors.transparent
+                : Theme.of(context).canvasColor,
+            border: showBorder ?? false
+                ? Border(
+                    bottom: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                      width: 1,
+                    ),
+                  )
+                : null,
+          ),
+          child: ItemBuilder.buildAppBar(
+            context: context,
+            // transparent: transparent,
+            leading: showBack ? Icons.arrow_back_rounded : null,
+            onLeadingTap: onBackTap ?? () => panelScreenState?.popPage(),
+            backgroundColor: transparent
+                ? MyTheme.getBackground(context)
+                : Theme.of(context).canvasColor,
+            leftSpacing: showBack ? 8 : 0,
+            leadingTitleSpacing: showBack ? 5 : 0,
+            actions: actions,
+            titleSpacing: titleSpacing,
+            title: titleWidget != null
+                ? Container(
+                    constraints: const BoxConstraints(maxHeight: 60),
+                    child: titleWidget,
+                  )
+                : Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium?.apply(
+                          fontWeightDelta: 2,
+                        ),
+                  ),
+          ),
+        ),
+      );
+    }
+    return bottom != null && bottomHeight != null
+        ? PreferredSize(
+            preferredSize: Size.fromHeight(56 + bottomHeight),
+            child: Column(
+              children: [
+                topWidget,
+                bottom,
+              ],
+            ),
+          )
+        : topWidget;
+  }
+
+  static buildTabBar(
+    BuildContext context,
+    TabController tabController,
+    List<Widget> tabs, {
+    double? height = 56,
+    EdgeInsetsGeometry? padding,
+    ValueChanged<int>? onTap,
+    bool showBorder = false,
+    Color? background,
+    double? width,
+    bool forceUnscrollable = false,
+  }) {
+    padding ??= ResponsiveUtil.isLandscape()
+        ? const EdgeInsets.symmetric(horizontal: 10)
+        : const EdgeInsets.symmetric(horizontal: 10);
+    bool scrollable = false;
+    if (ResponsiveUtil.isLandscape()) {
+      scrollable = true;
+    } else {
+      if (tabs.length <= 1 || tabs.length > 3) {
+        scrollable = true;
+      } else {
+        scrollable = false;
+      }
+    }
+    scrollable = forceUnscrollable ? false : scrollable;
+    return PreferredSize(
+      preferredSize: Size.fromHeight(height ?? 56),
+      child: Container(
+        height: 56,
+        width: width,
+        decoration: BoxDecoration(
+          color: background,
+          border: showBorder
+              ? Border(
+                  bottom: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                      width: ResponsiveUtil.isLandscape() ? 1 : 1),
+                )
+              : null,
+        ),
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 4),
+          child: TabBar(
+            controller: tabController,
+            overlayColor: WidgetStateProperty.all(Colors.transparent),
+            tabs: tabs,
+            labelPadding: const EdgeInsets.symmetric(horizontal: 10),
+            indicatorSize: TabBarIndicatorSize.tab,
+            dividerHeight: 0,
+            padding: padding,
+            isScrollable: scrollable,
+            tabAlignment: scrollable ? TabAlignment.start : null,
+            physics: const BouncingScrollPhysics(),
+            labelStyle: Theme.of(context).textTheme.titleLarge,
+            unselectedLabelStyle: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.apply(color: Colors.grey),
+            indicator:
+                CustomTabIndicator(borderColor: Theme.of(context).primaryColor),
+            onTap: onTap,
+          ),
+        ),
+      ),
+    );
+  }
+
   static PreferredSizeWidget buildSimpleAppBar({
     String title = "",
     Key? key,
@@ -95,58 +306,72 @@ class ItemBuilder {
     );
   }
 
-  static PreferredSizeWidget buildAppBar({
+  static buildAppBar({
     Widget? title,
     Key? key,
     bool center = false,
     IconData? leading,
+    Widget? leadingWidget,
     Color? leadingColor,
     Function()? onLeadingTap,
+    Color? backgroundColor,
     List<Widget>? actions,
     required BuildContext context,
     bool transparent = false,
-    Color? backgroundColor,
+    double leftSpacing = 10,
+    double leadingTitleSpacing = 10,
+    double? titleSpacing,
     bool forceShowClose = false,
   }) {
     bool showLeading =
         leading != null && (!ResponsiveUtil.isLandscape() || forceShowClose);
     // center = ResponsiveUtil.isDesktop() ? false : center;
-    return MyAppBar(
-      key: key,
-      backgroundColor: transparent
-          ? Colors.transparent
-          : backgroundColor ?? Theme.of(context).appBarTheme.backgroundColor,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      automaticallyImplyLeading: false,
-      leadingWidth: showLeading ? 56.0 : 0.0,
-      leading: showLeading
-          ? Container(
-              margin: const EdgeInsets.only(left: 5),
-              child: buildIconButton(
-                context: context,
-                icon: Icon(leading,
-                    color: leadingColor ?? Theme.of(context).iconTheme.color),
-                onTap: onLeadingTap,
+    return PreferredSize(
+      preferredSize: const Size(0, kToolbarHeight),
+      child: MyAppBar(
+        key: key,
+        primary: !ResponsiveUtil.isWideLandscape(),
+        backgroundColor: transparent
+            ? Colors.transparent
+            : backgroundColor ?? Theme.of(context).appBarTheme.backgroundColor!,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+        leadingWidth: showLeading ? 56.0 : 0.0,
+        leading: showLeading
+            ? Container(
+                margin: EdgeInsets.only(left: leftSpacing),
+                child: leadingWidget ??
+                    ItemBuilder.buildIconButton(
+                      context: context,
+                      icon: Icon(leading,
+                          color: leadingColor ??
+                              Theme.of(context).iconTheme.color),
+                      onTap: onLeadingTap,
+                    ),
+              )
+            : null,
+        title: center
+            ? Center(
+                child: Container(
+                    margin: EdgeInsets.only(
+                        left: center
+                            ? 0
+                            : (showLeading
+                                ? leadingTitleSpacing
+                                : titleSpacing ?? 20)),
+                    child: title))
+            : Container(
+                margin: EdgeInsets.only(
+                    left: center
+                        ? 0
+                        : (showLeading
+                            ? leadingTitleSpacing
+                            : titleSpacing ?? 20)),
+                child: title,
               ),
-            )
-          : null,
-      title: showLeading
-          ? center
-              ? Center(child: title)
-              : title ?? emptyWidget
-          : center
-              ? Center(
-                  child: Container(
-                    margin: const EdgeInsets.only(left: 20),
-                    child: title,
-                  ),
-                )
-              : Container(
-                  margin: const EdgeInsets.only(left: 20),
-                  child: title,
-                ),
-      actions: actions,
+        actions: actions,
+      ),
     );
   }
 
@@ -212,6 +437,70 @@ class ItemBuilder {
     );
   }
 
+  static buildContextMenuOverlay(Widget child) {
+    return ContextMenuOverlay(
+      cardBuilder: (context, widgets) => Container(
+        constraints: const BoxConstraints(minWidth: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        decoration: MyTheme.defaultDecoration,
+        child: Column(children: widgets),
+      ),
+      dividerBuilder: (context) => ItemBuilder.buildDivider(
+        context,
+        width: 1.5,
+        vertical: 6,
+        horizontal: 4,
+      ),
+      buttonBuilder: (context, config, [_]) {
+        bool isCheckbox = config.type == ContextMenuButtonConfigType.checkbox;
+        bool showCheck = isCheckbox && config.checked;
+        Widget checkIcon = Row(
+          children: [
+            Opacity(
+              opacity: showCheck ? 1 : 0,
+              child: Icon(Icons.check_rounded,
+                  size: ResponsiveUtil.isMobile() ? null : 16),
+            ),
+            SizedBox(width: showCheck ? 8 : 4),
+          ],
+        );
+        return Material(
+          color: Theme.of(context).canvasColor,
+          borderRadius: BorderRadius.circular(10),
+          child: InkWell(
+            onTap: config.onPressed,
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              padding: EdgeInsets.only(
+                  left: showCheck ? 8 : 12, right: 12, top: 8, bottom: 8),
+              decoration:
+                  BoxDecoration(borderRadius: BorderRadius.circular(10)),
+              child: Row(
+                children: [
+                  if (isCheckbox) checkIcon,
+                  if (config.icon != null)
+                    Transform.scale(
+                      scale: 0.83,
+                      child: config.icon!,
+                    ),
+                  if (config.icon != null) const SizedBox(width: 10),
+                  Text(
+                    config.label,
+                    style: Theme.of(context).textTheme.bodyMedium?.apply(
+                          fontSizeDelta: ResponsiveUtil.isMobile() ? 2 : 0,
+                          color: config.textColor,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+
   static buildLoadMoreNotification({
     Function()? onLoad,
     required Widget child,
@@ -244,6 +533,37 @@ class ItemBuilder {
           icon: Icon(Icons.more_vert_rounded,
               color: Theme.of(context).iconTheme.color),
           onTap: () {}),
+    );
+  }
+
+  static Widget buildShadowIconButton({
+    required BuildContext context,
+    required dynamic icon,
+    required Function()? onTap,
+    Function()? onLongPress,
+    double radius = 8,
+    EdgeInsets? padding,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).dividerColor, width: 0.8),
+        borderRadius: BorderRadius.circular(radius + 1),
+        boxShadow: MyTheme.defaultBoxShadow,
+      ),
+      child: Material(
+        color: Theme.of(context).canvasColor,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),
+        child: InkWell(
+          onTap: onTap,
+          onLongPress: onLongPress,
+          borderRadius: BorderRadius.circular(radius),
+          child: Container(
+            padding: padding ?? const EdgeInsets.all(10),
+            child: icon ?? emptyWidget,
+          ),
+        ),
+      ),
     );
   }
 
@@ -314,6 +634,26 @@ class ItemBuilder {
           return buildIconButton(context: context, icon: icon, onTap: onTap);
         },
       ),
+    );
+  }
+
+  static Widget buildDynamicToolButton({
+    required BuildContext context,
+    required WindowButtonIconBuilder iconBuilder,
+    required VoidCallback onTap,
+    Function(BuildContext context, dynamic value, Widget? child)? onChangemode,
+  }) {
+    return Selector<AppProvider, ActiveThemeMode>(
+      selector: (context, appProvider) => appProvider.themeMode,
+      builder: (context, themeMode, child) {
+        onChangemode?.call(context, themeMode, child);
+        return ToolButton(
+          context: context,
+          iconBuilder: iconBuilder,
+          onTap: onTap,
+          padding: const EdgeInsets.all(7),
+        );
+      },
     );
   }
 
@@ -1661,17 +2001,18 @@ class ItemBuilder {
               GestureDetector(
                 onTap: showDetailMode != ShowDetailMode.not
                     ? () {
-                        Navigator.push(
+                        RouteUtil.pushDialogRoute(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) => HeroPhotoViewScreen(
-                              tagPrefix: tagPrefix,
-                              tagSuffix: tagSuffix,
-                              imageUrls: [tagUrl],
-                              useMainColor: false,
-                              title: title,
-                              captions: [caption ?? ""],
-                            ),
+                          showClose: false,
+                          fullScreen: true,
+                          useMaterial: true,
+                          HeroPhotoViewScreen(
+                            tagPrefix: tagPrefix,
+                            tagSuffix: tagSuffix,
+                            imageUrls: [tagUrl],
+                            useMainColor: false,
+                            title: title,
+                            captions: [caption ?? ""],
                           ),
                         );
                       }
@@ -1742,17 +2083,18 @@ class ItemBuilder {
     return ItemBuilder.buildClickItem(
       GestureDetector(
         onTap: () {
-          Navigator.push(
+          RouteUtil.pushDialogRoute(
             context,
-            MaterialPageRoute(
-              builder: (context) => HeroPhotoViewScreen(
-                tagPrefix: tagPrefix,
-                tagSuffix: tagSuffix,
-                imageUrls: [imageUrl],
-                useMainColor: false,
-                title: title,
-                captions: [caption ?? ""],
-              ),
+            showClose: false,
+            fullScreen: true,
+            useMaterial: true,
+            HeroPhotoViewScreen(
+              tagPrefix: tagPrefix,
+              tagSuffix: tagSuffix,
+              imageUrls: [imageUrl],
+              useMainColor: false,
+              title: title,
+              captions: [caption ?? ""],
             ),
           );
         },
@@ -1888,40 +2230,45 @@ class ItemBuilder {
   static buildUnLoginMainBody(BuildContext context) {
     return Align(
       alignment: Alignment.topCenter,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 10),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 100),
-            ItemBuilder.buildAvatar(
-              showLoading: false,
-              context: context,
-              useDefaultAvatar: true,
-              size: 72,
-              imageUrl: '',
+      child: Stack(
+        alignment: Alignment.topCenter,
+        children: [
+          if (ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 10),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 100),
+                ItemBuilder.buildAvatar(
+                  showLoading: false,
+                  context: context,
+                  useDefaultAvatar: true,
+                  size: 72,
+                  imageUrl: '',
+                ),
+                const SizedBox(height: 24),
+                ItemBuilder.buildRoundButton(
+                  context,
+                  width: 230,
+                  text: "登录以获得个性化服务",
+                  background: Theme.of(context).primaryColor,
+                  fontSizeDelta: 2,
+                  onTap: () {
+                    if (ResponsiveUtil.isLandscape()) {
+                      DialogBuilder.showPageDialog(
+                        context,
+                        child: const LoginByCaptchaScreen(),
+                      );
+                    } else {
+                      panelScreenState?.pushPage(const LoginByCaptchaScreen());
+                    }
+                  },
+                ),
+              ],
             ),
-            const SizedBox(height: 24),
-            ItemBuilder.buildRoundButton(
-              context,
-              width: 230,
-              text: "登录以获得个性化服务",
-              background: Theme.of(context).primaryColor,
-              fontSizeDelta: 2,
-              onTap: () {
-                if (ResponsiveUtil.isLandscape()) {
-                  DialogBuilder.showPageDialog(
-                    context,
-                    child: const LoginByCaptchaScreen(),
-                  );
-                } else {
-                  RouteUtil.pushCupertinoRoute(
-                      context, const LoginByCaptchaScreen());
-                }
-              },
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -1993,7 +2340,7 @@ class ItemBuilder {
     return GestureDetector(
       onTap: () {
         if (tagType != TagType.egg && jumpToTag) {
-          RouteUtil.pushCupertinoRoute(context, TagDetailScreen(tag: tag));
+          panelScreenState?.pushPage(TagDetailScreen(tag: tag));
         }
         onTap?.call();
       },
@@ -2061,7 +2408,7 @@ class ItemBuilder {
   }) {
     return GestureDetector(
       onTap: () {
-        RouteUtil.pushCupertinoRoute(context, TagDetailScreen(tag: tag));
+        panelScreenState?.pushPage(TagDetailScreen(tag: tag));
         onTap?.call();
       },
       child: Container(
@@ -2908,8 +3255,7 @@ class ItemBuilder {
               type: ContextMenuButtonType.custom,
               onPressed: () {
                 if (Utils.isNotEmpty(details.selectedText)) {
-                  RouteUtil.pushCupertinoRoute(
-                    context,
+                  panelScreenState?.pushPage(
                     SearchResultScreen(
                       searchKey: details.selectedText!,
                     ),
@@ -2996,16 +3342,9 @@ class ItemBuilder {
           type: ContextMenuButtonType.custom,
           onPressed: () {
             if (Utils.isNotEmpty(selectedText)) {
-              if (ResponsiveUtil.isLandscape()) {
-                RouteUtil.pushDesktopFadeRoute(
-                  SearchResultScreen(searchKey: selectedText),
-                );
-              } else {
-                RouteUtil.pushCupertinoRoute(
-                  context,
-                  SearchResultScreen(searchKey: selectedText),
-                );
-              }
+              panelScreenState?.pushPage(
+                SearchResultScreen(searchKey: selectedText),
+              );
             }
             details.hideToolbar();
           },
@@ -3086,8 +3425,11 @@ class ItemBuilder {
                     GestureDetector(
                       onTap: () {
                         if (imageUrl.isNotEmpty) {
-                          RouteUtil.pushMaterialRoute(
+                          RouteUtil.pushDialogRoute(
                             context,
+                            showClose: false,
+                            fullScreen: true,
+                            useMaterial: true,
                             HeroPhotoViewScreen(
                               imageUrls: illusts ?? [imageUrl],
                               useMainColor: true,
@@ -3174,8 +3516,7 @@ class ItemBuilder {
             ItemBuilder.buildClickItem(
               GestureDetector(
                 onTap: () {
-                  RouteUtil.pushCupertinoRoute(
-                    context,
+                  panelScreenState?.pushPage(
                     UserDetailScreen(
                         blogId: comment.publisherBlogInfo.blogId,
                         blogName: comment.publisherBlogInfo.blogName),
@@ -3203,8 +3544,7 @@ class ItemBuilder {
                             ItemBuilder.buildClickItem(
                               GestureDetector(
                                 onTap: () {
-                                  RouteUtil.pushCupertinoRoute(
-                                    context,
+                                  panelScreenState?.pushPage(
                                     UserDetailScreen(
                                         blogId:
                                             comment.publisherBlogInfo.blogId,
@@ -3457,8 +3797,7 @@ class ItemBuilder {
                   ItemBuilder.buildClickItem(
                     GestureDetector(
                       onTap: () {
-                        RouteUtil.pushCupertinoRoute(
-                          context,
+                        panelScreenState?.pushPage(
                           UserDetailScreen(
                               blogId: comment.publisherBlogInfo.blogId,
                               blogName: comment.publisherBlogInfo.blogName),
@@ -3583,8 +3922,7 @@ class ItemBuilder {
     return ItemBuilder.buildClickItem(
       GestureDetector(
         onTap: () {
-          RouteUtil.pushCupertinoRoute(
-            context,
+          panelScreenState?.pushPage(
             UserDetailScreen(
               blogId: item.blogInfo.blogId,
               blogName: item.blogInfo.blogName,
@@ -3678,98 +4016,76 @@ class ItemBuilder {
     required bool isStayOnTop,
     required bool isMaximized,
     required Function() onStayOnTopTap,
-    bool showAppName = false,
     bool forceClose = false,
   }) {
     return Container(
-      color: backgroundColor ?? Theme.of(context).scaffoldBackgroundColor,
+      decoration: BoxDecoration(
+        color: backgroundColor ?? Theme.of(context).scaffoldBackgroundColor,
+        // border: Border(
+        //   left: BorderSide(
+        //     color: Theme.of(context).dividerColor,
+        //     width: 0.5
+        //   ),
+        // ),
+      ),
       child: WindowTitleBar(
         useMoveHandle: ResponsiveUtil.isDesktop(),
         titleBarHeightDelta: 26,
-        margin: const EdgeInsets.symmetric(vertical: 8),
+        margin: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
             ...leftWidgets,
-            if (showAppName) ...[
-              const SizedBox(width: 4),
-              // IgnorePointer(
-              //   child: ClipRRect(
-              //     borderRadius: BorderRadius.circular(10),
-              //     clipBehavior: Clip.antiAlias,
-              //     child: Container(
-              //       width: 24,
-              //       height: 24,
-              //       decoration: const BoxDecoration(
-              //         image: DecorationImage(
-              //           image: AssetImage('assets/logo-transparent.png'),
-              //           fit: BoxFit.contain,
-              //         ),
-              //       ),
-              //     ),
-              //   ),
-              // ),
-              const SizedBox(width: 8),
-              Text(
-                S.current.appName,
-                style: Theme.of(context).textTheme.titleSmall?.apply(
-                      fontSizeDelta: 4,
-                      fontWeightDelta: 2,
-                    ),
-              ),
-            ],
-            const Spacer(),
+            // const Spacer(),
             Row(
               children: [
+                const SizedBox(width: 10),
                 ...rightButtons,
-                if (ResponsiveUtil.isDesktop())
-                  StayOnTopWindowButton(
-                    context: context,
-                    rotateAngle: isStayOnTop ? 0 : -pi / 4,
-                    colors: isStayOnTop
-                        ? MyColors.getStayOnTopButtonColors(context)
-                        : MyColors.getNormalButtonColors(context),
-                    borderRadius: BorderRadius.circular(8),
-                    onPressed: onStayOnTopTap,
-                  ),
+                StayOnTopWindowButton(
+                  context: context,
+                  rotateAngle: isStayOnTop ? -pi / 4 : 0,
+                  colors: isStayOnTop
+                      ? MyColors.getStayOnTopButtonColors(context)
+                      : MyColors.getNormalButtonColors(context),
+                  borderRadius: BorderRadius.circular(8),
+                  onPressed: onStayOnTopTap,
+                ),
                 const SizedBox(width: 3),
-                if (ResponsiveUtil.isDesktop())
-                  MinimizeWindowButton(
-                    colors: MyColors.getNormalButtonColors(context),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                MinimizeWindowButton(
+                  colors: MyColors.getNormalButtonColors(context),
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 const SizedBox(width: 3),
-                if (ResponsiveUtil.isDesktop())
-                  isMaximized
-                      ? RestoreWindowButton(
-                          colors: MyColors.getNormalButtonColors(context),
-                          borderRadius: BorderRadius.circular(8),
-                          onPressed: ResponsiveUtil.maximizeOrRestore,
-                        )
-                      : MaximizeWindowButton(
-                          colors: MyColors.getNormalButtonColors(context),
-                          borderRadius: BorderRadius.circular(8),
-                          onPressed: ResponsiveUtil.maximizeOrRestore,
-                        ),
+                isMaximized
+                    ? RestoreWindowButton(
+                        colors: MyColors.getNormalButtonColors(context),
+                        borderRadius: BorderRadius.circular(8),
+                        onPressed: ResponsiveUtil.maximizeOrRestore,
+                      )
+                    : MaximizeWindowButton(
+                        colors: MyColors.getNormalButtonColors(context),
+                        borderRadius: BorderRadius.circular(8),
+                        onPressed: ResponsiveUtil.maximizeOrRestore,
+                      ),
                 const SizedBox(width: 3),
-                if (ResponsiveUtil.isDesktop())
-                  CloseWindowButton(
-                    colors: MyColors.getCloseButtonColors(context),
-                    borderRadius: BorderRadius.circular(8),
-                    onPressed: () {
-                      if (forceClose) {
-                        windowManager.close();
+                CloseWindowButton(
+                  colors: MyColors.getCloseButtonColors(context),
+                  borderRadius: BorderRadius.circular(8),
+                  onPressed: () {
+                    if (forceClose) {
+                      windowManager.close();
+                    } else {
+                      if (HiveUtil.getBool(HiveUtil.showTrayKey) &&
+                          HiveUtil.getBool(HiveUtil.enableCloseToTrayKey)) {
+                        windowManager.hide();
                       } else {
-                        if (HiveUtil.getBool(HiveUtil.enableCloseToTrayKey)) {
-                          windowManager.hide();
-                        } else {
-                          windowManager.close();
-                        }
+                        windowManager.close();
                       }
-                    },
-                  ),
+                    }
+                  },
+                ),
               ],
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
           ],
         ),
       ),

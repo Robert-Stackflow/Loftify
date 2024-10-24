@@ -157,13 +157,23 @@ class _MaterialIndicatorState extends State<_MaterialIndicator> {
                 _mode == IndicatorMode.processed || _mode == IndicatorMode.done
                     ? 0
                     : 1,
-            child: RefreshProgressIndicator(
-              value: _value,
-              backgroundColor: widget.backgroundColor,
-              color: _color,
-              valueColor: widget.valueColor,
-              semanticsLabel: widget.semanticsLabel,
-              semanticsValue: widget.semanticsValue,
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(
+                    width: 1, color: Theme.of(context).dividerColor),
+                borderRadius: BorderRadius.circular(50),
+              ),
+              child: RefreshProgressIndicator(
+                value: _value,
+                backgroundColor: widget.backgroundColor,
+                color: _color,
+                valueColor: widget.valueColor,
+                semanticsLabel: widget.semanticsLabel,
+                semanticsValue: widget.semanticsValue,
+                strokeCap: StrokeCap.round,
+                elevation: 0,
+                indicatorMargin: EdgeInsets.zero,
+              ),
             ),
           ),
           if (_mode == IndicatorMode.inactive &&

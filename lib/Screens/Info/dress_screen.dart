@@ -163,7 +163,7 @@ class _DressScreenState extends State<DressScreen>
   _buildGiftDressItem(GiftDress item) {
     return GestureDetector(
       onTap: () {
-        RouteUtil.pushCupertinoRoute(
+        RouteUtil.pushPanelCupertinoRoute(
           context,
           DressDetailScreen(
             returnGiftDressId: item.returnGiftDressId,
@@ -202,7 +202,7 @@ class _DressScreenState extends State<DressScreen>
               text: "查看详情",
               background: Theme.of(context).primaryColor,
               onTap: () {
-                RouteUtil.pushCupertinoRoute(
+                RouteUtil.pushPanelCupertinoRoute(
                   context,
                   DressDetailScreen(
                     returnGiftDressId: item.returnGiftDressId,
@@ -218,15 +218,10 @@ class _DressScreenState extends State<DressScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildAppBar(
+    return ItemBuilder.buildDesktopAppBar(
       context: context,
-      leading: Icons.arrow_back_rounded,
-      backgroundColor: MyTheme.getBackground(context),
-      onLeadingTap: () {
-        Navigator.pop(context);
-      },
-      center: Utils.isNotEmpty(widget.tag) ? true : false,
-      title: Utils.isNotEmpty(widget.tag)
+      showBack: true,
+      titleWidget: Utils.isNotEmpty(widget.tag)
           ? ItemBuilder.buildClickItem(
               ItemBuilder.buildTagItem(
                 context,

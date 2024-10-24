@@ -2,6 +2,7 @@ import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../Utils/utils.dart';
+import '../../../Utils/responsive_util.dart';
 import '../colors.dart';
 import '../custom_dialog.dart';
 
@@ -41,8 +42,8 @@ class CustomConfirmDialogWidget extends StatelessWidget {
     this.textColor = const Color(0xFF707070),
     this.buttonTextColor = Colors.white,
     this.imagePath,
-    this.padding = const EdgeInsets.all(24),
-    this.margin = const EdgeInsets.all(24),
+    this.padding,
+    this.margin,
     required this.renderHtml,
     this.borderRadius = 24,
     this.align = Alignment.bottomCenter,
@@ -57,10 +58,10 @@ class CustomConfirmDialogWidget extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: Container(
-          constraints: const BoxConstraints(
-            maxWidth: 340,
-          ),
-          margin: margin ?? const EdgeInsets.all(24),
+          constraints: ResponsiveUtil.isWideLandscape()
+              ? const BoxConstraints(maxWidth: 400)
+              : null,
+          margin: margin ?? const EdgeInsets.all(16),
           padding: padding ??
               const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
           decoration: BoxDecoration(

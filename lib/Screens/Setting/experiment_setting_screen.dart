@@ -47,21 +47,21 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.transparent,
-      child: Scaffold(
-        appBar: ItemBuilder.buildSimpleAppBar(
-            title: S.current.experimentSetting,
-            context: context,
-            transparent: true),
-        body: EasyRefresh(
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            children: [
-              ..._privacySettings(),
-              const SizedBox(height: 30),
-            ],
-          ),
+    return Scaffold(
+      appBar: ItemBuilder.buildDesktopAppBar(
+        transparent: true,
+        title: S.current.experimentSetting,
+        context: context,
+        showBack: true,
+      ),
+      body: EasyRefresh(
+        child: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          children: [
+            if (ResponsiveUtil.isLandscape()) const SizedBox(height: 10),
+            ..._privacySettings(),
+            const SizedBox(height: 30),
+          ],
         ),
       ),
     );
@@ -69,7 +69,6 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
 
   _privacySettings() {
     return [
-      const SizedBox(height: 10),
       ItemBuilder.buildCaptionItem(
           context: context, title: S.current.privacySetting),
       ItemBuilder.buildRadioItem(
@@ -158,7 +157,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
 
   onEnablePinTapped() {
     setState(() {
-      RouteUtil.pushCupertinoRoute(
+      RouteUtil.pushPanelCupertinoRoute(
         context,
         PinVerifyScreen(
           onSuccess: () {
@@ -181,7 +180,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
 
   onBiometricTapped() {
     if (!_enableBiometric) {
-      RouteUtil.pushCupertinoRoute(
+      RouteUtil.pushPanelCupertinoRoute(
         context,
         PinVerifyScreen(
           onSuccess: () {
@@ -204,14 +203,14 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
 
   onChangePinTapped() {
     setState(() {
-      RouteUtil.pushCupertinoRoute(context, const PinChangeScreen())
-          .then((value) {
-        setState(() {
-          _hasGuesturePasswd =
-              HiveUtil.getString(HiveUtil.guesturePasswdKey) != null &&
-                  HiveUtil.getString(HiveUtil.guesturePasswdKey)!.isNotEmpty;
-        });
-      });
+      RouteUtil.pushPanelCupertinoRoute(context, const PinChangeScreen());
+      //     .then((value) {
+      //   setState(() {
+      //     _hasGuesturePasswd =
+      //         HiveUtil.getString(HiveUtil.guesturePasswdKey) != null &&
+      //             HiveUtil.getString(HiveUtil.guesturePasswdKey)!.isNotEmpty;
+      //   });
+      // });
     });
   }
 

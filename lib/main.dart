@@ -9,28 +9,6 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:hive/hive.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:loftify/Database/database_manager.dart';
-import 'package:loftify/Models/recommend_response.dart';
-import 'package:loftify/Screens/Info/favorite_folder_list_screen.dart';
-import 'package:loftify/Screens/Info/history_screen.dart';
-import 'package:loftify/Screens/Info/share_screen.dart';
-import 'package:loftify/Screens/Lock/pin_change_screen.dart';
-import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
-import 'package:loftify/Screens/Login/login_by_lofterid_screen.dart';
-import 'package:loftify/Screens/Login/login_by_password_screen.dart';
-import 'package:loftify/Screens/Navigation/mine_screen.dart';
-import 'package:loftify/Screens/Post/post_detail_screen.dart';
-import 'package:loftify/Screens/Setting/apperance_setting_screen.dart';
-import 'package:loftify/Screens/Setting/blacklist_setting_screen.dart';
-import 'package:loftify/Screens/Setting/experiment_setting_screen.dart';
-import 'package:loftify/Screens/Setting/general_setting_screen.dart';
-import 'package:loftify/Screens/Setting/image_setting_screen.dart';
-import 'package:loftify/Screens/Setting/lofter_basic_setting_screen.dart';
-import 'package:loftify/Screens/Setting/navitem_setting_screen.dart';
-import 'package:loftify/Screens/Setting/operation_setting_screen.dart';
-import 'package:loftify/Screens/Setting/select_theme_screen.dart';
-import 'package:loftify/Screens/Setting/setting_screen.dart';
-import 'package:loftify/Screens/Setting/tagshield_setting_screen.dart';
-import 'package:loftify/Screens/Setting/userdynamicshield_setting_screen.dart';
 import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/fontsize_util.dart';
@@ -42,18 +20,12 @@ import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
-import 'Screens/Info/favorite_folder_detail_screen.dart';
-import 'Screens/Info/like_screen.dart';
-import 'Screens/Info/user_detail_screen.dart';
-import 'Screens/Lock/pin_verify_screen.dart';
-import 'Screens/Navigation/dynamic_screen.dart';
-import 'Screens/Navigation/home_screen.dart';
-import 'Screens/Setting/about_setting_screen.dart';
 import 'Screens/main_screen.dart';
 import 'Utils/constant.dart';
 import 'Utils/ilogger.dart';
 import 'Utils/notification_util.dart';
 import 'Utils/responsive_util.dart';
+import 'Widgets/Item/item_builder.dart';
 import 'generated/l10n.dart';
 
 Future<void> main(List<String> args) async {
@@ -92,13 +64,6 @@ Future<void> initApp() async {
   NotificationUtil.init();
   await ResponsiveUtil.init();
   await RequestUtil.init();
-  // VideoPlayerMediaKit.ensureInitialized(
-  //   android: false,
-  //   iOS: false,
-  //   macOS: false,
-  //   windows: true,
-  //   linux: false,
-  // );
 }
 
 Future<void> initWindow() async {
@@ -221,7 +186,7 @@ class MyApp extends StatelessWidget {
               }
             }
           },
-          home: home,
+          home: ItemBuilder.buildContextMenuOverlay(home),
           builder: (context, widget) {
             return Overlay(
               initialEntries: [
@@ -233,68 +198,20 @@ class MyApp extends StatelessWidget {
                           FontSizeUtil.getTextFactor(globalProvider.fontSize),
                         ),
                       ),
-                      child: widget,
+                      child: Listener(
+                        onPointerDown: (_) {
+                          if (!ResponsiveUtil.isDesktop() &&
+                              searchScreenState?.hasSearchFocus == true) {
+                            FocusManager.instance.primaryFocus?.unfocus();
+                          }
+                        },
+                        child: widget,
+                      ),
                     ),
                   ),
                 ],
               ],
             );
-          },
-          routes: {
-            HomeScreen.routeName: (context) => const HomeScreen(),
-            MineScreen.routeName: (context) => const MineScreen(),
-            DynamicScreen.routeName: (context) => const DynamicScreen(),
-            PostDetailScreen.routeName: (context) => PostDetailScreen(
-                  postItem: ModalRoute.of(context)!.settings.arguments
-                      as PostListItem,
-                  isArticle: false,
-                ),
-            SettingScreen.routeName: (context) => const SettingScreen(),
-            HistoryScreen.routeName: (context) => const HistoryScreen(),
-            LikeScreen.routeName: (context) => LikeScreen(),
-            ShareScreen.routeName: (context) => ShareScreen(),
-            UserDetailScreen.routeName: (context) =>
-                const UserDetailScreen(blogId: 0, blogName: ''),
-            FavoriteFolderListScreen.routeName: (context) =>
-                const FavoriteFolderListScreen(),
-            FavoriteFolderDetailScreen.routeName: (context) =>
-                FavoriteFolderDetailScreen(
-                    favoriteFolderId:
-                        ModalRoute.of(context)!.settings.arguments as int),
-            AboutSettingScreen.routeName: (context) =>
-                const AboutSettingScreen(),
-            NavItemSettingScreen.routeName: (context) =>
-                const NavItemSettingScreen(),
-            SelectThemeScreen.routeName: (context) => const SelectThemeScreen(),
-            OperationSettingScreen.routeName: (context) =>
-                const OperationSettingScreen(),
-            AppearanceSettingScreen.routeName: (context) =>
-                const AppearanceSettingScreen(),
-            GeneralSettingScreen.routeName: (context) =>
-                const GeneralSettingScreen(),
-            ImageSettingScreen.routeName: (context) =>
-                const ImageSettingScreen(),
-            ExperimentSettingScreen.routeName: (context) =>
-                const ExperimentSettingScreen(),
-            PinChangeScreen.routeName: (context) => const PinChangeScreen(),
-            LofterBasicSettingScreen.routeName: (context) =>
-                const LofterBasicSettingScreen(),
-            BlacklistSettingScreen.routeName: (context) =>
-                const BlacklistSettingScreen(),
-            TagShieldSettingScreen.routeName: (context) =>
-                const TagShieldSettingScreen(),
-            UserDynamicShieldSettingScreen.routeName: (context) =>
-                const UserDynamicShieldSettingScreen(),
-            PinVerifyScreen.routeName: (context) => PinVerifyScreen(
-                  onSuccess:
-                      ModalRoute.of(context)!.settings.arguments as Function(),
-                ),
-            LoginByPasswordScreen.routeName: (context) =>
-                const LoginByPasswordScreen(),
-            LoginByCaptchaScreen.routeName: (context) =>
-                const LoginByCaptchaScreen(),
-            LoginByLofterIDScreen.routeName: (context) =>
-                const LoginByLofterIDScreen(),
           },
         ),
       ),

@@ -266,14 +266,10 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildAppBar(
+    return ItemBuilder.buildDesktopAppBar(
       context: context,
-      backgroundColor: MyTheme.getBackground(context),
-      leading: Icons.arrow_back_rounded,
-      onLeadingTap: () {
-        Navigator.pop(context);
-      },
-      title: ItemBuilder.buildClickItem(
+      showBack: true,
+      titleWidget: ItemBuilder.buildClickItem(
         ItemBuilder.buildTagItem(
           context,
           widget.tag,
@@ -286,7 +282,6 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
           showTagLabel: false,
         ),
       ),
-      center: true,
       actions: [
         ItemBuilder.buildBlankIconButton(context),
         const SizedBox(width: 5),

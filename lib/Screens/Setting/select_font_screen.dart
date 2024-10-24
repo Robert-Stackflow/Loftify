@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 
 import '../../Resources/fonts.dart';
 import '../../Utils/hive_util.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../generated/l10n.dart';
@@ -31,16 +32,17 @@ class _SelectFontScreenState extends State<SelectFontScreen>
     return Container(
       color: Colors.transparent,
       child: Scaffold(
-        appBar: ItemBuilder.buildSimpleAppBar(
+        appBar: ItemBuilder.buildDesktopAppBar(
+            showBack: true,
+            transparent: true,
             title: S.current.chooseFontFamily,
-            context: context,
-            transparent: true),
+            context: context),
         body: EasyRefresh(
           child: ListView(
             physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 10),
             children: [
-              const SizedBox(height: 10),
+              if (ResponsiveUtil.isLandscape()) const SizedBox(height: 10),
               ItemBuilder.buildCaptionItem(
                   context: context, title: S.current.defaultFontFamily),
               ItemBuilder.buildContainerItem(

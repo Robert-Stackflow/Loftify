@@ -141,7 +141,9 @@ class _NavItemSettingScreenState extends State<NavItemSettingScreen>
   Widget build(BuildContext context) {
     return Consumer<AppProvider>(builder: (context, globalProvider, child) {
       return Scaffold(
-        appBar: ItemBuilder.buildSimpleAppBar(
+        appBar: ItemBuilder.buildDesktopAppBar(
+          showBack: true,
+          transparent: true,
           title: S.current.navItemSetting,
           context: context,
         ),

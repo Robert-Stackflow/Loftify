@@ -38,10 +38,10 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: ItemBuilder.buildSimpleAppBar(
+      appBar: ItemBuilder.buildDesktopAppBar(
+        showBack: true,
         transparent: true,
         title: "文件命名格式",
-        leading: Icons.arrow_back_rounded,
         context: context,
       ),
       body: EasyRefresh(

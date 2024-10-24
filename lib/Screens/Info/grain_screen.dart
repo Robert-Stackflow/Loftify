@@ -153,7 +153,7 @@ class _GrainScreenState extends State<GrainScreen>
             _grainList[index],
             verticalPadding: 8,
             onTap: () {
-              RouteUtil.pushCupertinoRoute(
+              RouteUtil.pushPanelCupertinoRoute(
                 context,
                 GrainDetailScreen(
                   grainId: _grainList[index].id,
@@ -248,14 +248,10 @@ class _GrainScreenState extends State<GrainScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildAppBar(
+    return ItemBuilder.buildDesktopAppBar(
       context: context,
-      leading: Icons.arrow_back_rounded,
-      backgroundColor: MyTheme.getBackground(context),
-      onLeadingTap: () {
-        Navigator.pop(context);
-      },
-      title: Text("我的粮单", style: Theme.of(context).textTheme.titleLarge),
+      showBack: true,
+      title: "我的粮单",
       actions: [
         ItemBuilder.buildBlankIconButton(context),
         const SizedBox(width: 5),

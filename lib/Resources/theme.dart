@@ -1,11 +1,41 @@
 import 'package:flutter/material.dart';
 
+import '../Utils/app_provider.dart';
 import '../Utils/utils.dart';
 import 'colors.dart';
 import 'styles.dart';
 
 class MyTheme {
   MyTheme._();
+
+  static List<BoxShadow> get defaultBoxShadow {
+    return [
+      BoxShadow(
+        color: Theme.of(rootContext).shadowColor,
+        offset: const Offset(0, 4),
+        blurRadius: 10,
+        spreadRadius: 1,
+      ).scale(2),
+    ];
+  }
+
+  static BoxDecoration get defaultDecoration {
+    return BoxDecoration(
+      color: Theme.of(rootContext).canvasColor,
+      border: Border.all(color: Theme.of(rootContext).dividerColor, width: 1),
+      boxShadow: defaultBoxShadow,
+      borderRadius: BorderRadius.circular(10),
+    );
+  }
+
+  static BoxDecoration getDefaultDecoration([double radius = 10,double borderWidth=1]) {
+    return BoxDecoration(
+      color: Theme.of(rootContext).canvasColor,
+      border: Border.all(color: Theme.of(rootContext).dividerColor, width: borderWidth),
+      boxShadow: defaultBoxShadow,
+      borderRadius: BorderRadius.circular(radius),
+    );
+  }
 
   bool isDarkMode(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark;

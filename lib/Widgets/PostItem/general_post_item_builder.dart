@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:like_button/like_button.dart';
 import 'package:loftify/Screens/Post/video_detail_screen.dart';
+import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Widgets/BottomSheet/shield_bottom_sheet.dart';
 
 import '../../Models/post_detail_response.dart';
@@ -128,14 +129,16 @@ class GeneralPostItemBuilder {
     if (item.type == PostType.invalid) {
       IToast.showTop("无效内容");
     } else if (item.type == PostType.video) {
-      RouteUtil.pushCupertinoRoute(
-        context,
-        VideoDetailScreen(
-          generalPostItem: item,
-        ),
-      );
+      if (ResponsiveUtil.isDesktop()) {
+        IToast.showTop("桌面端不支持播放视频");
+      } else {
+        RouteUtil.pushPanelCupertinoRoute(
+          context,
+          VideoDetailScreen(generalPostItem: item),
+        );
+      }
     } else {
-      RouteUtil.pushCupertinoRoute(
+      RouteUtil.pushPanelCupertinoRoute(
         context,
         PostDetailScreen(
           generalPostItem: item,
@@ -447,7 +450,7 @@ class GeneralPostItemBuilder {
               children: [
                 GestureDetector(
                   onTap: () {
-                    RouteUtil.pushCupertinoRoute(
+                    RouteUtil.pushPanelCupertinoRoute(
                       context,
                       UserDetailScreen(
                         blogId: item.blogId,
@@ -468,7 +471,7 @@ class GeneralPostItemBuilder {
                 Expanded(
                   child: GestureDetector(
                     onTap: () {
-                      RouteUtil.pushCupertinoRoute(
+                      RouteUtil.pushPanelCupertinoRoute(
                         context,
                         UserDetailScreen(
                           blogId: item.blogId,

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:loftify/Screens/Post/collection_detail_screen.dart';
 import 'package:loftify/Screens/Post/grain_detail_screen.dart';
 import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Screens/Post/tag_detail_screen.dart';
+import 'package:loftify/Screens/refresh_interface.dart';
 import 'package:loftify/Utils/asset_util.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/route_util.dart';
@@ -26,6 +28,7 @@ import '../../Utils/responsive_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/Custom/custom_tab_indicator.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/Hidable/scroll_to_hide.dart';
 import '../../Widgets/Item/item_builder.dart';
 import 'home_screen.dart';
 
@@ -39,7 +42,11 @@ class DynamicScreen extends StatefulWidget {
 }
 
 class DynamicScreenState extends State<DynamicScreen>
-    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+    with
+        TickerProviderStateMixin,
+        AutomaticKeepAliveClientMixin,
+        ScrollToHideMixin,
+        BottomNavgationMixin {
   @override
   bool get wantKeepAlive => true;
   late TabController _tabController;
@@ -49,29 +56,98 @@ class DynamicScreenState extends State<DynamicScreen>
   final GlobalKey _tagTabKey = GlobalKey();
   final GlobalKey _collectionTabKey = GlobalKey();
   final GlobalKey _grainTabKey = GlobalKey();
+  final ScrollController _tagScrollController = ScrollController();
+  final ScrollController _collectionScrollController = ScrollController();
+  final ScrollController _grainScrollController = ScrollController();
+
+  late AnimationController _refreshRotationController;
+  final ScrollToHideController _scrollToHideController =
+      ScrollToHideController();
+
+  @override
+  List<ScrollController> getScrollControllers() {
+    return [
+      _tagScrollController,
+      _collectionScrollController,
+      _grainScrollController
+    ];
+  }
+
+  @override
+  FutureOr onTapBottomNavigation() {
+    scrollToTopOrRefresh();
+  }
 
   void scrollToTopAndRefresh() {
     if (appProvider.token.isEmpty) return;
     int nowTime = DateTime.now().millisecondsSinceEpoch;
     if (lastRefreshTime == 0 || (nowTime - lastRefreshTime) > krefreshTimeout) {
       lastRefreshTime = nowTime;
-      switch (_currentTabIndex) {
-        case 0:
-          (_tagTabKey.currentState as SubscribeTagTabState).callRefresh();
-          break;
-        case 1:
-          (_collectionTabKey.currentState as SubscribeCollectionTabState)
-              .callRefresh();
-          break;
-        case 2:
-          (_grainTabKey.currentState as SubscribeGrainTabState).callRefresh();
-          break;
-      }
+      refresh();
     }
+  }
+
+  void scrollToTopOrRefresh() {
+    ScrollController controller = getCurrentController();
+    if (controller.offset > 30) {
+      controller.animateTo(0,
+          duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+    } else {
+      refresh();
+    }
+  }
+
+  ScrollController getCurrentController() {
+    late ScrollController controller;
+    switch (_currentTabIndex) {
+      case 0:
+        controller = _tagScrollController;
+        break;
+      case 1:
+        controller = _collectionScrollController;
+        break;
+      case 2:
+        controller = _grainScrollController;
+        break;
+    }
+    return controller;
+  }
+
+  Function getCurrentCallRefresh() {
+    late Function callRefresh;
+    switch (_currentTabIndex) {
+      case 0:
+        callRefresh =
+            (_tagTabKey.currentState as SubscribeTagTabState).callRefresh;
+        break;
+      case 1:
+        callRefresh =
+            (_collectionTabKey.currentState as SubscribeCollectionTabState)
+                .callRefresh;
+        break;
+      case 2:
+        callRefresh =
+            (_grainTabKey.currentState as SubscribeGrainTabState).callRefresh;
+        break;
+    }
+    return callRefresh;
+  }
+
+  void refresh() {
+    getCurrentCallRefresh()();
+  }
+
+  void scrollToTop() {
+    getCurrentController().animateTo(0,
+        duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
   }
 
   @override
   void initState() {
+    _refreshRotationController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
     if (Platform.isAndroid) {
       SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
@@ -87,23 +163,67 @@ class DynamicScreenState extends State<DynamicScreen>
     super.build(context);
     return Scaffold(
       backgroundColor: MyTheme.getBackground(context),
-      appBar: appProvider.token.isNotEmpty
-          ? _buildAppBar()
-          : ResponsiveUtil.isDesktop()
-              ? null
-              : ItemBuilder.buildAppBar(
-                  context: context,
-                  backgroundColor: MyTheme.getBackground(context)),
+      appBar: appProvider.token.isNotEmpty ? _buildAppBar() : null,
       body: appProvider.token.isNotEmpty
-          ? TabBarView(
-              controller: _tabController,
+          ? Stack(
               children: [
-                SubscribeTagTab(key: _tagTabKey),
-                SubscribeCollectionTab(key: _collectionTabKey),
-                SubscribeGrainTab(key: _grainTabKey),
+                TabBarView(
+                  controller: _tabController,
+                  children: [
+                    SubscribeTagTab(
+                      key: _tagTabKey,
+                      scrollController: _tagScrollController,
+                    ),
+                    SubscribeCollectionTab(
+                      key: _collectionTabKey,
+                      scrollController: _collectionScrollController,
+                    ),
+                    SubscribeGrainTab(
+                      key: _grainTabKey,
+                      scrollController: _grainScrollController,
+                    ),
+                  ],
+                ),
+                Positioned(
+                  right: ResponsiveUtil.isLandscape() ? 16 : 12,
+                  bottom: ResponsiveUtil.isLandscape() ? 16 : 76,
+                  child: ScrollToHide(
+                    controller: _scrollToHideController,
+                    scrollControllers: getScrollControllers(),
+                    hideDirection: AxisDirection.down,
+                    child: _buildFloatingButtons(),
+                  ),
+                ),
               ],
             )
           : ItemBuilder.buildUnLoginMainBody(context),
+    );
+  }
+
+  _buildFloatingButtons() {
+    return Column(
+      children: [
+        if (ResponsiveUtil.isLandscape())
+          ItemBuilder.buildShadowIconButton(
+            context: context,
+            icon: RotationTransition(
+              turns: Tween(begin: 0.0, end: 1.0)
+                  .animate(_refreshRotationController),
+              child: const Icon(Icons.refresh_rounded),
+            ),
+            onTap: () async {
+              refresh();
+            },
+          ),
+        const SizedBox(height: 10),
+        ItemBuilder.buildShadowIconButton(
+          context: context,
+          icon: const Icon(Icons.arrow_upward_rounded),
+          onTap: () {
+            scrollToTop();
+          },
+        ),
+      ],
     );
   }
 
@@ -120,11 +240,12 @@ class DynamicScreenState extends State<DynamicScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildAppBar(
-      backgroundColor: MyTheme.getBackground(context),
+    return ItemBuilder.buildDesktopAppBar(
       context: context,
-      title: TabBar(
-        padding: EdgeInsets.zero,
+      spacing: ResponsiveUtil.isLandscape() ? 20 : 10,
+      titleSpacing: 15,
+      titleWidget: TabBar(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         controller: _tabController,
         tabs: _tabLabelList
             .asMap()
@@ -157,7 +278,10 @@ class DynamicScreenState extends State<DynamicScreen>
 class SubscribeTagTab extends StatefulWidget {
   const SubscribeTagTab({
     super.key,
+    this.scrollController,
   });
+
+  final ScrollController? scrollController;
 
   @override
   State<StatefulWidget> createState() => SubscribeTagTabState();
@@ -172,7 +296,8 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
   final EasyRefreshController _refreshController = EasyRefreshController();
   int _offset = 0;
   bool _loading = false;
-  final ScrollController _scrollController = ScrollController();
+  late final ScrollController _scrollController =
+      widget.scrollController ?? ScrollController();
   bool _noMore = false;
 
   callRefresh() {
@@ -324,7 +449,8 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
   _buildRecentVisitTagItem(FullSubscribeTagItem item) {
     return GestureDetector(
       onTap: () {
-        RouteUtil.pushCupertinoRoute(context, TagDetailScreen(tag: item.name));
+        RouteUtil.pushPanelCupertinoRoute(
+            context, TagDetailScreen(tag: item.name));
       },
       child: Container(
         width: 70,
@@ -391,7 +517,8 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
   _buildSubscribeTagItem(FullSubscribeTagItem item) {
     return GestureDetector(
       onTap: () {
-        RouteUtil.pushCupertinoRoute(context, TagDetailScreen(tag: item.name));
+        RouteUtil.pushPanelCupertinoRoute(
+            context, TagDetailScreen(tag: item.name));
       },
       child: Container(
         margin: const EdgeInsets.only(left: 16, right: 16),
@@ -460,7 +587,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
             GestureDetector(
               onTap: () {
                 if (item.cardInfo != null && item.cardInfo!.type == 1) {
-                  RouteUtil.pushCupertinoRoute(
+                  RouteUtil.pushPanelCupertinoRoute(
                     context,
                     CollectionDetailScreen(
                       collectionId:
@@ -473,7 +600,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
                   );
                 } else if (item.cardInfo != null &&
                     item.cardInfo!.type == 100) {
-                  RouteUtil.pushCupertinoRoute(
+                  RouteUtil.pushPanelCupertinoRoute(
                     context,
                     PostDetailScreen(
                       meta: {
@@ -487,7 +614,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
                     ),
                   );
                 } else if (item.cardInfo != null && item.cardInfo!.type == 2) {
-                  RouteUtil.pushCupertinoRoute(
+                  RouteUtil.pushPanelCupertinoRoute(
                     context,
                     UserDetailScreen(
                       blogId: item.cardInfo!.blogCard!.blogInfo.blogId,
@@ -495,7 +622,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
                     ),
                   );
                 } else {
-                  RouteUtil.pushCupertinoRoute(
+                  RouteUtil.pushPanelCupertinoRoute(
                       context, TagDetailScreen(tag: item.name));
                 }
               },
@@ -722,7 +849,10 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
 class SubscribeCollectionTab extends StatefulWidget {
   const SubscribeCollectionTab({
     super.key,
+    this.scrollController,
   });
+
+  final ScrollController? scrollController;
 
   @override
   State<StatefulWidget> createState() => SubscribeCollectionTabState();
@@ -735,9 +865,10 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
   final List<TimelineCollection> _subscribeList = [];
   final List<TimelineGuessCollection> _guessLikeList = [];
   final EasyRefreshController _refreshController = EasyRefreshController();
-  int _total = 0;
   bool _loading = false;
-  final ScrollController _scrollController = ScrollController();
+  int _total = 0;
+  late final ScrollController _scrollController =
+      widget.scrollController ?? ScrollController();
   bool _noMore = false;
   bool _noMoreSubscribeItem = false;
 
@@ -913,7 +1044,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
     bool hasLastRead = item.lastReadBlogId != 0 && item.lastReadPostId != 0;
     return GestureDetector(
       onTap: () {
-        RouteUtil.pushCupertinoRoute(
+        RouteUtil.pushPanelCupertinoRoute(
           context,
           CollectionDetailScreen(
             collectionId: item.collectionId,
@@ -1027,7 +1158,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
                         onTap: !hasLastRead
                             ? null
                             : () {
-                                RouteUtil.pushCupertinoRoute(
+                                RouteUtil.pushPanelCupertinoRoute(
                                   context,
                                   PostDetailScreen(
                                     meta: {
@@ -1068,7 +1199,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
     tags = item.tags.split(",");
     return GestureDetector(
       onTap: () {
-        RouteUtil.pushCupertinoRoute(
+        RouteUtil.pushPanelCupertinoRoute(
           context,
           CollectionDetailScreen(
             collectionId: item.collectionId,
@@ -1235,7 +1366,10 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
 class SubscribeGrainTab extends StatefulWidget {
   const SubscribeGrainTab({
     super.key,
+    this.scrollController,
   });
+
+  final ScrollController? scrollController;
 
   @override
   State<StatefulWidget> createState() => SubscribeGrainTabState();
@@ -1249,7 +1383,8 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
   final EasyRefreshController _refreshController = EasyRefreshController();
   int _total = 0;
   bool _loading = false;
-  final ScrollController _scrollController = ScrollController();
+  late final ScrollController _scrollController =
+      widget.scrollController ?? ScrollController();
   bool _noMore = false;
 
   @override
@@ -1376,7 +1511,7 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
   _buildSubscribeGrainItem(SubscribeGrainItem item) {
     return GestureDetector(
       onTap: () {
-        RouteUtil.pushCupertinoRoute(
+        RouteUtil.pushPanelCupertinoRoute(
           context,
           GrainDetailScreen(
             grainId: item.grain.id,
@@ -1389,6 +1524,7 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         color: Colors.transparent,
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               decoration: BoxDecoration(

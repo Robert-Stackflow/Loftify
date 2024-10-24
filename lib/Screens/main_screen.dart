@@ -1,15 +1,13 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:app_links/app_links.dart';
+import 'package:context_menus/context_menus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
-import 'package:loftify/Models/nav_entry.dart';
 import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
-import 'package:loftify/Screens/Navigation/dynamic_screen.dart';
-import 'package:loftify/Screens/Navigation/home_screen.dart';
+import 'package:loftify/Screens/panel_screen.dart';
 import 'package:loftify/Utils/asset_util.dart';
 import 'package:loftify/Utils/constant.dart';
 import 'package:loftify/Utils/responsive_util.dart';
@@ -30,24 +28,66 @@ import '../Utils/hive_util.dart';
 import '../Utils/ilogger.dart';
 import '../Utils/itoast.dart';
 import '../Utils/lottie_util.dart';
+import '../Utils/request_util.dart';
 import '../Utils/route_util.dart';
 import '../Utils/utils.dart';
+import '../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../Widgets/Dialog/dialog_builder.dart';
 import '../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../Widgets/General/LottieCupertinoRefresh/lottie_cupertino_refresh.dart';
-import '../Widgets/Scaffold/my_bottom_navigation_bar.dart';
 import '../Widgets/Scaffold/my_scaffold.dart';
+import '../Widgets/Window/window_button.dart';
+import '../generated/l10n.dart';
 import 'Info/dress_screen.dart';
 import 'Info/system_notice_screen.dart';
 import 'Info/user_detail_screen.dart';
 import 'Lock/pin_verify_screen.dart';
-import 'Post/search_result_screen.dart';
-import 'Post/search_screen.dart';
 import 'Setting/setting_screen.dart';
 
 const borderColor = Color(0xFF805306);
 const backgroundStartColor = Color(0xFFFFD500);
 const backgroundEndColor = Color(0xFFF6A00C);
+
+enum SideBarChoice {
+  Home("home"),
+  Search("search"),
+  Dynamic("dynamic"),
+  Mine("mine");
+
+  final String key;
+
+  const SideBarChoice(this.key);
+
+  static fromString(String string) {
+    switch (string) {
+      case "home":
+        return SideBarChoice.Home;
+      case "search":
+        return SideBarChoice.Search;
+      case "dynamic":
+        return SideBarChoice.Dynamic;
+      case "mine":
+        return SideBarChoice.Mine;
+      default:
+        return SideBarChoice.Home;
+    }
+  }
+
+  static fromInt(int index) {
+    switch (index) {
+      case 0:
+        return SideBarChoice.Home;
+      case 1:
+        return SideBarChoice.Search;
+      case 2:
+        return SideBarChoice.Dynamic;
+      case 3:
+        return SideBarChoice.Mine;
+      default:
+        return SideBarChoice.Home;
+    }
+  }
+}
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -65,25 +105,14 @@ class MainScreenState extends State<MainScreen>
         TrayListener,
         WindowListener,
         AutomaticKeepAliveClientMixin {
-  final List<Widget> _pageList = [];
-  final List<GlobalKey> _keyList = [];
-  final SortableItemList _navItemList = SortableItemList(
-      items: appProvider.navItems,
-      defaultItems: SortableItemList.defaultNavItems);
-  final List<BottomNavigationBarItem> _navigationBarItemList = [];
-  List<SortableItem> _navItems = [];
   Timer? _timer;
-  int _bottomBarSelectedIndex = 0;
-  final _pageController = PageController(keepPage: true);
   late AnimationController darkModeController;
   Widget? darkModeWidget;
   FullBlogInfo? blogInfo;
-  bool clearNavSelectState = false;
   bool _isMaximized = false;
   bool _isStayOnTop = false;
   bool _hasJumpedToPinVerify = false;
-  late Navigator navigator;
-  late PageView pageView;
+  Orientation _oldOrientation = Orientation.portrait;
 
   @override
   void onWindowMinimize() {
@@ -209,24 +238,6 @@ class MainScreenState extends State<MainScreen>
     });
     initGlobalConfig();
     fetchData();
-    appProvider.addListener(() {
-      if (mounted) {
-        setState(() {
-          clearNavSelectState = appProvider.canPopByProvider;
-        });
-      }
-    });
-    navigator = Navigator(
-      key: desktopNavigatorKey,
-      onGenerateRoute: (settings) {
-        return RouteUtil.getFadeRoute(_pageList[0]);
-      },
-    );
-    pageView = PageView(
-      controller: _pageController,
-      physics: const NeverScrollableScrollPhysics(),
-      children: _pageList,
-    );
   }
 
   initGlobalConfig() {
@@ -240,11 +251,15 @@ class MainScreenState extends State<MainScreen>
     }
     ResponsiveUtil.checkSizeCondition();
     if (mounted) {
-      EasyRefresh.defaultHeaderBuilder = () => LottieCupertinoHeader(
+      // EasyRefresh.defaultHeaderBuilder = () => LottieCupertinoHeader(
+      //       backgroundColor: Theme.of(context).canvasColor,
+      //       indicator: LottieUtil.load(LottieUtil.getLoadingPath(context)),
+      //       hapticFeedback: true,
+      //       triggerOffset: 40,
+      //     );
+      EasyRefresh.defaultHeaderBuilder = () => MaterialHeader(
             backgroundColor: Theme.of(context).canvasColor,
-            indicator: LottieUtil.load(LottieUtil.getLoadingPath(context)),
-            hapticFeedback: true,
-            triggerOffset: 40,
+            color: Theme.of(context).primaryColor,
           );
       EasyRefresh.defaultFooterBuilder = () => LottieCupertinoFooter(
             indicator: LottieUtil.load(LottieUtil.getLoadingPath(context)),
@@ -265,63 +280,6 @@ class MainScreenState extends State<MainScreen>
     await LoginApi.getConfigs();
   }
 
-  void initData() {
-    _pageList.clear();
-    _navigationBarItemList.clear();
-    _navItems = _navItemList.getShownItems();
-    for (SortableItem item in _navItems) {
-      _navigationBarItemList.add(
-        BottomNavigationBarItem(
-          icon: AssetUtil.loadDouble(
-            context,
-            item.lightIcon,
-            item.darkIcon,
-            size: 30,
-          ),
-          activeIcon: AssetUtil.loadDouble(
-            context,
-            item.lightSelectedIcon,
-            item.darkSelectedIcon,
-            size: 30,
-          ),
-          label: SortableItemList.getNavItemLabel(item.id),
-        ),
-      );
-      _pageList.add(SortableItemList.getNavItemPage(item.id));
-      _keyList.add(SortableItemList.getNavItemKey(item.id));
-    }
-    _bottomBarSelectedIndex =
-        min(_navItems.length - 1, _bottomBarSelectedIndex);
-    setState(() {});
-  }
-
-  void onBottomNavigationBarItemTap(int index) {
-    bool canRefresh = ((ResponsiveUtil.isMobile() &&
-                !ResponsiveUtil.isLandscape()) ||
-            (ResponsiveUtil.isLandscape() && !appProvider.canPopByProvider)) &&
-        _bottomBarSelectedIndex == index;
-    if (canRefresh) {
-      var page = _pageList[index];
-      var currentState = _keyList[index].currentState;
-      if (page is HomeScreen && currentState != null) {
-        (currentState as HomeScreenState).scrollToTopAndRefresh();
-      } else if (page is DynamicScreen && currentState != null) {
-        (currentState as DynamicScreenState).scrollToTopAndRefresh();
-      }
-    }
-    if (ResponsiveUtil.isLandscape()) {
-      appProvider.canPopByProvider = false;
-      if (!canRefresh) {
-        RouteUtil.pushDesktopFadeRoute(_pageList[index], removeUtil: true);
-      }
-    } else {
-      _pageController.jumpToPage(index);
-    }
-    setState(() {
-      _bottomBarSelectedIndex = index;
-    });
-  }
-
   void jumpToLogin() {
     if (HiveUtil.isFirstLogin() &&
         HiveUtil.getString(HiveUtil.tokenKey, defaultValue: null) == null) {
@@ -331,7 +289,8 @@ class MainScreenState extends State<MainScreen>
         DialogBuilder.showPageDialog(context,
             child: const LoginByCaptchaScreen());
       } else {
-        RouteUtil.pushCupertinoRoute(context, const LoginByCaptchaScreen());
+        RouteUtil.pushPanelCupertinoRoute(
+            context, const LoginByCaptchaScreen());
       }
     }
   }
@@ -368,16 +327,13 @@ class MainScreenState extends State<MainScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return PopScope(
-      canPop: !appProvider.canPopByProvider,
-      onPopInvoked: (_) {
-        if (canPopByKey) {
-          desktopNavigatorState?.pop();
-        }
-        appProvider.canPopByProvider = canPopByKey;
-      },
-      child: _buildBodyByPlatform(),
-    );
+    return OrientationBuilder(builder: (ctx, ori) {
+      if (ori != _oldOrientation) {
+        // globalNavigatorState?.popUntil((route) => route.isFirst);
+      }
+      _oldOrientation = ori;
+      return _buildBodyByPlatform();
+    });
   }
 
   _buildBodyByPlatform() {
@@ -386,7 +342,7 @@ class MainScreenState extends State<MainScreen>
     } else if (ResponsiveUtil.isMobile()) {
       return Scaffold(
         resizeToAvoidBottomInset: false,
-        body: SafeArea(child: _buildDesktopBody()),
+        body: _buildDesktopBody(),
       );
     } else {
       return _buildDesktopBody();
@@ -394,37 +350,83 @@ class MainScreenState extends State<MainScreen>
   }
 
   _buildMobileBody() {
-    return FutureBuilder(
-      future: Future.sync(() => initData()),
-      builder: (_, __) => MyScaffold(
-        body: pageView,
-        bottomNavigationBar: MyBottomNavigationBar(
-          currentIndex: _bottomBarSelectedIndex,
-          backgroundColor: Theme.of(context).canvasColor,
-          items: _navigationBarItemList,
-          elevation: 0,
-          unselectedItemColor: Theme.of(context).textTheme.labelSmall?.color,
-          selectedItemColor: Theme.of(context).primaryColor,
-          unselectedLabelStyle: const TextStyle(fontSize: 10),
-          selectedLabelStyle:
-              const TextStyle(fontWeight: FontWeight.w500, fontSize: 10),
-          onTap: onBottomNavigationBarItemTap,
-          onDoubleTap: onBottomNavigationBarItemTap,
-        ),
-      ),
-    );
+    return PanelScreen(key: panelScreenKey);
   }
 
   _buildDesktopBody() {
-    return FutureBuilder(
-      future: Future.sync(() => initData()),
-      builder: (_, __) => MyScaffold(
-        resizeToAvoidBottomInset: false,
-        body: Row(
-          children: [_sideBar(), _desktopMainContent()],
+    var leftPosWidget = Row(
+      children: [
+        _sideBar(leftPadding: 8, rightPadding: 8),
+        Expanded(
+          child: Stack(
+            children: [
+              _desktopMainContent(),
+              Positioned(
+                right: 0,
+                child: _titleBar(),
+              ),
+            ],
+          ),
         ),
-      ),
+      ],
     );
+    return MyScaffold(
+      resizeToAvoidBottomInset: false,
+      body: leftPosWidget,
+    );
+  }
+
+  _buildAvatarContextMenuButtons() {
+    return GenericContextMenu(
+      buttonConfigs: [
+        ContextMenuButtonConfig(
+          "查看个人主页",
+          onPressed: () async {
+            panelScreenState?.pushPage(UserDetailScreen(
+              blogId: blogInfo!.blogId,
+              blogName: blogInfo!.blogName,
+            ));
+          },
+        ),
+        ContextMenuButtonConfig.divider(),
+        ContextMenuButtonConfig.warning(
+          "退出登录",
+          onPressed: () async {
+            HiveUtil.confirmLogout(context);
+          },
+        ),
+      ],
+    );
+  }
+
+  logout() async {
+    blogInfo == null;
+    setState(() {});
+    panelScreenState?.logout();
+  }
+
+  login() async {
+    await _fetchUserInfo();
+    setState(() {});
+    panelScreenState?.login();
+  }
+
+  _titleBar() {
+    return (ResponsiveUtil.isDesktop())
+        ? ItemBuilder.buildWindowTitle(
+            context,
+            backgroundColor: Colors.transparent,
+            isStayOnTop: _isStayOnTop,
+            isMaximized: _isMaximized,
+            onStayOnTopTap: () {
+              setState(() {
+                _isStayOnTop = !_isStayOnTop;
+                windowManager.setAlwaysOnTop(_isStayOnTop);
+              });
+            },
+            rightButtons: [],
+          )
+        : emptyWidget;
   }
 
   changeMode() {
@@ -437,218 +439,208 @@ class MainScreenState extends State<MainScreen>
     }
   }
 
-  _sideBar() {
-    return SizedBox(
-      width: 56,
-      child: Container(
-        color: Colors.transparent,
-        child: Stack(
-          children: [
-            if (ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
-            Column(
-              children: [
-                const SizedBox(height: 80),
-                MyBottomNavigationBar(
-                  currentIndex: _bottomBarSelectedIndex,
-                  backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-                  items: _navigationBarItemList,
-                  clearNavSelectState: clearNavSelectState,
-                  direction: Axis.vertical,
-                  elevation: 0,
-                  unselectedItemColor:
-                      Theme.of(context).textTheme.labelSmall?.color,
-                  selectedItemColor: Theme.of(context).primaryColor,
-                  unselectedLabelStyle: const TextStyle(fontSize: 12),
-                  selectedLabelStyle: const TextStyle(fontSize: 12),
-                  onTap: onBottomNavigationBarItemTap,
-                  onDoubleTap: onBottomNavigationBarItemTap,
-                ),
-                const Spacer(),
-                Column(
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        if (blogInfo == null) {
-                          DialogBuilder.showPageDialog(
-                            context,
-                            child: const LoginByCaptchaScreen(),
-                          );
-                        } else {
-                          RouteUtil.pushDesktopFadeRoute(
-                            UserDetailScreen(
-                                blogId: blogInfo!.blogId,
-                                blogName: blogInfo!.blogName),
-                          );
-                        }
-                      },
-                      child: ItemBuilder.buildClickItem(
-                        ItemBuilder.buildAvatar(
-                          showLoading: false,
-                          context: context,
-                          imageUrl: blogInfo?.bigAvaImg ?? "",
-                          useDefaultAvatar: blogInfo == null,
-                          size: 30,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ItemBuilder.buildDynamicIconButton(
-                        context: context,
-                        icon: darkModeWidget,
-                        onTap: changeMode,
-                        onChangemode: (context, themeMode, child) {
-                          if (darkModeController.duration != null) {
-                            if (themeMode == ActiveThemeMode.light) {
-                              darkModeController.forward();
-                            } else if (themeMode == ActiveThemeMode.dark) {
-                              darkModeController.reverse();
-                            } else {
-                              if (Utils.isDark(context)) {
-                                darkModeController.reverse();
-                              } else {
-                                darkModeController.forward();
-                              }
-                            }
-                          }
-                        }),
-                    const SizedBox(height: 2),
-                    ItemBuilder.buildIconButton(
-                        context: context,
-                        icon: AssetUtil.loadDouble(
-                          context,
-                          AssetUtil.dressLightIcon,
-                          AssetUtil.dressDarkIcon,
-                        ),
-                        onTap: () {
-                          RouteUtil.pushDesktopFadeRoute(const DressScreen());
-                        }),
-                    const SizedBox(width: 6),
-                    ItemBuilder.buildIconButton(
-                      context: context,
-                      icon: Icon(
-                        Icons.mail_outline_rounded,
-                        color: Theme.of(context).iconTheme.color,
-                      ),
-                      onTap: () {
-                        RouteUtil.pushDesktopFadeRoute(
-                            const SystemNoticeScreen());
-                      },
-                    ),
-                    ItemBuilder.buildDynamicIconButton(
-                      context: context,
-                      icon: AssetUtil.loadDouble(
-                        context,
-                        AssetUtil.settingLightIcon,
-                        AssetUtil.settingDarkIcon,
-                      ),
-                      onTap: () async {
-                        RouteUtil.pushDesktopFadeRoute(const SettingScreen());
-                      },
-                    ),
-                    const SizedBox(height: 5),
-                  ],
-                ),
-              ],
-            ),
-          ],
+  _sideBar({
+    double leftPadding = 0,
+    double rightPadding = 0,
+  }) {
+    return Container(
+      width: 42 + leftPadding + rightPadding,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: Theme.of(context).canvasColor,
+        border: Border(
+          right: BorderSide(
+            color: Theme.of(context).dividerColor,
+            width: 1,
+          ),
         ),
       ),
-    );
-  }
-
-  _desktopMainContent() {
-    return Expanded(
-      child: Column(
+      padding: EdgeInsets.only(left: leftPadding, right: rightPadding),
+      child: Stack(
         children: [
-          ItemBuilder.buildWindowTitle(
-            context,
-            isStayOnTop: _isStayOnTop,
-            isMaximized: _isMaximized,
-            leftWidgets: [
-              Selector<AppProvider, bool>(
-                selector: (context, globalProvider) =>
-                    globalProvider.canPopByProvider,
-                builder: (context, desktopCanpop, child) => MouseRegion(
-                  cursor: desktopCanpop
-                      ? SystemMouseCursors.click
-                      : SystemMouseCursors.basic,
-                  child: ItemBuilder.buildRoundIconButton(
+          if (ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
+          Selector<AppProvider, SideBarChoice>(
+            selector: (context, appProvider) => appProvider.sidebarChoice,
+            builder: (context, sidebarChoice, child) =>
+                Selector<AppProvider, bool>(
+              selector: (context, appProvider) => !appProvider.showNavigator,
+              builder: (context, hideNavigator, child) => Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (ResponsiveUtil.isDesktop()) const SizedBox(height: 5),
+                  if (ResponsiveUtil.isDesktop()) _buildLogo(),
+                  const SizedBox(height: 8),
+                  ToolButton(
                     context: context,
-                    disabled: !desktopCanpop,
-                    normalBackground: Colors.grey.withAlpha(40),
-                    icon: Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      size: 20,
-                      color: desktopCanpop
-                          ? Theme.of(context).iconTheme.color
-                          : Colors.grey,
-                    ),
-                    onTap: () {
-                      if (canPopByKey) {
-                        desktopNavigatorState?.pop();
-                      }
-                      appProvider.canPopByProvider = canPopByKey;
+                    selected:
+                        hideNavigator && sidebarChoice == SideBarChoice.Home,
+                    icon: Icons.explore_outlined,
+                    selectedIcon: Icons.explore_rounded,
+                    onTap: () async {
+                      appProvider.sidebarChoice = SideBarChoice.Home;
+                      panelScreenState?.popAll();
+                    },
+                    iconSize: 24,
+                  ),
+                  const SizedBox(height: 8),
+                  ToolButton(
+                    context: context,
+                    selected:
+                        hideNavigator && sidebarChoice == SideBarChoice.Search,
+                    icon: Icons.search_rounded,
+                    selectedIcon: Icons.manage_search_rounded,
+                    onTap: () async {
+                      appProvider.sidebarChoice = SideBarChoice.Search;
+                      panelScreenState?.popAll();
                     },
                   ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              // ItemBuilder.buildRoundIconButton(
-              //   context: context,
-              //   normalBackground: Colors.grey.withAlpha(40),
-              //   icon: Icon(
-              //     Icons.home_filled,
-              //     size: 20,
-              //     color: Theme.of(context).iconTheme.color,
-              //   ),
-              //   onTap: () {
-              //     ProviderManager.globalProvider.desktopCanpop = false;
-              //     desktopNavigatorKey =
-              //         GlobalKey<NavigatorState>();
-              //   },
-              // ),
-              // const SizedBox(width: 8),
-              SizedBox(
-                width: min(300, MediaQuery.sizeOf(context).width - 240),
-                child: ItemBuilder.buildDesktopSearchBar(
+                  const SizedBox(height: 8),
+                  ToolButton(
                     context: context,
-                    controller: TextEditingController(),
-                    background: Colors.grey.withAlpha(40),
-                    hintText: "搜索感兴趣的内容",
-                    borderRadius: 8,
-                    bottomMargin: 18,
-                    hintFontSizeDelta: 1,
-                    onSubmitted: (text) {
-                      if (Utils.isNotEmpty(text)) {
-                        RouteUtil.pushDesktopFadeRoute(
-                            SearchResultScreen(searchKey: text));
-                      } else {
-                        RouteUtil.pushDesktopFadeRoute(const SearchScreen());
+                    selected:
+                        hideNavigator && sidebarChoice == SideBarChoice.Dynamic,
+                    icon: Icons.favorite_border_rounded,
+                    selectedIcon: Icons.favorite_rounded,
+                    onTap: () async {
+                      appProvider.sidebarChoice = SideBarChoice.Dynamic;
+                      panelScreenState?.popAll();
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  ToolButton(
+                    context: context,
+                    selected:
+                        hideNavigator && sidebarChoice == SideBarChoice.Mine,
+                    icon: Icons.person_outline_rounded,
+                    selectedIcon: Icons.person_rounded,
+                    onTap: () async {
+                      appProvider.sidebarChoice = SideBarChoice.Mine;
+                      panelScreenState?.popAll();
+                    },
+                  ),
+                  const Spacer(),
+                  const SizedBox(height: 8),
+                  ItemBuilder.buildClickItem(
+                    GestureDetector(
+                      onTap: () async {
+                        if (blogInfo == null) {
+                          RouteUtil.pushDialogRoute(
+                              context, const LoginByCaptchaScreen());
+                        } else {
+                          BottomSheetBuilder.showContextMenu(
+                              context, _buildAvatarContextMenuButtons());
+                        }
+                      },
+                      child: ItemBuilder.buildAvatar(
+                        showLoading: false,
+                        context: context,
+                        imageUrl: blogInfo?.bigAvaImg ?? "",
+                        useDefaultAvatar: blogInfo == null,
+                        size: 30,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ItemBuilder.buildDynamicToolButton(
+                    context: context,
+                    iconBuilder: (colors) => darkModeWidget ?? emptyWidget,
+                    onTap: changeMode,
+                    onChangemode: (context, themeMode, child) {
+                      if (darkModeController.duration != null) {
+                        if (themeMode == ActiveThemeMode.light) {
+                          darkModeController.forward();
+                        } else if (themeMode == ActiveThemeMode.dark) {
+                          darkModeController.reverse();
+                        } else {
+                          if (Utils.isDark(context)) {
+                            darkModeController.reverse();
+                          } else {
+                            darkModeController.forward();
+                          }
+                        }
                       }
-                    }),
-              ),
-            ],
-            onStayOnTopTap: () {
-              setState(() {
-                _isStayOnTop = !_isStayOnTop;
-                windowManager.setAlwaysOnTop(_isStayOnTop);
-              });
-            },
-          ),
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.only(right: 10),
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-                child: navigator,
+                    },
+                  ),
+                  const SizedBox(height: 2),
+                  ToolButton(
+                    context: context,
+                    iconBuilder: (_) => AssetUtil.loadDouble(
+                      context,
+                      AssetUtil.dressLightIcon,
+                      AssetUtil.dressDarkIcon,
+                    ),
+                    padding: const EdgeInsets.all(8),
+                    onTap: () {
+                      RouteUtil.pushPanelCupertinoRoute(
+                          context, const DressScreen());
+                    },
+                  ),
+                  const SizedBox(height: 2),
+                  ToolButton(
+                    context: context,
+                    iconBuilder: (_) => Icon(
+                      Icons.notifications_on_outlined,
+                      color: Theme.of(context).iconTheme.color,
+                      size: 20,
+                    ),
+                    onTap: () {
+                      RouteUtil.pushPanelCupertinoRoute(
+                          context, const SystemNoticeScreen());
+                    },
+                  ),
+                  const SizedBox(height: 2),
+                  ToolButton(
+                    context: context,
+                    iconBuilder: (_) => AssetUtil.loadDouble(
+                      context,
+                      AssetUtil.settingLightIcon,
+                      AssetUtil.settingDarkIcon,
+                    ),
+                    padding: const EdgeInsets.all(8),
+                    onTap: () {
+                      RouteUtil.pushPanelCupertinoRoute(
+                          context, const SettingScreen());
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                ],
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  _buildLogo({
+    double size = 50,
+  }) {
+    return IgnorePointer(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        clipBehavior: Clip.antiAlias,
+        child: Container(
+          width: size,
+          height: size,
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/logo-transparent.png'),
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  _desktopMainContent({
+    double leftMargin = 0,
+    double rightMargin = 0,
+  }) {
+    return Container(
+      margin: EdgeInsets.only(left: leftMargin, right: rightMargin),
+      child: PanelScreen(key: panelScreenKey),
     );
   }
 

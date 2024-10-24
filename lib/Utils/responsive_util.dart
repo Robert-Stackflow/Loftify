@@ -79,7 +79,7 @@ class ResponsiveUtil {
     }
   }
 
-  static Future<void> restartApp(BuildContext context) async {
+  static Future<void> restartApp([BuildContext? context]) async {
     if (ResponsiveUtil.isDesktop()) {
     } else {
       Restart.restartApp();
@@ -87,6 +87,7 @@ class ResponsiveUtil {
   }
 
   static Future<void> returnToMainScreen(BuildContext context) async {
+    homeScreenState?.refresh();
     if (ResponsiveUtil.isDesktop()) {
       desktopNavigatorKey = GlobalKey<NavigatorState>();
       globalNavigatorState?.pushAndRemoveUntil(
@@ -95,9 +96,10 @@ class ResponsiveUtil {
       );
     } else {
       Navigator.pushAndRemoveUntil(
-          context,
-          CupertinoPageRoute(builder: (context) => const MainScreen()),
-          (route) => false);
+        context,
+        CupertinoPageRoute(builder: (context) => const MainScreen()),
+        (route) => false,
+      );
     }
   }
 

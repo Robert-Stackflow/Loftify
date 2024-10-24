@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loftify/Utils/responsive_util.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../Models/github_response.dart';
@@ -65,10 +66,10 @@ class _UpdateLogScreenState extends State<UpdateLogScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: ItemBuilder.buildSimpleAppBar(
+      appBar: ItemBuilder.buildDesktopAppBar(
+        showBack: true,
         transparent: true,
         title: S.current.changeLog,
-        leading: Icons.arrow_back_rounded,
         context: context,
       ),
       body: EasyRefresh(
@@ -78,7 +79,8 @@ class _UpdateLogScreenState extends State<UpdateLogScreen>
           await fetchReleases();
         },
         child: ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10)
+              .add(EdgeInsets.only(top: ResponsiveUtil.isLandscape() ? 10 : 0)),
           itemBuilder: (context, index) => _buildItem(releaseItems[index]),
           itemCount: releaseItems.length,
         ),

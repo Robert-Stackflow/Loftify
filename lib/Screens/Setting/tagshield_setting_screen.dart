@@ -57,14 +57,10 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: MyTheme.getBackground(context),
-      appBar: ItemBuilder.buildAppBar(
-        leading: Icons.arrow_back_rounded,
-        backgroundColor: MyTheme.getBackground(context),
-        onLeadingTap: () {
-          Navigator.pop(context);
-        },
-        title: Text("${S.current.tagShieldSetting}(${tags.length})",
-            style: Theme.of(context).textTheme.titleLarge),
+      appBar: ItemBuilder.buildDesktopAppBar(
+        showBack: true,
+        showBorder: true,
+        title: "${S.current.tagShieldSetting}(${tags.length})",
         context: context,
         actions: [
           ItemBuilder.buildIconButton(

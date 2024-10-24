@@ -1,3 +1,4 @@
+import 'package:context_menus/context_menus.dart';
 import 'package:custom_sliding_segmented_control/custom_sliding_segmented_control.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/material.dart';
@@ -14,8 +15,8 @@ import 'package:loftify/Utils/asset_util.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/ilogger.dart';
 import 'package:loftify/Utils/itoast.dart';
+import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Utils/route_util.dart';
-import 'package:tuple/tuple.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Api/post_api.dart';
@@ -23,7 +24,6 @@ import '../../Utils/constant.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
-import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
 import '../../Widgets/BottomSheet/newest_filter_bottom_sheet.dart';
 import '../../Widgets/Custom/custom_tab_indicator.dart';
 import '../../Widgets/Custom/sliver_appbar_delegate.dart';
@@ -201,6 +201,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                           });
                         },
                       ),
+                      if (ResponsiveUtil.isLandscape()) ..._buildButtons(true),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -361,7 +362,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                       title: "合集粮单",
                       desc: "热门「${_tagDetailData!.collectionRank!.title}」",
                       onTap: () {
-                        RouteUtil.pushCupertinoRoute(
+                        RouteUtil.pushPanelCupertinoRoute(
                             context, TagCollectionGrainScreen(tag: widget.tag));
                       }),
                 if (Utils.isNotEmpty(_tagDetailData!.relatedTags))
@@ -371,7 +372,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                       title: "相关标签",
                       desc: _tagDetailData!.relatedTags,
                       onTap: () {
-                        RouteUtil.pushCupertinoRoute(
+                        RouteUtil.pushPanelCupertinoRoute(
                             context, TagRelatedScreen(tag: widget.tag));
                       }),
                 if (_tagDetailData!.propGiftTagConfig != null)
@@ -381,7 +382,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                     title: "相关装扮",
                     desc: "已获取${_tagDetailData!.propGiftTagConfig!.slotCount}次",
                     onTap: () {
-                      RouteUtil.pushCupertinoRoute(
+                      RouteUtil.pushPanelCupertinoRoute(
                           context, DressScreen(tag: widget.tag));
                     },
                   ),
@@ -624,66 +625,74 @@ class _TagDetailScreenState extends State<TagDetailScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildAppBar(
+    return ItemBuilder.buildDesktopAppBar(
       context: context,
-      backgroundColor: MyTheme.getBackground(context),
-      leading: Icons.arrow_back_rounded,
-      onLeadingTap: () {
-        Navigator.pop(context);
-      },
-      title: Text(
+      showBack: true,
+      titleWidget: Text(
         "标签",
         style: Theme.of(context).textTheme.titleMedium?.apply(
               fontWeightDelta: 2,
             ),
       ),
       actions: [
-        ItemBuilder.buildIconButton(
-            context: context,
-            icon: AssetUtil.loadDouble(
-              context,
-              AssetUtil.searchLightIcon,
-              AssetUtil.searchDarkIcon,
-            ),
-            onTap: () {
-              RouteUtil.pushCupertinoRoute(
-                  context, TagInsearchScreen(tag: widget.tag));
-            }),
+        ..._buildButtons(),
         const SizedBox(width: 5),
-        ItemBuilder.buildIconButton(
-            context: context,
-            icon: Icon(Icons.more_vert_rounded,
-                color: Theme.of(context).iconTheme.color),
-            onTap: () {
-              List<Tuple2<String, dynamic>> options = [
-                const Tuple2("复制链接", 0),
-                const Tuple2("在浏览器打开", 1),
-                const Tuple2("分享到其他应用", 2),
-              ];
-              BottomSheetBuilder.showListBottomSheet(
-                context,
-                (sheetContext) => TileList.fromOptions(
-                  options,
-                  (idx) {
-                    String url = UriUtil.getTagUrlByTagName(widget.tag);
-                    if (idx == 0) {
-                      Utils.copy(context, url);
-                    } else if (idx == 1) {
-                      UriUtil.openExternal(url);
-                    } else if (idx == 2) {
-                      UriUtil.share(context, url);
-                    }
-                    Navigator.pop(sheetContext);
-                  },
-                  showCancel: true,
-                  context: context,
-                  showTitle: false,
-                  onCloseTap: () => Navigator.pop(sheetContext),
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                ),
-              );
-            }),
-        const SizedBox(width: 5),
+      ],
+    );
+  }
+
+  List<Widget> _buildButtons([bool small = false]) {
+    return [
+      const SizedBox(width: 5),
+      ItemBuilder.buildIconButton(
+        context: context,
+        icon: AssetUtil.loadDouble(
+          context,
+          AssetUtil.searchLightIcon,
+          AssetUtil.searchDarkIcon,
+          size: small ? 20 : 24,
+        ),
+        padding: small ? const EdgeInsets.all(4) : null,
+        onTap: () {
+          RouteUtil.pushPanelCupertinoRoute(
+              context, TagInsearchScreen(tag: widget.tag));
+        },
+      ),
+      const SizedBox(width: 5),
+      ItemBuilder.buildIconButton(
+        context: context,
+        icon: Icon(
+          Icons.more_vert_rounded,
+          color: Theme.of(context).iconTheme.color,
+          size: small ? 20 : 24,
+        ),
+        padding: small ? const EdgeInsets.all(4) : null,
+        onTap: () {
+          BottomSheetBuilder.showContextMenu(context, _buildMoreButtons());
+        },
+      ),
+    ];
+  }
+
+  _buildMoreButtons() {
+    String url = UriUtil.getTagUrlByTagName(widget.tag);
+    return GenericContextMenu(
+      buttonConfigs: [
+        ContextMenuButtonConfig(
+          "复制链接",
+          icon: const Icon(Icons.copy_rounded),
+          onPressed: () {
+            Utils.copy(context, url);
+          },
+        ),
+        ContextMenuButtonConfig("在浏览器打开",
+            icon: const Icon(Icons.open_in_browser_rounded), onPressed: () {
+          UriUtil.openExternal(url);
+        }),
+        ContextMenuButtonConfig("分享到其他应用",
+            icon: const Icon(Icons.share_rounded), onPressed: () {
+          UriUtil.share(context, url);
+        }),
       ],
     );
   }

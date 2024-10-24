@@ -21,8 +21,6 @@ import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
-import '../../Widgets/Custom/custom_tab_indicator.dart';
-import '../../Widgets/Custom/sliver_appbar_delegate.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
@@ -53,7 +51,6 @@ class _SearchResultScreenState extends State<SearchResultScreen>
   final List<SearchBlogData> _userList = [];
   late TabController _tabController;
   final List<TagInfo> _tagList = [];
-  final ScrollController _scrollController = ScrollController();
   TextEditingController? _searchController;
   final EasyRefreshController _allResultRefreshController =
       EasyRefreshController();
@@ -100,21 +97,36 @@ class _SearchResultScreenState extends State<SearchResultScreen>
     super.build(context);
     return Scaffold(
       backgroundColor: MyTheme.getBackground(context),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSearchBar(),
-            Expanded(
-              child: Stack(
-                children: [
-                  _buildMainBody(),
-                  if (_sugList.isNotEmpty) _buildSuggestList(),
-                ],
-              ),
-            ),
-          ],
+      appBar: ItemBuilder.buildDesktopAppBar(
+        context: context,
+        showBack: true,
+        spacing: 0,
+        titleWidget: _buildSearchBar(),
+        bottomHeight: 56,
+        bottom: ItemBuilder.buildTabBar(
+          context,
+          _tabController,
+          _tabLabelList
+              .asMap()
+              .entries
+              .map((entry) => ItemBuilder.buildAnimatedTab(context,
+                  selected: entry.key == _currentTabIndex, text: entry.value))
+              .toList(),
+          showBorder: true,
+          width: MediaQuery.sizeOf(context).width,
+          onTap: (index) {
+            setState(() {
+              _currentTabIndex = index;
+            });
+          },
+          forceUnscrollable: !ResponsiveUtil.isLandscape(),
         ),
+      ),
+      body: Stack(
+        children: [
+          _buildTabView(),
+          if (_sugList.isNotEmpty) _buildSuggestList(),
+        ],
       ),
     );
   }
@@ -466,7 +478,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
   }
 
   _jumpToTag(String tag) {
-    RouteUtil.pushCupertinoRoute(context, TagDetailScreen(tag: tag));
+    RouteUtil.pushPanelCupertinoRoute(context, TagDetailScreen(tag: tag));
   }
 
   _performSuggest(String str) {
@@ -520,7 +532,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
       case 2:
         return ItemBuilder.buildUserRow(context, item.blogData!, onTap: () {
           Utils.addSearchHistory(_searchController!.text);
-          RouteUtil.pushCupertinoRoute(
+          RouteUtil.pushPanelCupertinoRoute(
             context,
             UserDetailScreen(
               blogId: item.blogData!.blogInfo.blogId,
@@ -531,76 +543,6 @@ class _SearchResultScreenState extends State<SearchResultScreen>
       default:
         return emptyWidget;
     }
-  }
-
-  _buildMainBody() {
-    return CustomScrollView(
-      controller: _scrollController,
-      slivers: [
-        if (_tabLabelList.isNotEmpty)
-          SliverPersistentHeader(
-            key: ValueKey(Utils.getRandomString()),
-            pinned: true,
-            delegate: SliverAppBarDelegate(
-              radius: 0,
-              background: MyTheme.getBackground(context),
-              tabBar: TabBar(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-                overlayColor: WidgetStateProperty.all(Colors.transparent),
-                controller: _tabController,
-                tabs: _tabLabelList
-                    .asMap()
-                    .entries
-                    .map((entry) => ItemBuilder.buildAnimatedTab(context,
-                        selected: entry.key == _currentTabIndex,
-                        text: entry.value))
-                    .toList(),
-                labelPadding: const EdgeInsets.symmetric(horizontal: 0),
-                enableFeedback: true,
-                dividerHeight: 0,
-                physics: const BouncingScrollPhysics(),
-                labelStyle: Theme.of(context).textTheme.titleLarge,
-                unselectedLabelStyle: Theme.of(context)
-                    .textTheme
-                    .titleLarge
-                    ?.apply(color: Colors.grey),
-                indicator: CustomTabIndicator(
-                  borderColor: Theme.of(context).primaryColor,
-                ),
-                onTap: (index) {
-                  setState(() {
-                    _currentTabIndex = index;
-                  });
-                  // switch (index) {
-                  //   case 0:
-                  //     _allResultRefreshController.callRefresh();
-                  //     break;
-                  //   case 1:
-                  //     _tagResultRefreshController.callRefresh();
-                  //     break;
-                  //   case 2:
-                  //     _collectionResultRefreshController.callRefresh();
-                  //     break;
-                  //   case 3:
-                  //     _grainResultRefreshController.callRefresh();
-                  //     break;
-                  //   case 4:
-                  //     _postResultRefreshController.callRefresh();
-                  //     break;
-                  //   case 5:
-                  //     _userResultRefreshController.callRefresh();
-                  //     break;
-                  // }
-                },
-              ),
-            ),
-          ),
-        if (_tabLabelList.isNotEmpty)
-          SliverFillRemaining(
-            child: _buildTabView(),
-          ),
-      ],
-    );
   }
 
   Widget _buildTabView() {
@@ -874,7 +816,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                   return ItemBuilder.buildCollectionRow(
                       context, _collectionList[index], verticalPadding: 8,
                       onTap: () {
-                    RouteUtil.pushCupertinoRoute(
+                    RouteUtil.pushPanelCupertinoRoute(
                       context,
                       CollectionDetailScreen(
                         collectionId: _collectionList[index].id,
@@ -1002,7 +944,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                     _grainList[index],
                     verticalPadding: 8,
                     onTap: () {
-                      RouteUtil.pushCupertinoRoute(
+                      RouteUtil.pushPanelCupertinoRoute(
                         context,
                         GrainDetailScreen(
                             grainId: _grainList[index].id,
@@ -1065,7 +1007,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                     context,
                     _userList[index],
                     onTap: () {
-                      RouteUtil.pushCupertinoRoute(
+                      RouteUtil.pushPanelCupertinoRoute(
                         context,
                         UserDetailScreen(
                           blogId: _userList[index].blogInfo.blogId,
@@ -1085,39 +1027,25 @@ class _SearchResultScreenState extends State<SearchResultScreen>
   }
 
   Widget _buildSearchBar() {
-    return Hero(
-      tag: "searchBar",
-      child: Container(
-        height: 35,
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: ItemBuilder.buildSearchBar(
-                context: context,
-                hintText: "搜标签、合集、粮单、文章、用户",
-                onSubmitted: (value) {
-                  Utils.addSearchHistory(value);
-                  _performSearch(value);
-                },
-                controller: _searchController,
-              ),
-            ),
-            if (!ResponsiveUtil.isLandscape()) const SizedBox(width: 16),
-            if (!ResponsiveUtil.isLandscape())
-              GestureDetector(
-                onTap: () {
-                  Navigator.pop(context);
-                },
-                child: Text(
-                  "取消",
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              )
-          ],
-        ),
+    double width = ResponsiveUtil.isLandscape()
+        ? searchBarWidth - 100
+        : min(MediaQuery.of(context).size.width, searchBarWidth);
+    return Container(
+      margin: const EdgeInsets.all(10),
+      constraints:
+          BoxConstraints(maxWidth: width, minWidth: width, maxHeight: 56),
+      child: ItemBuilder.buildDesktopSearchBar(
+        context: context,
+        borderRadius: 8,
+        bottomMargin: 18,
+        hintFontSizeDelta: 1,
+        // focusNode: _focusNode,
+        controller: _searchController,
+        background: Colors.grey.withAlpha(40),
+        hintText: "搜标签、合集、文章、讨论、粮单、用户",
+        onSubmitted: (text) async {
+          _performSearch(text);
+        },
       ),
     );
   }

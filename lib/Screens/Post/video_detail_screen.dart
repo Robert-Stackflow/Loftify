@@ -15,7 +15,6 @@ import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
-import 'package:loftify/Utils/iprint.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Utils/route_util.dart';
@@ -267,8 +266,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
         child: Stack(
           children: [
             _buildBody(),
-            if (!ResponsiveUtil.isLandscape())
-              SafeArea(child: _buildTopWidget()),
+            if (!ResponsiveUtil.isLandscape()) _buildTopWidget(),
           ],
         ),
       ),
@@ -412,7 +410,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
               );
             },
             onTapAvatar: () {
-              RouteUtil.pushCupertinoRoute(
+              RouteUtil.pushPanelCupertinoRoute(
                 context,
                 UserDetailScreen(
                   blogId: postListItem.blogInfo!.blogId,
@@ -564,21 +562,23 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
   }
 
   Widget _buildTopWidget() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
-      child: Row(
-        children: [
-          ItemBuilder.buildIconButton(
-            context: context,
-            onTap: () {
-              Navigator.pop(context);
-            },
-            icon: const Icon(
-              Icons.arrow_back_rounded,
-              color: Colors.white,
+    return SafeArea(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+        child: Row(
+          children: [
+            ItemBuilder.buildIconButton(
+              context: context,
+              onTap: () {
+                Navigator.pop(context);
+              },
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                color: Colors.white,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

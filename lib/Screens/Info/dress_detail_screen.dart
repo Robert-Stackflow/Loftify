@@ -11,6 +11,7 @@ import 'package:waterfall_flow/waterfall_flow.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
+import '../../Utils/route_util.dart';
 import '../../Widgets/Custom/hero_photo_view_screen.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
@@ -57,7 +58,7 @@ class _DressDetailScreenState extends State<DressDetailScreen>
   _fetchDetail({bool refresh = false}) async {
     if (_loading) return;
     _loading = true;
-    userAvatarImg = (await HiveUtil.getUserInfo())!.bigAvaImg;
+    userAvatarImg = (await HiveUtil.getUserInfo())?.bigAvaImg;
     await DressApi.getDressDetail(
       returnGiftDressId: widget.returnGiftDressId,
     ).then((value) {
@@ -163,14 +164,15 @@ class _DressDetailScreenState extends State<DressDetailScreen>
                   )
                 : GestureDetector(
                     onTap: () {
-                      Navigator.push(
+                      RouteUtil.pushDialogRoute(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => HeroPhotoViewScreen(
-                            imageUrls: [item.partUrl],
-                            useMainColor: false,
-                            title: item.partName,
-                          ),
+                        showClose: false,
+                        fullScreen: true,
+                        useMaterial: true,
+                        HeroPhotoViewScreen(
+                          imageUrls: [item.partUrl],
+                          useMainColor: false,
+                          title: item.partName,
                         ),
                       );
                     },
@@ -217,17 +219,10 @@ class _DressDetailScreenState extends State<DressDetailScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildAppBar(
+    return ItemBuilder.buildDesktopAppBar(
       context: context,
-      leading: Icons.arrow_back_rounded,
-      backgroundColor: MyTheme.getBackground(context),
-      onLeadingTap: () {
-        Navigator.pop(context);
-      },
-      title: Text(
-        "装扮详情",
-        style: Theme.of(context).textTheme.titleLarge,
-      ),
+      showBack: true,
+      title: "装扮详情",
     );
   }
 }

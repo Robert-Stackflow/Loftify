@@ -6,6 +6,10 @@ import 'package:tuple/tuple.dart';
 import '../Models/nav_entry.dart';
 import '../Resources/fonts.dart';
 import '../Resources/theme_color_data.dart';
+import '../Screens/Navigation/home_screen.dart';
+import '../Screens/Navigation/search_screen.dart';
+import '../Screens/main_screen.dart';
+import '../Screens/panel_screen.dart';
 import '../generated/l10n.dart';
 import 'enums.dart';
 import 'hive_util.dart';
@@ -17,6 +21,22 @@ GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>();
 NavigatorState? get desktopNavigatorState => desktopNavigatorKey.currentState;
 
 NavigatorState? get globalNavigatorState => globalNavigatorKey.currentState;
+
+GlobalKey<PanelScreenState> panelScreenKey = GlobalKey<PanelScreenState>();
+
+PanelScreenState? get panelScreenState => panelScreenKey.currentState;
+
+GlobalKey<NavigatorState> panelNavigatorKey = GlobalKey<NavigatorState>();
+
+NavigatorState? get panelNavigatorState => panelNavigatorKey.currentState;
+
+GlobalKey<SearchScreenState> searchScreenKey = GlobalKey<SearchScreenState>();
+
+SearchScreenState? get searchScreenState => searchScreenKey.currentState;
+
+GlobalKey<HomeScreenState> homeScreenKey = GlobalKey<HomeScreenState>();
+
+HomeScreenState? get homeScreenState => homeScreenKey.currentState;
 
 GlobalKey<DialogWrapperWidgetState> dialogNavigatorKey =
     GlobalKey<DialogWrapperWidgetState>();
@@ -56,12 +76,24 @@ class AppProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  bool _canPopByProvider = false;
+  SideBarChoice _sidebarChoice = SideBarChoice.fromString(
+      HiveUtil.getString(HiveUtil.sidebarChoiceKey) ?? "");
 
-  bool get canPopByProvider => _canPopByProvider;
+  SideBarChoice get sidebarChoice => _sidebarChoice;
 
-  set canPopByProvider(bool value) {
-    _canPopByProvider = value;
+  set sidebarChoice(SideBarChoice value) {
+    _sidebarChoice = value;
+    HiveUtil.put(HiveUtil.sidebarChoiceKey, value.key);
+    notifyListeners();
+    panelScreenState?.jumpToPage(_sidebarChoice.index);
+  }
+
+  bool _showNavigator = false;
+
+  bool get showNavigator => _showNavigator;
+
+  set showNavigator(bool value) {
+    _showNavigator = value;
     notifyListeners();
   }
 

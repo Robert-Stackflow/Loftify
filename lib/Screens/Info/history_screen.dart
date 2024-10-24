@@ -176,14 +176,10 @@ class _HistoryScreenState extends State<HistoryScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildAppBar(
+    return ItemBuilder.buildDesktopAppBar(
       context: context,
-      leading: Icons.arrow_back_rounded,
-      backgroundColor: MyTheme.getBackground(context),
-      onLeadingTap: () {
-        Navigator.pop(context);
-      },
-      title: Text("我的足迹", style: Theme.of(context).textTheme.titleLarge),
+      showBack: true,
+      title: "我的足迹",
       actions: [
         ItemBuilder.buildIconButton(
             context: context,

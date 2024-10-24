@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:loftify/Resources/theme.dart';
 
 import 'app_provider.dart';
 
@@ -14,18 +15,7 @@ class IToast {
     toast.showToast(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          color: Theme.of(rootContext).canvasColor,
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(rootContext).shadowColor,
-              offset: const Offset(0, 4),
-              blurRadius: 10,
-              spreadRadius: 1,
-            ).scale(2)
-          ],
-        ),
+        decoration: MyTheme.defaultDecoration,
         child: Text(
           text,
           textAlign: TextAlign.center,

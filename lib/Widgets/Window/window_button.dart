@@ -1,11 +1,11 @@
 import 'dart:io' show Platform;
 import 'dart:math';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
+import '../../Resources/colors.dart';
 import '../../Utils/asset_util.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/responsive_util.dart';
@@ -32,36 +32,45 @@ class WindowButtonContext {
 
 class WindowButtonColors {
   late Color normal;
+  late Color selected;
   late Color mouseOver;
   late Color mouseDown;
   late Color iconNormal;
+  late Color iconSelected;
   late Color iconMouseOver;
   late Color iconMouseDown;
 
   WindowButtonColors({
     Color? normal,
+    Color? selected,
     Color? mouseOver,
     Color? mouseDown,
     Color? iconNormal,
+    Color? iconSelected,
     Color? iconMouseOver,
     Color? iconMouseDown,
   }) {
     this.normal = normal ?? _defaultButtonColors.normal;
+    this.selected = selected ?? _defaultButtonColors.selected;
     this.mouseOver = mouseOver ?? _defaultButtonColors.mouseOver;
     this.mouseDown = mouseDown ?? _defaultButtonColors.mouseDown;
     this.iconNormal = iconNormal ?? _defaultButtonColors.iconNormal;
+    this.iconSelected = iconSelected ?? _defaultButtonColors.iconSelected;
     this.iconMouseOver = iconMouseOver ?? _defaultButtonColors.iconMouseOver;
     this.iconMouseDown = iconMouseDown ?? _defaultButtonColors.iconMouseDown;
   }
 }
 
 final _defaultButtonColors = WindowButtonColors(
-    normal: Colors.transparent,
-    iconNormal: const Color(0xFF805306),
-    mouseOver: const Color(0xFF404040),
-    mouseDown: const Color(0xFF202020),
-    iconMouseOver: const Color(0xFFFFFFFF),
-    iconMouseDown: const Color(0xFFF0F0F0));
+  normal: Colors.transparent,
+  iconNormal: const Color(0xFF805306),
+  mouseOver: const Color(0xFF404040),
+  mouseDown: const Color(0xFF202020),
+  iconMouseOver: const Color(0xFFFFFFFF),
+  iconMouseDown: const Color(0xFFF0F0F0),
+  selected: const Color(0xFF202020),
+  iconSelected: const Color(0xFF805306),
+);
 
 class WindowButton extends StatelessWidget {
   final WindowButtonBuilder? builder;
@@ -72,6 +81,8 @@ class WindowButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final BorderRadius? borderRadius;
   final double rotateAngle;
+  final bool selected;
+  final Size buttonSize;
 
   WindowButton({
     super.key,
@@ -79,9 +90,11 @@ class WindowButton extends StatelessWidget {
     this.builder,
     @required this.iconBuilder,
     this.padding,
+    this.selected = false,
     this.onPressed,
+    this.buttonSize = const Size(36, 36),
     this.borderRadius,
-    this.animate = false,
+    this.animate = true,
     this.rotateAngle = 0,
   }) {
     this.colors = colors ?? _defaultButtonColors;
@@ -90,10 +103,12 @@ class WindowButton extends StatelessWidget {
   Color getBackgroundColor(MouseState mouseState) {
     if (mouseState.isMouseDown) return colors.mouseDown;
     if (mouseState.isMouseOver) return colors.mouseOver;
+    if (selected) return colors.selected;
     return colors.normal;
   }
 
   Color getIconColor(MouseState mouseState) {
+    if (selected) return colors.iconSelected;
     if (mouseState.isMouseDown) return colors.iconMouseDown;
     if (mouseState.isMouseOver) return colors.iconMouseOver;
     return colors.iconNormal;
@@ -104,12 +119,10 @@ class WindowButton extends StatelessWidget {
     if (kIsWeb) {
       return emptyWidget;
     } else {
-      // Don't show button on macOS
       if (Platform.isMacOS) {
         return emptyWidget;
       }
     }
-    const buttonSize = Size(40, 40);
     return MouseStateBuilder(
       builder: (context, mouseState) {
         WindowButtonContext buttonContext = WindowButtonContext(
@@ -122,18 +135,18 @@ class WindowButton extends StatelessWidget {
             (iconBuilder != null) ? iconBuilder!(buttonContext) : emptyWidget;
         double borderSize = 0;
         double defaultPadding = (30 - borderSize) / 3 - (borderSize / 2);
-        // Used when buttonContext.backgroundColor is null, allowing the AnimatedContainer to fade-out smoothly.
         var fadeOutColor =
             getBackgroundColor(MouseState()..isMouseOver = true).withOpacity(0);
         var padding = this.padding ?? EdgeInsets.all(defaultPadding);
         var animationMs =
-            mouseState.isMouseOver ? (animate ? 100 : 0) : (animate ? 200 : 0);
+            mouseState.isMouseOver ? (animate ? 50 : 0) : (animate ? 100 : 0);
         Widget iconWithPadding = Padding(
-            padding: padding,
-            child: Transform.rotate(
-              angle: rotateAngle,
-              child: icon,
-            ));
+          padding: padding,
+          child: Transform.rotate(
+            angle: rotateAngle,
+            child: icon,
+          ),
+        );
         iconWithPadding = AnimatedContainer(
             curve: Curves.easeOut,
             duration: Duration(milliseconds: animationMs),
@@ -158,6 +171,40 @@ class WindowButton extends StatelessWidget {
       },
     );
   }
+}
+
+class ToolButton extends WindowButton {
+  ToolButton({
+    super.key,
+    required BuildContext context,
+    super.selected,
+    WindowButtonColors? colors,
+    required VoidCallback onTap,
+    bool? animate,
+    EdgeInsets? padding,
+    WindowButtonIconBuilder? iconBuilder,
+    IconData? icon,
+    IconData? selectedIcon,
+    double iconSize = 22,
+    Size? buttonSize,
+    double? rotateAngle,
+  }) : super(
+          animate: animate ?? true,
+          buttonSize: buttonSize ?? const Size(38, 38),
+          padding: padding ?? EdgeInsets.zero,
+          colors: colors ?? MyColors.getNormalButtonColors(context),
+          borderRadius: BorderRadius.circular(8),
+          iconBuilder: iconBuilder ??
+              (buttonContext) => Transform.rotate(
+                    angle: rotateAngle ?? 0,
+                    child: Icon(
+                      selected ? selectedIcon ?? icon : icon,
+                      color: buttonContext.iconColor,
+                      size: iconSize,
+                    ),
+                  ),
+          onPressed: onTap,
+        );
 }
 
 class StayOnTopWindowButton extends WindowButton {

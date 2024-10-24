@@ -1,24 +1,22 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Api/recommend_api.dart';
 import 'package:loftify/Resources/theme.dart';
-//
-import 'package:loftify/Screens/Post/search_screen.dart';
+import 'package:loftify/Screens/refresh_interface.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Widgets/PostItem/recommend_flow_item_builder.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Api/post_api.dart';
 import '../../Models/recommend_response.dart';
-import '../../Utils/asset_util.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/ilogger.dart';
-import '../../Utils/iprint.dart';
 import '../../Utils/responsive_util.dart';
-import '../../Utils/route_util.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/Hidable/scroll_to_hide.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../generated/l10n.dart';
 
@@ -34,7 +32,11 @@ class HomeScreen extends StatefulWidget {
 }
 
 class HomeScreenState extends State<HomeScreen>
-    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+    with
+        TickerProviderStateMixin,
+        AutomaticKeepAliveClientMixin,
+        ScrollToHideMixin,
+        BottomNavgationMixin {
   @override
   bool get wantKeepAlive => true;
   final List<PostListItem> _recommendPosts = [];
@@ -45,9 +47,20 @@ class HomeScreenState extends State<HomeScreen>
   int _currentPage = 0;
   int _currentOffset = 0;
   int _currentFeed = 0;
+  late AnimationController _refreshRotationController;
+  final ScrollToHideController _scrollToHideController =
+      ScrollToHideController();
+
+  refresh() {
+    _refreshController.callRefresh();
+  }
 
   @override
   void initState() {
+    _refreshRotationController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
     if (Platform.isAndroid) {
       SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
@@ -116,65 +129,84 @@ class HomeScreenState extends State<HomeScreen>
     super.build(context);
     return Scaffold(
       backgroundColor: MyTheme.getBackground(context),
-      appBar: _buildAppBar(),
-      body: EasyRefresh(
-        refreshOnStart: true,
-        controller: _refreshController,
-        onRefresh: _onRefresh,
-        onLoad: _onLoad,
-        child: WaterfallFlow.builder(
-          controller: _scrollController,
-          cacheExtent: 9999,
-          padding: const EdgeInsets.only(top: 8, left: 8, right: 8),
-          gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-            mainAxisSpacing: 6,
-            crossAxisSpacing: 6,
-            maxCrossAxisExtent: 300,
-          ),
-          itemBuilder: (BuildContext context, int index) {
-            return GestureDetector(
-              child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
-                context,
-                _recommendPosts[index],
-                showMoreButton: true,
-                onLikeTap: () async {
-                  var item = _recommendPosts[index];
-                  HapticFeedback.mediumImpact();
-                  return await PostApi.likeOrUnLike(
-                          isLike: !item.favorite,
-                          postId: item.itemId,
-                          blogId: item.blogInfo!.blogId)
-                      .then((value) {
-                    setState(() {
-                      if (value['meta']['status'] != 200) {
-                        IToast.showTop(
-                            value['meta']['desc'] ?? value['meta']['msg']);
-                      } else {
-                        item.favorite = !item.favorite;
-                        item.postData!.postCount!.favoriteCount +=
-                            item.favorite ? 1 : -1;
-                      }
-                    });
-                    return value['meta']['status'];
-                  });
-                },
-                onShieldContent: () {
-                  _recommendPosts.remove(_recommendPosts[index]);
-                  setState(() {});
-                },
-                onShieldTag: (tag) {
-                  _recommendPosts.remove(_recommendPosts[index]);
-                  setState(() {});
-                },
-                onShieldUser: () {
-                  _recommendPosts.remove(_recommendPosts[index]);
-                  setState(() {});
-                },
+      appBar: ItemBuilder.buildDesktopAppBar(
+        context: context,
+        title: S.current.home,
+        spacing: ResponsiveUtil.isLandscape() ? 15 : 10,
+      ),
+      body: Stack(
+        children: [
+          EasyRefresh(
+            refreshOnStart: true,
+            controller: _refreshController,
+            onRefresh: _onRefresh,
+            onLoad: _onLoad,
+            child: WaterfallFlow.builder(
+              controller: _scrollController,
+              cacheExtent: 9999,
+              padding: const EdgeInsets.only(top: 8, left: 8, right: 8),
+              gridDelegate:
+                  const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                mainAxisSpacing: 6,
+                crossAxisSpacing: 6,
+                maxCrossAxisExtent: 300,
               ),
-            );
-          },
-          itemCount: _recommendPosts.length,
-        ),
+              itemBuilder: (BuildContext context, int index) {
+                return GestureDetector(
+                  child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
+                    context,
+                    _recommendPosts[index],
+                    showMoreButton: true,
+                    onLikeTap: () async {
+                      var item = _recommendPosts[index];
+                      HapticFeedback.mediumImpact();
+                      return await PostApi.likeOrUnLike(
+                              isLike: !item.favorite,
+                              postId: item.itemId,
+                              blogId: item.blogInfo!.blogId)
+                          .then((value) {
+                        setState(() {
+                          if (value['meta']['status'] != 200) {
+                            IToast.showTop(
+                                value['meta']['desc'] ?? value['meta']['msg']);
+                          } else {
+                            item.favorite = !item.favorite;
+                            item.postData!.postCount!.favoriteCount +=
+                                item.favorite ? 1 : -1;
+                          }
+                        });
+                        return value['meta']['status'];
+                      });
+                    },
+                    onShieldContent: () {
+                      _recommendPosts.remove(_recommendPosts[index]);
+                      setState(() {});
+                    },
+                    onShieldTag: (tag) {
+                      _recommendPosts.remove(_recommendPosts[index]);
+                      setState(() {});
+                    },
+                    onShieldUser: () {
+                      _recommendPosts.remove(_recommendPosts[index]);
+                      setState(() {});
+                    },
+                  ),
+                );
+              },
+              itemCount: _recommendPosts.length,
+            ),
+          ),
+          Positioned(
+            right: ResponsiveUtil.isLandscape() ? 16 : 12,
+            bottom: ResponsiveUtil.isLandscape() ? 16 : 76,
+            child: ScrollToHide(
+              controller: _scrollToHideController,
+              scrollControllers: [_scrollController],
+              hideDirection: AxisDirection.down,
+              child: _buildFloatingButtons(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -197,29 +229,53 @@ class HomeScreenState extends State<HomeScreen>
     }
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildAppBar(
-      context: context,
-      backgroundColor: MyTheme.getBackground(context),
-      title:
-          Text(S.current.home, style: Theme.of(context).textTheme.titleLarge),
-      actions: [
-        if (!ResponsiveUtil.isLandscape())
-          ItemBuilder.buildIconButton(
-              context: context,
-              icon: AssetUtil.loadDouble(
-                context,
-                AssetUtil.searchLightIcon,
-                AssetUtil.searchDarkIcon,
-              ),
-              onTap: () {
-                RouteUtil.pushCupertinoRoute(
-                  context,
-                  const SearchScreen(),
-                );
-              }),
-        const SizedBox(width: 10),
+  _buildFloatingButtons() {
+    return Column(
+      children: [
+        if (ResponsiveUtil.isLandscape())
+          ItemBuilder.buildShadowIconButton(
+            context: context,
+            icon: RotationTransition(
+              turns: Tween(begin: 0.0, end: 1.0)
+                  .animate(_refreshRotationController),
+              child: const Icon(Icons.refresh_rounded),
+            ),
+            onTap: () async {
+              refresh();
+            },
+          ),
+        const SizedBox(height: 10),
+        ItemBuilder.buildShadowIconButton(
+          context: context,
+          icon: const Icon(Icons.arrow_upward_rounded),
+          onTap: () {
+            scrollToTop();
+          },
+        ),
       ],
     );
+  }
+
+  void scrollToTop() {
+    _scrollController.animateTo(0,
+        duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+  }
+
+  void scrollToTopOrRefresh() {
+    if (_scrollController.offset > 30) {
+      scrollToTop();
+    } else {
+      _refreshController.callRefresh();
+    }
+  }
+
+  @override
+  List<ScrollController> getScrollControllers() {
+    return [_scrollController];
+  }
+
+  @override
+  FutureOr onTapBottomNavigation() {
+    scrollToTopOrRefresh();
   }
 }

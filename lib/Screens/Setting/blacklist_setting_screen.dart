@@ -68,18 +68,12 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: MyTheme.getBackground(context),
-      appBar: ItemBuilder.buildAppBar(
-          leading: Icons.arrow_back_rounded,
-          backgroundColor: MyTheme.getBackground(context),
-          onLeadingTap: () {
-            Navigator.pop(context);
-          },
-          title: Text(S.current.blacklistSetting,
-              style: Theme.of(context).textTheme.titleLarge),
-          context: context,
-          actions: [
-            ItemBuilder.buildBlankIconButton(context),
-          ]),
+      appBar: ItemBuilder.buildDesktopAppBar(
+        showBack: true,
+        showBorder: true,
+        title: S.current.blacklistSetting,
+        context: context,
+      ),
       body: EasyRefresh(
         controller: _refreshController,
         refreshOnStart: true,
@@ -107,7 +101,7 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
   _buildBlacklistRow(BlacklistItem blacklistItem) {
     return GestureDetector(
       onTap: () {
-        RouteUtil.pushCupertinoRoute(
+        RouteUtil.pushPanelCupertinoRoute(
           context,
           UserDetailScreen(
               blogId: blacklistItem.blogInfo.blogId,

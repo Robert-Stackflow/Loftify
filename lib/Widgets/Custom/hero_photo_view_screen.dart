@@ -12,6 +12,7 @@ import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
 
 import '../../Models/post_detail_response.dart';
+import '../../Utils/app_provider.dart';
 import '../../Utils/asset_util.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/responsive_util.dart';
@@ -19,6 +20,7 @@ import '../../Utils/utils.dart';
 import '../General/PhotoView/photo_view.dart';
 import '../General/PhotoView/photo_view_gallery.dart';
 import '../Item/item_builder.dart';
+import '../Window/window_caption.dart';
 
 enum DownloadState { none, loading, succeed, failed }
 
@@ -128,7 +130,15 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      appBar: _buildAppBar(),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(56),
+        child: Stack(
+          children: [
+            _buildAppBar(),
+            if (ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
+          ],
+        ),
+      ),
       extendBody: true,
       extendBodyBehindAppBar: true,
       backgroundColor: Colors.black,
@@ -570,7 +580,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
             icon:
                 const Icon(Icons.close_rounded, color: Colors.white, size: 22),
             onTap: () {
-              Navigator.pop(context);
+              dialogNavigatorState?.popPage();
             },
           ),
         if (ResponsiveUtil.isLandscape()) const SizedBox(width: 5),

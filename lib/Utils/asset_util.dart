@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:loftify/Utils/utils.dart';
 
 class AssetUtil {
+  static const String avatar = "assets/avatar.png";
   static const String collectionDarkIcon = "assets/icon/collection_dark.png";
   static const String collectionLightIcon = "assets/icon/collection_light.png";
   static const String collectionPrimaryIcon =

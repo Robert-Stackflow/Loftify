@@ -207,7 +207,7 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
         children: [
           GestureDetector(
             onTap: () {
-              RouteUtil.pushCupertinoRoute(
+              RouteUtil.pushPanelCupertinoRoute(
                 context,
                 CollectionDetailScreen(
                   blogId: widget.blogId,

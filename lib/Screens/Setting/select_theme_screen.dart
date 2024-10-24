@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:loftify/Resources/theme_color_data.dart';
 import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/hive_util.dart';
+import 'package:loftify/Utils/responsive_util.dart';
 
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
@@ -26,13 +27,17 @@ class _SelectThemeScreenState extends State<SelectThemeScreen>
     return Container(
       color: Colors.transparent,
       child: Scaffold(
-        appBar: ItemBuilder.buildSimpleAppBar(
-            title: S.current.selectTheme, context: context, transparent: true),
+        appBar: ItemBuilder.buildDesktopAppBar(
+          showBack: true,
+          title: S.current.selectTheme,
+          transparent: true,
+          context: context,
+        ),
         body: EasyRefresh(
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             children: [
-              const SizedBox(height: 10),
+              if (ResponsiveUtil.isLandscape()) const SizedBox(height: 10),
               ItemBuilder.buildCaptionItem(
                   context: context, title: S.current.lightTheme),
               ItemBuilder.buildContainerItem(

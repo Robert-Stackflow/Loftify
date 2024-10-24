@@ -1,4 +1,5 @@
 import 'package:blur/blur.dart';
+import 'package:context_menus/context_menus.dart';
 import 'package:flutter/material.dart' hide AnimatedSlide;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,7 +8,6 @@ import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Widgets/Dialog/custom_dialog.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
-import 'package:tuple/tuple.dart';
 
 import '../../Api/collection_api.dart';
 import '../../Models/history_response.dart';
@@ -17,11 +17,12 @@ import '../../Utils/asset_util.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
-import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
+import '../../Widgets/Custom/sliver_appbar_delegate.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
 
@@ -172,6 +173,10 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: MyTheme.getBackground(context),
+      appBar: ResponsiveUtil.isLandscape()
+          ? ItemBuilder.buildDesktopAppBar(
+              context: context, showBack: true, title: "合集详情")
+          : null,
       bottomNavigationBar:
           blogInfo != null && postCollection != null ? _buildFooter() : null,
       body: blogInfo != null && postCollection != null
@@ -186,67 +191,62 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
   }
 
   _buildHeaderSlivers() {
-    bool hasDesc = Utils.isNotEmpty(postCollection!.description);
-    return <Widget>[
-      ItemBuilder.buildSliverAppBar(
-        context: context,
-        expandedHeight: 265,
-        backgroundWidget: _buildBackground(),
-        actions: [
-          ItemBuilder.buildIconButton(
-            context: context,
-            onTap: () {
-              List<Tuple2<String, dynamic>> options = [
-                const Tuple2("复制链接", 0),
-                const Tuple2("在浏览器打开", 1),
-                const Tuple2("分享到其他应用", 2),
-              ];
-              BottomSheetBuilder.showListBottomSheet(
-                context,
-                (sheetContext) => TileList.fromOptions(
-                  options,
-                  (idx) {
-                    if (idx == 0) {
-                      Utils.copy(context, collectionUrl);
-                    } else if (idx == 1) {
-                      UriUtil.openExternal(collectionUrl);
-                    } else if (idx == 2) {
-                      UriUtil.share(context, collectionUrl);
-                    }
-                    Navigator.pop(sheetContext);
-                  },
-                  showCancel: true,
-                  context: context,
-                  showTitle: false,
-                  onCloseTap: () => Navigator.pop(sheetContext),
-                  crossAxisAlignment: CrossAxisAlignment.center,
+    if (!ResponsiveUtil.isLandscape()) {
+      return <Widget>[
+        ItemBuilder.buildSliverAppBar(
+          context: context,
+          expandedHeight: 265,
+          backgroundWidget: _buildBackground(),
+          actions: [
+            ItemBuilder.buildIconButton(
+              context: context,
+              onTap: () {
+                BottomSheetBuilder.showContextMenu(
+                    context, _buildMoreButtons());
+              },
+              icon: const Icon(
+                Icons.more_vert_rounded,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 5),
+          ],
+          center: true,
+          title: Text(
+            "合集",
+            style: Theme.of(context).textTheme.titleMedium?.apply(
+                  color: Colors.white,
+                  fontWeightDelta: 2,
                 ),
-              );
-            },
-            icon: const Icon(
-              Icons.more_vert_rounded,
-              color: Colors.white,
+          ),
+          flexibleSpace: FlexibleSpaceBar(
+            background: Stack(
+              children: [
+                _buildBackground(),
+                Column(
+                  children: [
+                    SizedBox(
+                        height: kToolbarHeight +
+                            MediaQuery.of(context).padding.top),
+                    _buildInfoRow(),
+                    _buildStatsticRow(),
+                  ],
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 5),
-        ],
-        center: true,
-        title: Text(
-          "合集",
-          style: Theme.of(context).textTheme.titleMedium?.apply(
-                color: Colors.white,
-                fontWeightDelta: 2,
-              ),
+          bottom: _buildFixedBar(0),
         ),
-        flexibleSpace: FlexibleSpaceBar(
-          background: Stack(
+      ];
+    } else {
+      return [
+        SliverToBoxAdapter(
+          child: Stack(
             children: [
-              _buildBackground(),
+              _buildBackground(height: 180),
               Column(
                 children: [
-                  SizedBox(
-                      height:
-                          kToolbarHeight + MediaQuery.of(context).padding.top),
+                  const SizedBox(height: 10),
                   _buildInfoRow(),
                   _buildStatsticRow(),
                 ],
@@ -254,73 +254,85 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
             ],
           ),
         ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(0),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            decoration: BoxDecoration(
-              color: MyTheme.getBackground(context),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-            ),
-            width: MediaQuery.sizeOf(context).width,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        SliverPersistentHeader(
+          key: ValueKey(Utils.getRandomString()),
+          pinned: true,
+          delegate: SliverAppBarDelegate(
+            radius: 0,
+            background: MyTheme.getBackground(context),
+            tabBar: _buildFixedBar(),
+          ),
+        ),
+      ];
+    }
+  }
+
+  PreferredSize _buildFixedBar([double height = 56]) {
+    bool hasDesc = Utils.isNotEmpty(postCollection!.description);
+    return PreferredSize(
+      preferredSize: Size.fromHeight(height),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: MyTheme.getBackground(context),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        width: MediaQuery.sizeOf(context).width,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 12),
+            Row(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        hasDesc ? postCollection!.description : "暂无简介",
-                        style: Theme.of(context).textTheme.labelLarge?.apply(
-                              color:
-                                  Theme.of(context).textTheme.bodySmall?.color,
-                            ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 5),
-                    ItemBuilder.buildIconTextButton(
-                      context,
-                      text: isOldest ? "正序" : "倒序",
-                      icon: AssetUtil.load(
-                        isOldest
-                            ? AssetUtil.orderDownDarkIcon
-                            : AssetUtil.orderUpDarkIcon,
-                        size: 15,
-                      ),
-                      fontSizeDelta: 1,
-                      color: Theme.of(context).textTheme.labelMedium?.color,
-                      onTap: () {
-                        HapticFeedback.mediumImpact();
-                        setState(() {
-                          isOldest = !isOldest;
-                        });
-                        _fetchData(refresh: true, showLoading: true);
-                      },
-                    ),
-                  ],
+                Flexible(
+                  child: Text(
+                    hasDesc ? postCollection!.description : "暂无简介",
+                    style: Theme.of(context).textTheme.labelLarge?.apply(
+                          color: Theme.of(context).textTheme.bodySmall?.color,
+                        ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                // if (Utils.isNotEmpty(postCollection!.tags)) _buildTagList(),
-                const SizedBox(height: 8),
-                ItemBuilder.buildDivider(
+                const SizedBox(width: 5),
+                ItemBuilder.buildIconTextButton(
                   context,
-                  horizontal: 0,
-                  vertical: 0,
+                  text: isOldest ? "正序" : "倒序",
+                  icon: AssetUtil.load(
+                    isOldest
+                        ? AssetUtil.orderDownDarkIcon
+                        : AssetUtil.orderUpDarkIcon,
+                    size: 15,
+                  ),
+                  fontSizeDelta: 1,
+                  color: Theme.of(context).textTheme.labelMedium?.color,
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    setState(() {
+                      isOldest = !isOldest;
+                    });
+                    _fetchData(refresh: true, showLoading: true);
+                  },
                 ),
               ],
             ),
-          ),
+            // if (Utils.isNotEmpty(postCollection!.tags)) _buildTagList(),
+            const SizedBox(height: 8),
+            ItemBuilder.buildDivider(
+              context,
+              horizontal: 0,
+              vertical: 0,
+            ),
+          ],
         ),
       ),
-    ];
+    );
   }
 
   Widget _buildFooter() {
@@ -369,7 +381,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
               padding: const EdgeInsets.symmetric(vertical: 15),
               onTap: () {
                 if (posts.isNotEmpty) {
-                  RouteUtil.pushCupertinoRoute(
+                  RouteUtil.pushPanelCupertinoRoute(
                     context,
                     PostDetailScreen(
                       postDetailData: posts[0],
@@ -425,7 +437,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
                 ItemBuilder.buildClickItem(
                   GestureDetector(
                     onTap: () {
-                      RouteUtil.pushCupertinoRoute(
+                      RouteUtil.pushPanelCupertinoRoute(
                         context,
                         UserDetailScreen(
                           blogId: widget.blogId,
@@ -464,6 +476,20 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
               ],
             ),
           ),
+          if (ResponsiveUtil.isLandscape()) ...[
+            ItemBuilder.buildIconButton(
+              context: context,
+              onTap: () {
+                BottomSheetBuilder.showContextMenu(
+                    context, _buildMoreButtons());
+              },
+              icon: const Icon(
+                Icons.more_vert_rounded,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 5),
+          ]
         ],
       ),
     );
@@ -596,77 +622,29 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
     );
   }
 
-  Widget _buildAppBar() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-          colors: [
-            Colors.black.withOpacity(0),
-            Colors.black.withOpacity(0.4),
-          ],
+  _buildMoreButtons() {
+    return GenericContextMenu(
+      buttonConfigs: [
+        ContextMenuButtonConfig(
+          "复制链接",
+          icon: const Icon(Icons.copy_rounded),
+          onPressed: () {
+            Utils.copy(context, collectionUrl);
+          },
         ),
-      ),
-      child: ItemBuilder.buildAppBar(
-        transparent: true,
-        leading: Icons.arrow_back_rounded,
-        leadingColor: Colors.white,
-        center: true,
-        title: Text(
-          "合集",
-          style: Theme.of(context).textTheme.titleMedium?.apply(
-                color: Colors.white,
-                fontWeightDelta: 2,
-              ),
-        ),
-        actions: [
-          ItemBuilder.buildIconButton(
-            context: context,
-            onTap: () {
-              List<Tuple2<String, dynamic>> options = [
-                const Tuple2("复制链接", 0),
-                const Tuple2("在浏览器打开", 1),
-                const Tuple2("分享到其他应用", 2),
-              ];
-              BottomSheetBuilder.showListBottomSheet(
-                context,
-                (sheetContext) => TileList.fromOptions(
-                  options,
-                  (idx) {
-                    if (idx == 0) {
-                      Utils.copy(context, collectionUrl);
-                    } else if (idx == 1) {
-                      UriUtil.openExternal(collectionUrl);
-                    } else if (idx == 2) {
-                      UriUtil.share(context, collectionUrl);
-                    }
-                    Navigator.pop(sheetContext);
-                  },
-                  showCancel: true,
-                  context: context,
-                  showTitle: false,
-                  onCloseTap: () => Navigator.pop(sheetContext),
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                ),
-              );
-            },
-            icon: const Icon(
-              Icons.more_vert_rounded,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 5),
-        ],
-        onLeadingTap: () {
-          Navigator.pop(context);
-        },
-        context: context,
-      ),
+        ContextMenuButtonConfig("在浏览器打开",
+            icon: const Icon(Icons.open_in_browser_rounded), onPressed: () {
+          UriUtil.openExternal(collectionUrl);
+        }),
+        ContextMenuButtonConfig("分享到其他应用",
+            icon: const Icon(Icons.share_rounded), onPressed: () {
+          UriUtil.share(context, collectionUrl);
+        }),
+      ],
     );
   }
 
-  Widget _buildBackground() {
+  Widget _buildBackground({double? height}) {
     String backgroudUrl = postCollection!.coverUrl;
     return Blur(
       blur: 20,
@@ -677,7 +655,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
         showLoading: false,
         fit: BoxFit.cover,
         width: MediaQuery.sizeOf(context).width * 2,
-        height: MediaQuery.sizeOf(context).height * 0.7,
+        height: height ?? MediaQuery.sizeOf(context).height * 0.7,
         placeholderBackground: Theme.of(context).textTheme.labelSmall?.color,
         bottomPadding: 50,
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/user_api.dart';
 import 'package:loftify/Models/account_response.dart';
+import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Screens/Info/collection_screen.dart';
 import 'package:loftify/Screens/Info/dress_screen.dart';
 import 'package:loftify/Screens/Info/favorite_folder_list_screen.dart';
@@ -26,9 +27,11 @@ import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
 import '../Info/following_follower_screen.dart';
 import '../Info/system_notice_screen.dart';
 import '../Setting/setting_screen.dart';
+import '../refresh_interface.dart';
 
 class MineScreen extends StatefulWidget {
   const MineScreen({super.key});
@@ -40,15 +43,19 @@ class MineScreen extends StatefulWidget {
 }
 
 class _MineScreenState extends State<MineScreen>
-    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+    with
+        TickerProviderStateMixin,
+        AutomaticKeepAliveClientMixin,
+        ScrollToHideMixin {
   @override
   bool get wantKeepAlive => true;
   FullBlogInfo? blogInfo;
   MeInfoData? meInfoData;
-  bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
   final List<FollowingUserItem> _followingList = [];
   final List<FollowingUserItem> _followerList = [];
+
+  final ScrollController _scrollController = ScrollController();
 
   late AnimationController darkModeController;
   Widget? darkModeWidget;
@@ -79,8 +86,6 @@ class _MineScreenState extends State<MineScreen>
   }
 
   _fetchUserInfo() async {
-    if (_loading) return;
-    _loading = true;
     if (appProvider.token.isNotEmpty) {
       return await UserApi.getUserInfo().then((value) async {
         try {
@@ -117,8 +122,6 @@ class _MineScreenState extends State<MineScreen>
           IToast.showTop("加载失败");
           ILogger.error("Failed to load user info", e, t);
           return IndicatorResult.fail;
-        } finally {
-          _loading = false;
         }
       });
     }
@@ -133,7 +136,16 @@ class _MineScreenState extends State<MineScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      appBar: ResponsiveUtil.isLandscape() ? null : _buildAppBar(),
+      backgroundColor: MyTheme.getBackground(context),
+      appBar: ResponsiveUtil.isLandscape()
+          ? appProvider.token.isNotEmpty
+              ? ItemBuilder.buildDesktopAppBar(
+                  context: context,
+                  title: S.current.mine,
+                  spacing: ResponsiveUtil.isLandscape() ? 15 : 10,
+                )
+              : null
+          : _buildAppBar(),
       body: _buildMainBody(),
     );
   }
@@ -160,6 +172,7 @@ class _MineScreenState extends State<MineScreen>
         margin: const EdgeInsets.symmetric(horizontal: 10),
         child: ListView(
           cacheExtent: 9999,
+          controller: _scrollController,
           children: [
             const SizedBox(height: 10),
             _buildUserCard(),
@@ -306,7 +319,7 @@ class _MineScreenState extends State<MineScreen>
             title: "我的关注（${meInfoData!.blogInfo.attentionCount}）",
             icon: Icons.keyboard_arrow_right_rounded,
             onTap: () {
-              RouteUtil.pushCupertinoRoute(
+              RouteUtil.pushPanelCupertinoRoute(
                 context,
                 FollowingFollowerScreen(
                   infoMode: InfoMode.me,
@@ -352,7 +365,7 @@ class _MineScreenState extends State<MineScreen>
             title: "我的粉丝（${meInfoData!.blogInfo.followerCount}）",
             icon: Icons.keyboard_arrow_right_rounded,
             onTap: () {
-              RouteUtil.pushCupertinoRoute(
+              RouteUtil.pushPanelCupertinoRoute(
                 context,
                 FollowingFollowerScreen(
                   infoMode: InfoMode.me,
@@ -384,15 +397,14 @@ class _MineScreenState extends State<MineScreen>
   }
 
   Widget _buildUserCard() {
-    return ItemBuilder.buildContainerItem(
-      context: context,
-      backgroundColor: Colors.transparent,
-      child: GestureDetector(
+    return ItemBuilder.buildClickItem(
+      GestureDetector(
         onTap: () {
           if (blogInfo == null) {
-            RouteUtil.pushCupertinoRoute(context, const LoginByCaptchaScreen());
+            RouteUtil.pushPanelCupertinoRoute(
+                context, const LoginByCaptchaScreen());
           } else {
-            RouteUtil.pushCupertinoRoute(
+            RouteUtil.pushPanelCupertinoRoute(
               context,
               UserDetailScreen(
                   blogId: blogInfo!.blogId, blogName: blogInfo!.blogName),
@@ -470,8 +482,6 @@ class _MineScreenState extends State<MineScreen>
           ),
         ),
       ),
-      topRadius: true,
-      bottomRadius: true,
     );
   }
 
@@ -496,7 +506,7 @@ class _MineScreenState extends State<MineScreen>
             count: meInfoData?.blogInfo.followerCount,
             onTap: () {
               if (blogInfo != null && meInfoData != null) {
-                RouteUtil.pushCupertinoRoute(
+                RouteUtil.pushPanelCupertinoRoute(
                   context,
                   FollowingFollowerScreen(
                     infoMode: InfoMode.me,
@@ -521,7 +531,7 @@ class _MineScreenState extends State<MineScreen>
             labelFontWeightDelta: 2,
             onTap: () {
               if (blogInfo != null && meInfoData != null) {
-                RouteUtil.pushCupertinoRoute(
+                RouteUtil.pushPanelCupertinoRoute(
                   context,
                   FollowingFollowerScreen(
                     infoMode: InfoMode.me,
@@ -549,7 +559,7 @@ class _MineScreenState extends State<MineScreen>
         padding: 15,
         showLeading: true,
         onTap: () {
-          RouteUtil.pushCupertinoRoute(
+          RouteUtil.pushPanelCupertinoRoute(
             context,
             LikeScreen(),
           );
@@ -562,7 +572,7 @@ class _MineScreenState extends State<MineScreen>
         padding: 15,
         showLeading: true,
         onTap: () {
-          RouteUtil.pushCupertinoRoute(
+          RouteUtil.pushPanelCupertinoRoute(
             context,
             ShareScreen(),
           );
@@ -575,7 +585,7 @@ class _MineScreenState extends State<MineScreen>
         padding: 15,
         showLeading: true,
         onTap: () {
-          RouteUtil.pushCupertinoRoute(
+          RouteUtil.pushPanelCupertinoRoute(
             context,
             const FavoriteFolderListScreen(),
           );
@@ -596,7 +606,7 @@ class _MineScreenState extends State<MineScreen>
         padding: 15,
         showLeading: true,
         onTap: () {
-          RouteUtil.pushCupertinoRoute(
+          RouteUtil.pushPanelCupertinoRoute(
             context,
             const HistoryScreen(),
           );
@@ -617,7 +627,7 @@ class _MineScreenState extends State<MineScreen>
         padding: 15,
         showLeading: true,
         onTap: () {
-          RouteUtil.pushCupertinoRoute(
+          RouteUtil.pushPanelCupertinoRoute(
             context,
             CollectionScreen(),
           );
@@ -631,7 +641,7 @@ class _MineScreenState extends State<MineScreen>
         showLeading: true,
         bottomRadius: true,
         onTap: () {
-          RouteUtil.pushCupertinoRoute(
+          RouteUtil.pushPanelCupertinoRoute(
             context,
             GrainScreen(),
           );
@@ -651,7 +661,7 @@ class _MineScreenState extends State<MineScreen>
         padding: 15,
         showLeading: true,
         onTap: () {
-          RouteUtil.pushCupertinoRoute(
+          RouteUtil.pushPanelCupertinoRoute(
             context,
             PostScreen(),
           );
@@ -664,7 +674,7 @@ class _MineScreenState extends State<MineScreen>
         padding: 15,
         showLeading: true,
         onTap: () {
-          RouteUtil.pushCupertinoRoute(
+          RouteUtil.pushPanelCupertinoRoute(
             context,
             CollectionScreen(),
           );
@@ -678,7 +688,7 @@ class _MineScreenState extends State<MineScreen>
         showLeading: true,
         bottomRadius: true,
         onTap: () {
-          RouteUtil.pushCupertinoRoute(
+          RouteUtil.pushPanelCupertinoRoute(
             context,
             GrainScreen(),
           );
@@ -703,6 +713,19 @@ class _MineScreenState extends State<MineScreen>
       context: context,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       actions: [
+        if (appProvider.token.isNotEmpty)
+          ItemBuilder.buildIconButton(
+            context: context,
+            icon: Icon(
+              Icons.exit_to_app_rounded,
+              size: 23,
+              color: Theme.of(context).iconTheme.color,
+            ),
+            onTap: () {
+              HiveUtil.confirmLogout(context);
+            },
+          ),
+        const SizedBox(width: 5),
         ItemBuilder.buildDynamicIconButton(
             context: context,
             icon: darkModeWidget,
@@ -731,7 +754,7 @@ class _MineScreenState extends State<MineScreen>
               AssetUtil.dressDarkIcon,
             ),
             onTap: () {
-              RouteUtil.pushCupertinoRoute(
+              RouteUtil.pushPanelCupertinoRoute(
                 context,
                 const DressScreen(),
               );
@@ -745,7 +768,7 @@ class _MineScreenState extends State<MineScreen>
             color: Theme.of(context).iconTheme.color,
           ),
           onTap: () {
-            RouteUtil.pushCupertinoRoute(
+            RouteUtil.pushPanelCupertinoRoute(
               context,
               const SystemNoticeScreen(),
             );
@@ -760,10 +783,15 @@ class _MineScreenState extends State<MineScreen>
               AssetUtil.settingDarkIcon,
             ),
             onTap: () {
-              RouteUtil.pushCupertinoRoute(context, const SettingScreen());
+              RouteUtil.pushPanelCupertinoRoute(context, const SettingScreen());
             }),
         const SizedBox(width: 5),
       ],
     );
+  }
+
+  @override
+  List<ScrollController> getScrollControllers() {
+    return [_scrollController];
   }
 }

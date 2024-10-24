@@ -147,7 +147,7 @@ class _SupporterScreenState extends State<SupporterScreen>
     return ItemBuilder.buildClickItem(
       GestureDetector(
         onTap: () {
-          RouteUtil.pushCupertinoRoute(
+          RouteUtil.pushPanelCupertinoRoute(
             context,
             UserDetailScreen(
               blogId: item.blogInfo.blogId,
@@ -207,17 +207,10 @@ class _SupporterScreenState extends State<SupporterScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildAppBar(
+    return ItemBuilder.buildDesktopAppBar(
       context: context,
-      leading: Icons.arrow_back_rounded,
-      backgroundColor: MyTheme.getBackground(context),
-      onLeadingTap: () {
-        Navigator.pop(context);
-      },
-      title: Text(
-        "支持者列表",
-        style: Theme.of(context).textTheme.titleLarge,
-      ),
+      showBack: true,
+      title: "支持者列表",
     );
   }
 }

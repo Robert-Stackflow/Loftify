@@ -256,7 +256,7 @@ class UriUtil {
       if (UriUtil.isMentionBlogIdUrl(url)) {
         String blogId = extractMentionBlogId(url);
         if (!quiet) await CustomLoadingDialog.dismissLoading();
-        RouteUtil.pushCupertinoRoute(
+        RouteUtil.pushPanelCupertinoRoute(
           context,
           UserDetailScreen(
             blogId: Utils.parseToInt(blogId),
@@ -267,7 +267,7 @@ class UriUtil {
       } else if (UriUtil.isPostUrl(url)) {
         Map<String, String> map = UriUtil.extractPostInfo(url);
         if (!quiet) await CustomLoadingDialog.dismissLoading();
-        RouteUtil.pushCupertinoRoute(
+        RouteUtil.pushPanelCupertinoRoute(
           context,
           PostDetailScreen(
             meta: map,
@@ -278,12 +278,12 @@ class UriUtil {
       } else if (UriUtil.isTagUrl(url)) {
         String tag = UriUtil.extractTagName(url);
         if (!quiet) await CustomLoadingDialog.dismissLoading();
-        RouteUtil.pushCupertinoRoute(context, TagDetailScreen(tag: tag));
+        RouteUtil.pushPanelCupertinoRoute(context, TagDetailScreen(tag: tag));
         return true;
       } else if (UriUtil.isCollectionShareUrl(url)) {
         Map collectionInfo = UriUtil.extractCollectionShareInfo(url);
         if (!quiet) await CustomLoadingDialog.dismissLoading();
-        RouteUtil.pushCupertinoRoute(
+        RouteUtil.pushPanelCupertinoRoute(
           context,
           CollectionDetailScreen(
             blogName: collectionInfo['blogName'],
@@ -296,7 +296,7 @@ class UriUtil {
       } else if (UriUtil.isGrainShareUrl(url)) {
         Map grainInfo = UriUtil.extractGrainShareInfo(url);
         if (!quiet) await CustomLoadingDialog.dismissLoading();
-        RouteUtil.pushCupertinoRoute(
+        RouteUtil.pushPanelCupertinoRoute(
           context,
           GrainDetailScreen(
             grainId: grainInfo['grainId'],
@@ -307,7 +307,7 @@ class UriUtil {
       } else if (UriUtil.isHomePageUrl(url)) {
         String blogName = UriUtil.extractHomePageName(url);
         if (!quiet) await CustomLoadingDialog.dismissLoading();
-        RouteUtil.pushCupertinoRoute(
+        RouteUtil.pushPanelCupertinoRoute(
           context,
           UserDetailScreen(
             blogName: blogName,
@@ -350,7 +350,7 @@ class UriUtil {
     bool processUri = true,
   }) {
     if (ResponsiveUtil.isMobile()) {
-      RouteUtil.pushCupertinoRoute(
+      RouteUtil.pushPanelCupertinoRoute(
           context, WebviewScreen(url: url, processUri: processUri));
     } else {
       openExternal(url);

@@ -5,6 +5,8 @@ const defaultPassword = "";
 const defaultLofterID = "";
 const defaultMail = "";
 
+const double searchBarWidth = 400;
+
 const defaultFilenameFormat = "{original_name}";
 
 const double kLoadExtentOffset = 1000;

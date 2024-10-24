@@ -8,7 +8,6 @@ import 'package:loftify/Utils/hive_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Models/user_response.dart';
-import '../../Utils/constant.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
@@ -177,17 +176,11 @@ class _FollowingFollowerScreenState extends State<FollowingFollowerScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildAppBar(
+    return ItemBuilder.buildDesktopAppBar(
       context: context,
-      leading: Icons.arrow_back_rounded,
-      backgroundColor: MyTheme.getBackground(context),
-      onLeadingTap: () {
-        Navigator.pop(context);
-      },
-      title: Text(
-        "${widget.followingMode == FollowingMode.follower ? "粉丝列表" : "关注列表"}（$total）",
-        style: Theme.of(context).textTheme.titleLarge,
-      ),
+      showBack: true,
+      title:
+          "${widget.followingMode == FollowingMode.follower ? "粉丝列表" : "关注列表"}（$total）",
     );
   }
 }

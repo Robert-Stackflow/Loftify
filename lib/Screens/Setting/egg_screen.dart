@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../Utils/lottie_util.dart';
-import '../../Utils/responsive_util.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 
@@ -58,13 +57,11 @@ class _EggScreenState extends State<EggScreen> with TickerProviderStateMixin {
     return Stack(
       children: [
         Scaffold(
-          appBar: ResponsiveUtil.isDesktop()
-              ? null
-              : ItemBuilder.buildSimpleAppBar(
-                  transparent: true,
-                  leading: Icons.close_rounded,
-                  context: context,
-                ),
+          appBar: ItemBuilder.buildDesktopAppBar(
+            transparent: true,
+            context: context,
+            showBack: true,
+          ),
           body: EasyRefresh(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 12),

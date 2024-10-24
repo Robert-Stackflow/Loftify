@@ -5,12 +5,18 @@ import 'package:hive/hive.dart';
 import 'package:loftify/Models/account_response.dart';
 import 'package:loftify/Resources/theme_color_data.dart';
 import 'package:loftify/Utils/enums.dart';
+import 'package:loftify/Utils/request_util.dart';
+import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Utils/utils.dart';
 
 import '../Models/nav_entry.dart';
 import '../Resources/fonts.dart';
+import '../Widgets/Dialog/dialog_builder.dart';
+import '../generated/l10n.dart';
+import 'app_provider.dart';
 import 'constant.dart';
 import 'ilogger.dart';
+import 'itoast.dart';
 
 class HiveUtil {
   //Database
@@ -32,9 +38,11 @@ class HiveUtil {
 
   //General
   static const String localeKey = "locale";
+  static const String sidebarChoiceKey = "sidebarChoice";
   static const String recordWindowStateKey = "recordWindowState";
   static const String windowSizeKey = "windowSize";
   static const String windowPositionKey = "windowPosition";
+  static const String showTrayKey = "showTray";
   static const String enableCloseToTrayKey = "enableCloseToTray";
   static const String enableCloseNoticeKey = "enableCloseNotice";
   static const String autoCheckUpdateKey = "autoCheckUpdate";
@@ -94,6 +102,32 @@ class HiveUtil {
 
   //System
   static const String firstLoginKey = "firstLogin";
+
+  static confirmLogout(BuildContext context) {
+    DialogBuilder.showConfirmDialog(
+      context,
+      title: "退出登录",
+      message: "确认退出登录？退出后本地的设置项不会被删除",
+      confirmButtonText: S.current.confirm,
+      cancelButtonText: S.current.cancel,
+      onTapConfirm: () async {
+        appProvider.token = "";
+        await HiveUtil.delete(HiveUtil.userIdKey);
+        await HiveUtil.delete(HiveUtil.tokenKey);
+        await HiveUtil.delete(HiveUtil.deviceIdKey);
+        await RequestUtil.clearCookie();
+        HiveUtil.delete(HiveUtil.tokenTypeKey).then((value) {
+          IToast.showTop("退出成功");
+          if (ResponsiveUtil.isLandscape()) {
+            ResponsiveUtil.returnToMainScreen(rootContext);
+          } else {
+            ResponsiveUtil.restartApp();
+          }
+        });
+      },
+      onTapCancel: () {},
+    );
+  }
 
   static initConfig() async {
     HiveUtil.put(HiveUtil.doubleTapActionKey, 1);

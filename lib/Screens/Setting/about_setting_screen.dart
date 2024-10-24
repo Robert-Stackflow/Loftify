@@ -15,7 +15,6 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../Utils/constant.dart';
 import '../../Utils/hive_util.dart';
-import '../../Utils/responsive_util.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Shake/shake_animation_type.dart';
@@ -96,13 +95,12 @@ class _AboutSettingScreenState extends State<AboutSettingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: ResponsiveUtil.isLandscape()
-          ? null
-          : ItemBuilder.buildSimpleAppBar(
-              transparent: true,
-              leading: Icons.close_rounded,
-              context: context,
-            ),
+      appBar: ItemBuilder.buildDesktopAppBar(
+        context: context,
+        transparent: true,
+        showBack: true,
+        title: S.current.about,
+      ),
       body: EasyRefresh(
         child: ListView(
           children: [
@@ -186,7 +184,7 @@ class _AboutSettingScreenState extends State<AboutSettingScreen>
                       topRadius: true,
                       showLeading: true,
                       onTap: () {
-                        RouteUtil.pushCupertinoRoute(
+                        RouteUtil.pushPanelCupertinoRoute(
                             context, const UpdateLogScreen());
                       },
                       leading: Icons.merge_type_outlined,

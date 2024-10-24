@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:card_swiper/card_swiper.dart';
+import 'package:context_menus/context_menus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_resizable_container/flutter_resizable_container.dart';
@@ -24,7 +25,6 @@ import 'package:loftify/Widgets/BottomSheet/collection_bottom_sheet.dart';
 import 'package:loftify/Widgets/BottomSheet/comment_bottom_sheet.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:responsive_builder/responsive_builder.dart';
-import 'package:tuple/tuple.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -41,7 +41,6 @@ import '../../Utils/route_util.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
-import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
 import '../../Widgets/Custom/hero_photo_view_screen.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
@@ -831,7 +830,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     return <Widget>[
       GestureDetector(
         onTap: () {
-          RouteUtil.pushCupertinoRoute(
+          RouteUtil.pushPanelCupertinoRoute(
             context,
             UserDetailScreen(
               blogId: _postDetailData!.post!.blogId,
@@ -974,25 +973,27 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             const SizedBox(width: 40),
             if (_myBlogId != _postDetailData!.post!.blogId)
               ItemBuilder.buildFramedDoubleButton(
-                  context: context,
-                  isFollowed: _postDetailData!.followed == 1 ? true : false,
-                  onTap: () {
-                    HapticFeedback.mediumImpact();
-                    UserApi.followOrUnfollow(
-                            isFollow: !(_postDetailData!.followed == 1),
-                            blogId: _postDetailData!.post!.blogId,
-                            blogName: _postDetailData!.post!.blogInfo!.blogName)
-                        .then((value) {
-                      if (value['meta']['status'] != 200) {
-                        IToast.showTop(
-                            value['meta']['desc'] ?? value['meta']['msg']);
-                      } else {
-                        _postDetailData!.followed =
-                            !(_postDetailData!.followed == 1) ? 1 : 0;
-                        setState(() {});
-                      }
-                    });
-                  }),
+                context: context,
+                isFollowed: _postDetailData!.followed == 1 ? true : false,
+                onTap: () {
+                  HapticFeedback.mediumImpact();
+                  UserApi.followOrUnfollow(
+                          isFollow: !(_postDetailData!.followed == 1),
+                          blogId: _postDetailData!.post!.blogId,
+                          blogName: _postDetailData!.post!.blogInfo!.blogName)
+                      .then((value) {
+                    if (value['meta']['status'] != 200) {
+                      IToast.showTop(
+                          value['meta']['desc'] ?? value['meta']['msg']);
+                    } else {
+                      _postDetailData!.followed =
+                          !(_postDetailData!.followed == 1) ? 1 : 0;
+                      setState(() {});
+                    }
+                  });
+                },
+              ),
+            if (ResponsiveUtil.isLandscape()) ..._buildButtons(),
           ],
         ),
       ),
@@ -1077,25 +1078,26 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                   children: [
                     GestureDetector(
                       onTap: () {
-                        Navigator.push(
+                        RouteUtil.pushDialogRoute(
                           context,
-                          RouteUtil.getFadeRoute(
-                            HeroPhotoViewScreen(
-                              imageUrls: _getIllusts(),
-                              initIndex: index,
-                              captions: captions,
-                              tagPrefix: tagPrefix,
-                              mainColors: mainColors,
-                              useMainColor: true,
-                              onIndexChanged: (index) {
-                                _currentIndex = index + 1;
-                                _swiperController.move(index);
-                                setState(() {});
-                              },
-                              onDownloadSuccess: () {
-                                _handleDownloadSuccessAction();
-                              },
-                            ),
+                          showClose: false,
+                          fullScreen: true,
+                          useMaterial: true,
+                          HeroPhotoViewScreen(
+                            imageUrls: _getIllusts(),
+                            initIndex: index,
+                            captions: captions,
+                            tagPrefix: tagPrefix,
+                            mainColors: mainColors,
+                            useMainColor: true,
+                            onIndexChanged: (index) {
+                              _currentIndex = index + 1;
+                              _swiperController.move(index);
+                              setState(() {});
+                            },
+                            onDownloadSuccess: () {
+                              _handleDownloadSuccessAction();
+                            },
                           ),
                         );
                       },
@@ -1328,7 +1330,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   _buildGrainItem() {
     return GestureDetector(
       onTap: () {
-        RouteUtil.pushCupertinoRoute(
+        RouteUtil.pushPanelCupertinoRoute(
           context,
           GrainDetailScreen(
             grainId: _postDetailData!.grainInfo!.id,
@@ -1694,7 +1696,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                   context,
                   title: "更多推荐",
                   bottomMargin: 16,
-                  topMargin: 0,
+                  topMargin: 16,
+                  left: 8,
                 ),
               ),
               list,
@@ -1766,14 +1769,10 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildAppBar(
+    return ItemBuilder.buildDesktopAppBar(
       context: context,
-      backgroundColor: MyTheme.getBackground(context),
-      leading: Icons.arrow_back_rounded,
-      onLeadingTap: () {
-        Navigator.pop(context);
-      },
-      title: Text(
+      showBack: true,
+      titleWidget: Text(
         "帖子详情",
         style: Theme.of(context).textTheme.titleLarge?.apply(
               fontWeightDelta: 2,
@@ -1812,81 +1811,86 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               ),
             ),
           ),
+        ..._buildButtons(),
         const SizedBox(width: 5),
-        if (_hasImage() ||
-            _hasArticleImage() &&
-                HiveUtil.getBool(HiveUtil.showDownloadKey, defaultValue: true))
-          ItemBuilder.buildIconButton(
-            context: context,
-            icon: downloadIcon,
-            onTap: () {
-              _handleDownloadAll();
-            },
-          ),
-        if ((_hasImage() || _hasArticleImage()) &&
-            HiveUtil.getBool(HiveUtil.showDownloadKey, defaultValue: true))
-          const SizedBox(width: 5),
+      ],
+    );
+  }
+
+  List<Widget> _buildButtons() {
+    return [
+      const SizedBox(width: 5),
+      if (_hasImage() ||
+          _hasArticleImage() &&
+              HiveUtil.getBool(HiveUtil.showDownloadKey, defaultValue: true))
         ItemBuilder.buildIconButton(
-            context: context,
-            icon: Icon(Icons.more_vert_rounded,
-                color: Theme.of(context).iconTheme.color),
-            onTap: () {
-              List<Tuple2<String, dynamic>> options = [
-                const Tuple2("复制链接", 0),
-                const Tuple2("访问原文", 1),
-                const Tuple2("在浏览器打开", 2),
-                const Tuple2("分享到其他应用", 3),
-              ];
-              BottomSheetBuilder.showListBottomSheet(
-                context,
-                (sheetContext) => TileList.fromOptions(
-                  options,
-                  (idx) {
-                    Navigator.pop(sheetContext);
-                    if (idx == 0) {
-                      Utils.copy(
-                        context,
-                        UriUtil.getPostUrlByPermalink(
-                          _postDetailData!.post!.blogInfo!.blogName,
-                          _postDetailData!.post!.permalink,
-                        ),
-                      );
-                    } else if (idx == 1) {
-                      UriUtil.openInternal(
-                        context,
-                        UriUtil.getPostUrlById(
-                          blogName,
-                          postId,
-                          blogId,
-                        ),
-                        processUri: false,
-                      );
-                    } else if (idx == 2) {
-                      UriUtil.openExternal(
-                        UriUtil.getPostUrlByPermalink(
-                          _postDetailData!.post!.blogInfo!.blogName,
-                          _postDetailData!.post!.permalink,
-                        ),
-                      );
-                    } else if (idx == 3) {
-                      UriUtil.share(
-                        context,
-                        UriUtil.getPostUrlByPermalink(
-                          _postDetailData!.post!.blogInfo!.blogName,
-                          _postDetailData!.post!.permalink,
-                        ),
-                      );
-                    }
-                  },
-                  showCancel: true,
-                  context: context,
-                  showTitle: false,
-                  onCloseTap: () => Navigator.pop(sheetContext),
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                ),
-              );
-            }),
+          context: context,
+          icon: downloadIcon,
+          onTap: () {
+            _handleDownloadAll();
+          },
+        ),
+      if ((_hasImage() || _hasArticleImage()) &&
+          HiveUtil.getBool(HiveUtil.showDownloadKey, defaultValue: true))
         const SizedBox(width: 5),
+      ItemBuilder.buildIconButton(
+        context: context,
+        icon: Icon(Icons.more_vert_rounded,
+            color: Theme.of(context).iconTheme.color),
+        onTap: () {
+          BottomSheetBuilder.showContextMenu(context, _buildMoreButtons());
+        },
+      ),
+    ];
+  }
+
+  _buildMoreButtons() {
+    return GenericContextMenu(
+      buttonConfigs: [
+        ContextMenuButtonConfig(
+          "复制链接",
+          icon: const Icon(Icons.copy_rounded),
+          onPressed: () {
+            Utils.copy(
+              context,
+              UriUtil.getPostUrlByPermalink(
+                _postDetailData!.post!.blogInfo!.blogName,
+                _postDetailData!.post!.permalink,
+              ),
+            );
+          },
+        ),
+        ContextMenuButtonConfig("访问原文",
+            icon: const Icon(Icons.view_carousel_outlined), onPressed: () {
+          UriUtil.openInternal(
+            context,
+            UriUtil.getPostUrlById(
+              blogName,
+              postId,
+              blogId,
+            ),
+            processUri: false,
+          );
+        }),
+        ContextMenuButtonConfig("在浏览器打开",
+            icon: const Icon(Icons.open_in_browser_rounded), onPressed: () {
+          UriUtil.openExternal(
+            UriUtil.getPostUrlByPermalink(
+              _postDetailData!.post!.blogInfo!.blogName,
+              _postDetailData!.post!.permalink,
+            ),
+          );
+        }),
+        ContextMenuButtonConfig("分享到其他应用",
+            icon: const Icon(Icons.share_rounded), onPressed: () {
+          UriUtil.share(
+            context,
+            UriUtil.getPostUrlByPermalink(
+              _postDetailData!.post!.blogInfo!.blogName,
+              _postDetailData!.post!.permalink,
+            ),
+          );
+        }),
       ],
     );
   }

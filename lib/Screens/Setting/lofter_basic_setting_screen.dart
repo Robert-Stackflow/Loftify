@@ -9,6 +9,7 @@ import '../../Utils/app_provider.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Widgets/Dialog/dialog_builder.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
@@ -147,142 +148,141 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.transparent,
-      child: Scaffold(
-        appBar: ItemBuilder.buildSimpleAppBar(
-            title: S.current.lofterBasicSetting,
-            context: context,
-            transparent: true),
-        body: EasyRefresh.builder(
-          controller: _refreshController,
-          refreshOnStart: true,
-          onRefresh: () async {
-            var t1 = await _fetchGiftSetting();
-            var t2 = await _fetchUserInfo();
-            var t3 = await _fetchMiscInfo();
-            return t1 == IndicatorResult.success &&
-                    t2 == IndicatorResult.success &&
-                    t3 == IndicatorResult.success
-                ? IndicatorResult.success
-                : IndicatorResult.fail;
-          },
-          triggerAxis: Axis.vertical,
-          childBuilder: (_, physics) => ListView(
-            physics: physics,
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-            children: [
-              ItemBuilder.buildRadioItem(
-                value: personalRecommend,
-                context: context,
-                title: "个性化服务",
-                topRadius: true,
-                bottomRadius: true,
-                description: "取消勾选后，将不会使用你的个性信息为你提供个性化服务",
-                onTap: () {
-                  SettingApi.updatePersonalRecommendSetting(
-                    isEnable: !personalRecommend,
-                  ).then((value) {
-                    if (value['meta']['status'] == 200) {
-                      personalRecommend = !personalRecommend;
-                      setState(() {});
-                    } else {
-                      IToast.showTop(
-                          value['meta']['desc'] ?? value['meta']['msg']);
-                    }
-                  });
-                },
-              ),
-              const SizedBox(height: 10),
-              ItemBuilder.buildCaptionItem(context: context, title: "版权保护"),
-              ItemBuilder.buildRadioItem(
-                value: appimagestamp,
-                context: context,
-                title: "版权水印签名",
-                description: "勾选后，所有用户保存你的图片到手机，会显示你的签名水印，保护原创",
-                onTap: () {
-                  _updateCopyRightSetting(
-                    copyRightType: CopyRightType.appimagestamp,
-                    isClose: appimagestamp,
-                    onSuccess: () {
-                      appimagestamp = !appimagestamp;
-                    },
-                  );
-                },
-              ),
-              ItemBuilder.buildRadioItem(
-                value: imageprotection,
-                context: context,
-                title: "作品保护",
-                description: "勾选后,发布的图片日志将禁止被保存到本地",
-                onTap: () {
-                  _updateCopyRightSetting(
-                    copyRightType: CopyRightType.imageprotection,
-                    isClose: imageprotection,
-                    onSuccess: () {
-                      imageprotection = !imageprotection;
-                    },
-                  );
-                },
-              ),
-              ItemBuilder.buildRadioItem(
-                value: videoprotection,
-                context: context,
-                bottomRadius: true,
-                title: "生成分享视频",
-                description: "勾选后，你的作品将禁止生成分享视频",
-                onTap: () {
-                  _updateCopyRightSetting(
-                    copyRightType: CopyRightType.videoprotection,
-                    isClose: videoprotection,
-                    onSuccess: () {
-                      videoprotection = !videoprotection;
-                    },
-                  );
-                },
-              ),
-              const SizedBox(height: 10),
-              ItemBuilder.buildCaptionItem(context: context, title: "礼物设置"),
-              ItemBuilder.buildRadioItem(
-                value: acceptGiftFlag,
-                context: context,
-                title: "接受礼物",
-                onTap: () {
-                  SettingApi.updateGiftSetting(
-                    acceptGiftFlag: !acceptGiftFlag,
-                    showReturnGiftPreviewImg: showReturnGiftPreviewImg,
-                  ).then((value) {
-                    if (value['code'] == 200) {
-                      acceptGiftFlag = !acceptGiftFlag;
-                      setState(() {});
-                    } else {
-                      IToast.showTop(value['msg']);
-                    }
-                  });
-                },
-              ),
-              ItemBuilder.buildRadioItem(
-                value: showReturnGiftPreviewImg,
-                bottomRadius: true,
-                context: context,
-                title: "支持图片模糊预览",
-                onTap: () {
-                  SettingApi.updateGiftSetting(
-                    acceptGiftFlag: acceptGiftFlag,
-                    showReturnGiftPreviewImg: !showReturnGiftPreviewImg,
-                  ).then((value) {
-                    if (value['code'] == 200) {
-                      showReturnGiftPreviewImg = !showReturnGiftPreviewImg;
-                      setState(() {});
-                    } else {
-                      IToast.showTop(value['msg']);
-                    }
-                  });
-                },
-              ),
-              const SizedBox(height: 30),
-            ],
-          ),
+    return Scaffold(
+      appBar: ItemBuilder.buildDesktopAppBar(
+          showBack: true,
+          transparent: true,
+          context: context,
+          title: S.current.lofterBasicSetting),
+      body: EasyRefresh.builder(
+        controller: _refreshController,
+        refreshOnStart: true,
+        onRefresh: () async {
+          var t1 = await _fetchGiftSetting();
+          var t2 = await _fetchUserInfo();
+          var t3 = await _fetchMiscInfo();
+          return t1 == IndicatorResult.success &&
+                  t2 == IndicatorResult.success &&
+                  t3 == IndicatorResult.success
+              ? IndicatorResult.success
+              : IndicatorResult.fail;
+        },
+        triggerAxis: Axis.vertical,
+        childBuilder: (_, physics) => ListView(
+          physics: physics,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          children: [
+            if (ResponsiveUtil.isLandscape()) const SizedBox(height: 10),
+            ItemBuilder.buildRadioItem(
+              value: personalRecommend,
+              context: context,
+              title: "个性化服务",
+              topRadius: true,
+              bottomRadius: true,
+              description: "取消勾选后，将不会使用你的个性信息为你提供个性化服务",
+              onTap: () {
+                SettingApi.updatePersonalRecommendSetting(
+                  isEnable: !personalRecommend,
+                ).then((value) {
+                  if (value['meta']['status'] == 200) {
+                    personalRecommend = !personalRecommend;
+                    setState(() {});
+                  } else {
+                    IToast.showTop(
+                        value['meta']['desc'] ?? value['meta']['msg']);
+                  }
+                });
+              },
+            ),
+            const SizedBox(height: 10),
+            ItemBuilder.buildCaptionItem(context: context, title: "版权保护"),
+            ItemBuilder.buildRadioItem(
+              value: appimagestamp,
+              context: context,
+              title: "版权水印签名",
+              description: "勾选后，所有用户保存你的图片到手机，会显示你的签名水印，保护原创",
+              onTap: () {
+                _updateCopyRightSetting(
+                  copyRightType: CopyRightType.appimagestamp,
+                  isClose: appimagestamp,
+                  onSuccess: () {
+                    appimagestamp = !appimagestamp;
+                  },
+                );
+              },
+            ),
+            ItemBuilder.buildRadioItem(
+              value: imageprotection,
+              context: context,
+              title: "作品保护",
+              description: "勾选后,发布的图片日志将禁止被保存到本地",
+              onTap: () {
+                _updateCopyRightSetting(
+                  copyRightType: CopyRightType.imageprotection,
+                  isClose: imageprotection,
+                  onSuccess: () {
+                    imageprotection = !imageprotection;
+                  },
+                );
+              },
+            ),
+            ItemBuilder.buildRadioItem(
+              value: videoprotection,
+              context: context,
+              bottomRadius: true,
+              title: "生成分享视频",
+              description: "勾选后，你的作品将禁止生成分享视频",
+              onTap: () {
+                _updateCopyRightSetting(
+                  copyRightType: CopyRightType.videoprotection,
+                  isClose: videoprotection,
+                  onSuccess: () {
+                    videoprotection = !videoprotection;
+                  },
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+            ItemBuilder.buildCaptionItem(context: context, title: "礼物设置"),
+            ItemBuilder.buildRadioItem(
+              value: acceptGiftFlag,
+              context: context,
+              title: "接受礼物",
+              onTap: () {
+                SettingApi.updateGiftSetting(
+                  acceptGiftFlag: !acceptGiftFlag,
+                  showReturnGiftPreviewImg: showReturnGiftPreviewImg,
+                ).then((value) {
+                  if (value['code'] == 200) {
+                    acceptGiftFlag = !acceptGiftFlag;
+                    setState(() {});
+                  } else {
+                    IToast.showTop(value['msg']);
+                  }
+                });
+              },
+            ),
+            ItemBuilder.buildRadioItem(
+              value: showReturnGiftPreviewImg,
+              bottomRadius: true,
+              context: context,
+              title: "支持图片模糊预览",
+              onTap: () {
+                SettingApi.updateGiftSetting(
+                  acceptGiftFlag: acceptGiftFlag,
+                  showReturnGiftPreviewImg: !showReturnGiftPreviewImg,
+                ).then((value) {
+                  if (value['code'] == 200) {
+                    showReturnGiftPreviewImg = !showReturnGiftPreviewImg;
+                    setState(() {});
+                  } else {
+                    IToast.showTop(value['msg']);
+                  }
+                });
+              },
+            ),
+            const SizedBox(height: 30),
+          ],
         ),
       ),
     );

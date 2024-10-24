@@ -13,7 +13,6 @@ import 'package:loftify/Utils/route_util.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/utils.dart';
-import '../../Widgets/Custom/custom_tab_indicator.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 
@@ -507,7 +506,7 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
     return ItemBuilder.buildClickItem(
       GestureDetector(
         onTap: () {
-          RouteUtil.pushCupertinoRoute(
+          RouteUtil.pushPanelCupertinoRoute(
             context,
             PostDetailScreen(
               simpleMessagePost: item.simplePost,
@@ -528,7 +527,7 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
                   imageUrl: item.actUserBlogInfo.bigAvaImg,
                 ),
                 onTap: () {
-                  RouteUtil.pushCupertinoRoute(
+                  RouteUtil.pushPanelCupertinoRoute(
                     context,
                     UserDetailScreen(
                       blogId: item.actUserId,
@@ -623,18 +622,15 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildAppBar(
+    return ItemBuilder.buildDesktopAppBar(
       context: context,
-      leading: Icons.arrow_back_rounded,
-      backgroundColor: MyTheme.getBackground(context),
-      onLeadingTap: () {
-        Navigator.pop(context);
-      },
-      title: TabBar(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-        controller: _tabController,
-        overlayColor: WidgetStateProperty.all(Colors.transparent),
-        tabs: _tabLabelList
+      showBack: true,
+      title: "通知",
+      bottomHeight: 56,
+      bottom: ItemBuilder.buildTabBar(
+        context,
+        _tabController,
+        _tabLabelList
             .asMap()
             .entries
             .map(
@@ -645,22 +641,14 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
                   sameFontSize: true),
             )
             .toList(),
-        isScrollable: true,
-        tabAlignment: TabAlignment.start,
-        labelPadding: const EdgeInsets.only(right: 16),
-        enableFeedback: true,
-        dividerHeight: 0,
-        physics: const BouncingScrollPhysics(),
-        labelStyle: Theme.of(context).textTheme.titleLarge,
-        unselectedLabelStyle:
-            Theme.of(context).textTheme.titleLarge?.apply(color: Colors.grey),
-        indicator:
-            CustomTabIndicator(borderColor: Theme.of(context).primaryColor),
         onTap: (index) {
           setState(() {
             _currentTabIndex = index;
           });
         },
+        width: MediaQuery.sizeOf(context).width,
+        background: MyTheme.getBackground(context),
+        showBorder: true,
       ),
     );
   }

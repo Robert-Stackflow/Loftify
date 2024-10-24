@@ -1,4 +1,5 @@
 import 'package:blur/blur.dart';
+import 'package:context_menus/context_menus.dart';
 import 'package:flutter/material.dart' hide AnimatedSlide;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,11 +17,13 @@ import '../../Utils/asset_util.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
+import '../../Widgets/Custom/sliver_appbar_delegate.dart';
 import '../../Widgets/Dialog/custom_dialog.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 
@@ -164,6 +167,10 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: MyTheme.getBackground(context),
+      appBar: ResponsiveUtil.isLandscape()
+          ? ItemBuilder.buildDesktopAppBar(
+              context: context, showBack: true, title: "粮单详情")
+          : null,
       bottomNavigationBar: grainDetailData != null ? _buildFooter() : null,
       body: grainDetailData != null
           ? NestedScrollView(
@@ -177,69 +184,62 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
   }
 
   _buildHeaderSlivers() {
-    bool hasDesc = Utils.isNotEmpty(
-      grainDetailData!.grainInfo.description,
-    );
-    return <Widget>[
-      ItemBuilder.buildSliverAppBar(
-        context: context,
-        expandedHeight: 265,
-        backgroundWidget: _buildBackground(),
-        actions: [
-          ItemBuilder.buildIconButton(
-            context: context,
-            onTap: () {
-              List<Tuple2<String, dynamic>> options = [
-                const Tuple2("复制链接", 0),
-                const Tuple2("在浏览器打开", 1),
-                const Tuple2("分享到其他应用", 2),
-              ];
-              BottomSheetBuilder.showListBottomSheet(
-                context,
-                (sheetContext) => TileList.fromOptions(
-                  options,
-                  (idx) {
-                    if (idx == 0) {
-                      Utils.copy(context, grainUrl);
-                    } else if (idx == 1) {
-                      UriUtil.openExternal(grainUrl);
-                    } else if (idx == 2) {
-                      UriUtil.share(context, grainUrl);
-                    }
-                    Navigator.pop(sheetContext);
-                  },
-                  showCancel: true,
-                  context: context,
-                  showTitle: false,
-                  onCloseTap: () => Navigator.pop(sheetContext),
-                  crossAxisAlignment: CrossAxisAlignment.center,
+    if (!ResponsiveUtil.isLandscape()) {
+      return <Widget>[
+        ItemBuilder.buildSliverAppBar(
+          context: context,
+          expandedHeight: 265,
+          backgroundWidget: _buildBackground(),
+          actions: [
+            ItemBuilder.buildIconButton(
+              context: context,
+              onTap: () {
+                BottomSheetBuilder.showContextMenu(
+                    context, _buildMoreButtons());
+              },
+              icon: const Icon(
+                Icons.more_vert_rounded,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 5),
+          ],
+          title: Text(
+            "粮单",
+            style: Theme.of(context).textTheme.titleMedium?.apply(
+                  color: Colors.white,
+                  fontWeightDelta: 2,
                 ),
-              );
-            },
-            icon: const Icon(
-              Icons.more_vert_rounded,
-              color: Colors.white,
+          ),
+          center: true,
+          flexibleSpace: FlexibleSpaceBar(
+            background: Stack(
+              children: [
+                _buildBackground(),
+                Column(
+                  children: [
+                    SizedBox(
+                        height: kToolbarHeight +
+                            MediaQuery.of(context).padding.top),
+                    _buildInfoRow(),
+                    _buildStatisticRow(),
+                  ],
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 5),
-        ],
-        title: Text(
-          "粮单",
-          style: Theme.of(context).textTheme.titleMedium?.apply(
-                color: Colors.white,
-                fontWeightDelta: 2,
-              ),
+          bottom: _buildFixedBar(0),
         ),
-        center: true,
-        flexibleSpace: FlexibleSpaceBar(
-          background: Stack(
+      ];
+    } else {
+      return [
+        SliverToBoxAdapter(
+          child: Stack(
             children: [
-              _buildBackground(),
+              _buildBackground(height: 180),
               Column(
                 children: [
-                  SizedBox(
-                      height:
-                          kToolbarHeight + MediaQuery.of(context).padding.top),
+                  const SizedBox(height: 10),
                   _buildInfoRow(),
                   _buildStatisticRow(),
                 ],
@@ -247,74 +247,106 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
             ],
           ),
         ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(0),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            decoration: BoxDecoration(
-              color: MyTheme.getBackground(context),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-            ),
-            width: MediaQuery.sizeOf(context).width,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        SliverPersistentHeader(
+          key: ValueKey(Utils.getRandomString()),
+          pinned: true,
+          delegate: SliverAppBarDelegate(
+            radius: 0,
+            background: MyTheme.getBackground(context),
+            tabBar: _buildFixedBar(),
+          ),
+        ),
+      ];
+    }
+  }
+
+  _buildMoreButtons() {
+    return GenericContextMenu(
+      buttonConfigs: [
+        ContextMenuButtonConfig(
+          "复制链接",
+          icon: const Icon(Icons.copy_rounded),
+          onPressed: () {
+            Utils.copy(context, grainUrl);
+          },
+        ),
+        ContextMenuButtonConfig("在浏览器打开",
+            icon: const Icon(Icons.open_in_browser_rounded), onPressed: () {
+          UriUtil.openExternal(grainUrl);
+        }),
+        ContextMenuButtonConfig("分享到其他应用",
+            icon: const Icon(Icons.share_rounded), onPressed: () {
+          UriUtil.share(context, grainUrl);
+        }),
+      ],
+    );
+  }
+
+  PreferredSize _buildFixedBar([double height = 56]) {
+    bool hasDesc = Utils.isNotEmpty(grainDetailData!.grainInfo.description);
+    return PreferredSize(
+      preferredSize: Size.fromHeight(height),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: MyTheme.getBackground(context),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        width: MediaQuery.sizeOf(context).width,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 12),
+            Row(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        hasDesc
-                            ? grainDetailData!.grainInfo.description
-                            : "暂无简介",
-                        style: Theme.of(context).textTheme.labelLarge?.apply(
-                              color:
-                                  Theme.of(context).textTheme.bodySmall?.color,
-                            ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 5),
-                    ItemBuilder.buildIconTextButton(
-                      context,
-                      text: isOldest ? "正序" : "倒序",
-                      icon: AssetUtil.load(
-                        isOldest
-                            ? AssetUtil.orderDownDarkIcon
-                            : AssetUtil.orderUpDarkIcon,
-                        size: 15,
-                      ),
-                      fontSizeDelta: 1,
-                      color: Theme.of(context).textTheme.labelMedium?.color,
-                      onTap: () {
-                        HapticFeedback.mediumImpact();
-                        setState(() {
-                          isOldest = !isOldest;
-                        });
-                        _fetchData(refresh: true, showLoading: true);
-                      },
-                    ),
-                  ],
+                Flexible(
+                  child: Text(
+                    hasDesc ? grainDetailData!.grainInfo.description : "暂无简介",
+                    style: Theme.of(context).textTheme.labelLarge?.apply(
+                          color: Theme.of(context).textTheme.bodySmall?.color,
+                        ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                const SizedBox(height: 8),
-                ItemBuilder.buildDivider(
+                const SizedBox(width: 5),
+                ItemBuilder.buildIconTextButton(
                   context,
-                  horizontal: 0,
-                  vertical: 0,
+                  text: isOldest ? "正序" : "倒序",
+                  icon: AssetUtil.load(
+                    isOldest
+                        ? AssetUtil.orderDownDarkIcon
+                        : AssetUtil.orderUpDarkIcon,
+                    size: 15,
+                  ),
+                  fontSizeDelta: 1,
+                  color: Theme.of(context).textTheme.labelMedium?.color,
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    setState(() {
+                      isOldest = !isOldest;
+                    });
+                    _fetchData(refresh: true, showLoading: true);
+                  },
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 8),
+            ItemBuilder.buildDivider(
+              context,
+              horizontal: 0,
+              vertical: 0,
+            ),
+          ],
         ),
       ),
-    ];
+    );
   }
 
   Widget _buildFooter() {
@@ -363,7 +395,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
               padding: const EdgeInsets.symmetric(vertical: 15),
               onTap: () {
                 if (posts.isNotEmpty) {
-                  RouteUtil.pushCupertinoRoute(
+                  RouteUtil.pushPanelCupertinoRoute(
                     context,
                     PostDetailScreen(
                       grainPostItem: posts[0],
@@ -420,7 +452,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
                 ItemBuilder.buildClickItem(
                   GestureDetector(
                     onTap: () {
-                      RouteUtil.pushCupertinoRoute(
+                      RouteUtil.pushPanelCupertinoRoute(
                         context,
                         UserDetailScreen(
                           blogId: widget.blogId,
@@ -459,6 +491,20 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
               ],
             ),
           ),
+          if (ResponsiveUtil.isLandscape()) ...[
+            ItemBuilder.buildIconButton(
+              context: context,
+              onTap: () {
+                BottomSheetBuilder.showContextMenu(
+                    context, _buildMoreButtons());
+              },
+              icon: const Icon(
+                Icons.more_vert_rounded,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 5),
+          ],
         ],
       ),
     );
@@ -658,7 +704,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
     );
   }
 
-  Widget _buildBackground() {
+  Widget _buildBackground({double? height}) {
     String backgroudUrl = grainDetailData!.grainInfo.coverUrl;
     return Blur(
       blur: 20,
@@ -669,7 +715,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
         fit: BoxFit.cover,
         showLoading: false,
         width: MediaQuery.sizeOf(context).width * 2,
-        height: MediaQuery.sizeOf(context).height * 0.7,
+        height: height ?? MediaQuery.sizeOf(context).height * 0.7,
         placeholderBackground: Theme.of(context).textTheme.labelSmall?.color,
         bottomPadding: 50,
       ),

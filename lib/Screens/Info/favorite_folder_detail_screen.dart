@@ -196,7 +196,7 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
               if (FavoriteFolderPostItemBuilder.isInvalid(_posts[trueIndex])) {
                 IToast.showTop("无效内容");
               } else {
-                RouteUtil.pushCupertinoRoute(
+                RouteUtil.pushPanelCupertinoRoute(
                   context,
                   PostDetailScreen(
                     favoritePostDetailData: _posts[trueIndex],
@@ -236,15 +236,10 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
         icon = Icons.article_outlined;
         break;
     }
-    return ItemBuilder.buildAppBar(
+    return ItemBuilder.buildDesktopAppBar(
       context: context,
-      leading: Icons.arrow_back_rounded,
-      backgroundColor: MyTheme.getBackground(context),
-      onLeadingTap: () {
-        Navigator.pop(context);
-      },
-      title: Text(_favoriteFolder?.name ?? "收藏夹详情",
-          style: Theme.of(context).textTheme.titleLarge),
+      showBack: true,
+      title: _favoriteFolder?.name ?? "收藏夹详情",
       actions: [
         ItemBuilder.buildIconButton(
             context: context,

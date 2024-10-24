@@ -43,8 +43,8 @@ class CustomInfoDialogWidget extends StatelessWidget {
     this.backgroundColor,
     this.buttonTextColor,
     this.imagePath,
-    this.padding = const EdgeInsets.all(24),
-    this.margin = const EdgeInsets.all(24),
+    this.padding,
+    this.margin,
     required this.renderHtml,
     this.align = Alignment.bottomCenter,
     this.messageTextAlign = TextAlign.center,
@@ -63,13 +63,13 @@ class CustomInfoDialogWidget extends StatelessWidget {
           constraints: ResponsiveUtil.isWideLandscape()
               ? const BoxConstraints(maxWidth: 400)
               : null,
-          margin: margin ?? const EdgeInsets.all(24),
-          padding: padding ?? const EdgeInsets.all(24),
+          margin: margin ?? const EdgeInsets.all(16),
+          padding: padding ?? const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
           decoration: BoxDecoration(
             color: backgroundColor ?? MyTheme.getCardBackground(context),
             borderRadius: BorderRadius.vertical(
-              bottom: Radius.circular(bottomRadius ? 10 : 0),
-              top: Radius.circular(topRadius ? 10 : 0),
+              bottom: Radius.circular(bottomRadius ? 24 : 0),
+              top: Radius.circular(topRadius ? 24 : 0),
             ),
           ),
           child: Column(

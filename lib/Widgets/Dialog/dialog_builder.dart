@@ -146,6 +146,7 @@ class DialogBuilder {
     required Widget child,
     bool barrierDismissible = true,
     bool showClose = true,
+        bool fullScreen = false,
     Function(dynamic)? onThen,
     double? preferMinWidth,
     double? preferMinHeight,
@@ -157,7 +158,7 @@ class DialogBuilder {
       barrierLabel: '',
       barrierColor: overrideDialogNavigatorKey != null
           ? Colors.black.withOpacity(0.15)
-          : Colors.black.withOpacity(0.35),
+          : Colors.black.withOpacity(fullScreen ? 0.55 : 0.35),
       transitionDuration: const Duration(milliseconds: 300),
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         return AnimatedFade(
@@ -168,8 +169,9 @@ class DialogBuilder {
       pageBuilder: (context, animation, secondaryAnimation) =>
           DialogWrapperWidget(
         key: overrideDialogNavigatorKey ?? dialogNavigatorKey,
-        showClose: showClose,
-        preferMinWidth: preferMinWidth,
+        showClose: showClose,        fullScreen: fullScreen,
+
+            preferMinWidth: preferMinWidth,
         preferMinHeight: preferMinHeight,
         child: child,
       ),

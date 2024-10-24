@@ -52,8 +52,11 @@ class ThemeColorData {
 
   Color tagColor;
 
+  String id;
+
   ThemeColorData({
     this.isDarkMode = false,
+    required this.id,
     required this.name,
     this.description,
     required this.cardBackground,
@@ -81,19 +84,44 @@ class ThemeColorData {
 
   static List<ThemeColorData> defaultLightThemes = [
     ThemeColorData(
+      id: "pureWhite",
       name: "极简白",
       background: const Color(0xFFF7F8F9),
       canvasBackground: const Color(0xFFFFFFFF),
       primaryColor: const Color(0xFF14C2BB),
+      //0xFF1D9BF0
+      iconColor: const Color(0xFF333333),
+      splashColor: const Color(0x44c8c8c8),
+      highlightColor: const Color(0x44bcbcbc),
+      shadowColor: const Color(0x12000000),
+      appBarShadowColor: const Color(0xFFF6F6F6),
+      appBarBackgroundColor: const Color(0xFFF7F8F9),
+      appBarSurfaceTintColor: const Color(0xFFF7F8F9),
+      textColor: const Color(0xFF333333),
+      textGrayColor: const Color(0xFF71767B),
+      textDisabledColor: const Color(0xFFD4E2FA),
+      buttonTextColor: const Color(0xFFF2F2F2),
+      buttonDisabledColor: const Color(0xFF96BBFA),
+      dividerColor: Colors.grey.shade200,
+      tagBackground: const Color(0xFFF5F5F5),
+      tagColor: const Color(0xFFBDBDBD),
+      cardBackground: const Color(0xFFF5F5F5),
+    ),
+    ThemeColorData(
+      id: "freshGreen",
+      name: "清新绿",
+      background: const Color(0xFFE8F5E9),
+      canvasBackground: const Color(0xFFECF7EF),
+      primaryColor: const Color(0xFF66BB6A),
       iconColor: const Color(0xFF333333),
       splashColor: const Color(0x44c8c8c8),
       highlightColor: const Color(0x44bcbcbc),
       shadowColor: Colors.grey.shade200,
       appBarShadowColor: const Color(0xFFF6F6F6),
-      appBarBackgroundColor: const Color(0xFFF7F8F9),
-      appBarSurfaceTintColor: const Color(0xFFF7F8F9),
+      appBarBackgroundColor: const Color(0xFFE8F5E9),
+      appBarSurfaceTintColor: const Color(0xFFE8F5E9),
       textColor: const Color(0xFF333333),
-      textGrayColor: const Color(0xFF999999),
+      textGrayColor: const Color(0xFF71767B),
       textDisabledColor: const Color(0xFFD4E2FA),
       buttonTextColor: const Color(0xFFF2F2F2),
       buttonDisabledColor: const Color(0xFF96BBFA),
@@ -102,54 +130,16 @@ class ThemeColorData {
       tagColor: const Color(0xFFBDBDBD),
       cardBackground: const Color(0xFFF5F5F5),
     ),
-    ThemeColorData(
-      name: "清新绿",
-      background: const Color(0xFFE8F5E9),
-      // 浅绿色背景
-      canvasBackground: const Color(0xFFECF7EF),
-      // 白色画布背景
-      primaryColor: const Color(0xFF66BB6A),
-      // 亮绿色主色
-      iconColor: const Color(0xFF333333),
-      // 深灰色图标
-      splashColor: const Color(0x44c8c8c8),
-      // 灰色飞溅色
-      highlightColor: const Color(0x44bcbcbc),
-      // 灰色高亮色
-      shadowColor: Colors.grey.shade200,
-      // 浅灰色阴影
-      appBarShadowColor: const Color(0xFFF6F6F6),
-      // 浅灰色AppBar阴影
-      appBarBackgroundColor: const Color(0xFFE8F5E9),
-      // 浅绿色AppBar背景
-      appBarSurfaceTintColor: const Color(0xFFE8F5E9),
-      // 浅绿色AppBar表面色调
-      textColor: const Color(0xFF333333),
-      // 深灰色文字
-      textGrayColor: const Color(0xFF999999),
-      // 灰色文字
-      textDisabledColor: const Color(0xFFD4E2FA),
-      // 浅蓝色禁用文字
-      buttonTextColor: const Color(0xFFF2F2F2),
-      // 浅灰色按钮文字
-      buttonDisabledColor: const Color(0xFF96BBFA),
-      // 浅蓝色禁用按钮
-      dividerColor: const Color(0xFFF5F5F5),
-      // 浅灰色分割线
-      tagBackground: const Color(0xFFF5F5F5),
-      // 浅灰色标签背景
-      tagColor: const Color(0xFFBDBDBD),
-      // 灰色标签文字
-      cardBackground: const Color(0xFFF5F5F5), // 浅灰色卡片背景
-    ),
   ];
 
   static List<ThemeColorData> defaultDarkThemes = [
     ThemeColorData(
+      id: "pureBlack",
       name: "极简黑",
       background: const Color(0xFF151515),
       canvasBackground: const Color(0xFF232326),
       primaryColor: const Color(0xFF14C2BB),
+      //F1F1F1
       iconColor: const Color(0xFFCACACA),
       splashColor: const Color(0x12cccccc),
       highlightColor: const Color(0x12cfcfcf),
@@ -168,6 +158,7 @@ class ThemeColorData {
       cardBackground: const Color(0xFF333333),
     ),
     ThemeColorData(
+      id: "blueIron",
       name: "蓝铁",
       background: const Color(0xFF1D2733),
       canvasBackground: const Color(0xFF242E39),
@@ -334,6 +325,7 @@ class ThemeColorData {
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
+        "id": id,
         "isDarkMode": isDarkMode ? 1 : 0,
         "name": name,
         "description": description,
@@ -361,6 +353,7 @@ class ThemeColorData {
       };
 
   factory ThemeColorData.fromJson(Map<String, dynamic> map) => ThemeColorData(
+        id: map['id'] ?? "",
         isDarkMode: map['isDarkMode'] == 0 ? false : true,
         name: map['name'] as String,
         description: map['description'] as String,

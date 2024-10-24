@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:card_swiper/card_swiper.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/search_api.dart';
@@ -9,19 +11,19 @@ import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Screens/Post/search_result_screen.dart';
 import 'package:loftify/Screens/Post/tag_detail_screen.dart';
 import 'package:loftify/Screens/Post/video_detail_screen.dart';
+import 'package:loftify/Screens/refresh_interface.dart';
 import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/itoast.dart';
-import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Utils/route_util.dart';
 import 'package:provider/provider.dart';
 
 import '../../Resources/colors.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/hive_util.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
-import '../../Widgets/Custom/custom_tab_indicator.dart';
 import '../../Widgets/Custom/sliver_appbar_delegate.dart';
 import '../../Widgets/Item/item_builder.dart';
 
@@ -31,11 +33,14 @@ class SearchScreen extends StatefulWidget {
   static const String routeName = "/search";
 
   @override
-  State<SearchScreen> createState() => _SearchScreenState();
+  State<SearchScreen> createState() => SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen>
-    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+class SearchScreenState extends State<SearchScreen>
+    with
+        TickerProviderStateMixin,
+        AutomaticKeepAliveClientMixin,
+        ScrollToHideMixin {
   @override
   bool get wantKeepAlive => true;
 
@@ -50,6 +55,8 @@ class _SearchScreenState extends State<SearchScreen>
   final List<String> _tabLabelList = [];
   int _currentTabIndex = 0;
   final FocusNode _focusNode = FocusNode();
+
+  bool get hasSearchFocus => _focusNode.hasFocus;
 
   @override
   void initState() {
@@ -126,23 +133,19 @@ class _SearchScreenState extends State<SearchScreen>
     super.build(context);
     return Scaffold(
       backgroundColor: MyTheme.getBackground(context),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            _buildSearchBar(),
-            Expanded(
-              child: Stack(
-                children: [
-                  _buildMainBody(),
-                  if (_sugList.isNotEmpty) _buildSuggestList(),
-                ],
-              ),
-            ),
-          ],
-        ),
+      appBar: ItemBuilder.buildDesktopAppBar(
+        context: context,
+        spacing: 0,
+        titleWidget: _buildSearchBar(),
+        titleSpacing: 0,
       ),
+      body: Stack(
+        children: [
+          _buildMainBody(),
+          if (_sugList.isNotEmpty) _buildSuggestList(),
+        ],
+      ),
+      extendBody: true,
     );
   }
 
@@ -150,13 +153,14 @@ class _SearchScreenState extends State<SearchScreen>
     Utils.addSearchHistory(str);
     bool processed = await UriUtil.processUrl(context, str, quiet: true);
     if (!processed) {
-      RouteUtil.pushFadeRoute(context, SearchResultScreen(searchKey: str));
+      RouteUtil.pushPanelCupertinoRoute(
+          context, SearchResultScreen(searchKey: str));
     }
   }
 
   _jumpToTag(String tag) {
     Utils.addSearchHistory(tag);
-    RouteUtil.pushCupertinoRoute(context, TagDetailScreen(tag: tag));
+    RouteUtil.pushPanelCupertinoRoute(context, TagDetailScreen(tag: tag));
   }
 
   _performSuggest(String str) {
@@ -202,7 +206,7 @@ class _SearchScreenState extends State<SearchScreen>
       case 2:
         return ItemBuilder.buildUserRow(context, item.blogData!, onTap: () {
           Utils.addSearchHistory(_searchController.text);
-          RouteUtil.pushCupertinoRoute(
+          RouteUtil.pushPanelCupertinoRoute(
             context,
             UserDetailScreen(
               blogId: item.blogData!.blogInfo.blogId,
@@ -285,13 +289,10 @@ class _SearchScreenState extends State<SearchScreen>
             delegate: SliverAppBarDelegate(
               radius: 0,
               background: MyTheme.getBackground(context),
-              tabBar: TabBar(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-                overlayColor: WidgetStateProperty.all(Colors.transparent),
-                tabAlignment: TabAlignment.start,
-                isScrollable: true,
-                controller: _tabController,
-                tabs: _tabLabelList
+              tabBar: ItemBuilder.buildTabBar(
+                context,
+                _tabController,
+                _tabLabelList
                     .asMap()
                     .entries
                     .map(
@@ -304,18 +305,6 @@ class _SearchScreenState extends State<SearchScreen>
                       ),
                     )
                     .toList(),
-                labelPadding: const EdgeInsets.symmetric(horizontal: 12),
-                enableFeedback: true,
-                dividerHeight: 0,
-                physics: const BouncingScrollPhysics(),
-                labelStyle: Theme.of(context).textTheme.titleLarge,
-                unselectedLabelStyle: Theme.of(context)
-                    .textTheme
-                    .titleLarge
-                    ?.apply(color: Colors.grey),
-                indicator: const CustomTabIndicator(
-                  borderColor: Colors.transparent,
-                ),
                 onTap: (index) {
                   setState(() {
                     _currentTabIndex = index;
@@ -397,7 +386,7 @@ class _SearchScreenState extends State<SearchScreen>
           case RankListType.post:
             if (UriUtil.isPostUrl(item.url)) {
               Map<String, String> map = UriUtil.extractPostInfo(item.url);
-              RouteUtil.pushCupertinoRoute(
+              RouteUtil.pushPanelCupertinoRoute(
                 context,
                 PostDetailScreen(
                   meta: map,
@@ -406,19 +395,21 @@ class _SearchScreenState extends State<SearchScreen>
               );
             } else if (UriUtil.isVideoUrl(item.url)) {
               Map<String, String> map = UriUtil.extractVideoInfo(item.url);
-              RouteUtil.pushCupertinoRoute(
-                context,
-                VideoDetailScreen(
-                  meta: map,
-                ),
-              );
+              if (ResponsiveUtil.isDesktop()) {
+                IToast.showTop("桌面端不支持播放视频");
+              } else {
+                RouteUtil.pushPanelCupertinoRoute(
+                  context,
+                  VideoDetailScreen(meta: map),
+                );
+              }
             }
             break;
           case RankListType.collection:
             if (UriUtil.isCollectionUrl(item.url)) {
               int collectionId = UriUtil.extractCollectionId(item.url);
               if (collectionId != 0) {
-                RouteUtil.pushCupertinoRoute(
+                RouteUtil.pushPanelCupertinoRoute(
                   context,
                   CollectionDetailScreen(
                     collectionId: collectionId,
@@ -626,40 +617,31 @@ class _SearchScreenState extends State<SearchScreen>
   }
 
   Widget _buildSearchBar() {
-    return Hero(
-      tag: "searchBar",
-      child: Container(
-        height: 35,
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: ItemBuilder.buildSearchBar(
-                context: context,
-                focusNode: _focusNode,
-                hintText: "搜标签、合集、文章、讨论、粮单、用户",
-                onSubmitted: (value) {
-                  _performSearch(value);
-                },
-                controller: _searchController,
-              ),
-            ),
-            if (!ResponsiveUtil.isLandscape()) const SizedBox(width: 16),
-            if (!ResponsiveUtil.isLandscape())
-              GestureDetector(
-                onTap: () {
-                  Navigator.pop(context);
-                },
-                child: Text(
-                  "取消",
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-          ],
-        ),
+    double width = ResponsiveUtil.isLandscape()
+        ? searchBarWidth - 80
+        : min(MediaQuery.of(context).size.width, searchBarWidth);
+    return Container(
+      margin: const EdgeInsets.all(10),
+      constraints:
+          BoxConstraints(maxWidth: width, minWidth: width, maxHeight: 56),
+      child: ItemBuilder.buildDesktopSearchBar(
+        context: context,
+        borderRadius: 8,
+        bottomMargin: 18,
+        hintFontSizeDelta: 1,
+        focusNode: _focusNode,
+        controller: _searchController,
+        background: Colors.grey.withAlpha(40),
+        hintText: "搜标签、合集、文章、讨论、粮单、用户",
+        onSubmitted: (text) async {
+          _performSearch(text);
+        },
       ),
     );
+  }
+
+  @override
+  List<ScrollController> getScrollControllers() {
+    return [_scrollController];
   }
 }

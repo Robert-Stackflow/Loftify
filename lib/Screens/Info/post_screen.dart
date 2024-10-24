@@ -242,14 +242,10 @@ class _PostScreenState extends State<PostScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildAppBar(
+    return ItemBuilder.buildDesktopAppBar(
       context: context,
-      leading: Icons.arrow_back_rounded,
-      backgroundColor: MyTheme.getBackground(context),
-      onLeadingTap: () {
-        Navigator.pop(context);
-      },
-      title: Text("我的作品", style: Theme.of(context).textTheme.titleLarge),
+      showBack: true,
+      title: "我的作品",
       actions: [
         // ItemBuilder.buildIconButton(
         //     context: context,

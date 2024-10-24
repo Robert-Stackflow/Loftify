@@ -120,15 +120,16 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
       color: Colors.transparent,
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: ItemBuilder.buildSimpleAppBar(
-            title: S.current.generalSetting,
-            context: context,
-            transparent: true),
+        appBar: ItemBuilder.buildDesktopAppBar(
+          showBack: true,
+          title: S.current.generalSetting,
+          transparent: true,
+          context: context,
+        ),
         body: EasyRefresh(
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             children: [
-              const SizedBox(height: 10),
               Selector<AppProvider, Locale?>(
                 selector: (context, globalProvider) => globalProvider.locale,
                 builder: (context, locale, child) => ItemBuilder.buildEntryItem(

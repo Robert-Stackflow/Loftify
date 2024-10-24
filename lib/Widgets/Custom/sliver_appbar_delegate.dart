@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../Resources/theme.dart';
 
 class SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
-  final TabBar tabBar;
+  final PreferredSizeWidget tabBar;
 
   final double radius;
 

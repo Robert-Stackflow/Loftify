@@ -2,12 +2,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Screens/Setting/filename_setting_screen.dart';
 import 'package:loftify/Utils/enums.dart';
-import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Utils/route_util.dart';
-import 'package:loftify/Widgets/Dialog/dialog_builder.dart';
 
 import '../../Utils/constant.dart';
 import '../../Utils/hive_util.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
@@ -78,13 +77,17 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
       color: Colors.transparent,
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: ItemBuilder.buildSimpleAppBar(
-            title: S.current.imageSetting, context: context, transparent: true),
+        appBar: ItemBuilder.buildDesktopAppBar(
+          showBack: true,
+          title: S.current.imageSetting,
+          transparent: true,
+          context: context,
+        ),
         body: EasyRefresh(
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             children: [
-              const SizedBox(height: 10),
+              if (ResponsiveUtil.isLandscape()) const SizedBox(height: 10),
               ItemBuilder.buildCaptionItem(context: context, title: "图片质量"),
               ItemBuilder.buildEntryItem(
                 context: context,
@@ -237,11 +240,7 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
                       });
                     },
                   );
-                  if (ResponsiveUtil.isLandscape()) {
-                    DialogBuilder.showPageDialog(context, child: page);
-                  } else {
-                    RouteUtil.pushCupertinoRoute(context, page);
-                  }
+                  RouteUtil.pushPanelCupertinoRoute(context, page);
                 },
               ),
               const SizedBox(height: 30),

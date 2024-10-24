@@ -110,6 +110,8 @@ class MyColors {
       iconNormal: Theme.of(context).iconTheme.color,
       iconMouseOver: Theme.of(context).iconTheme.color,
       iconMouseDown: Theme.of(context).iconTheme.color,
+      selected: Theme.of(context).primaryColor.withAlpha(25),
+      iconSelected: Theme.of(context).primaryColor,
     );
   }
 
@@ -120,6 +122,8 @@ class MyColors {
       iconNormal: Theme.of(context).iconTheme.color,
       iconMouseOver: Colors.white,
       iconMouseDown: Colors.white,
+      selected: Theme.of(context).primaryColor,
+      iconSelected: Colors.white,
     );
   }
 

@@ -1,4 +1,5 @@
 import 'package:blur/blur.dart';
+import 'package:context_menus/context_menus.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/material.dart' hide AnimatedSlide;
 import 'package:flutter/material.dart';
@@ -15,11 +16,11 @@ import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/ilogger.dart';
+import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Utils/uri_util.dart';
 import 'package:loftify/Widgets/BottomSheet/input_bottom_sheet.dart';
 import 'package:loftify/Widgets/Custom/subordinate_scroll_controller.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
-import 'package:tuple/tuple.dart';
 
 import '../../Api/user_api.dart';
 import '../../Models/user_response.dart';
@@ -30,12 +31,10 @@ import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
-import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
-import '../../Widgets/Custom/custom_tab_indicator.dart';
 import '../../Widgets/Custom/hero_photo_view_screen.dart';
+import '../../Widgets/Custom/sliver_appbar_delegate.dart';
 import '../../Widgets/Dialog/custom_dialog.dart';
 import '../../Widgets/Dialog/dialog_builder.dart';
-import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../generated/l10n.dart';
 import '../Post/collection_detail_screen.dart';
 
@@ -57,8 +56,6 @@ class UserDetailScreen extends StatefulWidget {
 
 class UserDetailScreenState extends State<UserDetailScreen>
     with TickerProviderStateMixin {
-  final EasyRefreshController _refreshController = EasyRefreshController();
-
   TotalBlogData? _fullBlogData;
   bool? isMe = false;
   late TabController _tabController;
@@ -120,6 +117,10 @@ class UserDetailScreenState extends State<UserDetailScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
+      appBar: ResponsiveUtil.isLandscape()
+          ? ItemBuilder.buildDesktopAppBar(
+              context: context, showBack: true, title: "个人主页")
+          : null,
       body: _fullBlogData != null
           ? ExtendedNestedScrollView(
               headerSliverBuilder: (_, __) => _buildHeaderSlivers(),
@@ -132,67 +133,246 @@ class UserDetailScreenState extends State<UserDetailScreen>
   }
 
   _buildHeaderSlivers() {
-    return <Widget>[
-      ItemBuilder.buildSliverAppBar(
-        context: context,
-        expandedHeight: _expandedHeight,
-        systemOverlayStyle: SystemUiOverlayStyle.light,
-        collapsedHeight: 56,
-        backgroundWidget: _buildBackground(height: _expandedHeight + 60),
-        actions: _appBarActions(),
-        center: true,
-        title: Text(
-          "个人主页",
-          style: Theme.of(context).textTheme.titleMedium?.apply(
-                color: Colors.white,
-                fontWeightDelta: 2,
+    if (!ResponsiveUtil.isLandscape()) {
+      return <Widget>[
+        ItemBuilder.buildSliverAppBar(
+          context: context,
+          expandedHeight: _expandedHeight,
+          systemOverlayStyle: SystemUiOverlayStyle.light,
+          collapsedHeight: 56,
+          backgroundWidget: _buildBackground(height: _expandedHeight + 60),
+          actions: _appBarActions(),
+          center: true,
+          title: Text(
+            "个人主页",
+            style: Theme.of(context).textTheme.titleMedium?.apply(
+                  color: Colors.white,
+                  fontWeightDelta: 2,
+                ),
+          ),
+          flexibleSpace: FlexibleSpaceBar(
+            background: Stack(
+              children: [
+                _buildBackground(height: _expandedHeight + 60),
+                _buildInfo(),
+              ],
+            ),
+          ),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(40),
+            child: Container(
+              decoration: BoxDecoration(
+                color: MyTheme.getBackground(context),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
               ),
+              child: ItemBuilder.buildTabBar(
+                context,
+                _tabController,
+                tabList,
+                width: MediaQuery.sizeOf(context).width,
+              ),
+            ),
+          ),
         ),
-        flexibleSpace: FlexibleSpaceBar(
-          background: Stack(
+      ];
+    } else {
+      return [
+        SliverToBoxAdapter(
+          child: Stack(
             children: [
-              _buildBackground(height: _expandedHeight + 60),
-              _buildInfo(),
+              _buildBackground(height: _expandedHeight - 84),
+              _buildInfo(10),
             ],
           ),
         ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(40),
-          child: Container(
-            decoration: BoxDecoration(
-              color: MyTheme.getBackground(context),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-            ),
-            child: TabBar(
-              controller: _tabController,
-              overlayColor: WidgetStateProperty.all(Colors.transparent),
-              tabs: tabList,
-              labelPadding: const EdgeInsets.symmetric(horizontal: 12),
-              dividerHeight: 0,
-              physics: const BouncingScrollPhysics(),
-              labelStyle: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.apply(fontWeightDelta: 2),
-              unselectedLabelStyle: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.apply(color: Colors.grey),
-              indicator: CustomTabIndicator(
-                borderColor: Theme.of(context).primaryColor,
-              ),
+        SliverPersistentHeader(
+          key: ValueKey(Utils.getRandomString()),
+          pinned: true,
+          delegate: SliverAppBarDelegate(
+            radius: 0,
+            background: MyTheme.getBackground(context),
+            tabBar: ItemBuilder.buildTabBar(
+              context,
+              _tabController,
+              tabList,
+              width: MediaQuery.sizeOf(context).width,
+              showBorder: true,
             ),
           ),
         ),
-      ),
-    ];
+      ];
+    }
   }
 
   Widget _mainContent() {
     return _buildTabView();
+  }
+
+  _buildMoreButtons() {
+    return GenericContextMenu(
+      buttonConfigs: [
+        ContextMenuButtonConfig(
+          "查看主题背景",
+          icon: const Icon(Icons.color_lens_outlined),
+          onPressed: () {
+            RouteUtil.pushDialogRoute(
+              context,
+              showClose: false,
+              fullScreen: true,
+              useMaterial: true,
+              HeroPhotoViewScreen(
+                tagPrefix: Utils.getRandomString(),
+                imageUrls: [Utils.removeImageParam(backgroudUrl)],
+                useMainColor: false,
+                title: "主题背景",
+                captions: ["「${_fullBlogData!.blogInfo.blogNickName}」"],
+              ),
+            );
+          },
+        ),
+        if (infoMode == InfoMode.other) ...[
+          if (Utils.isNotEmpty(_fullBlogData!.blogInfo.avatarBoxImage))
+            ContextMenuButtonConfig(
+              HiveUtil.getString(HiveUtil.customAvatarBoxKey) ==
+                      _fullBlogData!.blogInfo.avatarBoxImage
+                  ? "取消佩戴头像框"
+                  : "佩戴头像框",
+              icon: const Icon(Icons.account_box),
+              onPressed: () async {
+                String? currentAvatarImg =
+                    HiveUtil.getString(HiveUtil.customAvatarBoxKey);
+                if (currentAvatarImg ==
+                    _fullBlogData!.blogInfo.avatarBoxImage) {
+                  await HiveUtil.put(HiveUtil.customAvatarBoxKey, "");
+                  currentAvatarImg = "";
+                  setState(() {});
+                  IToast.showTop("取消佩戴成功");
+                } else {
+                  await HiveUtil.put(HiveUtil.customAvatarBoxKey,
+                      _fullBlogData!.blogInfo.avatarBoxImage);
+                  currentAvatarImg = _fullBlogData!.blogInfo.avatarBoxImage;
+                  setState(() {});
+                  IToast.showTop("佩戴成功");
+                }
+              },
+            ),
+          ContextMenuButtonConfig(
+            "设置备注",
+            icon: const Icon(Icons.credit_card),
+            onPressed: () {
+              BottomSheetBuilder.showBottomSheet(
+                context,
+                (sheetContext) => InputBottomSheet(
+                  buttonText: "确认",
+                  title: "设置「${_fullBlogData!.blogInfo.blogNickName}」的备注",
+                  text: _fullBlogData!.blogInfo.remarkName.trim(),
+                  onConfirm: (text) {
+                    UserApi.setRemark(
+                      blogId: _fullBlogData!.blogInfo.blogId,
+                      remark: text,
+                    ).then((value) {
+                      if (value['meta']['status'] != 200) {
+                        IToast.showTop(
+                            value['meta']['desc'] ?? value['meta']['msg']);
+                      } else {
+                        _fullBlogData!.blogInfo.remarkName = text;
+                        setState(() {});
+                        IToast.showTop("设置备注成功");
+                      }
+                    });
+                  },
+                ),
+                preferMinWidth: 400,
+                responsive: true,
+              );
+            },
+          ),
+          ContextMenuButtonConfig.divider(),
+          ContextMenuButtonConfig.warning(
+            _fullBlogData!.isBlackBlog ? "解除黑名单" : "加入黑名单",
+            icon: const Icon(Icons.block_rounded, color: Colors.red),
+            onPressed: () {
+              _doBlockUser(
+                isBlock: !_fullBlogData!.isBlackBlog,
+                onSuccess: () {
+                  if (_fullBlogData!.isBlackBlog) {
+                    IToast.showTop("拉黑成功");
+                  } else {
+                    IToast.showTop("解除拉黑成功");
+                  }
+                  setState(() {});
+                  updateFollowStatus();
+                },
+              );
+            },
+            textColor: Colors.red,
+          ),
+          if (_fullBlogData!.following) ...[
+            ContextMenuButtonConfig.warning(
+              _fullBlogData!.isShieldRecom == 1 ? "恢复查看TA推荐的内容" : "不看TA推荐的内容",
+              icon: const Icon(Icons.block_rounded, color: Colors.red),
+              onPressed: () {
+                UserApi.shieldRecommendOrUnShield(
+                  blogId: _fullBlogData!.blogInfo.blogId,
+                  isShield: !(_fullBlogData!.isShieldRecom == 1),
+                ).then((value) {
+                  if (value['meta']['status'] != 200) {
+                    IToast.showTop(
+                        value['meta']['desc'] ?? value['meta']['msg']);
+                  } else {
+                    _fullBlogData!.isShieldRecom =
+                        _fullBlogData!.isShieldRecom == 1 ? 0 : 1;
+                    setState(() {});
+                  }
+                });
+              },
+              textColor: Colors.red,
+            ),
+            ContextMenuButtonConfig.warning(
+              _fullBlogData!.shieldUserTimeline ? "恢复查看TA的动态" : "不看TA的动态",
+              icon: const Icon(Icons.block_rounded, color: Colors.red),
+              onPressed: () {
+                UserApi.shieldBlogOrUnShield(
+                  blogId: _fullBlogData!.blogInfo.blogId,
+                  isShield: !_fullBlogData!.shieldUserTimeline,
+                ).then((value) {
+                  if (value['code'] != 0) {
+                    IToast.showTop(value['msg']);
+                  } else {
+                    _fullBlogData!.shieldUserTimeline =
+                        !_fullBlogData!.shieldUserTimeline;
+                    setState(() {});
+                  }
+                });
+              },
+              textColor: Colors.red,
+            ),
+          ],
+        ],
+        ContextMenuButtonConfig.divider(),
+        ContextMenuButtonConfig(
+          "复制主页链接",
+          icon: const Icon(Icons.copy_rounded),
+          onPressed: () {
+            Utils.copy(context, _fullBlogData!.blogInfo.homePageUrl);
+          },
+        ),
+        ContextMenuButtonConfig("在浏览器打开",
+            icon: const Icon(Icons.open_in_browser_rounded), onPressed: () {
+          UriUtil.openExternal(_fullBlogData!.blogInfo.homePageUrl);
+        }),
+        ContextMenuButtonConfig("分享到其他应用",
+            icon: const Icon(Icons.share_rounded), onPressed: () {
+          UriUtil.share(
+            context,
+            _fullBlogData!.blogInfo.homePageUrl,
+          );
+        }),
+      ],
+    );
   }
 
   _appBarActions() {
@@ -200,159 +380,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
       ItemBuilder.buildIconButton(
         context: context,
         onTap: () {
-          List<Tuple2<String, dynamic>> options = [
-            const Tuple2("查看主题背景", -1),
-            const Tuple2("复制主页链接", 0),
-            const Tuple2("在浏览器打开", 1),
-            const Tuple2("分享到其他应用", 2),
-          ];
-          if (infoMode == InfoMode.other) {
-            if (Utils.isNotEmpty(_fullBlogData!.blogInfo.avatarBoxImage)) {
-              options.add(
-                Tuple2(
-                    HiveUtil.getString(HiveUtil.customAvatarBoxKey) ==
-                            _fullBlogData!.blogInfo.avatarBoxImage
-                        ? "取消佩戴头像框"
-                        : "佩戴头像框",
-                    3),
-              );
-            }
-            options.addAll([
-              const Tuple2("设置备注", 4),
-              Tuple2(_fullBlogData!.isBlackBlog ? "解除黑名单" : "加入黑名单", 5),
-            ]);
-            if (_fullBlogData!.following) {
-              options.addAll([
-                Tuple2(
-                    _fullBlogData!.isShieldRecom == 1
-                        ? "恢复查看TA推荐的内容"
-                        : "不看TA推荐的内容",
-                    6),
-                Tuple2(
-                    _fullBlogData!.shieldUserTimeline ? "恢复查看TA的动态" : "不看TA的动态",
-                    7),
-              ]);
-            }
-          }
-          BottomSheetBuilder.showListBottomSheet(
-            context,
-            (sheetContext) => TileList.fromOptions(
-              options,
-              (idx) async {
-                Navigator.pop(sheetContext);
-                if (idx == -1) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => HeroPhotoViewScreen(
-                        tagPrefix: Utils.getRandomString(),
-                        imageUrls: [Utils.removeImageParam(backgroudUrl)],
-                        useMainColor: false,
-                        title: "主题背景",
-                        captions: ["「${_fullBlogData!.blogInfo.blogNickName}」"],
-                      ),
-                    ),
-                  );
-                } else if (idx == 0) {
-                  Utils.copy(context, _fullBlogData!.blogInfo.homePageUrl);
-                } else if (idx == 1) {
-                  UriUtil.openExternal(_fullBlogData!.blogInfo.homePageUrl);
-                } else if (idx == 2) {
-                  UriUtil.share(
-                    context,
-                    _fullBlogData!.blogInfo.homePageUrl,
-                  );
-                } else if (idx == 3) {
-                  String? currentAvatarImg =
-                      HiveUtil.getString(HiveUtil.customAvatarBoxKey);
-                  if (currentAvatarImg ==
-                      _fullBlogData!.blogInfo.avatarBoxImage) {
-                    await HiveUtil.put(HiveUtil.customAvatarBoxKey, "");
-                    currentAvatarImg = "";
-                    setState(() {});
-                    IToast.showTop("取消佩戴成功");
-                  } else {
-                    await HiveUtil.put(HiveUtil.customAvatarBoxKey,
-                        _fullBlogData!.blogInfo.avatarBoxImage);
-                    currentAvatarImg = _fullBlogData!.blogInfo.avatarBoxImage;
-                    setState(() {});
-                    IToast.showTop("佩戴成功");
-                  }
-                } else if (idx == 4) {
-                  BottomSheetBuilder.showBottomSheet(
-                    context,
-                    (sheetContext) => InputBottomSheet(
-                      buttonText: "确认",
-                      title: "设置「${_fullBlogData!.blogInfo.blogNickName}」的备注",
-                      text: _fullBlogData!.blogInfo.remarkName.trim(),
-                      onConfirm: (text) {
-                        UserApi.setRemark(
-                          blogId: _fullBlogData!.blogInfo.blogId,
-                          remark: text,
-                        ).then((value) {
-                          if (value['meta']['status'] != 200) {
-                            IToast.showTop(
-                                value['meta']['desc'] ?? value['meta']['msg']);
-                          } else {
-                            _fullBlogData!.blogInfo.remarkName = text;
-                            setState(() {});
-                            IToast.showTop("设置备注成功");
-                          }
-                        });
-                      },
-                    ),
-                    preferMinWidth: 400,
-                    responsive: true,
-                  );
-                } else if (idx == 5) {
-                  _doBlockUser(
-                      isBlock: !_fullBlogData!.isBlackBlog,
-                      onSuccess: () {
-                        if (_fullBlogData!.isBlackBlog) {
-                          IToast.showTop("拉黑成功");
-                        } else {
-                          IToast.showTop("解除拉黑成功");
-                        }
-                        setState(() {});
-                        updateFollowStatus();
-                      });
-                } else if (idx == 6) {
-                  UserApi.shieldRecommendOrUnShield(
-                    blogId: _fullBlogData!.blogInfo.blogId,
-                    isShield: !(_fullBlogData!.isShieldRecom == 1),
-                  ).then((value) {
-                    if (value['meta']['status'] != 200) {
-                      IToast.showTop(
-                          value['meta']['desc'] ?? value['meta']['msg']);
-                    } else {
-                      _fullBlogData!.isShieldRecom =
-                          _fullBlogData!.isShieldRecom == 1 ? 0 : 1;
-                      setState(() {});
-                    }
-                  });
-                } else if (idx == 7) {
-                  UserApi.shieldBlogOrUnShield(
-                    blogId: _fullBlogData!.blogInfo.blogId,
-                    isShield: !_fullBlogData!.shieldUserTimeline,
-                  ).then((value) {
-                    if (value['code'] != 0) {
-                      IToast.showTop(value['msg']);
-                    } else {
-                      _fullBlogData!.shieldUserTimeline =
-                          !_fullBlogData!.shieldUserTimeline;
-                      setState(() {});
-                    }
-                  });
-                }
-              },
-              redOptions: const [5, 6, 7],
-              showCancel: true,
-              context: context,
-              showTitle: false,
-              onCloseTap: () => Navigator.pop(sheetContext),
-              crossAxisAlignment: CrossAxisAlignment.center,
-            ),
-          );
+          BottomSheetBuilder.showContextMenu(context, _buildMoreButtons());
         },
         icon: const Icon(
           Icons.more_vert_rounded,
@@ -392,11 +420,12 @@ class UserDetailScreenState extends State<UserDetailScreen>
     }
   }
 
-  Widget _buildInfo() {
+  Widget _buildInfo([double? topMargin]) {
     bool hasRemarkName = Utils.isNotEmpty(_fullBlogData!.blogInfo.remarkName);
     return Container(
       margin: EdgeInsets.only(
-          top: kToolbarHeight + MediaQuery.of(context).padding.top),
+          top:
+              topMargin ?? kToolbarHeight + MediaQuery.of(context).padding.top),
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: const BoxDecoration(
         borderRadius: BorderRadius.only(
@@ -537,9 +566,24 @@ class UserDetailScreenState extends State<UserDetailScreen>
                           ),
                         ),
                     ],
-                  )
+                  ),
                 ],
               ),
+              const Spacer(),
+              if (ResponsiveUtil.isLandscape()) ...[
+                ItemBuilder.buildIconButton(
+                  context: context,
+                  onTap: () {
+                    BottomSheetBuilder.showContextMenu(
+                        context, _buildMoreButtons());
+                  },
+                  icon: const Icon(
+                    Icons.more_vert_rounded,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 10),
+              ],
             ],
           ),
           const SizedBox(height: 16),
@@ -555,7 +599,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                 onTap: () {
                   if (_fullBlogData!.showFollow == 1 ||
                       infoMode == InfoMode.me) {
-                    RouteUtil.pushCupertinoRoute(
+                    RouteUtil.pushPanelCupertinoRoute(
                       context,
                       FollowingFollowerScreen(
                         infoMode: infoMode,
@@ -580,7 +624,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                 labelColor: Colors.white.withOpacity(0.9),
                 onTap: () {
                   if (_fullBlogData!.showFans == 1 || infoMode == InfoMode.me) {
-                    RouteUtil.pushCupertinoRoute(
+                    RouteUtil.pushPanelCupertinoRoute(
                       context,
                       FollowingFollowerScreen(
                         infoMode: infoMode,
@@ -646,7 +690,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                 onTap: () {
                   if (_fullBlogData!.showSupport == 1 ||
                       infoMode == InfoMode.me) {
-                    RouteUtil.pushCupertinoRoute(
+                    RouteUtil.pushPanelCupertinoRoute(
                       context,
                       SupporterScreen(
                         infoMode: infoMode,
@@ -813,31 +857,21 @@ class UserDetailScreenState extends State<UserDetailScreen>
         HapticFeedback.mediumImpact();
         _doFollow(isFollow: !_fullBlogData!.following);
       } else {
-        BottomSheetBuilder.showListBottomSheet(
-          context,
-          (sheetContext) => TileList.fromOptions(
-            [
-              Tuple2(_fullBlogData!.specialfollowing ? "取消特别关注" : "特别关注", 2),
-              const Tuple2("取消关注", 0),
-            ],
-            (idx) {
-              if (idx == 0) {
-                _doFollow(isFollow: !_fullBlogData!.following);
-              } else {
-                _doSpecialFollow(
-                    isSpecialFollow: !_fullBlogData!.specialfollowing);
-              }
-              Navigator.pop(sheetContext);
-            },
-            context: context,
-            showCancel: true,
-            showTitle: false,
-            onCloseTap: () => Navigator.pop(sheetContext),
-            crossAxisAlignment: CrossAxisAlignment.center,
-          ),
-        );
+        BottomSheetBuilder.showContextMenu(context, _buildFollowButtons());
       }
     }
+  }
+
+  _buildFollowButtons() {
+    return GenericContextMenu(buttonConfigs: [
+      ContextMenuButtonConfig(
+          _fullBlogData!.specialfollowing ? "取消特别关注" : "特别关注", onPressed: () {
+        _doSpecialFollow(isSpecialFollow: !_fullBlogData!.specialfollowing);
+      }),
+      ContextMenuButtonConfig("取消关注", onPressed: () {
+        _doFollow(isFollow: !_fullBlogData!.following);
+      }),
+    ]);
   }
 
   _buildTabView() {
@@ -954,7 +988,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
       onTap = () {
         item.postSimpleData!.postView.blogName =
             _fullBlogData!.blogInfo.blogName;
-        RouteUtil.pushCupertinoRoute(
+        RouteUtil.pushPanelCupertinoRoute(
           context,
           PostDetailScreen(
             showCaseItem: item,
@@ -967,7 +1001,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
       backgroundUrl = item.postCollection!.coverUrl;
       hotCount = item.postCollection!.postCollectionHot.toString();
       onTap = () {
-        RouteUtil.pushCupertinoRoute(
+        RouteUtil.pushPanelCupertinoRoute(
           context,
           CollectionDetailScreen(
             blogId: widget.blogId,

@@ -11,8 +11,6 @@ import 'package:waterfall_flow/waterfall_flow.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/utils.dart';
-import '../../Widgets/Custom/custom_tab_indicator.dart';
-import '../../Widgets/Custom/sliver_appbar_delegate.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import 'grain_detail_screen.dart';
@@ -34,11 +32,11 @@ class _TagCollectionGrainScreenState extends State<TagCollectionGrainScreen>
   @override
   bool get wantKeepAlive => true;
   late TabController _tabController;
-  final ScrollController _scrollController = ScrollController();
 
-  final List<Tab> _tabList = [];
+  List<String> _tabLabelList = [];
   final GlobalKey _collectionKey = GlobalKey();
   final GlobalKey _grainKey = GlobalKey();
+  int _currentTabIndex = 0;
 
   @override
   void initState() {
@@ -51,64 +49,14 @@ class _TagCollectionGrainScreenState extends State<TagCollectionGrainScreen>
     super.build(context);
     return Scaffold(
       backgroundColor: MyTheme.getBackground(context),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildAppBar(),
-            Expanded(
-              child: _buildMainBody(),
-            ),
-          ],
-        ),
-      ),
+      appBar: _buildAppBar(),
+      body: _buildTabView(),
     );
   }
 
   initTab() {
-    _tabList
-      ..add(const Tab(text: "合集"))
-      ..add(const Tab(text: "粮单"));
-    _tabController = TabController(length: _tabList.length, vsync: this);
-  }
-
-  _buildMainBody() {
-    return CustomScrollView(
-      controller: _scrollController,
-      slivers: [
-        if (_tabList.isNotEmpty)
-          SliverPersistentHeader(
-            key: ValueKey(Utils.getRandomString()),
-            pinned: true,
-            delegate: SliverAppBarDelegate(
-              radius: 0,
-              background: MyTheme.getBackground(context),
-              tabBar: TabBar(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-                overlayColor: WidgetStateProperty.all(Colors.transparent),
-                controller: _tabController,
-                tabs: _tabList,
-                labelPadding: const EdgeInsets.symmetric(horizontal: 0),
-                enableFeedback: true,
-                dividerHeight: 0,
-                physics: const BouncingScrollPhysics(),
-                labelStyle: Theme.of(context).textTheme.titleLarge,
-                unselectedLabelStyle: Theme.of(context)
-                    .textTheme
-                    .titleLarge
-                    ?.apply(color: Colors.grey),
-                indicator: CustomTabIndicator(
-                  borderColor: Theme.of(context).primaryColor,
-                ),
-              ),
-            ),
-          ),
-        if (_tabList.isNotEmpty)
-          SliverFillRemaining(
-            child: _buildTabView(),
-          ),
-      ],
-    );
+    _tabLabelList = ['合集', '粮单'];
+    _tabController = TabController(length: _tabLabelList.length, vsync: this);
   }
 
   Widget _buildTabView() {
@@ -122,14 +70,10 @@ class _TagCollectionGrainScreenState extends State<TagCollectionGrainScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildAppBar(
+    return ItemBuilder.buildDesktopAppBar(
       context: context,
-      backgroundColor: MyTheme.getBackground(context),
-      leading: Icons.arrow_back_rounded,
-      onLeadingTap: () {
-        Navigator.pop(context);
-      },
-      title: ItemBuilder.buildClickItem(
+      showBack: true,
+      titleWidget: ItemBuilder.buildClickItem(
         ItemBuilder.buildTagItem(
           context,
           widget.tag,
@@ -140,7 +84,30 @@ class _TagCollectionGrainScreenState extends State<TagCollectionGrainScreen>
           showRightIcon: true,
         ),
       ),
-      center: true,
+      bottomHeight: 56,
+      bottom: ItemBuilder.buildTabBar(
+        context,
+        _tabController,
+        _tabLabelList
+            .asMap()
+            .entries
+            .map(
+              (entry) => ItemBuilder.buildAnimatedTab(context,
+                  selected: entry.key == _currentTabIndex,
+                  text: entry.value,
+                  normalUserBold: true,
+                  sameFontSize: true),
+            )
+            .toList(),
+        onTap: (index) {
+          setState(() {
+            _currentTabIndex = index;
+          });
+        },
+        width: MediaQuery.sizeOf(context).width,
+        background: MyTheme.getBackground(context),
+        showBorder: true,
+      ),
       actions: [
         Visibility(
           visible: false,
@@ -324,7 +291,7 @@ class CollectionTabState extends State<CollectionTab>
     return ItemBuilder.buildClickItem(
       GestureDetector(
         onTap: () {
-          RouteUtil.pushCupertinoRoute(
+          RouteUtil.pushPanelCupertinoRoute(
             context,
             CollectionDetailScreen(
                 collectionId: info.id,
@@ -460,7 +427,7 @@ class CollectionTabState extends State<CollectionTab>
     return ItemBuilder.buildClickItem(
       GestureDetector(
         onTap: () {
-          RouteUtil.pushCupertinoRoute(
+          RouteUtil.pushPanelCupertinoRoute(
             context,
             CollectionDetailScreen(
               collectionId: info.id,
@@ -700,7 +667,7 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
     return ItemBuilder.buildClickItem(
       GestureDetector(
         onTap: () {
-          RouteUtil.pushCupertinoRoute(
+          RouteUtil.pushPanelCupertinoRoute(
             context,
             GrainDetailScreen(
               grainId: info.id,
@@ -844,7 +811,7 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
     return ItemBuilder.buildClickItem(
       GestureDetector(
         onTap: () {
-          RouteUtil.pushCupertinoRoute(
+          RouteUtil.pushPanelCupertinoRoute(
             context,
             GrainDetailScreen(
               grainId: info.id,
