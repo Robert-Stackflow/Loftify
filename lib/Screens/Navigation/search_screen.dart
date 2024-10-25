@@ -41,7 +41,8 @@ class SearchScreenState extends State<SearchScreen>
     with
         TickerProviderStateMixin,
         AutomaticKeepAliveClientMixin,
-        ScrollToHideMixin,BottomNavgationMixin {
+        ScrollToHideMixin,
+        BottomNavgationMixin {
   @override
   bool get wantKeepAlive => true;
 
@@ -77,9 +78,11 @@ class SearchScreenState extends State<SearchScreen>
         _performSuggest(_searchController.text);
       }
     });
-    Future.delayed(const Duration(milliseconds: 200), () {
-      FocusScope.of(context).requestFocus(_focusNode);
-    });
+    if (ResponsiveUtil.isDesktop()) {
+      Future.delayed(const Duration(milliseconds: 200), () {
+        FocusScope.of(context).requestFocus(_focusNode);
+      });
+    }
   }
 
   initTab() {

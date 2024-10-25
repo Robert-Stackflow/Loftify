@@ -146,7 +146,7 @@ class DialogBuilder {
     required Widget child,
     bool barrierDismissible = true,
     bool showClose = true,
-        bool fullScreen = false,
+    bool fullScreen = false,
     Function(dynamic)? onThen,
     double? preferMinWidth,
     double? preferMinHeight,
@@ -169,9 +169,9 @@ class DialogBuilder {
       pageBuilder: (context, animation, secondaryAnimation) =>
           DialogWrapperWidget(
         key: overrideDialogNavigatorKey ?? dialogNavigatorKey,
-        showClose: showClose,        fullScreen: fullScreen,
-
-            preferMinWidth: preferMinWidth,
+        showClose: showClose,
+        fullScreen: fullScreen,
+        preferMinWidth: preferMinWidth,
         preferMinHeight: preferMinHeight,
         child: child,
       ),

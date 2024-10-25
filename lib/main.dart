@@ -125,12 +125,17 @@ Future<void> initDisplayMode() async {
 }
 
 Future<void> onError(FlutterErrorDetails details) async {
-  File errorFile = File(join(await FileUtil.getLogDir(), "error.log"));
-  if (!errorFile.existsSync()) errorFile.createSync();
-  errorFile.writeAsStringSync(details.toDiagnosticsNode().toStringDeep(),
-      mode: FileMode.append);
-  if (details.stack != null) {
-    Zone.current.handleUncaughtError(details.exception, details.stack!);
+  try {
+    File errorFile = File(join(await FileUtil.getLogDir(), "error.log"));
+    if (!errorFile.existsSync()) errorFile.createSync();
+    errorFile.writeAsStringSync(
+        "${details.exceptionAsString()}\n${details.stack}",
+        mode: FileMode.append);
+    if (details.stack != null) {
+      Zone.current.handleUncaughtError(details.exception, details.stack!);
+    }
+  } catch (e, t) {
+    ILogger.error("Failed to write error log", e, t);
   }
 }
 

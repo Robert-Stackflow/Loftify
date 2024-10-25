@@ -125,11 +125,13 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
           title: S.current.generalSetting,
           transparent: true,
           context: context,
+          background: Theme.of(context).scaffoldBackgroundColor,
         ),
         body: EasyRefresh(
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             children: [
+              if (ResponsiveUtil.isLandscape()) const SizedBox(height: 10),
               Selector<AppProvider, Locale?>(
                 selector: (context, globalProvider) => globalProvider.locale,
                 builder: (context, locale, child) => ItemBuilder.buildEntryItem(

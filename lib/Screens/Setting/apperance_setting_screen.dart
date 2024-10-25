@@ -64,10 +64,12 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: ItemBuilder.buildDesktopAppBar(
-            transparent: true,
-            showBack: true,
-            title: S.current.apprearanceSetting,
-            context: context),
+          transparent: true,
+          showBack: true,
+          title: S.current.apprearanceSetting,
+          context: context,
+          background: Theme.of(context).scaffoldBackgroundColor,
+        ),
         body: EasyRefresh(
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 10),

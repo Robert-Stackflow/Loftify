@@ -49,6 +49,7 @@ class _PostScreenState extends State<PostScreen>
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
+  InitPhase _initPhase = InitPhase.haveNotConnected;
 
   @override
   void initState() {
@@ -59,9 +60,7 @@ class _PostScreenState extends State<PostScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     super.initState();
-    if (widget.infoMode != InfoMode.me) {
-      _onRefresh();
-    }
+    _onRefresh();
   }
 
   _fetchLike({bool refresh = false}) async {
@@ -75,6 +74,10 @@ class _PostScreenState extends State<PostScreen>
       if (_archiveDataList.isNotEmpty && _archiveDataList[0].isTop) {
         offset = _postList.length - _archiveDataList[0].count;
       }
+    }
+    if (_initPhase != InitPhase.successful) {
+      _initPhase = InitPhase.connecting;
+      setState(() {});
     }
     return await HiveUtil.getUserInfo().then((blogInfo) async {
       String blogName = widget.infoMode == InfoMode.me
@@ -144,6 +147,7 @@ class _PostScreenState extends State<PostScreen>
               }
             }
             if (mounted) setState(() {});
+            _initPhase = InitPhase.successful;
             if (tmp.isEmpty && !refresh) {
               _noMore = true;
               return IndicatorResult.noMore;
@@ -152,6 +156,7 @@ class _PostScreenState extends State<PostScreen>
             }
           }
         } catch (e, t) {
+          _initPhase = InitPhase.failed;
           ILogger.error("Failed to load post list", e, t);
           if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
@@ -179,17 +184,37 @@ class _PostScreenState extends State<PostScreen>
           ? MyTheme.getBackground(context)
           : Colors.transparent,
       appBar: widget.infoMode == InfoMode.me ? _buildAppBar() : null,
-      body: EasyRefresh.builder(
-        refreshOnStart: true,
-        controller: _refreshController,
-        onRefresh: _onRefresh,
-        onLoad: _onLoad,
-        triggerAxis: Axis.vertical,
-        childBuilder: (context, physics) {
-          return _buildNineGridGroup(physics);
-        },
-      ),
+      body: _buildBody(),
     );
+  }
+
+  _buildBody() {
+    switch (_initPhase) {
+      case InitPhase.connecting:
+        return ItemBuilder.buildLoadingDialog(context,
+            background: Colors.transparent);
+      case InitPhase.failed:
+        return ItemBuilder.buildError(
+          context: context,
+          onTap: _onRefresh,
+        );
+      case InitPhase.successful:
+        return EasyRefresh.builder(
+          refreshOnStart: true,
+          controller: _refreshController,
+          onRefresh: _onRefresh,
+          onLoad: _onLoad,
+          triggerAxis: Axis.vertical,
+          childBuilder: (context, physics) {
+            return _archiveDataList.isNotEmpty
+                ? _buildNineGridGroup(physics)
+                : ItemBuilder.buildEmptyPlaceholder(
+                    context: context, text: "暂无文章");
+          },
+        );
+      default:
+        return Container();
+    }
   }
 
   Widget _buildNineGridGroup(ScrollPhysics physics) {

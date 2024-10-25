@@ -201,30 +201,31 @@ class DynamicScreenState extends State<DynamicScreen>
   }
 
   _buildFloatingButtons() {
-    return Column(
-      children: [
-        if (ResponsiveUtil.isLandscape())
-          ItemBuilder.buildShadowIconButton(
-            context: context,
-            icon: RotationTransition(
-              turns: Tween(begin: 0.0, end: 1.0)
-                  .animate(_refreshRotationController),
-              child: const Icon(Icons.refresh_rounded),
-            ),
-            onTap: () async {
-              refresh();
-            },
-          ),
-        const SizedBox(height: 10),
-        ItemBuilder.buildShadowIconButton(
-          context: context,
-          icon: const Icon(Icons.arrow_upward_rounded),
-          onTap: () {
-            scrollToTop();
-          },
-        ),
-      ],
-    );
+    return ResponsiveUtil.isLandscape()
+        ? Column(
+            children: [
+              ItemBuilder.buildShadowIconButton(
+                context: context,
+                icon: RotationTransition(
+                  turns: Tween(begin: 0.0, end: 1.0)
+                      .animate(_refreshRotationController),
+                  child: const Icon(Icons.refresh_rounded),
+                ),
+                onTap: () async {
+                  refresh();
+                },
+              ),
+              const SizedBox(height: 10),
+              ItemBuilder.buildShadowIconButton(
+                context: context,
+                icon: const Icon(Icons.arrow_upward_rounded),
+                onTap: () {
+                  scrollToTop();
+                },
+              ),
+            ],
+          )
+        : emptyWidget;
   }
 
   initTab() {

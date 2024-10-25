@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/user_api.dart';
 import 'package:loftify/Models/account_response.dart';
-import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Screens/Info/collection_screen.dart';
 import 'package:loftify/Screens/Info/dress_screen.dart';
 import 'package:loftify/Screens/Info/favorite_folder_list_screen.dart';
@@ -136,7 +135,7 @@ class _MineScreenState extends State<MineScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: MyTheme.getBackground(context),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: ResponsiveUtil.isLandscape()
           ? appProvider.token.isNotEmpty
               ? ItemBuilder.buildDesktopAppBar(
@@ -200,7 +199,7 @@ class _MineScreenState extends State<MineScreen>
               child: ListView(
                 cacheExtent: 9999,
                 children: [
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 20),
                   _buildUserCard(),
                   if (blogInfo != null) ..._buildContent(),
                   // if (blogInfo != null) ..._buildMessage(),

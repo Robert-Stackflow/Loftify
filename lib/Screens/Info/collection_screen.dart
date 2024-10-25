@@ -51,6 +51,7 @@ class _CollectionScreenState extends State<CollectionScreen>
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
+  InitPhase _initPhase = InitPhase.haveNotConnected;
 
   @override
   void initState() {
@@ -61,9 +62,7 @@ class _CollectionScreenState extends State<CollectionScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     super.initState();
-    if (widget.infoMode != InfoMode.me) {
-      _onRefresh();
-    }
+    _onRefresh();
   }
 
   _fetchGrain({bool refresh = false}) async {
@@ -71,6 +70,10 @@ class _CollectionScreenState extends State<CollectionScreen>
     if (refresh) _noMore = false;
     _loading = true;
     int offset = refresh ? 0 : _collectionList.length;
+    if (_initPhase != InitPhase.successful) {
+      _initPhase = InitPhase.connecting;
+      setState(() {});
+    }
     return await HiveUtil.getUserInfo().then((blogInfo) async {
       String blogName = widget.infoMode == InfoMode.me
           ? blogInfo!.blogName
@@ -94,6 +97,7 @@ class _CollectionScreenState extends State<CollectionScreen>
             }
             _collectionList.addAll(tmp);
             if (mounted) setState(() {});
+            _initPhase = InitPhase.successful;
             if (((widget.collectionCount != null &&
                         _collectionList.length >= widget.collectionCount!) ||
                     tmp.isEmpty) &&
@@ -105,6 +109,7 @@ class _CollectionScreenState extends State<CollectionScreen>
             }
           }
         } catch (e, t) {
+          _initPhase = InitPhase.failed;
           ILogger.error("Failed to load collection list", e, t);
           if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
@@ -132,20 +137,40 @@ class _CollectionScreenState extends State<CollectionScreen>
           ? MyTheme.getBackground(context)
           : Colors.transparent,
       appBar: widget.infoMode == InfoMode.me ? _buildAppBar() : null,
-      body: EasyRefresh.builder(
-        refreshOnStart: true,
-        controller: _refreshController,
-        onRefresh: _onRefresh,
-        onLoad: _onLoad,
-        triggerAxis: Axis.vertical,
-        childBuilder: (context, physics) {
-          return _buildBody(physics);
-        },
-      ),
+      body: _buildBody(),
     );
   }
 
-  Widget _buildBody(ScrollPhysics physics) {
+  _buildBody() {
+    switch (_initPhase) {
+      case InitPhase.connecting:
+        return ItemBuilder.buildLoadingDialog(context,
+            background: Colors.transparent);
+      case InitPhase.failed:
+        return ItemBuilder.buildError(
+          context: context,
+          onTap: _onRefresh,
+        );
+      case InitPhase.successful:
+        return EasyRefresh.builder(
+          refreshOnStart: true,
+          controller: _refreshController,
+          onRefresh: _onRefresh,
+          onLoad: _onLoad,
+          triggerAxis: Axis.vertical,
+          childBuilder: (context, physics) {
+            return _collectionList.isNotEmpty
+                ? _buildMainBody(physics)
+                : ItemBuilder.buildEmptyPlaceholder(
+                    context: context, text: "暂无合集");
+          },
+        );
+      default:
+        return Container();
+    }
+  }
+
+  Widget _buildMainBody(ScrollPhysics physics) {
     return ItemBuilder.buildLoadMoreNotification(
       noMore: _noMore,
       onLoad: _onLoad,

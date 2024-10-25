@@ -14,21 +14,15 @@ import '../generated/l10n.dart';
 import 'enums.dart';
 import 'hive_util.dart';
 
-GlobalKey<NavigatorState> desktopNavigatorKey = GlobalKey<NavigatorState>();
-
 GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>();
 
-NavigatorState? get desktopNavigatorState => desktopNavigatorKey.currentState;
-
 NavigatorState? get globalNavigatorState => globalNavigatorKey.currentState;
+
+BuildContext get rootContext => globalNavigatorState!.context;
 
 GlobalKey<PanelScreenState> panelScreenKey = GlobalKey<PanelScreenState>();
 
 PanelScreenState? get panelScreenState => panelScreenKey.currentState;
-
-GlobalKey<NavigatorState> panelNavigatorKey = GlobalKey<NavigatorState>();
-
-NavigatorState? get panelNavigatorState => panelNavigatorKey.currentState;
 
 GlobalKey<SearchScreenState> searchScreenKey = GlobalKey<SearchScreenState>();
 
@@ -43,11 +37,6 @@ GlobalKey<DialogWrapperWidgetState> dialogNavigatorKey =
 
 DialogWrapperWidgetState? get dialogNavigatorState =>
     dialogNavigatorKey.currentState;
-
-BuildContext get rootContext => globalNavigatorState!.context;
-
-bool get canPopByKey =>
-    desktopNavigatorState != null && desktopNavigatorState!.canPop();
 
 RouteObserver<PageRoute> routeObserver = RouteObserver();
 
@@ -90,9 +79,9 @@ class AppProvider with ChangeNotifier {
 
   bool _showNavigator = false;
 
-  bool get showNavigator => _showNavigator;
+  bool get showPanelNavigator => _showNavigator;
 
-  set showNavigator(bool value) {
+  set showPanelNavigator(bool value) {
     _showNavigator = value;
     notifyListeners();
   }
@@ -134,19 +123,6 @@ class AppProvider with ChangeNotifier {
     HiveUtil.setDarkTheme(index);
     _darkTheme = HiveUtil.getDarkTheme();
     notifyListeners();
-  }
-
-  List<SortableItem> _navItems = HiveUtil.getSortableItems(
-      HiveUtil.navItemsKey, SortableItemList.defaultNavItems);
-
-  List<SortableItem> get navItems => _navItems;
-
-  set navItems(List<SortableItem> value) {
-    if (value != _navItems) {
-      _navItems = value;
-      notifyListeners();
-      HiveUtil.setSortableItems(HiveUtil.navItemsKey, value);
-    }
   }
 
   Locale? _locale = HiveUtil.getLocale();

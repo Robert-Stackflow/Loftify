@@ -51,6 +51,7 @@ class _ShareScreenState extends State<ShareScreen>
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
+  InitPhase _initPhase = InitPhase.haveNotConnected;
 
   @override
   void initState() {
@@ -61,9 +62,7 @@ class _ShareScreenState extends State<ShareScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     super.initState();
-    if (widget.infoMode != InfoMode.me) {
-      _onRefresh();
-    }
+    _onRefresh();
   }
 
   _fetchShare({bool refresh = false}) async {
@@ -71,6 +70,10 @@ class _ShareScreenState extends State<ShareScreen>
     if (refresh) _noMore = false;
     _loading = true;
     int offset = refresh ? 0 : _shareList.length;
+    if (_initPhase != InitPhase.successful) {
+      _initPhase = InitPhase.connecting;
+      setState(() {});
+    }
     return await HiveUtil.getUserInfo().then((blogInfo) async {
       String blogName = widget.infoMode == InfoMode.me
           ? blogInfo!.blogName
@@ -113,6 +116,7 @@ class _ShareScreenState extends State<ShareScreen>
               }
             }
             if (mounted) setState(() {});
+            _initPhase = InitPhase.successful;
             if (_shareList.length >= _total && !refresh) {
               _noMore = true;
               return IndicatorResult.noMore;
@@ -121,6 +125,7 @@ class _ShareScreenState extends State<ShareScreen>
             }
           }
         } catch (e, t) {
+          _initPhase = InitPhase.failed;
           ILogger.error("Failed to load share list", e, t);
           if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
@@ -148,18 +153,40 @@ class _ShareScreenState extends State<ShareScreen>
           ? MyTheme.getBackground(context)
           : Colors.transparent,
       appBar: widget.infoMode == InfoMode.me ? _buildAppBar() : null,
-      body: EasyRefresh(
-        refreshOnStart: true,
-        controller: _refreshController,
-        onRefresh: _onRefresh,
-        onLoad: _onLoad,
-        triggerAxis: Axis.vertical,
-        child: _buildNineGridGroup(),
-      ),
+      body: _buildBody(),
     );
   }
 
-  Widget _buildNineGridGroup() {
+  _buildBody() {
+    switch (_initPhase) {
+      case InitPhase.connecting:
+        return ItemBuilder.buildLoadingDialog(context,
+            background: Colors.transparent);
+      case InitPhase.failed:
+        return ItemBuilder.buildError(
+          context: context,
+          onTap: _onRefresh,
+        );
+      case InitPhase.successful:
+        return EasyRefresh.builder(
+          refreshOnStart: true,
+          controller: _refreshController,
+          onRefresh: _onRefresh,
+          onLoad: _onLoad,
+          triggerAxis: Axis.vertical,
+          childBuilder: (context, physics) {
+            return _archiveDataList.isNotEmpty
+                ? _buildNineGridGroup(physics)
+                : ItemBuilder.buildEmptyPlaceholder(
+                    context: context, text: "暂无推荐");
+          },
+        );
+      default:
+        return Container();
+    }
+  }
+
+  Widget _buildNineGridGroup(ScrollPhysics physics) {
     List<Widget> widgets = [];
     int startIndex = 0;
     for (var e in _archiveDataList) {
@@ -184,6 +211,7 @@ class _ShareScreenState extends State<ShareScreen>
       noMore: _noMore,
       onLoad: _onLoad,
       child: ListView(
+        physics: physics,
         padding: const EdgeInsets.only(bottom: 20),
         children: widgets,
       ),
@@ -211,7 +239,7 @@ class _ShareScreenState extends State<ShareScreen>
     return ItemBuilder.buildDesktopAppBar(
       context: context,
       showBack: true,
-      title:"我的推荐",
+      title: "我的推荐",
       actions: [
         ItemBuilder.buildIconButton(
             context: context,
@@ -224,11 +252,11 @@ class _ShareScreenState extends State<ShareScreen>
                   const [
                     Tuple2("清空无效内容", 1),
                   ],
-                  (idx) {
+                  (idx) async {
                     Navigator.pop(sheetContext);
                     if (idx == 0) {
                       UserApi.deleteInvalidLike(
-                              blogId: HiveUtil.getInt(HiveUtil.userIdKey))
+                              blogId: await HiveUtil.getUserId())
                           .then((value) {
                         if (value['meta']['status'] != 200) {
                           IToast.showTop(

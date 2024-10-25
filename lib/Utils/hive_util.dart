@@ -216,6 +216,19 @@ class HiveUtil {
     return Future(() => null);
   }
 
+  static Future<void> setUserId(int userId) async {
+    await HiveUtil.put(HiveUtil.userIdKey, userId);
+  }
+
+  static Future<int> getUserId() async {
+    try {
+      return HiveUtil.getInt(HiveUtil.userIdKey);
+    } catch (e) {
+      FullBlogInfo? blogInfo = await HiveUtil.getUserInfo();
+      return blogInfo?.blogId ?? 0;
+    }
+  }
+
   static Future<FullBlogInfo?> getUserInfo({
     Function()? onEmpty,
   }) async {

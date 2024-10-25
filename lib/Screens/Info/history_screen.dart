@@ -9,6 +9,7 @@ import 'package:loftify/Utils/hive_util.dart';
 import 'package:tuple/tuple.dart';
 
 import '../../Models/post_detail_response.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/utils.dart';
@@ -38,6 +39,7 @@ class _HistoryScreenState extends State<HistoryScreen>
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
+  InitPhase _initPhase = InitPhase.haveNotConnected;
 
   @override
   void initState() {
@@ -48,6 +50,7 @@ class _HistoryScreenState extends State<HistoryScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     super.initState();
+    _onRefresh();
   }
 
   _fetchHistory({bool refresh = false}) async {
@@ -55,6 +58,10 @@ class _HistoryScreenState extends State<HistoryScreen>
     if (refresh) _noMore = false;
     _loading = true;
     int offset = refresh ? 0 : _histories.length;
+    if (_initPhase != InitPhase.successful) {
+      _initPhase = InitPhase.connecting;
+      setState(() {});
+    }
     return await HiveUtil.getUserInfo().then((blogInfo) async {
       String domain = Utils.getBlogDomain(blogInfo?.blogName);
       return await UserApi.getHistoryList(blogDomain: domain, offset: offset)
@@ -81,6 +88,7 @@ class _HistoryScreenState extends State<HistoryScreen>
               }
             }
             if (mounted) setState(() {});
+            _initPhase = InitPhase.successful;
             if (_histories.length >= _total && !refresh) {
               _noMore = true;
               return IndicatorResult.noMore;
@@ -89,6 +97,7 @@ class _HistoryScreenState extends State<HistoryScreen>
             }
           }
         } catch (e, t) {
+          _initPhase = InitPhase.failed;
           ILogger.error("Failed to load history", e, t);
           if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
@@ -114,18 +123,40 @@ class _HistoryScreenState extends State<HistoryScreen>
     return Scaffold(
       backgroundColor: MyTheme.getBackground(context),
       appBar: _buildAppBar(),
-      body: EasyRefresh(
-        refreshOnStart: true,
-        controller: _refreshController,
-        onRefresh: _onRefresh,
-        onLoad: _onLoad,
-        triggerAxis: Axis.vertical,
-        child: _buildNineGridGroup(),
-      ),
+      body: _buildBody(),
     );
   }
 
-  Widget _buildNineGridGroup() {
+  _buildBody() {
+    switch (_initPhase) {
+      case InitPhase.connecting:
+        return ItemBuilder.buildLoadingDialog(context,
+            background: Colors.transparent);
+      case InitPhase.failed:
+        return ItemBuilder.buildError(
+          context: context,
+          onTap: _onRefresh,
+        );
+      case InitPhase.successful:
+        return EasyRefresh.builder(
+          refreshOnStart: true,
+          controller: _refreshController,
+          onRefresh: _onRefresh,
+          onLoad: _onLoad,
+          triggerAxis: Axis.vertical,
+          childBuilder: (context, physics) {
+            return _archiveDataList.isNotEmpty
+                ? _buildNineGridGroup(physics)
+                : ItemBuilder.buildEmptyPlaceholder(
+                    context: context, text: "暂无历史");
+          },
+        );
+      default:
+        return Container();
+    }
+  }
+
+  Widget _buildNineGridGroup(ScrollPhysics physics) {
     List<Widget> widgets = [];
     int startIndex = 0;
     for (var e in _archiveDataList) {
@@ -150,6 +181,7 @@ class _HistoryScreenState extends State<HistoryScreen>
       noMore: _noMore,
       onLoad: _onLoad,
       child: ListView(
+        physics: physics,
         padding: const EdgeInsets.only(bottom: 20),
         children: widgets,
       ),
@@ -194,7 +226,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                     const Tuple2("清空无效内容", 1),
                     Tuple2(_recordHistory == 1 ? "关闭我的足迹" : "打开我的足迹", 2),
                   ],
-                  (idx) {
+                  (idx) async {
                     Navigator.pop(sheetContext);
                     if (idx == 0) {
                       UserApi.clearHistory().then((value) {
@@ -211,7 +243,7 @@ class _HistoryScreenState extends State<HistoryScreen>
                       });
                     } else if (idx == 1) {
                       UserApi.deleteInvalidHistory(
-                              blogId: HiveUtil.getInt(HiveUtil.userIdKey))
+                              blogId: await HiveUtil.getUserId())
                           .then((value) {
                         if (value['meta']['status'] != 200) {
                           IToast.showTop(

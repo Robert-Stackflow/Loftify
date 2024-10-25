@@ -150,10 +150,12 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: ItemBuilder.buildDesktopAppBar(
-          showBack: true,
-          transparent: true,
-          context: context,
-          title: S.current.lofterBasicSetting),
+        showBack: true,
+        transparent: true,
+        context: context,
+        title: S.current.lofterBasicSetting,
+        background: Theme.of(context).scaffoldBackgroundColor,
+      ),
       body: EasyRefresh.builder(
         controller: _refreshController,
         refreshOnStart: true,

@@ -61,6 +61,7 @@ class _EggScreenState extends State<EggScreen> with TickerProviderStateMixin {
             transparent: true,
             context: context,
             showBack: true,
+            background: Theme.of(context).scaffoldBackgroundColor,
           ),
           body: EasyRefresh(
             child: ListView(

@@ -89,7 +89,6 @@ class AssetUtil {
   static const String thumbDarkIllust = "assets/illust/thumb_dark.png";
   static const String thumbLightIllust = "assets/illust/thumb_light.png";
 
-  static const String emptyMess = "assets/mess/empty.png";
   static const String tagIconBgMess = "assets/mess/tag_icon_bg.png";
   static const String tagRowBgMess = "assets/mess/tag_row_bg.png";
   static const String tagRowBgDarkMess = "assets/mess/tag_row_bg_dark.png";

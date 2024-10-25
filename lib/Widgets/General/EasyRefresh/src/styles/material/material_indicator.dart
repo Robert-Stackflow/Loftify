@@ -159,8 +159,8 @@ class _MaterialIndicatorState extends State<_MaterialIndicator> {
                     : 1,
             child: Container(
               decoration: BoxDecoration(
-                border: Border.all(
-                    width: 1, color: Theme.of(context).dividerColor),
+                border:
+                    Border.all(width: 1, color: Theme.of(context).dividerColor),
                 borderRadius: BorderRadius.circular(50),
               ),
               child: RefreshProgressIndicator(

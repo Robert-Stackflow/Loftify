@@ -23,7 +23,8 @@ class _OperationSettingScreenState extends State<OperationSettingScreen>
         appBar: ItemBuilder.buildDesktopAppBar(
             showBack: true,
             transparent: true,
-            title: S.current.operationSetting, context: context),
+            title: S.current.operationSetting,
+            context: context),
         body: Container(
           margin: const EdgeInsets.symmetric(horizontal: 10),
           child: ScrollConfiguration(

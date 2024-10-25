@@ -70,14 +70,13 @@ class UserDetailScreenState extends State<UserDetailScreen>
 
   _fetchData() {
     UserApi.getUserDetail(blogId: widget.blogId, blogName: widget.blogName)
-        .then((value) {
+        .then((value) async {
       try {
         if (value['meta']['status'] != 200) {
           IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
         } else {
           _fullBlogData = TotalBlogData.fromJson(value['response']);
-          isMe = _fullBlogData!.blogInfo.blogId ==
-              HiveUtil.getInt(HiveUtil.userIdKey);
+          isMe = _fullBlogData!.blogInfo.blogId == await HiveUtil.getUserId();
           initTab();
           updateFollowStatus();
           _fetchShowCases();
@@ -173,6 +172,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                 _tabController,
                 tabList,
                 width: MediaQuery.sizeOf(context).width,
+                forceUnscrollable: !ResponsiveUtil.isLandscape(),
               ),
             ),
           ),
@@ -200,6 +200,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
               tabList,
               width: MediaQuery.sizeOf(context).width,
               showBorder: true,
+              forceUnscrollable: !ResponsiveUtil.isLandscape(),
             ),
           ),
         ),

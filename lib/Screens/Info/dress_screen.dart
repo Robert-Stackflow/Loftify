@@ -221,6 +221,7 @@ class _DressScreenState extends State<DressScreen>
     return ItemBuilder.buildDesktopAppBar(
       context: context,
       showBack: true,
+      centerInMobile: Utils.isNotEmpty(widget.tag),
       titleWidget: Utils.isNotEmpty(widget.tag)
           ? ItemBuilder.buildClickItem(
               ItemBuilder.buildTagItem(

@@ -10,7 +10,7 @@ mixin RefreshMixin {
   ScrollController? getScrollController();
 }
 
-mixin BottomNavgationMixin{
+mixin BottomNavgationMixin {
   FutureOr onTapBottomNavigation();
 }
 

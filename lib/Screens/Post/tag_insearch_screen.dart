@@ -269,6 +269,7 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
     return ItemBuilder.buildDesktopAppBar(
       context: context,
       showBack: true,
+      centerInMobile: true,
       titleWidget: ItemBuilder.buildClickItem(
         ItemBuilder.buildTagItem(
           context,

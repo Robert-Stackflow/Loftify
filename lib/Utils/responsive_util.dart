@@ -88,7 +88,6 @@ class ResponsiveUtil {
 
   static Future<void> returnToMainScreen(BuildContext context) async {
     if (ResponsiveUtil.isDesktop()) {
-      desktopNavigatorKey = GlobalKey<NavigatorState>();
       globalNavigatorState?.pushAndRemoveUntil(
         RouteUtil.getFadeRoute(const MainScreen(), duration: Duration.zero),
         (route) => false,

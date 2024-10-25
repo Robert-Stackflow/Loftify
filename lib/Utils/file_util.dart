@@ -29,7 +29,6 @@ import '../Widgets/Item/item_builder.dart';
 import '../generated/l10n.dart';
 import 'hive_util.dart';
 import 'ilogger.dart';
-import 'iprint.dart';
 import 'itoast.dart';
 import 'notification_util.dart';
 
@@ -365,8 +364,10 @@ class FileUtil {
     bool showToast = true,
     String? message,
   }) async {
-    CachedNetworkImage image =
-        ItemBuilder.buildCachedImage(imageUrl: imageUrl, context: context);
+    CachedNetworkImage image = CachedNetworkImage(
+      imageUrl: imageUrl,
+      filterQuality: FilterQuality.high,
+    );
     BaseCacheManager manager = image.cacheManager ?? DefaultCacheManager();
     Map<String, String> headers = image.httpHeaders ?? {};
     File file = await manager.getSingleFile(
@@ -389,8 +390,10 @@ class FileUtil {
     String imageUrl, {
     bool showToast = true,
   }) async {
-    CachedNetworkImage image =
-        ItemBuilder.buildCachedImage(imageUrl: imageUrl, context: context);
+    CachedNetworkImage image = CachedNetworkImage(
+      imageUrl: imageUrl,
+      filterQuality: FilterQuality.high,
+    );
     BaseCacheManager manager = image.cacheManager ?? DefaultCacheManager();
     Map<String, String> headers = image.httpHeaders ?? {};
     return await manager.getSingleFile(
@@ -414,8 +417,10 @@ class FileUtil {
     String? fileName,
   }) async {
     try {
-      CachedNetworkImage image =
-          ItemBuilder.buildCachedImage(imageUrl: imageUrl, context: context);
+      CachedNetworkImage image = CachedNetworkImage(
+        imageUrl: imageUrl,
+        filterQuality: FilterQuality.high,
+      );
       BaseCacheManager manager = image.cacheManager ?? DefaultCacheManager();
       Map<String, String> headers = image.httpHeaders ?? {};
       File file = await manager.getSingleFile(

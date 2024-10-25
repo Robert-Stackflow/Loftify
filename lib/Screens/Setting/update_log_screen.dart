@@ -71,6 +71,7 @@ class _UpdateLogScreenState extends State<UpdateLogScreen>
         transparent: true,
         title: S.current.changeLog,
         context: context,
+        background: Theme.of(context).scaffoldBackgroundColor,
       ),
       body: EasyRefresh(
         controller: _refreshController,

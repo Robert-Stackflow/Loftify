@@ -32,6 +32,7 @@ class _SelectThemeScreenState extends State<SelectThemeScreen>
           title: S.current.selectTheme,
           transparent: true,
           context: context,
+          background: Theme.of(context).scaffoldBackgroundColor,
         ),
         body: EasyRefresh(
           child: ListView(

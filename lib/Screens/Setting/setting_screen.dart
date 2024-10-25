@@ -42,6 +42,7 @@ class _SettingScreenState extends State<SettingScreen>
           transparent: true,
           title: S.current.setting,
           context: context,
+          background: Theme.of(context).scaffoldBackgroundColor,
         ),
         body: EasyRefresh(
           child: ListView(

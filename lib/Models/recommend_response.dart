@@ -957,7 +957,7 @@ class VideoInfo {
       imgWidth: json['imgWidth'] ?? json['img_width'] ?? "",
       originUrl: json['originUrl'] ?? "",
       size: Utils.parseToInt(json['size']),
-      type: Utils.parseToInt(json['type']).toString(),
+      type: json['type'],
       vid: Utils.parseToInt(json['vid']),
       videoFirstImg: json['videoFirstImg'] ?? json['video_first_img'] ?? "",
       videoImgUrl: json['videoImgUrl'] ?? json['video_img_url'] ?? "",

@@ -1,13 +1,12 @@
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Widgets/Dialog/dialog_builder.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
 
 import '../../Resources/fonts.dart';
-import '../../Utils/hive_util.dart';
 import '../../Utils/responsive_util.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
@@ -33,10 +32,12 @@ class _SelectFontScreenState extends State<SelectFontScreen>
       color: Colors.transparent,
       child: Scaffold(
         appBar: ItemBuilder.buildDesktopAppBar(
-            showBack: true,
-            transparent: true,
-            title: S.current.chooseFontFamily,
-            context: context),
+          showBack: true,
+          transparent: true,
+          title: S.current.chooseFontFamily,
+          context: context,
+          background: Theme.of(context).scaffoldBackgroundColor,
+        ),
         body: EasyRefresh(
           child: ListView(
             physics: const BouncingScrollPhysics(),

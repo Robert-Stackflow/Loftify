@@ -648,7 +648,6 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
         },
         width: MediaQuery.sizeOf(context).width,
         background: MyTheme.getBackground(context),
-        showBorder: true,
       ),
     );
   }

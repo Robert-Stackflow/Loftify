@@ -64,7 +64,7 @@ class _SupporterScreenState extends State<SupporterScreen>
     _loading = true;
     return await HiveUtil.getUserInfo().then((blogInfo) async {
       int blogId = widget.infoMode == InfoMode.me
-          ? HiveUtil.getInt(HiveUtil.userIdKey)
+          ? await HiveUtil.getUserId()
           : widget.blogId!;
       return await UserApi.getSupporterList(
         blogId: blogId,

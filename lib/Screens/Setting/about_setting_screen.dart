@@ -100,6 +100,7 @@ class _AboutSettingScreenState extends State<AboutSettingScreen>
         transparent: true,
         showBack: true,
         title: S.current.about,
+        background: Theme.of(context).scaffoldBackgroundColor,
       ),
       body: EasyRefresh(
         child: ListView(

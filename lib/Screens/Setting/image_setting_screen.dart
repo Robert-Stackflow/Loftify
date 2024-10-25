@@ -82,6 +82,7 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
           title: S.current.imageSetting,
           transparent: true,
           context: context,
+          background: Theme.of(context).scaffoldBackgroundColor,
         ),
         body: EasyRefresh(
           child: ListView(

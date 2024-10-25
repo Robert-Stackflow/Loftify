@@ -64,6 +64,10 @@ class PanelScreenState extends State<PanelScreen>
   final ScrollToHideController _scrollToHideController =
       ScrollToHideController();
 
+  GlobalKey<NavigatorState> panelNavigatorKey = GlobalKey<NavigatorState>();
+
+  NavigatorState? get panelNavigatorState => panelNavigatorKey.currentState;
+
   @override
   void initState() {
     super.initState();
@@ -83,17 +87,17 @@ class PanelScreenState extends State<PanelScreen>
     while (panelNavigatorState?.canPop() ?? false) {
       panelNavigatorState?.pop();
     }
-    appProvider.showNavigator = false;
+    appProvider.showPanelNavigator = false;
     _pageController =
         PageController(initialPage: appProvider.sidebarChoice.index);
   }
 
   pushPage(Widget page) {
-    if (ResponsiveUtil.isMobile()) {
-      RouteUtil.pushCupertinoRoute(rootContext, page);
-    } else {
-      appProvider.showNavigator = true;
+    if (ResponsiveUtil.isLandscape()) {
+      appProvider.showPanelNavigator = true;
       panelNavigatorState?.push(RouteUtil.getFadeRoute(page));
+    } else {
+      RouteUtil.pushCupertinoRoute(rootContext, page);
     }
   }
 
@@ -102,10 +106,10 @@ class PanelScreenState extends State<PanelScreen>
       if (panelNavigatorState?.canPop() ?? false) {
         panelNavigatorState?.pop();
         if (!(panelNavigatorState?.canPop() ?? false)) {
-          appProvider.showNavigator = false;
+          appProvider.showPanelNavigator = false;
         }
       } else {
-        appProvider.showNavigator = false;
+        appProvider.showPanelNavigator = false;
       }
       _pageController =
           PageController(initialPage: appProvider.sidebarChoice.index);
@@ -191,10 +195,9 @@ class PanelScreenState extends State<PanelScreen>
               ),
             ),
           Selector<AppProvider, bool>(
-            selector: (context, provider) => provider.showNavigator,
-            builder: (context, value, child) => SizedBox(
-              width: value ? double.infinity : 0,
-              height: value ? double.infinity : 0,
+            selector: (context, provider) => provider.showPanelNavigator,
+            builder: (context, value, child) => Offstage(
+              offstage: !value,
               child: Navigator(
                 key: panelNavigatorKey,
                 onGenerateRoute: (settings) {

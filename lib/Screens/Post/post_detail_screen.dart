@@ -93,7 +93,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   int _currentIndex = 1;
   final List<PostListItem> _recommendPosts = [];
   int _currentPage = 0;
-  final int _myBlogId = HiveUtil.getInt(HiveUtil.userIdKey);
+  int _myBlogId = 0;
   bool _loadingInfo = false;
   bool _loadingRecommend = false;
   int blogId = 0;
@@ -176,13 +176,14 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         duration: const Duration(milliseconds: 2500), vsync: this);
   }
 
-  initData() {
+  initData() async {
     _inited = InitPhase.connecting;
     setState(() {});
     _initParams();
     _fetchPostDetail();
     _fetchRecommendPosts();
     setState(() {});
+    _myBlogId = await HiveUtil.getUserId();
   }
 
   _initParams() {
@@ -230,8 +231,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     }
   }
 
-  _uploadHistory() {
-    int userId = HiveUtil.getInt(HiveUtil.userIdKey);
+  _uploadHistory() async {
+    int userId = await HiveUtil.getUserId();
     PostApi.uploadHistory(
       postId: postId,
       blogId: blogId,
@@ -877,8 +878,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         Container(
           alignment: Alignment.center,
           margin: const EdgeInsets.symmetric(vertical: 24),
-          child:
-              ItemBuilder.buildEmptyPlaceholder(context: context, text: "暂无评论"),
+          child: ItemBuilder.buildEmptyPlaceholder(
+              context: context, text: "暂无评论", topPadding: 0),
         ),
       if (totalHotOrNewComments > 0)
         Center(

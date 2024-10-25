@@ -43,6 +43,7 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
         transparent: true,
         title: "文件命名格式",
         context: context,
+        background: Theme.of(context).scaffoldBackgroundColor,
       ),
       body: EasyRefresh(
         child: ScrollConfiguration(

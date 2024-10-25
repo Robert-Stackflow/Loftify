@@ -53,6 +53,7 @@ class _LikeScreenState extends State<LikeScreen>
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
+  InitPhase _initPhase = InitPhase.haveNotConnected;
 
   @override
   void initState() {
@@ -63,9 +64,7 @@ class _LikeScreenState extends State<LikeScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     super.initState();
-    if (widget.infoMode != InfoMode.me) {
-      _onRefresh();
-    }
+    _onRefresh();
   }
 
   _fetchLike({bool refresh = false}) async {
@@ -73,6 +72,10 @@ class _LikeScreenState extends State<LikeScreen>
     if (refresh) _noMore = false;
     _loading = true;
     int offset = refresh ? 0 : _likeList.length;
+    if (_initPhase != InitPhase.successful) {
+      _initPhase = InitPhase.connecting;
+      setState(() {});
+    }
     return await HiveUtil.getUserInfo().then((blogInfo) async {
       String blogName = widget.infoMode == InfoMode.me
           ? blogInfo!.blogName
@@ -118,6 +121,7 @@ class _LikeScreenState extends State<LikeScreen>
               }
             }
             if (mounted) setState(() {});
+            _initPhase = InitPhase.successful;
             if (_likeList.length >= _total && !refresh) {
               _noMore = true;
               return IndicatorResult.noMore;
@@ -126,6 +130,7 @@ class _LikeScreenState extends State<LikeScreen>
             }
           }
         } catch (e, t) {
+          _initPhase = InitPhase.failed;
           ILogger.error("Failed to load like list", e, t);
           if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
@@ -153,17 +158,37 @@ class _LikeScreenState extends State<LikeScreen>
           ? MyTheme.getBackground(context)
           : Colors.transparent,
       appBar: widget.infoMode == InfoMode.me ? _buildAppBar() : null,
-      body: EasyRefresh.builder(
-        refreshOnStart: true,
-        controller: _refreshController,
-        onRefresh: _onRefresh,
-        onLoad: _onLoad,
-        triggerAxis: Axis.vertical,
-        childBuilder: (context, physics) {
-          return _buildNineGridGroup(physics);
-        },
-      ),
+      body: _buildBody(),
     );
+  }
+
+  _buildBody() {
+    switch (_initPhase) {
+      case InitPhase.connecting:
+        return ItemBuilder.buildLoadingDialog(context,
+            background: Colors.transparent);
+      case InitPhase.failed:
+        return ItemBuilder.buildError(
+          context: context,
+          onTap: _onRefresh,
+        );
+      case InitPhase.successful:
+        return EasyRefresh.builder(
+          refreshOnStart: true,
+          controller: _refreshController,
+          onRefresh: _onRefresh,
+          onLoad: _onLoad,
+          triggerAxis: Axis.vertical,
+          childBuilder: (context, physics) {
+            return _archiveDataList.isNotEmpty
+                ? _buildNineGridGroup(physics)
+                : ItemBuilder.buildEmptyPlaceholder(
+                    context: context, text: "暂无喜欢");
+          },
+        );
+      default:
+        return Container();
+    }
   }
 
   Widget _buildNineGridGroup(ScrollPhysics physics) {
@@ -232,11 +257,11 @@ class _LikeScreenState extends State<LikeScreen>
                   const [
                     Tuple2("清空无效内容", 1),
                   ],
-                  (idx) {
+                  (idx) async {
                     Navigator.pop(sheetContext);
                     if (idx == 1) {
                       UserApi.deleteInvalidLike(
-                              blogId: HiveUtil.getInt(HiveUtil.userIdKey))
+                              blogId: await HiveUtil.getUserId())
                           .then((value) {
                         if (value['meta']['status'] != 200) {
                           IToast.showTop(

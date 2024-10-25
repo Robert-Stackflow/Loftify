@@ -51,20 +51,6 @@ class RouteUtil {
     panelScreenState?.pushPage(page);
   }
 
-  static pushDesktopFadeRoute(
-    Widget page, {
-    bool removeUtil = false,
-  }) async {
-    if (removeUtil) {
-      return await panelNavigatorState?.pushAndRemoveUntil(
-        getFadeRoute(page),
-        (route) => false,
-      );
-    } else {
-      return await panelNavigatorState?.push(getFadeRoute(page));
-    }
-  }
-
   static getFadeRoute(Widget page, {Duration? duration}) {
     return PageRouteBuilder(
       transitionDuration: duration ?? const Duration(milliseconds: 300),

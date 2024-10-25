@@ -28,7 +28,6 @@ import '../Utils/hive_util.dart';
 import '../Utils/ilogger.dart';
 import '../Utils/itoast.dart';
 import '../Utils/lottie_util.dart';
-import '../Utils/request_util.dart';
 import '../Utils/route_util.dart';
 import '../Utils/utils.dart';
 import '../Widgets/BottomSheet/bottom_sheet_builder.dart';
@@ -37,7 +36,6 @@ import '../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../Widgets/General/LottieCupertinoRefresh/lottie_cupertino_refresh.dart';
 import '../Widgets/Scaffold/my_scaffold.dart';
 import '../Widgets/Window/window_button.dart';
-import '../generated/l10n.dart';
 import 'Info/dress_screen.dart';
 import 'Info/system_notice_screen.dart';
 import 'Info/user_detail_screen.dart';
@@ -177,6 +175,8 @@ class MainScreenState extends State<MainScreen>
             AccountResponse accountResponse =
                 AccountResponse.fromJson(value['response']);
             await HiveUtil.setUserInfo(accountResponse.blogs[0].blogInfo);
+            await HiveUtil.put(
+                HiveUtil.userIdKey, accountResponse.blogs[0].blogInfo?.blogId);
             setState(() {
               blogInfo = accountResponse.blogs[0].blogInfo;
             });
@@ -319,7 +319,7 @@ class MainScreenState extends State<MainScreen>
     await hotKeyManager.register(
       hotKey,
       keyDownHandler: (hotKey) {
-        RouteUtil.pushDesktopFadeRoute(const SettingScreen());
+        RouteUtil.pushPanelCupertinoRoute(rootContext, const SettingScreen());
       },
     );
   }
@@ -451,7 +451,8 @@ class MainScreenState extends State<MainScreen>
             selector: (context, appProvider) => appProvider.sidebarChoice,
             builder: (context, sidebarChoice, child) =>
                 Selector<AppProvider, bool>(
-              selector: (context, appProvider) => !appProvider.showNavigator,
+              selector: (context, appProvider) =>
+                  !appProvider.showPanelNavigator,
               builder: (context, hideNavigator, child) => Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,

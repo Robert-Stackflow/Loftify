@@ -53,6 +53,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
         title: S.current.experimentSetting,
         context: context,
         showBack: true,
+        background: Theme.of(context).scaffoldBackgroundColor,
       ),
       body: EasyRefresh(
         child: ListView(

@@ -49,6 +49,7 @@ import '../Selectable/my_selection_toolbar.dart';
 import '../Selectable/selection_transformer.dart';
 import '../Window/window_button.dart';
 import '../Window/window_caption.dart';
+import 'my_cached_network_image.dart';
 
 enum TailingType { none, clear, password, icon, text, widget }
 
@@ -67,6 +68,7 @@ class ItemBuilder {
     Widget? bottom,
     double? bottomHeight,
     bool transparent = true,
+    Color? background,
     double? titleSpacing,
   }) {
     late PreferredSize topWidget;
@@ -94,10 +96,7 @@ class ItemBuilder {
                 if (ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
                 Center(
                   child: Row(
-                    mainAxisAlignment:
-                        ResponsiveUtil.isMobile() && centerInMobile
-                            ? MainAxisAlignment.center
-                            : MainAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       if (showBack)
                         ResponsiveUtil.isLandscape()
@@ -141,9 +140,6 @@ class ItemBuilder {
         preferredSize: const Size.fromHeight(56),
         child: Container(
           decoration: BoxDecoration(
-            color: transparent
-                ? Colors.transparent
-                : Theme.of(context).canvasColor,
             border: showBorder ?? false
                 ? Border(
                     bottom: BorderSide(
@@ -156,11 +152,13 @@ class ItemBuilder {
           child: ItemBuilder.buildAppBar(
             context: context,
             // transparent: transparent,
+            center: centerInMobile,
             leading: showBack ? Icons.arrow_back_rounded : null,
             onLeadingTap: onBackTap ?? () => panelScreenState?.popPage(),
-            backgroundColor: transparent
-                ? MyTheme.getBackground(context)
-                : Theme.of(context).canvasColor,
+            backgroundColor: background ??
+                (transparent
+                    ? MyTheme.getBackground(context)
+                    : Theme.of(context).canvasColor),
             leftSpacing: showBack ? 8 : 0,
             leadingTitleSpacing: showBack ? 5 : 0,
             actions: actions,
@@ -1551,21 +1549,53 @@ class ItemBuilder {
   static Widget buildEmptyPlaceholder({
     required BuildContext context,
     required String text,
-    double size = 50,
+    double size = 30,
+    bool showButton = false,
+    String? buttonText,
+    ScrollController? scrollController,
+    Function()? onTap,
+    ScrollPhysics? physics,
+    double topPadding = 50,
   }) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.max,
-      crossAxisAlignment: CrossAxisAlignment.center,
+    return ListView(
+      physics: physics,
+      shrinkWrap: true,
+      controller: scrollController,
       children: [
-        AssetUtil.load(
-          AssetUtil.emptyMess,
-          size: size,
-        ),
-        const SizedBox(height: 10),
-        Text(
-          text,
-          style: Theme.of(context).textTheme.labelLarge,
+        SizedBox(height: topPadding),
+        Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 10),
+                  Icon(
+                    Icons.inbox_rounded,
+                    size: size,
+                    color: Theme.of(context).textTheme.labelLarge?.color,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    text,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  if (showButton) const SizedBox(height: 10),
+                  if (showButton)
+                    ItemBuilder.buildRoundButton(
+                      context,
+                      text: buttonText,
+                      background: Theme.of(context).primaryColor,
+                      onTap: onTap,
+                    ),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -1913,7 +1943,7 @@ class ItemBuilder {
     );
   }
 
-  static CachedNetworkImage buildCachedImage({
+  static MyCachedNetworkImage buildCachedImage({
     required String imageUrl,
     required BuildContext context,
     BoxFit? fit,
@@ -1923,27 +1953,18 @@ class ItemBuilder {
     Color? placeholderBackground,
     double topPadding = 0,
     double bottomPadding = 0,
+    bool simpleError = false,
   }) {
-    return CachedNetworkImage(
+    return MyCachedNetworkImage(
       imageUrl: imageUrl,
       fit: fit,
       width: width,
+      simpleError: simpleError,
       height: height,
-      filterQuality: FilterQuality.high,
-      placeholder: showLoading
-          ? (context, url) => ItemBuilder.buildLoadingDialog(
-                context,
-                topPadding: topPadding,
-                bottomPadding: bottomPadding,
-                showText: false,
-                size: 40,
-                background: placeholderBackground,
-              )
-          : (context, url) => Container(
-                color: placeholderBackground ?? Theme.of(context).cardColor,
-                width: width,
-                height: height,
-              ),
+      placeholderBackground: placeholderBackground,
+      topPadding: topPadding,
+      bottomPadding: bottomPadding,
+      showLoading: showLoading,
     );
   }
 
@@ -2032,6 +2053,7 @@ class ItemBuilder {
                                   width: size,
                                   showLoading: showLoading,
                                   height: size,
+                                  simpleError: true,
                                 ),
                               ),
                             ),
@@ -2047,6 +2069,7 @@ class ItemBuilder {
                               topPadding: 0,
                               bottomPadding: 0,
                               height: size + avatarBoxDeltaSize,
+                              simpleError: true,
                             ),
                           ),
                         ],
@@ -2058,6 +2081,7 @@ class ItemBuilder {
                           width: size,
                           showLoading: showLoading,
                           height: size,
+                          simpleError: true,
                         ),
                       ),
               ),

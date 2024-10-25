@@ -51,6 +51,7 @@ class _GrainScreenState extends State<GrainScreen>
   int _offset = 0;
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
+  InitPhase _initPhase = InitPhase.haveNotConnected;
 
   @override
   void initState() {
@@ -61,9 +62,7 @@ class _GrainScreenState extends State<GrainScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     super.initState();
-    if (widget.infoMode != InfoMode.me) {
-      _onRefresh();
-    }
+    _onRefresh();
   }
 
   _fetchGrain({bool refresh = false}) async {
@@ -71,6 +70,10 @@ class _GrainScreenState extends State<GrainScreen>
     if (refresh) _noMore = false;
     _loading = true;
     int offset = refresh ? 0 : _grainList.length;
+    if (_initPhase != InitPhase.successful) {
+      _initPhase = InitPhase.connecting;
+      setState(() {});
+    }
     return await HiveUtil.getUserInfo().then((blogInfo) async {
       int blogId =
           widget.infoMode == InfoMode.me ? blogInfo!.blogId : widget.blogId!;
@@ -91,6 +94,7 @@ class _GrainScreenState extends State<GrainScreen>
               }
             }
             if (mounted) setState(() {});
+            _initPhase = InitPhase.successful;
             if ((t.isEmpty || _grainList.length > _total) && !refresh) {
               _noMore = true;
               return IndicatorResult.noMore;
@@ -99,6 +103,7 @@ class _GrainScreenState extends State<GrainScreen>
             }
           }
         } catch (e, t) {
+          _initPhase = InitPhase.failed;
           ILogger.error("Failed to load grain list", e, t);
           if (mounted) IToast.showTop("加载失败");
           return IndicatorResult.fail;
@@ -126,20 +131,40 @@ class _GrainScreenState extends State<GrainScreen>
           ? MyTheme.getBackground(context)
           : Colors.transparent,
       appBar: widget.infoMode == InfoMode.me ? _buildAppBar() : null,
-      body: EasyRefresh.builder(
-        refreshOnStart: true,
-        controller: _refreshController,
-        onRefresh: _onRefresh,
-        onLoad: _onLoad,
-        triggerAxis: Axis.vertical,
-        childBuilder: (context, physics) {
-          return _buildBody(physics);
-        },
-      ),
+      body: _buildBody(),
     );
   }
 
-  Widget _buildBody(ScrollPhysics physics) {
+  _buildBody() {
+    switch (_initPhase) {
+      case InitPhase.connecting:
+        return ItemBuilder.buildLoadingDialog(context,
+            background: Colors.transparent);
+      case InitPhase.failed:
+        return ItemBuilder.buildError(
+          context: context,
+          onTap: _onRefresh,
+        );
+      case InitPhase.successful:
+        return EasyRefresh.builder(
+          refreshOnStart: true,
+          controller: _refreshController,
+          onRefresh: _onRefresh,
+          onLoad: _onLoad,
+          triggerAxis: Axis.vertical,
+          childBuilder: (context, physics) {
+            return _grainList.isNotEmpty
+                ? _buildMainBody(physics)
+                : ItemBuilder.buildEmptyPlaceholder(
+                    context: context, text: "暂无粮单");
+          },
+        );
+      default:
+        return Container();
+    }
+  }
+
+  Widget _buildMainBody(ScrollPhysics physics) {
     return ItemBuilder.buildLoadMoreNotification(
       noMore: _noMore,
       onLoad: _onLoad,

@@ -73,6 +73,7 @@ class _TagCollectionGrainScreenState extends State<TagCollectionGrainScreen>
     return ItemBuilder.buildDesktopAppBar(
       context: context,
       showBack: true,
+      centerInMobile: true,
       titleWidget: ItemBuilder.buildClickItem(
         ItemBuilder.buildTagItem(
           context,
@@ -106,7 +107,6 @@ class _TagCollectionGrainScreenState extends State<TagCollectionGrainScreen>
         },
         width: MediaQuery.sizeOf(context).width,
         background: MyTheme.getBackground(context),
-        showBorder: true,
       ),
       actions: [
         Visibility(
