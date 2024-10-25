@@ -10,6 +10,7 @@ import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Utils/enums.dart';
 import '../../Utils/ilogger.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
@@ -107,6 +108,7 @@ class _TagCollectionGrainScreenState extends State<TagCollectionGrainScreen>
         },
         width: MediaQuery.sizeOf(context).width,
         background: MyTheme.getBackground(context),
+        showBorder: ResponsiveUtil.isLandscape(),
       ),
       actions: [
         Visibility(

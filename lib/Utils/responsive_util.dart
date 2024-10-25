@@ -9,6 +9,7 @@ import 'package:restart_app/restart_app.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../Screens/main_screen.dart';
+import '../Widgets/Item/item_builder.dart';
 import 'app_provider.dart';
 import 'ilogger.dart';
 
@@ -89,7 +90,7 @@ class ResponsiveUtil {
   static Future<void> returnToMainScreen(BuildContext context) async {
     if (ResponsiveUtil.isDesktop()) {
       globalNavigatorState?.pushAndRemoveUntil(
-        RouteUtil.getFadeRoute(const MainScreen(), duration: Duration.zero),
+        RouteUtil.getFadeRoute(ItemBuilder.buildContextMenuOverlay(const MainScreen()), duration: Duration.zero),
         (route) => false,
       );
     } else {

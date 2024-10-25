@@ -263,7 +263,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                   );
                 },
               ),
-              const SizedBox(height: 10),
+              if (ResponsiveUtil.isMobile()) const SizedBox(height: 10),
               if (ResponsiveUtil.isMobile())
                 ItemBuilder.buildEntryItem(
                   context: context,

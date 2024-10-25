@@ -8,6 +8,7 @@ import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Utils/hive_util.dart';
+import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Utils/route_util.dart';
 
 import '../../Utils/ilogger.dart';
@@ -648,6 +649,7 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
         },
         width: MediaQuery.sizeOf(context).width,
         background: MyTheme.getBackground(context),
+        showBorder: ResponsiveUtil.isLandscape(),
       ),
     );
   }

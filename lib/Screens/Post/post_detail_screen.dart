@@ -1329,61 +1329,63 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   _buildGrainItem() {
-    return GestureDetector(
-      onTap: () {
-        RouteUtil.pushPanelCupertinoRoute(
-          context,
-          GrainDetailScreen(
-            grainId: _postDetailData!.grainInfo!.id,
-            blogId: _postDetailData!.grainInfo!.userId,
-          ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(left: 16, right: 16, top: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: Theme.of(context).cardColor,
-            width: 1,
-          ),
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.grain_rounded,
-                  size: 16,
-                  color: MyColors.getHotTagTextColor(context),
-                ),
-                const SizedBox(width: 3),
-                Text(
-                  "收录至",
-                  style: Theme.of(context).textTheme.titleSmall?.apply(
-                      fontSizeDelta: -1,
-                      fontWeightDelta: 2,
-                      color: MyColors.getHotTagTextColor(context)),
-                ),
-                const SizedBox(width: 3),
-                Expanded(
-                  child: Text(
-                    _postDetailData!.grainInfo!.name,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.apply(fontSizeDelta: -1),
-                  ),
-                ),
-                Icon(
-                  Icons.keyboard_arrow_right_rounded,
-                  size: 16,
-                  color: Theme.of(context).textTheme.labelSmall?.color,
-                ),
-              ],
+    return ItemBuilder.buildClickItem(
+      GestureDetector(
+        onTap: () {
+          RouteUtil.pushPanelCupertinoRoute(
+            context,
+            GrainDetailScreen(
+              grainId: _postDetailData!.grainInfo!.id,
+              blogId: _postDetailData!.grainInfo!.userId,
             ),
-          ],
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.only(left: 16, right: 16, top: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: Theme.of(context).cardColor,
+              width: 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.grain_rounded,
+                    size: 16,
+                    color: MyColors.getHotTagTextColor(context),
+                  ),
+                  const SizedBox(width: 3),
+                  Text(
+                    "收录至",
+                    style: Theme.of(context).textTheme.titleSmall?.apply(
+                        fontSizeDelta: -1,
+                        fontWeightDelta: 2,
+                        color: MyColors.getHotTagTextColor(context)),
+                  ),
+                  const SizedBox(width: 3),
+                  Expanded(
+                    child: Text(
+                      _postDetailData!.grainInfo!.name,
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.apply(fontSizeDelta: -1),
+                    ),
+                  ),
+                  Icon(
+                    Icons.keyboard_arrow_right_rounded,
+                    size: 16,
+                    color: Theme.of(context).textTheme.labelSmall?.color,
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

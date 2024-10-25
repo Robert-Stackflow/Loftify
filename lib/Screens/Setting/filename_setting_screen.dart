@@ -25,7 +25,7 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   String filenameFormat = HiveUtil.getString(HiveUtil.filenameFormatKey,
-          defaultValue: defaultFilenameFormat) ??
+      defaultValue: defaultFilenameFormat) ??
       defaultFilenameFormat;
 
   @override
@@ -43,14 +43,16 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
         transparent: true,
         title: "文件命名格式",
         context: context,
-        background: Theme.of(context).scaffoldBackgroundColor,
+        background: Theme
+            .of(context)
+            .scaffoldBackgroundColor,
       ),
       body: EasyRefresh(
         child: ScrollConfiguration(
           behavior: NoShadowScrollBehavior(),
           child: ListView(
-            padding: EdgeInsets.symmetric(
-                horizontal: ResponsiveUtil.isLandscape() ? 20 : 10),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 10),
             children: [
               ItemBuilder.buildInputItem(
                 context: context,
@@ -101,24 +103,30 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
                     ItemBuilder.buildRoundButton(
                       context,
                       text: "可用字段: ",
-                      textStyle: Theme.of(context)
+                      textStyle: Theme
+                          .of(context)
                           .textTheme
                           .titleSmall
                           ?.apply(fontWeightDelta: 2),
                       radius: 10,
                       padding:
-                          const EdgeInsets.only(top: 8, bottom: 8, left: 8),
+                      const EdgeInsets.only(top: 8, bottom: 8, left: 8),
                       background: Colors.transparent,
                     ),
                     ...FilenameField.values.map((field) {
                       return ItemBuilder.buildRoundButton(
                         context,
                         text: field.label,
-                        textStyle: Theme.of(context).textTheme.titleSmall,
+                        textStyle: Theme
+                            .of(context)
+                            .textTheme
+                            .titleSmall,
                         radius: 10,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
-                        background: Theme.of(context).canvasColor,
+                        background: Theme
+                            .of(context)
+                            .canvasColor,
                         onTap: () {
                           _focusNode.requestFocus();
                           final text = _controller.text;
@@ -140,7 +148,9 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
               Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
-                  color: Theme.of(context).canvasColor,
+                  color: Theme
+                      .of(context)
+                      .canvasColor,
                 ),
                 child: Table(
                   defaultColumnWidth: const IntrinsicColumnWidth(),
@@ -152,7 +162,7 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
                     ], fontWeightDelta: 2),
                     ...List.generate(
                       FilenameField.values.length,
-                      (index) {
+                          (index) {
                         return _buildRow([
                           FilenameField.values[index].label,
                           FilenameField.values[index].description,
@@ -177,7 +187,8 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
         child: Center(
           child: Text(
             text,
-            style: Theme.of(context)
+            style: Theme
+                .of(context)
                 .textTheme
                 .bodyMedium
                 ?.apply(fontWeightDelta: fontWeightDelta),
@@ -193,11 +204,13 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
       decoration: BoxDecoration(
         border: useBorder
             ? Border(
-                bottom: BorderSide(
-                  color: Theme.of(context).dividerColor,
-                  width: 0.5,
-                ),
-              )
+          bottom: BorderSide(
+            color: Theme
+                .of(context)
+                .dividerColor,
+            width: 0.5,
+          ),
+        )
             : null,
       ),
       children: cells

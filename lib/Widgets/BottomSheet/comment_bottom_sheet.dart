@@ -36,6 +36,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
   List<Comment> newComments = [];
   bool loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
+  bool _noMore = false;
 
   @override
   void initState() {
@@ -203,6 +204,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
                 child: ItemBuilder.buildTitle(
                   context,
                   title: "最新评论",
+                  left: 8,
                   bottomMargin: 0,
                   topMargin: 0,
                   textStyle: Theme.of(context)
@@ -222,23 +224,27 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
     return SliverList(
       delegate: SliverChildListDelegate(
         [
-          ListView.builder(
-            shrinkWrap: true,
-            itemCount: comments.length,
-            padding: EdgeInsets.zero,
-            physics: const NeverScrollableScrollPhysics(),
-            itemBuilder: (context, index) => ItemBuilder.buildCommentRow(
-              context,
-              comments[index],
-              padding: const EdgeInsets.only(bottom: 12),
-              writerId: widget.blogId,
-              l2Padding: const EdgeInsets.only(top: 12, right: 0),
-              onL2CommentTap: (comment) {
-                HapticFeedback.mediumImpact();
-                _fetchL2Comments(comment);
-              },
+          ItemBuilder.buildLoadMoreNotification(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: comments.length,
+              padding: EdgeInsets.zero,
+              physics: const NeverScrollableScrollPhysics(),
+              itemBuilder: (context, index) => ItemBuilder.buildCommentRow(
+                context,
+                comments[index],
+                padding: const EdgeInsets.only(bottom: 12),
+                writerId: widget.blogId,
+                l2Padding: const EdgeInsets.only(top: 12, right: 0),
+                onL2CommentTap: (comment) {
+                  HapticFeedback.mediumImpact();
+                  _fetchL2Comments(comment);
+                },
+              ),
             ),
-          )
+            noMore: _noMore,
+            onLoad: _onLoad,
+          ),
         ],
       ),
     );

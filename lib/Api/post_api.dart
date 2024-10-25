@@ -101,7 +101,7 @@ class PostApi {
       "/v2.0/commentHot.api",
       data: {
         "postId": postId,
-        "blogId": blogId,
+        "blogId": "$blogId",
         "likeType": isLike ? 1 : 0,
         "commentId": commentId,
       },
