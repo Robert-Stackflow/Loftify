@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:loftify/Api/user_api.dart';
 import 'package:loftify/Models/history_response.dart';
 import 'package:loftify/Resources/theme.dart';
+import 'package:loftify/Screens/Info/nested_mixin.dart';
+import 'package:loftify/Screens/refresh_interface.dart';
 import 'package:loftify/Utils/hive_util.dart';
 
 import '../../Models/post_detail_response.dart';
@@ -15,13 +17,14 @@ import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
 
-class PostScreen extends StatefulWidget {
+class PostScreen extends StatefulWidgetForNested {
   PostScreen({
     super.key,
     this.infoMode = InfoMode.me,
     this.scrollController,
     this.blogId,
     this.blogName,
+    super.nested = false,
   }) {
     if (infoMode == InfoMode.other) {
       assert(blogName != null);
@@ -60,7 +63,14 @@ class _PostScreenState extends State<PostScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     super.initState();
-    _onRefresh();
+    if (widget.nested) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.delayed(const Duration(milliseconds: 300), () => _onRefresh());
+      });
+    }else{
+      _initPhase = InitPhase.successful;
+      setState(() {});
+    }
   }
 
   _fetchLike({bool refresh = false}) async {
@@ -209,7 +219,7 @@ class _PostScreenState extends State<PostScreen>
             return _archiveDataList.isNotEmpty
                 ? _buildNineGridGroup(physics)
                 : ItemBuilder.buildEmptyPlaceholder(
-                    context: context, text: "暂无文章");
+                    context: context, text: "暂无文章",physics: physics);
           },
         );
       default:

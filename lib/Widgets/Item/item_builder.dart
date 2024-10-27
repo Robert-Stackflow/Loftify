@@ -1950,6 +1950,7 @@ class ItemBuilder {
     bool showLoading = true,
     double? width,
     double? height,
+    double? placeholderHeight,
     Color? placeholderBackground,
     double topPadding = 0,
     double bottomPadding = 0,
@@ -1961,6 +1962,7 @@ class ItemBuilder {
       width: width,
       simpleError: simpleError,
       height: height,
+      placeholderHeight: placeholderHeight,
       placeholderBackground: placeholderBackground,
       topPadding: topPadding,
       bottomPadding: bottomPadding,
@@ -2363,13 +2365,13 @@ class ItemBuilder {
     String str = Utils.isNotEmpty(shownTag) ? shownTag! : tag;
     return GestureDetector(
       onTap: () {
-        if (tagType != TagType.egg && jumpToTag) {
+        if (!tagType.preventJump && jumpToTag) {
           panelScreenState?.pushPage(TagDetailScreen(tag: tag));
         }
         onTap?.call();
       },
       child: ItemBuilder.buildClickItem(
-        clickable: (tagType != TagType.egg && jumpToTag) || onTap != null,
+        clickable: (!tagType.preventJump && jumpToTag) || onTap != null,
         Container(
           padding: padding,
           decoration: BoxDecoration(
@@ -2394,6 +2396,12 @@ class ItemBuilder {
               if (tagType == TagType.egg && showIcon)
                 Icon(Icons.egg_rounded,
                     size: 15, color: MyColors.getHotTagTextColor(context)),
+              if (tagType == TagType.catutu && showIcon)
+                Container(
+                  margin: const EdgeInsets.only(right: 2),
+                  child: Icon(Icons.auto_fix_high_outlined,
+                      size: 15, color: MyColors.getHotTagTextColor(context)),
+                ),
               Text(
                 ((tagType == TagType.normal || !showIcon) && showTagLabel)
                     ? "#$str"
@@ -3082,14 +3090,16 @@ class ItemBuilder {
     Function()? onTap,
     Color? color,
     int quarterTurns = 0,
+    bool start = false,
   }) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
+    return ItemBuilder.buildClickItem(
+      clickable: onTap != null,
+      GestureDetector(
         onTap: onTap,
         child: direction == Axis.horizontal
             ? Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment:
+                    start ? MainAxisAlignment.start : MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   if (icon != null && showIcon)
@@ -3472,9 +3482,10 @@ class ItemBuilder {
                           borderRadius: BorderRadius.circular(10),
                           child: ItemBuilder.buildCachedImage(
                             context: context,
-                            showLoading: false,
                             imageUrl: imageUrl,
                             fit: BoxFit.cover,
+                            width: double.infinity,
+                            placeholderHeight: 300,
                           ),
                         ),
                       ),
@@ -4002,7 +4013,7 @@ class ItemBuilder {
                 onTap: () {
                   UserApi.followOrUnfollow(
                     isFollow: !item.following,
-                    blogId: item.blogId,
+                    blogId: item.blogInfo.blogId,
                     blogName: item.blogInfo.blogName,
                   ).then((value) {
                     if (value['meta']['status'] != 200) {
@@ -4010,6 +4021,7 @@ class ItemBuilder {
                           value['meta']['desc'] ?? value['meta']['msg']);
                     } else {
                       item.following = !item.following;
+                      IToast.showTop(item.following ? "已关注" : "已取消关注");
                       onFollowOrUnFollow?.call();
                     }
                   });

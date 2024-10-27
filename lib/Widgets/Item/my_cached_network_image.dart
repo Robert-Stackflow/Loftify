@@ -25,6 +25,7 @@ class MyCachedNetworkImage extends StatefulWidget {
     required this.imageUrl,
     this.width,
     this.height,
+    this.placeholderHeight,
     this.fit,
     this.showLoading = false,
     this.placeholderBackground,
@@ -36,6 +37,7 @@ class MyCachedNetworkImage extends StatefulWidget {
   final String imageUrl;
   final double? width;
   final double? height;
+  final double? placeholderHeight;
   final BoxFit? fit;
   final bool showLoading;
   final bool simpleError;
@@ -76,8 +78,12 @@ class _MyCachedNetworkImageState extends State<MyCachedNetworkImage> {
           placeholder: widget.showLoading
               ? (context, url) => ItemBuilder.buildLoadingDialog(
                     context,
-                    topPadding: widget.topPadding,
-                    bottomPadding: widget.bottomPadding,
+                    topPadding: widget.placeholderHeight != null
+                        ? (widget.placeholderHeight! - 20) / 2
+                        : widget.topPadding,
+                    bottomPadding: widget.placeholderHeight != null
+                        ? (widget.placeholderHeight! - 20) / 2
+                        : widget.bottomPadding,
                     showText: false,
                     size: 40,
                     background: widget.placeholderBackground,
@@ -86,7 +92,7 @@ class _MyCachedNetworkImageState extends State<MyCachedNetworkImage> {
                     color: widget.placeholderBackground ??
                         Theme.of(context).cardColor,
                     width: widget.width,
-                    height: widget.height,
+                    height: widget.placeholderHeight ?? widget.height,
                   ),
           errorWidget: widget.simpleError
               ? _simpleErrorWidget

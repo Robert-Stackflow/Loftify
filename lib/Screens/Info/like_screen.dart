@@ -18,14 +18,16 @@ import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
+import 'nested_mixin.dart';
 
-class LikeScreen extends StatefulWidget {
+class LikeScreen extends StatefulWidgetForNested {
   LikeScreen({
     super.key,
     this.infoMode = InfoMode.me,
     this.scrollController,
     this.blogId,
     this.blogName,
+    super.nested = false,
   }) {
     if (infoMode == InfoMode.other) {
       assert(blogName != null);
@@ -64,7 +66,14 @@ class _LikeScreenState extends State<LikeScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     super.initState();
-    _onRefresh();
+    if (widget.nested) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.delayed(const Duration(milliseconds: 300), () => _onRefresh());
+      });
+    } else {
+      _initPhase = InitPhase.successful;
+      setState(() {});
+    }
   }
 
   _fetchLike({bool refresh = false}) async {
@@ -183,7 +192,7 @@ class _LikeScreenState extends State<LikeScreen>
             return _archiveDataList.isNotEmpty
                 ? _buildNineGridGroup(physics)
                 : ItemBuilder.buildEmptyPlaceholder(
-                    context: context, text: "暂无喜欢");
+                    context: context, text: "暂无喜欢",physics: physics);
           },
         );
       default:

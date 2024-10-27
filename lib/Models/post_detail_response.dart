@@ -1,5 +1,4 @@
 import 'package:loftify/Models/recommend_response.dart';
-import 'package:loftify/Utils/iprint.dart';
 
 import '../Utils/ilogger.dart';
 import '../Utils/utils.dart';
@@ -208,6 +207,11 @@ class PostDetail {
   int publisherUserId;
   int publishTime;
   int rank;
+  String imageMarkInfo;
+  int imageReblogMark;
+  int imageAiMark;
+  String reblogAuthorFromEmbed;
+  List<ReturnContent> returnContent;
   int showGift;
   String tag;
   List<String> tagList;
@@ -220,10 +224,15 @@ class PostDetail {
   VideoInfo? videoInfo;
 
   PostDetail({
+    required this.imageAiMark,
+    required this.imageMarkInfo,
+    required this.imageReblogMark,
+    required this.reblogAuthorFromEmbed,
     required this.allowReward,
     required this.allowView,
     required this.applyStatus,
     required this.blogId,
+    required this.returnContent,
     this.blogInfo,
     this.embed,
     this.videoInfo,
@@ -295,6 +304,10 @@ class PostDetail {
 
   factory PostDetail.fromJson(Map<String, dynamic> json) {
     return PostDetail(
+      imageAiMark: json['imageAiMark'] ?? 0,
+      imageMarkInfo: json['imageMarkInfo'] ?? "",
+      imageReblogMark: json['imageReblogMark'] ?? 0,
+      reblogAuthorFromEmbed: json['reblogAuthorFromEmbed'] ?? "",
       allowReward: json['allowReward'] ?? 0,
       allowView: json['allowView'] ?? 0,
       applyStatus: json['applyStatus'] ?? 0,
@@ -302,6 +315,11 @@ class PostDetail {
       blogInfo: json['blogInfo'] != null
           ? FullBlogInfo.fromJson(json['blogInfo'])
           : null,
+      returnContent: json['returnContent'] != null
+          ? (json['returnContent'] as List)
+              .map((v) => ReturnContent.fromJson(v))
+              .toList()
+          : [],
       blogPageUrl: json['blogPageUrl'] ?? "",
       caption: json['caption'] ?? "",
       embed: json['embed'] ?? "",
@@ -449,6 +467,40 @@ class PostDetail {
   @override
   String toString() {
     return 'PostDetail{allowReward: $allowReward, allowView: $allowView, applyStatus: $applyStatus, blogId: $blogId, blogInfo: $blogInfo, blogPageUrl: $blogPageUrl, caption: $caption, cctype: $cctype, cited: $cited, citeParentBlogId: $citeParentBlogId, citeParentPermalink: $citeParentPermalink, citeParentPostId: $citeParentPostId, citeRootBlogId: $citeRootBlogId, citeRootPostId: $citeRootPostId, collectionId: $collectionId, content: $content, digest: $digest, dirPostType: $dirPostType, fansVipPost: $fansVipPost, firstImageUrl: $firstImageUrl, firstImageWh: $firstImageWh, firstSmallImageUrl: $firstSmallImageUrl, forbidPcomment: $forbidPcomment, forbidShare: $forbidShare, hot: $hot, id: $id, ipLocation: $ipLocation, isContribute: $isContribute, isPublished: $isPublished, locationId: $locationId, needPay: $needPay, newVersionAuditing: $newVersionAuditing, payingView: $payingView, payView: $payView, payViewExpire: $payViewExpire, payViewPost: $payViewPost, permalink: $permalink, photoCaptions: $photoCaptions, photoLinks: $photoLinks, photoType: $photoType, pos: $pos, postCollection: $postCollection, postCount: $postCount, postSource: $postSource, postStyle: $postStyle, publisherMainBlogInfo: $publisherMainBlogInfo, publisherUserId: $publisherUserId, publishTime: $publishTime, rank: $rank, showGift: $showGift, tag: $tag, tagList: $tagList, tagRankList: $tagRankList, title: $title, top: $top, type: $type, valid: $valid, viewRank: $viewRank}';
+  }
+}
+
+class ReturnContent {
+  final int id;
+  final String content;
+  final String planTypeName;
+  final List<PreviewImage> images;
+
+  ReturnContent({
+    required this.id,
+    required this.content,
+    required this.planTypeName,
+    required this.images,
+  });
+
+  factory ReturnContent.fromJson(Map<String, dynamic> json) {
+    return ReturnContent(
+      id: json['id'] ?? 0,
+      content: json['content'] ?? "",
+      planTypeName: json['planTypeName'] ?? "",
+      images: (json['images'] as List)
+          .map((e) => PreviewImage.fromJson(e))
+          .toList(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['content'] = content;
+    data['planTypeName'] = planTypeName;
+    data['images'] = images;
+    return data;
   }
 }
 
@@ -609,7 +661,7 @@ class PreviewImage {
 
   factory PreviewImage.fromJson(Map<String, dynamic> json) {
     return PreviewImage(
-      baseImage: json['baseImage'],
+      baseImage: json['baseImage'] ?? json['raw'] ?? "",
       oh: json['oh'],
       ow: json['ow'],
       raw: json['raw'],

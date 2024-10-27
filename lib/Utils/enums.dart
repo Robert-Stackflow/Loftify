@@ -21,7 +21,14 @@ enum FollowingMode { following, follower, timeline }
 
 enum ShowDetailMode { not, avatar, avatarBox }
 
-enum TagType { normal, hot, egg }
+enum TagType {
+  normal,
+  hot,
+  egg,
+  catutu;
+
+  bool get preventJump => this == TagType.egg || this == TagType.catutu;
+}
 
 enum RankListType { tag, tagRank, unset, post, collection }
 
@@ -149,6 +156,7 @@ extension DownloadSuccessEnumExtension on DownloadSuccessAction {
 enum FilenameField {
   originalName('original_name', '{original_name}', '图片原文件名称'),
   postId('post_id', '{post_id}', '帖子ID'),
+  postTitle('post_title', '{post_title}', '帖子标题，若没有标题则忽略该字段'),
   timestamp('timestamp', '{timestamp}', '时间戳'),
   blogId('blog_id', '{blog_id}', '作者ID'),
   blogLofterId('blog_lofter_id', '{blog_lofter_id}', '作者Lofter ID'),
@@ -168,4 +176,39 @@ enum InitPhase {
   connecting,
   successful,
   failed;
+}
+
+enum Copyright {
+  none('不声明'),
+  by('署名'),
+  byNd('署名-禁止演绎'),
+  byNc('署名-非商业性使用'),
+  bySa("署名-相同方式共享"),
+  byNcNd('署名-非商业性使用-禁止演绎'),
+  byNcSa('署名-非商业性使用-相同方式共享');
+
+  const Copyright(this.label);
+
+  final String label;
+
+  static Copyright fromInt(int index) {
+    switch (index) {
+      case 0:
+        return none;
+      case 1:
+        return by;
+      case 2:
+        return byNd;
+      case 3:
+        return byNc;
+      case 4:
+        return bySa;
+      case 5:
+        return byNcNd;
+      case 6:
+        return byNcSa;
+      default:
+        return none;
+    }
+  }
 }

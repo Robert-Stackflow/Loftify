@@ -39,7 +39,7 @@ class _HistoryScreenState extends State<HistoryScreen>
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
-  InitPhase _initPhase = InitPhase.haveNotConnected;
+  InitPhase _initPhase = InitPhase.successful;
 
   @override
   void initState() {
@@ -50,7 +50,6 @@ class _HistoryScreenState extends State<HistoryScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     super.initState();
-    _onRefresh();
   }
 
   _fetchHistory({bool refresh = false}) async {
@@ -148,7 +147,10 @@ class _HistoryScreenState extends State<HistoryScreen>
             return _archiveDataList.isNotEmpty
                 ? _buildNineGridGroup(physics)
                 : ItemBuilder.buildEmptyPlaceholder(
-                    context: context, text: "暂无历史");
+                    context: context,
+                    text: "暂无历史",
+                    physics: physics,
+                  );
           },
         );
       default:

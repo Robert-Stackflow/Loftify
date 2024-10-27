@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
@@ -97,19 +98,6 @@ class RequestUtil {
     (dio.httpClientAdapter as IOHttpClientAdapter).validateCertificate =
         (X509Certificate? cert, String host, int port) => true;
     dio.interceptors.add(cookieManager!);
-    dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (RequestOptions options, RequestInterceptorHandler handler) {
-          return handler.next(options);
-        },
-        onResponse: (Response response, ResponseInterceptorHandler handler) {
-          return handler.next(response);
-        },
-        onError: (DioException e, ErrorInterceptorHandler handler) {
-          return handler.next(e);
-        },
-      ),
-    );
   }
 
   static Future<void> clearCookie() async {
@@ -121,6 +109,7 @@ class RequestUtil {
     params,
     options,
     bool getFullResponse = false,
+    DomainType domainType = DomainType.api,
   }) async {
     Response? response;
     [params, options] = _processRequest(params: params, options: options);
@@ -231,7 +220,9 @@ class RequestUtil {
           response.data['meta']['msg'] != null) {
         list['Message'] = response.data['meta']['msg'];
       }
-      list['Data'] = response.data;
+      list['Data'] = response.data
+          .toString()
+          .substring(0, min(600, response.data.toString().length));
     }
     IPrint.format(
       tag: response.requestOptions.method,
@@ -248,12 +239,11 @@ class RequestUtil {
     DomainType domainType = DomainType.api,
     bool getFullResponse = false,
   }) async {
-    return getInstance(domainType: domainType)._get(
-      url,
-      params: params,
-      options: options,
-      getFullResponse: getFullResponse,
-    );
+    return getInstance(domainType: domainType)._get(url,
+        params: params,
+        options: options,
+        getFullResponse: getFullResponse,
+        domainType: domainType);
   }
 
   static post(

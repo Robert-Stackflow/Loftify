@@ -520,8 +520,10 @@ class FileUtil {
         .replaceAll(FilenameField.originalName.format, illust.originalName)
         .replaceAll(FilenameField.part.format, illust.part.toString())
         .replaceAll(FilenameField.postId.format, illust.postId.toString())
+        .replaceAll(FilenameField.postTitle.format, illust.postTitle)
         .replaceAll(FilenameField.timestamp.format,
             DateTime.now().millisecondsSinceEpoch.toString());
+    fileName = fileName.replaceAll(RegExp(r'[\\/:*?"<>|]\n'), '');
     return '$fileName.${illust.extension}';
   }
 

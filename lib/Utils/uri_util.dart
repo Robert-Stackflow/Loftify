@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -7,6 +8,7 @@ import 'package:loftify/Screens/Post/grain_detail_screen.dart';
 import 'package:loftify/Screens/Post/tag_detail_screen.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/itoast.dart';
+import 'package:loftify/Utils/request_header_util.dart';
 import 'package:loftify/Utils/request_util.dart';
 import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Utils/route_util.dart';
@@ -234,11 +236,32 @@ class UriUtil {
   }
 
   static Future<dynamic> getRedirectUrl(String url) async {
-    return RequestUtil.get(
+    Response res = await RequestUtil.get(
       url.split(RequestUtil.shortUrl)[1],
       domainType: DomainType.short,
       getFullResponse: true,
+      options: Options(
+        headers: {
+          "Connection": "keep-alive",
+          "Referer": url,
+          "Cookie":
+              "LofterInnerBrowser=true; usertrack=c+53cWcJ4o0X34ckM2x8Ag==; JSESSIONID-WLF-XXD=ecd0454e54d08cc79a37e4ed1ce3c70349c5823c155570d49dbd03af344ace8dd4316050803ce43791c8da46634edf356eed65c1de8139ad682f77dd9bc4b477cd191c9391f5f3dd3ab39dd2c5298237423d222cd09c997a8541a23134c7e3108bef67ba167957690ed53d42fd77d3c723bca305e1cfb4ed53cbb56a05867f68c7014f32; regtoken=2000; reglogin_isLoginFlag=1; ${RequestHeaderUtil.getShortHeader()}",
+          "x-requested-with": "com.lofter.android",
+          "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0",
+        },
+      ),
     );
+    ILogger.info("Get Redirects: ${res.redirects}");
+    if (res.redirects.isNotEmpty) {
+      List<String> redirects =
+          res.redirects.map((e) => e.location.toString()).toList();
+      redirects = redirects.where((e) => !e.contains("front/login")).toList();
+      if (redirects.isNotEmpty) url = redirects.last;
+    } else {
+      url = res.realUri.toString();
+    }
+    return url;
   }
 
   static Future<bool> processUrl(
@@ -251,7 +274,9 @@ class UriUtil {
       if (!quiet) CustomLoadingDialog.showLoading(title: "加载中...");
       url = Uri.decodeComponent(url);
       if (UriUtil.isShortLinkUrl(url)) {
-        url = (await UriUtil.getRedirectUrl(url))!.realUri.toString();
+        var tmp = url;
+        url = await UriUtil.getRedirectUrl(url);
+        ILogger.info("Redirect from $tmp to $url");
       }
       if (UriUtil.isMentionBlogIdUrl(url)) {
         String blogId = extractMentionBlogId(url);

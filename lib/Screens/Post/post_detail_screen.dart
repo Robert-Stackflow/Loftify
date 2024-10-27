@@ -23,6 +23,7 @@ import 'package:loftify/Utils/ilogger.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Widgets/BottomSheet/collection_bottom_sheet.dart';
 import 'package:loftify/Widgets/BottomSheet/comment_bottom_sheet.dart';
+import 'package:loftify/Widgets/Dialog/dialog_builder.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:responsive_builder/responsive_builder.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
@@ -30,6 +31,7 @@ import 'package:window_manager/window_manager.dart';
 
 import '../../Api/collection_api.dart';
 import '../../Api/recommend_api.dart';
+import '../../Models/return_gift_response.dart';
 import '../../Models/search_response.dart';
 import '../../Resources/theme.dart';
 import '../../Utils/app_provider.dart';
@@ -89,6 +91,11 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   bool get wantKeepAlive => true;
   PostDetailData? _postDetailData;
   List<PreviewImage> _previewImages = [];
+  bool _isCatutu = false;
+  String _giftTypeString = "";
+  String _giftPreviewDescription = "";
+  String _giftCost = "";
+  GiftInfoData? _giftInfoData;
   final SwiperController _swiperController = SwiperController();
   int _currentIndex = 1;
   final List<PostListItem> _recommendPosts = [];
@@ -293,21 +300,83 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         IToast.showTop(value['msg']);
         return IndicatorResult.fail;
       } else {
-        List<dynamic> gifts = value['data']['returnGifts'] as List;
-        _previewImages = [];
-        for (var gift in gifts) {
-          if (gift['previewImages'] != null) {
-            List<dynamic> images = gift['previewImages'] as List;
-            for (var image in images) {
-              _previewImages.add(PreviewImage.fromJson(image));
-            }
-            break;
-          }
-        }
+        _giftInfoData = GiftInfoData.fromJson(value['data']);
+        _refreshPreviewImage();
+        _refreshGiftDescription();
         if (mounted) setState(() {});
         return IndicatorResult.success;
       }
     });
+  }
+
+  _refreshPreviewImage() {
+    if (_hasReturnContent()) {
+      _previewImages = _getReturnGiftImages();
+      _isCatutu = false;
+    } else {
+      _previewImages = [];
+      for (var gift in _giftInfoData!.returnGifts) {
+        _previewImages.addAll(gift.previewImages ?? []);
+      }
+      _isCatutu = true;
+    }
+  }
+
+  ReturnGift? _getReturnGift() {
+    if (_giftInfoData != null && _giftInfoData!.returnGifts.isNotEmpty) {
+      return _giftInfoData!.returnGifts.first;
+    }
+    return null;
+  }
+
+  ReturnContent? _getReturnContent() {
+    if (_postDetailData != null &&
+        _postDetailData!.post != null &&
+        _postDetailData!.post!.returnContent.isNotEmpty) {
+      return _postDetailData!.post!.returnContent.first;
+    }
+    return null;
+  }
+
+  bool _hasReturnContent() {
+    return _getReturnContent() != null;
+  }
+
+  List<PreviewImage> _getReturnGiftImages() {
+    ReturnContent? content = _getReturnContent();
+    if (content == null) return [];
+    return content.images;
+  }
+
+  void _refreshGiftDescription() {
+    ReturnGift? gift = _getReturnGift();
+    if (gift == null) return;
+    String typeString = gift.planType?.name ?? "彩蛋";
+    var defaultGifts = gift.defaultSelectedGifts ?? [];
+    String unlockCost = "";
+    if (defaultGifts.isNotEmpty) {
+      unlockCost = "";
+      for (var gift in defaultGifts) {
+        if ((gift.coin ?? 0) > 0) {
+          unlockCost += "${gift.name}(${gift.coin}个乐乎币) ";
+        } else {
+          unlockCost += "${gift.name} ";
+        }
+      }
+    }
+    String previewDescription = "";
+    if ((gift.wordCount ?? 0) > 0) {
+      previewDescription = "${gift.wordCount}字";
+    }
+    if ((gift.imgCount ?? 0) > 0) {
+      previewDescription += "${gift.imgCount}图";
+    }
+    if (previewDescription.isNotEmpty) {
+      previewDescription = "($previewDescription)";
+    }
+    _giftTypeString = typeString;
+    _giftPreviewDescription = previewDescription;
+    _giftCost = unlockCost;
   }
 
   _fetchHotComments() async {
@@ -847,6 +916,11 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         onDoubleTap: _handleDoubleTap,
         child: _buildPostContent(),
       ),
+      GestureDetector(
+        onDoubleTapDown: _handleDoubleTapDown,
+        onDoubleTap: _handleDoubleTap,
+        child: _buildEggContent(),
+      ),
       if (hasCollection()) _buildCollectionItem(),
       if (hasGrain()) _buildGrainItem(),
       GestureDetector(
@@ -854,6 +928,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         onDoubleTap: _handleDoubleTap,
         child: _buildTagList(),
       ),
+      _buildMarkInfo(),
       Stack(
         children: [
           ItemBuilder.buildDivider(context),
@@ -921,6 +996,205 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           topMargin: 24,
         ),
     ];
+  }
+
+  _buildEggTitle(String tag, String title) {
+    return Text.rich(
+      TextSpan(
+        children: [
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Container(
+              margin: const EdgeInsets.only(left: 16, right: 8),
+              child: ItemBuilder.buildRoundButton(
+                context,
+                text: tag,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                background: MyColors.biliPinkPrimaryColor,
+                radius: 4,
+              ),
+            ),
+          ),
+          TextSpan(
+            text: title,
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.apply(fontSizeDelta: -1),
+          ),
+        ],
+      ),
+    );
+  }
+
+  _buildRichIconTextButton({
+    required Widget icon,
+    required String text,
+    double spacing = 2,
+  }) {
+    return Text.rich(
+      TextSpan(
+        children: [
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Container(
+              margin: EdgeInsets.only(right: spacing),
+              child: icon,
+            ),
+          ),
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Text(
+              text,
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  _buildEggContent() {
+    ReturnGift? gift = _getReturnGift();
+    ReturnContent? returnContent = _getReturnContent();
+    if (gift == null) return emptyWidget;
+    var bodySmall = Theme.of(context).textTheme.bodySmall;
+    var labelSmall = Theme.of(context).textTheme.labelSmall;
+    var coinCount = _giftInfoData!.userBag.coin;
+    Widget promotionWidget = Utils.isNotEmpty(gift.promotion)
+        ? Container(
+            color: Colors.transparent,
+            padding: const EdgeInsets.only(left: 16, right: 16, top: 8),
+            child: _buildRichIconTextButton(
+              icon: RotatedBox(
+                quarterTurns: 2,
+                child: Icon(
+                  Icons.format_quote,
+                  size: 16,
+                  color: labelSmall?.color,
+                ),
+              ),
+              text: gift.promotion!,
+            ),
+          )
+        : emptyWidget;
+    List<Widget> topWidgets = [
+      const SizedBox(height: 16),
+      Center(
+        child: ItemBuilder.buildTextDivider(
+            context: context,
+            text:
+                "$_giftTypeString${(gift.unlockCount ?? 0) > 0 ? "(${gift.unlockCount!}次解锁)" : ""}"),
+      ),
+      const SizedBox(height: 20),
+      _buildEggTitle(
+          returnContent == null
+              ? "$_giftTypeString预览$_giftPreviewDescription"
+              : "已解锁$_giftTypeString$_giftPreviewDescription",
+          gift.title ?? ""),
+      promotionWidget,
+    ];
+    if (returnContent == null) {
+      topWidgets.addAll(
+        [
+          if (Utils.isNotEmpty(gift.digest))
+            Container(
+              color: Colors.transparent,
+              padding:
+                  const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
+              child: Text(
+                "${gift.digest!}...",
+                style: bodySmall?.apply(fontSizeDelta: 2),
+              ),
+            ),
+          const SizedBox(height: 8),
+          Center(
+            child: ItemBuilder.buildRoundButton(
+              context,
+              text: "$_giftCost解锁回礼",
+              background: Theme.of(context).primaryColor,
+              onTap: () async {
+                DialogBuilder.showConfirmDialog(context,
+                    title: "支付$_giftCost解锁回礼",
+                    message: "你当前拥有$coinCount个乐乎币，是否确认支付以解锁回礼？",
+                    onTapConfirm: () async {
+                  var value = await PostApi.presentGift(
+                    postId: _postDetailData!.post!.id,
+                    blogId: blogId,
+                    giftId: 1,
+                    count: 1,
+                    myBlogId: _myBlogId,
+                  );
+                  if (value['code'] != 200 || value['ok'] != true) {
+                    IToast.showTop(value['msg']);
+                  } else {
+                    int returnGiftId = value['data']['returnGiftId'];
+                    var returnGiftData = await PostApi.getMyReturnGift(
+                      postId: _postDetailData!.post!.id,
+                      blogId: blogId,
+                      giftId: returnGiftId,
+                    );
+                    if (returnGiftData['code'] != 200 ||
+                        returnGiftData['ok'] != true) {
+                      IToast.showTop(returnGiftData['msg']);
+                    } else {
+                      var returnGift =
+                          ReturnGift.fromJson(returnGiftData['data']['plan']);
+                      returnGift.digest = gift.digest;
+                      returnGift.defaultSelectedGifts =
+                          gift.defaultSelectedGifts;
+                      returnGift.imgCount = gift.imgCount;
+                      returnGift.wordCount = gift.wordCount;
+                      _giftInfoData!.returnGifts.clear();
+                      _giftInfoData!.returnGifts.add(returnGift);
+                      _postDetailData!.post!.returnContent.add(
+                        ReturnContent(
+                          id: returnGift.id ?? 0,
+                          content: returnGift.content ?? "",
+                          images: returnGift.images,
+                          planTypeName: returnGift.planType?.name ?? "",
+                        ),
+                      );
+                      _refreshPreviewImage();
+                      _refreshGiftDescription();
+                      setState(() {});
+                    }
+                  }
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+      );
+    } else {
+      topWidgets.addAll(
+        [
+          if (Utils.isNotEmpty(returnContent?.content))
+            Container(
+              color: Colors.transparent,
+              padding:
+                  const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
+              child: ItemBuilder.buildHtmlWidget(
+                context,
+                returnContent?.content ?? "",
+                illusts: _getIllusts(),
+                textStyle: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.apply(fontSizeDelta: 3, heightDelta: 0.3),
+                onDownloadSuccess: _handleDownloadSuccessAction,
+              ),
+            ),
+          if (isArticle && _previewImages.isNotEmpty)
+            _buildImageList(_getImageIllusts().length, 16),
+        ],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: topWidgets,
+    );
   }
 
   _buildUserRow() {
@@ -1008,10 +1282,11 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   List<dynamic> _getImages() {
-    List<PhotoLink> photoLinks =
-        Utils.parseJsonList(_postDetailData!.post!.photoLinks)
-            .map((e) => PhotoLink.fromJson(e))
-            .toList();
+    String photoJson = _postDetailData!.post!.photoLinks;
+    if (Utils.isEmpty(photoJson)) photoJson = "[]";
+    List<PhotoLink> photoLinks = Utils.parseJsonList(photoJson)
+        .map((e) => PhotoLink.fromJson(e))
+        .toList();
     int previewIndex = photoLinks.length;
     for (var e in _previewImages) {
       photoLinks.add(PhotoLink(
@@ -1028,22 +1303,18 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     return [photoLinks, previewIndex];
   }
 
-  _buildImageList() {
+  _buildImageList([int startIndex = 0, double horizontalPaddding = 12]) {
     late List<PhotoLink> photoLinks;
     late int previewIndex;
     [photoLinks, previewIndex] = _getImages();
+    String photoCaptionJson = _postDetailData!.post!.photoCaptions;
+    if (Utils.isEmpty(photoCaptionJson)) photoCaptionJson = "[]";
     List<String> captions =
-        Utils.parseJsonList(_postDetailData!.post!.photoCaptions)
-            .map((e) => e.toString())
-            .toList();
+        Utils.parseJsonList(photoCaptionJson).map((e) => e.toString()).toList();
     double heightMinThreshold = 200;
     double heightMaxThreshold = MediaQuery.sizeOf(context).height - 340;
     double preferedHeight = 0;
     double preferedWidth = MediaQuery.sizeOf(context).width;
-    // for (var e in photoLinks) {
-    //   double t = (e.oh * 1.0) * preferedWidth / e.ow;
-    //   preferedHeight = max(t, preferedHeight);
-    // }
     preferedHeight =
         (photoLinks[0].oh * 1.0) * preferedWidth / photoLinks[0].ow;
     preferedHeight =
@@ -1070,9 +1341,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                 width: preferedWidth,
                 height: trueHeight,
                 padding: EdgeInsets.symmetric(vertical: padding),
-                margin: const EdgeInsets.only(
-                  left: 12,
-                  right: 12,
+                margin: EdgeInsets.only(
+                  left: horizontalPaddding,
+                  right: horizontalPaddding,
                   bottom: 18,
                 ),
                 child: Stack(
@@ -1086,7 +1357,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                           useMaterial: true,
                           HeroPhotoViewScreen(
                             imageUrls: _getIllusts(),
-                            initIndex: index,
+                            initIndex: startIndex + index,
                             captions: captions,
                             tagPrefix: tagPrefix,
                             mainColors: mainColors,
@@ -1133,7 +1404,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                         left: 6,
                         child: ItemBuilder.buildTransparentTag(
                           context,
-                          text: '彩蛋',
+                          text: _isCatutu ? "擦图图" : _giftTypeString,
                           opacity: 0.5,
                         ),
                       ),
@@ -1187,11 +1458,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                 onTap: () {
                   _swiperController.previous();
                 },
-                child: MouseRegion(
-                  cursor: _currentIndex == 1
-                      ? SystemMouseCursors.basic
-                      : SystemMouseCursors.click,
-                  child: const Icon(
+                child: ItemBuilder.buildClickItem(
+                  clickable: _currentIndex != 1,
+                  const Icon(
                     Icons.keyboard_arrow_left_rounded,
                     size: 30,
                     color: Colors.white,
@@ -1217,11 +1486,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                 onTap: () {
                   _swiperController.next();
                 },
-                child: MouseRegion(
-                  cursor: _currentIndex == photoLinks.length
-                      ? SystemMouseCursors.basic
-                      : SystemMouseCursors.click,
-                  child: const Icon(
+                child: ItemBuilder.buildClickItem(
+                  clickable: _currentIndex != photoLinks.length,
+                  const Icon(
                     Icons.keyboard_arrow_right_rounded,
                     size: 30,
                     color: Colors.white,
@@ -1247,43 +1514,60 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             .isNotEmpty;
   }
 
+  List<Illust> _getImageIllusts() {
+    List<Illust> illusts = [];
+    List<PhotoLink> photoLinks = _getImages()[0];
+    for (int i = 0; i < photoLinks.length; i++) {
+      PhotoLink e = photoLinks[i];
+      String rawUrl = Utils.getUrlByQuality(e.middle, ImageQuality.raw);
+      illusts.add(
+        Illust(
+          extension: FileUtil.extractFileExtensionFromUrl(rawUrl),
+          originalName: FileUtil.extractFileNameFromUrl(rawUrl),
+          blogId: _postDetailData!.post!.blogId,
+          blogLofterId: _postDetailData!.post!.blogInfo!.blogName,
+          blogNickName: _postDetailData!.post!.blogInfo!.blogNickName,
+          postId: _postDetailData!.post!.id,
+          part: i,
+          url: rawUrl,
+          postTitle: _postDetailData!.post!.title,
+          postDigest: _postDetailData!.post!.digest,
+        ),
+      );
+    }
+    return illusts;
+  }
+
+  List<Illust> _getArticleIllusts() {
+    List<Illust> illusts = [];
+    List<String> imageUrls = _getArticleImages();
+    for (int i = 0; i < imageUrls.length; i++) {
+      String rawUrl = Utils.getUrlByQuality(imageUrls[i], ImageQuality.raw);
+      illusts.add(
+        Illust(
+          extension: FileUtil.extractFileExtensionFromUrl(rawUrl),
+          originalName: FileUtil.extractFileNameFromUrl(rawUrl),
+          blogId: _postDetailData!.post!.blogId,
+          blogLofterId: _postDetailData!.post!.blogInfo!.blogName,
+          blogNickName: _postDetailData!.post!.blogInfo!.blogNickName,
+          postId: _postDetailData!.post!.id,
+          part: i,
+          url: rawUrl,
+          postTitle: _postDetailData!.post!.title,
+          postDigest: _postDetailData!.post!.digest,
+        ),
+      );
+    }
+    return illusts;
+  }
+
   List<Illust> _getIllusts() {
     List<Illust> illusts = [];
-    if (_hasImage()) {
-      List<PhotoLink> photoLinks = _getImages()[0];
-      for (int i = 0; i < photoLinks.length; i++) {
-        PhotoLink e = photoLinks[i];
-        String rawUrl = Utils.getUrlByQuality(e.middle, ImageQuality.raw);
-        illusts.add(
-          Illust(
-            extension: FileUtil.extractFileExtensionFromUrl(rawUrl),
-            originalName: FileUtil.extractFileNameFromUrl(rawUrl),
-            blogId: _postDetailData!.post!.blogId,
-            blogLofterId: _postDetailData!.post!.blogInfo!.blogName,
-            blogNickName: _postDetailData!.post!.blogInfo!.blogNickName,
-            postId: _postDetailData!.post!.id,
-            part: i,
-            url: rawUrl,
-          ),
-        );
-      }
-    } else if (_hasArticleImage()) {
-      List<String> imageUrls = _getArticleImages();
-      for (int i = 0; i < imageUrls.length; i++) {
-        String rawUrl = Utils.getUrlByQuality(imageUrls[i], ImageQuality.raw);
-        illusts.add(
-          Illust(
-            extension: FileUtil.extractFileExtensionFromUrl(rawUrl),
-            originalName: FileUtil.extractFileNameFromUrl(rawUrl),
-            blogId: _postDetailData!.post!.blogId,
-            blogLofterId: _postDetailData!.post!.blogInfo!.blogName,
-            blogNickName: _postDetailData!.post!.blogInfo!.blogNickName,
-            postId: _postDetailData!.post!.id,
-            part: i,
-            url: rawUrl,
-          ),
-        );
-      }
+    if (isArticle) {
+      illusts.addAll(_getArticleIllusts());
+      illusts.addAll(_getImageIllusts());
+    } else {
+      illusts.addAll(_getImageIllusts());
     }
     return illusts;
   }
@@ -1532,7 +1816,13 @@ class _PostDetailScreenState extends State<PostDetailScreen>
 
   _buildTagList() {
     Map<String, TagType> tags = {};
-    if (_previewImages.isNotEmpty) tags.addAll({"彩蛋": TagType.egg});
+    if (_previewImages.isNotEmpty) {
+      if (_isCatutu) {
+        tags.addAll({"擦图图": TagType.catutu});
+      } else {
+        tags.addAll({_giftTypeString: TagType.egg});
+      }
+    }
     _postDetailData!.post?.tagList.forEach((e) {
       tags[e] = _postDetailData!.post!.tagRankList.contains(e)
           ? TagType.hot
@@ -1564,6 +1854,67 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         }),
       ),
     );
+  }
+
+  Widget _buildMarkInfo() {
+    var color = Theme.of(context).textTheme.labelSmall?.color;
+    bool showMark = Utils.isNotEmpty(_postDetailData!.post!.imageMarkInfo);
+    bool showReBlog = _postDetailData!.post!.imageReblogMark == 1 &&
+        Utils.isNotEmpty(_postDetailData!.post!.reblogAuthorFromEmbed);
+    bool showCopyright = _postDetailData!.post!.cctype > 0;
+    if (showMark || showCopyright || showReBlog) {
+      return Container(
+        padding: const EdgeInsets.only(left: 16, right: 16, top: 4),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (showCopyright)
+                    ItemBuilder.buildIconTextButton(
+                      context,
+                      text: Copyright.fromInt(_postDetailData!.post!.cctype)
+                          .label,
+                      start: true,
+                      color: color,
+                      spacing: 6,
+                      icon:
+                          Icon(Icons.copyright_rounded, size: 16, color: color),
+                    ),
+                  if (showCopyright && (showMark || showReBlog))
+                    const SizedBox(height: 4),
+                  if (showMark)
+                    ItemBuilder.buildIconTextButton(
+                      context,
+                      text: _postDetailData!.post!.imageMarkInfo,
+                      start: true,
+                      color: color,
+                      spacing: 6,
+                      icon: Icon(Icons.auto_awesome_outlined,
+                          size: 16, color: color),
+                    ),
+                  if (showMark && showReBlog) const SizedBox(height: 4),
+                  if (showReBlog)
+                    ItemBuilder.buildIconTextButton(
+                      context,
+                      text:
+                          "授权转载自${_postDetailData!.post!.reblogAuthorFromEmbed}",
+                      spacing: 6,
+                      start: true,
+                      color: color,
+                      icon: Icon(Icons.repeat_rounded, size: 16, color: color),
+                    ),
+                  const SizedBox(height: 4),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      return emptyWidget;
+    }
   }
 
   Widget _buildOperationRow() {

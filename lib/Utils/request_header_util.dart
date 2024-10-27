@@ -12,9 +12,9 @@ import 'jwt_decoder.dart';
 class RequestHeaderUtil {
   static const String defaultMarket = "xiaomi";
   static const String defaultUA =
-      "LOFTER-Android 7.8.6 (23127PN0CC; Android 14; null) WIFI";
-  static const String defaultProduct = "lofter-android-7.8.6";
-  static const String defaultLofProduct = "lofter-android-7.8.6";
+      "LOFTER-Android 8.0.12 (23127PN0CC; Android 14; null) WIFI";
+  static const String defaultProduct = "lofter-android-8.0.12";
+  static const String defaultLofProduct = "lofter-android-8.0.12";
   static const String defaultDeviceId = "3451efd56bgg6h47";
   static const String defaultAndroidId = "3451efd56bgg6h47";
   static const String defaultOaid = "32b4d2c348650842";
@@ -45,7 +45,28 @@ class RequestHeaderUtil {
         res["lofter-phone-login-auth"] = token;
         break;
       case TokenType.lofterID:
-        res["authorization"] = "ThirdParty $token";
+        res["Authorization"] = token;
+        break;
+      case TokenType.none:
+        break;
+    }
+    return res;
+  }
+
+  static getShortHeader() {
+    int tokenTypeIndex =
+        HiveUtil.getInt(HiveUtil.tokenTypeKey, defaultValue: 0);
+    tokenTypeIndex = max(tokenTypeIndex, 0);
+    TokenType tokenType = TokenType.values[tokenTypeIndex];
+    String? token = appProvider.token;
+    String res = "";
+    switch (tokenType) {
+      case TokenType.captchCode:
+      case TokenType.password:
+        res = "lofter-phone-login-auth=$token";
+        break;
+      case TokenType.lofterID:
+        res = "Authorization=$token";
         break;
       case TokenType.none:
         break;
@@ -101,7 +122,7 @@ class RequestHeaderUtil {
     if (androidInfo == null) {
       return defaultUA;
     }
-    return "LOFTER-Android 7.8.6 (${androidInfo!.model}; Android ${androidInfo!.version.release}; null) WIFI";
+    return "LOFTER-Android 8.0.12 (${androidInfo!.model}; Android ${androidInfo!.version.release}; null) WIFI";
   }
 
   static String getMarket() {

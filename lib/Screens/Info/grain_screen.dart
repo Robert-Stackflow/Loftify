@@ -16,14 +16,16 @@ import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import 'nested_mixin.dart';
 
-class GrainScreen extends StatefulWidget {
+class GrainScreen extends StatefulWidgetForNested {
   GrainScreen({
     super.key,
     this.infoMode = InfoMode.me,
     this.scrollController,
     this.blogId,
     this.blogName,
+    super.nested = false,
   }) {
     if (infoMode == InfoMode.other) {
       assert(blogName != null);
@@ -62,7 +64,14 @@ class _GrainScreenState extends State<GrainScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     super.initState();
-    _onRefresh();
+    if (widget.nested) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.delayed(const Duration(milliseconds: 300), () => _onRefresh());
+      });
+    }else{
+      _initPhase = InitPhase.successful;
+      setState(() {});
+    }
   }
 
   _fetchGrain({bool refresh = false}) async {
@@ -156,7 +165,7 @@ class _GrainScreenState extends State<GrainScreen>
             return _grainList.isNotEmpty
                 ? _buildMainBody(physics)
                 : ItemBuilder.buildEmptyPlaceholder(
-                    context: context, text: "暂无粮单");
+                    context: context, text: "暂无粮单",physics: physics);
           },
         );
       default:

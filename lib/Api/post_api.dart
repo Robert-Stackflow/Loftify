@@ -181,6 +181,61 @@ class PostApi {
     );
   }
 
+  static Future getMyReturnGift({
+    required int postId,
+    required int blogId,
+    required int giftId,
+  }) async {
+    return RequestUtil.get(
+      "/v1.1/trade/gift/myReturnGift",
+      params: {
+        "postId": postId,
+        "blogId": "$blogId",
+        "id": giftId,
+      },
+    );
+  }
+
+  static Future presentGift({
+    required int postId,
+    required int blogId,
+    required int giftId,
+    required int count,
+    required int myBlogId,
+  }) async {
+    return RequestUtil.post(
+      "/v1.1/trade/gift/present",
+      domainType: DomainType.www,
+      params: {
+        "_": DateTime.now().millisecondsSinceEpoch.toString(),
+      },
+      data: {
+        "postId": postId,
+        "blogId": blogId,
+        "giftId": giftId,
+        "count": count,
+        "currentUserId": "$myBlogId",
+        "couponId": "",
+      },
+    );
+  }
+
+  static Future getBalance({
+    required int postId,
+    required int blogId,
+    required int giftId,
+    required int count,
+    required int myBlogId,
+  }) async {
+    return RequestUtil.get(
+      "/trade/loftercoin/balance",
+      domainType: DomainType.www,
+      params: {
+        "_": DateTime.now().millisecondsSinceEpoch.toString(),
+      },
+    );
+  }
+
   static Future uploadHistory({
     required int postId,
     required int blogId,

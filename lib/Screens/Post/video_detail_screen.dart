@@ -483,6 +483,8 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
       postId: postListItem.itemId,
       part: 0,
       url: rawUrl,
+      postTitle: postListItem.postData!.postView.title,
+      postDigest: postListItem.postData!.postView.digest,
     );
   }
 

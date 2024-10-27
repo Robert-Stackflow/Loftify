@@ -882,6 +882,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
         infoMode: InfoMode.other,
         blogId: _fullBlogData!.blogInfo.blogId,
         blogName: _fullBlogData!.blogInfo.blogName,
+        nested: true,
       ),
     );
     if (_fullBlogData!.showLike == 1) {
@@ -890,6 +891,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
           infoMode: InfoMode.other,
           blogId: _fullBlogData!.blogInfo.blogId,
           blogName: _fullBlogData!.blogInfo.blogName,
+          nested: true,
         ),
       );
     }
@@ -899,6 +901,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
           infoMode: InfoMode.other,
           blogId: _fullBlogData!.blogInfo.blogId,
           blogName: _fullBlogData!.blogInfo.blogName,
+          nested: true,
         ),
       );
     }
@@ -908,6 +911,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
         blogId: _fullBlogData!.blogInfo.blogId,
         blogName: _fullBlogData!.blogInfo.blogName,
         collectionCount: _fullBlogData!.collectionCount,
+        nested: true,
       ),
     );
     if (_fullBlogData!.showFoods == 1) {
@@ -916,6 +920,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
           infoMode: InfoMode.other,
           blogId: _fullBlogData!.blogInfo.blogId,
           blogName: _fullBlogData!.blogInfo.blogName,
+          nested: true,
         ),
       );
     }

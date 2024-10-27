@@ -382,7 +382,13 @@ class _MineScreenState extends State<MineScreen>
             padding: EdgeInsets.zero,
             children: List.generate(_followerList.length, (index) {
               return ItemBuilder.buildFollowerOrFollowingItem(
-                  context, index, _followerList[index]);
+                context,
+                index,
+                _followerList[index],
+                onFollowOrUnFollow: () {
+                  setState(() {});
+                },
+              );
             }),
           ),
         ],

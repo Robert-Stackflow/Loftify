@@ -16,8 +16,9 @@ import '../../Utils/utils.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../Post/collection_detail_screen.dart';
+import 'nested_mixin.dart';
 
-class CollectionScreen extends StatefulWidget {
+class CollectionScreen extends StatefulWidgetForNested {
   CollectionScreen({
     super.key,
     this.infoMode = InfoMode.me,
@@ -25,6 +26,7 @@ class CollectionScreen extends StatefulWidget {
     this.blogId,
     this.blogName,
     this.collectionCount,
+    super.nested = false,
   }) {
     if (infoMode == InfoMode.other) {
       assert(blogName != null);
@@ -62,7 +64,14 @@ class _CollectionScreenState extends State<CollectionScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     super.initState();
-    _onRefresh();
+    if (widget.nested) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.delayed(const Duration(milliseconds: 300), () => _onRefresh());
+      });
+    } else {
+      _initPhase = InitPhase.successful;
+      setState(() {});
+    }
   }
 
   _fetchGrain({bool refresh = false}) async {
@@ -162,7 +171,7 @@ class _CollectionScreenState extends State<CollectionScreen>
             return _collectionList.isNotEmpty
                 ? _buildMainBody(physics)
                 : ItemBuilder.buildEmptyPlaceholder(
-                    context: context, text: "暂无合集");
+                    context: context, text: "暂无合集",physics: physics);
           },
         );
       default:

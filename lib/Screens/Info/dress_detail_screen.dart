@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:loftify/Api/dress_api.dart';
 import 'package:loftify/Models/gift_response.dart';
 import 'package:loftify/Resources/theme.dart';
+import 'package:loftify/Screens/Info/nested_mixin.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
@@ -16,10 +17,11 @@ import '../../Widgets/Custom/hero_photo_view_screen.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 
-class DressDetailScreen extends StatefulWidget {
+class DressDetailScreen extends StatefulWidgetForNested {
   const DressDetailScreen({
     super.key,
     required this.returnGiftDressId,
+    super.nested = false,
   });
 
   final int returnGiftDressId;
@@ -49,7 +51,6 @@ class _DressDetailScreenState extends State<DressDetailScreen>
       SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     }
     super.initState();
-    _onRefresh();
     currentAvatarImg =
         HiveUtil.getString(HiveUtil.customAvatarBoxKey, defaultValue: null);
     setState(() {});

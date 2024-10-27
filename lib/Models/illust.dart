@@ -7,6 +7,8 @@ class Illust {
   int postId;
   String url;
   String extension;
+  String postTitle;
+  String postDigest;
 
   Illust({
     required this.extension,
@@ -17,6 +19,8 @@ class Illust {
     required this.blogLofterId,
     required this.blogNickName,
     required this.part,
+    required this.postTitle,
+    required this.postDigest,
   });
 
   @override
