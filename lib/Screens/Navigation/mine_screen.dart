@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:loftify/Api/user_api.dart';
 import 'package:loftify/Models/account_response.dart';
 import 'package:loftify/Screens/Info/collection_screen.dart';
-import 'package:loftify/Screens/Info/dress_screen.dart';
+import 'package:loftify/Screens/Suit/dress_screen.dart';
 import 'package:loftify/Screens/Info/favorite_folder_list_screen.dart';
 import 'package:loftify/Screens/Info/grain_screen.dart';
 import 'package:loftify/Screens/Info/history_screen.dart';
@@ -30,6 +30,7 @@ import '../../generated/l10n.dart';
 import '../Info/following_follower_screen.dart';
 import '../Info/system_notice_screen.dart';
 import '../Setting/setting_screen.dart';
+import '../Suit/suit_screen.dart';
 import '../refresh_interface.dart';
 
 class MineScreen extends StatefulWidget {
@@ -761,7 +762,7 @@ class _MineScreenState extends State<MineScreen>
             onTap: () {
               RouteUtil.pushPanelCupertinoRoute(
                 context,
-                const DressScreen(),
+                const SuitScreen(),
               );
             }),
         const SizedBox(width: 5),

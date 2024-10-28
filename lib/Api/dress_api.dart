@@ -8,17 +8,20 @@ class DressApi {
     int propType = 2,
     String tag = "",
   }) async {
+    var params = {
+      "tag": tag,
+      "activityCode": activityCode,
+      "propType": propType,
+      "offset": offset,
+      "_": DateTime.timestamp().microsecond,
+    };
+    if (propType == 2) {
+      params["partTargetId"] = partTargetId;
+    }
     return RequestUtil.get(
       "/trade/act/paidContent/propMarket.json",
       domainType: DomainType.www,
-      params: {
-        "tag": tag,
-        "activityCode": activityCode,
-        "propType": propType,
-        "offset": offset,
-        "partTargetId": partTargetId,
-        "_": DateTime.timestamp().microsecond,
-      },
+      params: params,
     );
   }
 
@@ -32,6 +35,20 @@ class DressApi {
         "returnGiftId": "",
         "product": "",
         "returnGiftDressId": returnGiftDressId,
+      },
+    );
+  }
+
+  static Future getEmoteDetail({
+    required int emotePackId,
+  }) async {
+    return RequestUtil.get(
+      "/trade/gift/emotepack/detail",
+      domainType: DomainType.www,
+      params: {
+        "returnGiftId": "",
+        "product": "",
+        "emotePackId": emotePackId,
       },
     );
   }

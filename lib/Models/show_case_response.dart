@@ -18,7 +18,7 @@ class ShowCaseItem {
 
   factory ShowCaseItem.fromJson(Map<String, dynamic> json) {
     return ShowCaseItem(
-      icon: json['icon'],
+      icon: json['icon'] ?? "",
       itemId: json['itemId'],
       postSimpleData: json['postSimpleData'] != null
           ? SimplePostData.fromJson(json['postSimpleData'])

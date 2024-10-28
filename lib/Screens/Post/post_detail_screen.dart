@@ -1170,20 +1170,17 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     } else {
       topWidgets.addAll(
         [
-          if (Utils.isNotEmpty(returnContent?.content))
+          if (Utils.isNotEmpty(returnContent.content))
             Container(
               color: Colors.transparent,
               padding:
                   const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
-              child: ItemBuilder.buildHtmlWidget(
-                context,
-                returnContent?.content ?? "",
-                illusts: _getIllusts(),
-                textStyle: Theme.of(context)
+              child: Text(
+                returnContent.content,
+                style: Theme.of(context)
                     .textTheme
                     .bodyMedium
                     ?.apply(fontSizeDelta: 3, heightDelta: 0.3),
-                onDownloadSuccess: _handleDownloadSuccessAction,
               ),
             ),
           if (isArticle && _previewImages.isNotEmpty)
@@ -1354,7 +1351,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                           context,
                           showClose: false,
                           fullScreen: true,
-                          useMaterial: true,
+                          useFade: true,
                           HeroPhotoViewScreen(
                             imageUrls: _getIllusts(),
                             initIndex: startIndex + index,

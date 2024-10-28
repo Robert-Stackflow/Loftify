@@ -36,11 +36,12 @@ import '../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../Widgets/General/LottieCupertinoRefresh/lottie_cupertino_refresh.dart';
 import '../Widgets/Scaffold/my_scaffold.dart';
 import '../Widgets/Window/window_button.dart';
-import 'Info/dress_screen.dart';
+import 'Suit/dress_screen.dart';
 import 'Info/system_notice_screen.dart';
 import 'Info/user_detail_screen.dart';
 import 'Lock/pin_verify_screen.dart';
 import 'Setting/setting_screen.dart';
+import 'Suit/suit_screen.dart';
 
 const borderColor = Color(0xFF805306);
 const backgroundStartColor = Color(0xFFFFD500);
@@ -562,7 +563,7 @@ class MainScreenState extends State<MainScreen>
                     padding: const EdgeInsets.all(8),
                     onTap: () {
                       RouteUtil.pushPanelCupertinoRoute(
-                          context, const DressScreen());
+                          context, const SuitScreen());
                     },
                   ),
                   const SizedBox(height: 2),

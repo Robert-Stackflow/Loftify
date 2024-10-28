@@ -1,3 +1,5 @@
+import 'package:loftify/Models/return_gift_response.dart';
+
 ///GiftData
 class GiftData {
   GiftDress? returnGiftDress;
@@ -276,5 +278,229 @@ class EmoteItem {
         "scarce": scarce,
         "sizeType": sizeType,
         "url": url,
+      };
+}
+
+class GrantRecord {
+  final String action;
+  final String img;
+  int grantTime;
+  int count;
+  String rule;
+
+  GrantRecord({
+    required this.action,
+    required this.img,
+    required this.grantTime,
+    required this.count,
+    required this.rule,
+  });
+
+  factory GrantRecord.fromJson(Map<String, dynamic> json) => GrantRecord(
+        action: json["action"],
+        img: json["img"],
+        grantTime: json["grantTime"],
+        count: json["count"],
+        rule: json["rule"],
+      );
+
+  Map<String, dynamic> toJson() => {
+        "action": action,
+        "img": img,
+        "grantTime": grantTime,
+        "count": count,
+        "rule": rule,
+      };
+}
+
+class CosumeLog {
+  final String action;
+  final int type;
+  final String tip;
+  final String link;
+  final String img;
+  final int count;
+  final int time;
+
+  CosumeLog({
+    required this.action,
+    required this.type,
+    required this.tip,
+    required this.link,
+    required this.img,
+    required this.count,
+    required this.time,
+  });
+
+  factory CosumeLog.fromJson(Map<String, dynamic> json) => CosumeLog(
+        action: json["action"],
+        type: json["type"],
+        tip: json["tip"],
+        link: json["link"],
+        img: json["img"],
+        count: json["count"],
+        time: json["time"],
+      );
+
+  Map<String, dynamic> toJson() => {
+        "action": action,
+        "type": type,
+        "tip": tip,
+        "link": link,
+        "img": img,
+        "count": count,
+        "time": time,
+      };
+}
+
+class UserTasksData {
+  final UserLimitedTasks limitedTasks;
+  final Gift freeGiftBag;
+  final List<UserTask> tasks;
+
+  UserTasksData({
+    required this.limitedTasks,
+    required this.freeGiftBag,
+    required this.tasks,
+  });
+
+  factory UserTasksData.fromJson(Map<String, dynamic> json) => UserTasksData(
+        limitedTasks: UserLimitedTasks.fromJson(json["limitedTasks"]),
+        freeGiftBag: Gift.fromJson(json["freeGiftBag"]),
+        tasks:
+            List<UserTask>.from(json["tasks"].map((x) => UserTask.fromJson(x))),
+      );
+
+  Map<String, dynamic> toJson() => {
+        "limitedTasks": limitedTasks.toJson(),
+        "freeGiftBag": freeGiftBag.toJson(),
+        "tasks": List<dynamic>.from(tasks.map((x) => x.toJson())),
+      };
+}
+
+class UserTask {
+  String action;
+  String rule;
+  String img;
+  int progress;
+  int goal;
+  int count;
+  int type;
+
+  UserTask({
+    required this.action,
+    required this.rule,
+    required this.img,
+    required this.progress,
+    required this.goal,
+    required this.count,
+    required this.type,
+  });
+
+  factory UserTask.fromJson(Map<String, dynamic> json) => UserTask(
+        action: json["action"],
+        rule: json["rule"],
+        img: json["img"],
+        progress: json["progress"],
+        goal: json["goal"],
+        count: json["count"],
+        type: json["type"],
+      );
+
+  Map<String, dynamic> toJson() => {
+        "action": action,
+        "rule": rule,
+        "img": img,
+        "progress": progress,
+        "goal": goal,
+        "count": count,
+        "type": type,
+      };
+}
+
+class UserLimitedTasks {
+  final List<AdReawrdTask> adReawrdTasks;
+
+  const UserLimitedTasks({
+    required this.adReawrdTasks,
+  });
+
+  factory UserLimitedTasks.fromJson(Map<String, dynamic> json) =>
+      UserLimitedTasks(
+        adReawrdTasks: List<AdReawrdTask>.from(
+            json["adReawrdTasks"].map((x) => AdReawrdTask.fromJson(x))),
+      );
+
+  Map<String, dynamic> toJson() => {
+        "adReawrdTasks":
+            List<dynamic>.from(adReawrdTasks.map((x) => x.toJson())),
+      };
+}
+
+class AdReawrdTask {
+  final String rewardName;
+  final int rewardId;
+  final int rewardCount;
+  final int rewardType;
+  final int rewardStatus; //1已经获取 0未获取
+
+  const AdReawrdTask({
+    required this.rewardName,
+    required this.rewardId,
+    required this.rewardCount,
+    required this.rewardType,
+    required this.rewardStatus,
+  });
+
+  factory AdReawrdTask.fromJson(Map<String, dynamic> json) => AdReawrdTask(
+        rewardName: json["rewardName"],
+        rewardId: json["rewardId"],
+        rewardCount: json["rewardCount"],
+        rewardType: json["rewardType"],
+        rewardStatus: json["rewardStatus"],
+      );
+
+  Map<String, dynamic> toJson() => {
+        "rewardName": rewardName,
+        "rewardId": rewardId,
+        "rewardCount": rewardCount,
+        "rewardType": rewardType,
+        "rewardStatus": rewardStatus,
+      };
+}
+
+class CoinOrder {
+  String amount;
+  String desc;
+  int createTime;
+  int finishTime;
+  int type;
+  int id;
+
+  CoinOrder({
+    required this.amount,
+    required this.desc,
+    required this.createTime,
+    required this.finishTime,
+    required this.type,
+    required this.id,
+  });
+
+  factory CoinOrder.fromJson(Map<String, dynamic> json) => CoinOrder(
+        amount: json["amount"],
+        desc: json["desc"],
+        createTime: json["createTime"],
+        finishTime: json["finishTime"],
+        type: json["type"],
+        id: json["id"],
+      );
+
+  Map<String, dynamic> toJson() => {
+        "amount": amount,
+        "desc": desc,
+        "createTime": createTime,
+        "finishTime": finishTime,
+        "type": type,
+        "id": id,
       };
 }

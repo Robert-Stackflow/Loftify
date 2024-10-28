@@ -223,7 +223,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
               context,
               showClose: false,
               fullScreen: true,
-              useMaterial: true,
+              useFade: true,
               HeroPhotoViewScreen(
                 tagPrefix: Utils.getRandomString(),
                 imageUrls: [Utils.removeImageParam(backgroudUrl)],
@@ -400,8 +400,13 @@ class UserDetailScreenState extends State<UserDetailScreen>
       if (value['code'] != 200) {
         IToast.showTop(value['msg']);
       } else if (value['data']['showCaseList'] != null) {
+        print(value['data']['showCaseList']);
         showCases = (value['data']['showCaseList'] as List)
             .map((e) => ShowCaseItem.fromJson(e))
+            .toList();
+        showCases = showCases
+            .where(
+                (e) => !(e.postCollection == null && e.postSimpleData == null))
             .toList();
         updateFollowStatus();
         if (showCases.isNotEmpty) {
@@ -1002,7 +1007,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
           ),
         );
       };
-    } else {
+    } else if (item.postCollection != null) {
       title = item.postCollection!.name;
       backgroundUrl = item.postCollection!.coverUrl;
       hotCount = item.postCollection!.postCollectionHot.toString();
@@ -1017,6 +1022,8 @@ class UserDetailScreenState extends State<UserDetailScreen>
           ),
         );
       };
+    } else {
+      print(item.toJson());
     }
     return ItemBuilder.buildClickItem(
       GestureDetector(

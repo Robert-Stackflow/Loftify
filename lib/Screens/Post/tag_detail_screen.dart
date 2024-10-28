@@ -7,7 +7,7 @@ import 'package:loftify/Api/tag_api.dart';
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Models/tag_response.dart';
 import 'package:loftify/Resources/theme.dart';
-import 'package:loftify/Screens/Info/dress_screen.dart';
+import 'package:loftify/Screens/Suit/dress_screen.dart';
 import 'package:loftify/Screens/Post/tag_collection_grain_screen.dart';
 import 'package:loftify/Screens/Post/tag_insearch_screen.dart';
 import 'package:loftify/Screens/Post/tag_related_screen.dart';

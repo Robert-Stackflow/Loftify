@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Models/gift_response.dart';
 import 'package:loftify/Resources/theme.dart';
-import 'package:loftify/Screens/Info/dress_detail_screen.dart';
+import 'package:loftify/Screens/Suit/dress_detail_screen.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Api/dress_api.dart';

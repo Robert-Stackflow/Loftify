@@ -51,7 +51,10 @@ class RouteUtil {
     panelScreenState?.pushPage(page);
   }
 
-  static getFadeRoute(Widget page, {Duration? duration}) {
+  static getFadeRoute(
+    Widget page, {
+    Duration? duration,
+  }) {
     return PageRouteBuilder(
       transitionDuration: duration ?? const Duration(milliseconds: 300),
       pageBuilder: (BuildContext context, Animation<double> animation,
@@ -71,6 +74,7 @@ class RouteUtil {
     BuildContext context,
     Widget page, {
     Function(dynamic)? onThen,
+    bool popAll = false,
   }) {
     return Navigator.push(
       context,
@@ -88,7 +92,7 @@ class RouteUtil {
     double? preferMinHeight,
     Function(dynamic)? onThen,
     GlobalKey<DialogWrapperWidgetState>? overrideDialogNavigatorKey,
-    bool useMaterial = false,
+    bool useFade = false,
     bool popAll = false,
   }) {
     if (ResponsiveUtil.isLandscape()) {
@@ -108,8 +112,8 @@ class RouteUtil {
         );
       }
     } else {
-      if (useMaterial) {
-        pushMaterialRoute(context, page, onThen: onThen, popAll: popAll);
+      if (useFade) {
+        pushFadeRoute(context, page, onThen: onThen, popAll: popAll);
       } else {
         pushCupertinoRoute(context, page, onThen: onThen, popAll: popAll);
       }

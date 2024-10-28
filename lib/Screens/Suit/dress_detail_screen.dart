@@ -10,10 +10,12 @@ import 'package:loftify/Utils/hive_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Utils/enums.dart';
+import '../../Utils/file_util.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Widgets/Custom/hero_photo_view_screen.dart';
+import '../../Widgets/Dialog/custom_dialog.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 
@@ -100,12 +102,7 @@ class _DressDetailScreenState extends State<DressDetailScreen>
           onRefresh: _onRefresh,
           triggerAxis: Axis.vertical,
           childBuilder: (context, physics) {
-            return _giftDress != null
-                ? _buildBody(physics)
-                : ItemBuilder.buildLoadingDialog(
-                    context,
-                    background: MyTheme.getBackground(context),
-                  );
+            return _buildBody(physics);
           }),
     );
   }
@@ -115,7 +112,7 @@ class _DressDetailScreenState extends State<DressDetailScreen>
       physics: physics,
       cacheExtent: 9999,
       padding: const EdgeInsets.all(10),
-      itemCount: _giftDress!.partList.length,
+      itemCount: _giftDress?.partList.length ?? 0,
       gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
         mainAxisSpacing: 10,
         crossAxisSpacing: 10,
@@ -169,7 +166,7 @@ class _DressDetailScreenState extends State<DressDetailScreen>
                         context,
                         showClose: false,
                         fullScreen: true,
-                        useMaterial: true,
+                        useFade: true,
                         HeroPhotoViewScreen(
                           imageUrls: [item.partUrl],
                           useMainColor: false,
@@ -184,36 +181,67 @@ class _DressDetailScreenState extends State<DressDetailScreen>
                         width: 90,
                         height: 90,
                         showLoading: false,
+                        placeholderBackground: Colors.transparent,
                         imageUrl: item.img,
                       ),
                     ),
                   ),
           ),
-          const SizedBox(width: 15),
+          const SizedBox(height: 10),
           Text(
             item.partName,
             style: Theme.of(context).textTheme.titleMedium,
           ),
+          const SizedBox(height: 5),
           Text(
             item.partType == 1 ? "头像框" : "评论气泡",
             style: Theme.of(context).textTheme.labelMedium,
           ),
           const SizedBox(height: 10),
-          item.partType == 1
-              ? ItemBuilder.buildRoundButton(
-                  context,
-                  text: currentAvatarImg == item.partUrl ? "正在佩戴" : "立即佩戴",
-                  background: currentAvatarImg == item.partUrl
-                      ? null
-                      : Theme.of(context).primaryColor,
-                  onTap: () {
-                    _dressOrUnDress(item);
-                  },
-                )
-              : ItemBuilder.buildRoundButton(
-                  context,
-                  text: "无法佩戴",
+          Row(
+            children: [
+              if (item.partType == 1) const SizedBox(width: 0),
+              if (item.partType == 1)
+                Center(
+                  child: ItemBuilder.buildIconButton(
+                    context: context,
+                    icon: const Icon(Icons.download_done_rounded, size: 24),
+                    onTap: () async {
+                      CustomLoadingDialog.showLoading(title: "下载中...");
+                      String url = item.partUrl;
+                      await FileUtil.saveImage(context, url);
+                      CustomLoadingDialog.dismissLoading();
+                    },
+                  ),
                 ),
+              if (item.partType != 1)
+                Expanded(
+                  flex: 2,
+                  child: ItemBuilder.buildRoundButton(context, text: "下载",
+                      onTap: () async {
+                    CustomLoadingDialog.showLoading(title: "下载中...");
+                    String url = item.partUrl;
+                    await FileUtil.saveImage(context, url);
+                    CustomLoadingDialog.dismissLoading();
+                  }),
+                ),
+              if (item.partType == 1) const SizedBox(width: 5),
+              if (item.partType == 1)
+                Expanded(
+                  flex: 3,
+                  child: ItemBuilder.buildRoundButton(
+                    context,
+                    text: currentAvatarImg == item.partUrl ? "正在佩戴" : "立即佩戴",
+                    background: currentAvatarImg == item.partUrl
+                        ? null
+                        : Theme.of(context).primaryColor,
+                    onTap: () {
+                      _dressOrUnDress(item);
+                    },
+                  ),
+                ),
+            ],
+          ),
         ],
       ),
     );

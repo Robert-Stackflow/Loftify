@@ -204,7 +204,7 @@ class ItemBuilder {
     bool forceUnscrollable = false,
   }) {
     padding ??= ResponsiveUtil.isLandscape()
-        ? const EdgeInsets.symmetric(horizontal: 10)
+        ? const EdgeInsets.symmetric(horizontal: 0)
         : const EdgeInsets.symmetric(horizontal: 10);
     bool scrollable = false;
     if (ResponsiveUtil.isLandscape()) {
@@ -1983,6 +1983,7 @@ class ItemBuilder {
     String? caption,
     String? tagPrefix,
     String? tagSuffix,
+    bool clickable = true,
   }) {
     double avatarBoxDeltaSize = size / 2;
     bool hasAvatarBox = Utils.isNotEmpty(avatarBoxImageUrl);
@@ -2021,6 +2022,7 @@ class ItemBuilder {
               ),
             )
           : ItemBuilder.buildClickItem(
+              clickable: clickable,
               GestureDetector(
                 onTap: showDetailMode != ShowDetailMode.not
                     ? () {
@@ -2028,7 +2030,7 @@ class ItemBuilder {
                           context,
                           showClose: false,
                           fullScreen: true,
-                          useMaterial: true,
+                          useFade: true,
                           HeroPhotoViewScreen(
                             tagPrefix: tagPrefix,
                             tagSuffix: tagSuffix,
@@ -2113,7 +2115,7 @@ class ItemBuilder {
             context,
             showClose: false,
             fullScreen: true,
-            useMaterial: true,
+            useFade: true,
             HeroPhotoViewScreen(
               tagPrefix: tagPrefix,
               tagSuffix: tagSuffix,
@@ -3105,6 +3107,7 @@ class ItemBuilder {
                   if (icon != null && showIcon)
                     RotatedBox(quarterTurns: quarterTurns, child: icon),
                   if (icon != null && showIcon) SizedBox(width: spacing),
+                  if(text.isNotEmpty)
                   Text(
                     text,
                     style: Theme.of(context).textTheme.titleSmall?.apply(
@@ -3122,6 +3125,7 @@ class ItemBuilder {
                   if (icon != null && showIcon)
                     RotatedBox(quarterTurns: quarterTurns, child: icon),
                   if (icon != null && showIcon) SizedBox(height: spacing),
+                  if(text.isNotEmpty)
                   Text(
                     text,
                     style: Theme.of(context).textTheme.titleSmall?.apply(
@@ -3463,7 +3467,7 @@ class ItemBuilder {
                             context,
                             showClose: false,
                             fullScreen: true,
-                            useMaterial: true,
+                            useFade: true,
                             HeroPhotoViewScreen(
                               imageUrls: illusts ?? [imageUrl],
                               useMainColor: true,

@@ -192,8 +192,8 @@ class SimpleBlogInfo {
     return SimpleBlogInfo(
       authName: json['authName'],
       avatarBoxImage: json['avatarBoxImage'],
-      bigAvaImg: json['bigAvaImg'],
-      blogId: json['blogId'],
+      bigAvaImg: json['bigAvaImg'] ?? "",
+      blogId: json['blogId'] ?? 0,
       blogName: json['blogName'],
       blogNickName: json['blogNickName'],
       cardDressing: json['cardDressing'] != null

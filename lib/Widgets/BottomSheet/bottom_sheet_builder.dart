@@ -24,6 +24,7 @@ class BottomSheetBuilder {
     bool useWideLandscape = true,
     Color? backgroundColor,
     double? preferMinWidth,
+        bool useVerticalMargin = false,
     ShapeBorder shape = const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
@@ -39,6 +40,7 @@ class BottomSheetBuilder {
           return FloatingModal(
             preferMinWidth: preferMinWidth,
             useWideLandscape: useWideLandscape,
+            useVerticalMargin:useVerticalMargin,
             child: builder(context),
           );
         },

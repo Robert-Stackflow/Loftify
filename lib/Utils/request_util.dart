@@ -222,7 +222,7 @@ class RequestUtil {
       }
       list['Data'] = response.data
           .toString()
-          .substring(0, min(600, response.data.toString().length));
+          .substring(0, min(1000, response.data.toString().length));
     }
     IPrint.format(
       tag: response.requestOptions.method,
