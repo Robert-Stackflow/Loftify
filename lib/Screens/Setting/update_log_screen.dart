@@ -44,7 +44,8 @@ class _UpdateLogScreenState extends State<UpdateLogScreen>
       context: context,
       showLoading: false,
       showUpdateDialog: false,
-      showNoUpdateToast: false,
+      showLatestToast: false,
+      noUpdateToastText: S.current.failedToGetChangelog,
       onGetCurrentVersion: (currentVersion) {
         setState(() {
           this.currentVersion = currentVersion;
@@ -69,7 +70,7 @@ class _UpdateLogScreenState extends State<UpdateLogScreen>
       appBar: ItemBuilder.buildDesktopAppBar(
         showBack: true,
         transparent: true,
-        title: S.current.changeLog,
+        title: S.current.changelog,
         context: context,
         background: Theme.of(context).scaffoldBackgroundColor,
       ),

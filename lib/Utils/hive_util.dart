@@ -43,6 +43,7 @@ class HiveUtil {
   static const String windowSizeKey = "windowSize";
   static const String windowPositionKey = "windowPosition";
   static const String showTrayKey = "showTray";
+  static const String launchAtStartupKey = "launchAtStartup";
   static const String enableCloseToTrayKey = "enableCloseToTray";
   static const String enableCloseNoticeKey = "enableCloseNotice";
   static const String autoCheckUpdateKey = "autoCheckUpdate";

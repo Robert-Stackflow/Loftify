@@ -212,3 +212,20 @@ enum Copyright {
     }
   }
 }
+
+enum TrayKey {
+  displayApp("displayApp"),
+  lockApp("lockApp"),
+  setting("setting"),
+  officialWebsite("officialWebsite"),
+  githubRepository("githubRepository"),
+  about("about"),
+  launchAtStartup("launchAtStartup"),
+  checkUpdates("checkUpdates"),
+  shortcutHelp("shortcutHelp"),
+  exitApp("exitApp");
+
+  final String key;
+
+  const TrayKey(this.key);
+}

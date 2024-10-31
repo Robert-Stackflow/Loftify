@@ -89,12 +89,14 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         WindowListener {
   @override
   bool get wantKeepAlive => true;
+  static const int LIANGPIAO_GIFTID = 3001;
   PostDetailData? _postDetailData;
   List<PreviewImage> _previewImages = [];
   bool _isCatutu = false;
   String _giftTypeString = "";
   String _giftPreviewDescription = "";
   String _giftCost = "";
+  int _giftCostId = LIANGPIAO_GIFTID;
   GiftInfoData? _giftInfoData;
   final SwiperController _swiperController = SwiperController();
   int _currentIndex = 1;
@@ -353,17 +355,20 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     if (gift == null) return;
     String typeString = gift.planType?.name ?? "彩蛋";
     var defaultGifts = gift.defaultSelectedGifts ?? [];
-    String unlockCost = "";
+    List<String> unlockCost = [];
+    Map<int, int> idToCoinMap = {};
     if (defaultGifts.isNotEmpty) {
-      unlockCost = "";
       for (var gift in defaultGifts) {
+        idToCoinMap[gift.id ?? LIANGPIAO_GIFTID] = gift.coin ?? 0;
         if ((gift.coin ?? 0) > 0) {
-          unlockCost += "${gift.name}(${gift.coin}个乐乎币) ";
+          unlockCost.add("${gift.name}(${gift.coin}个乐乎币)");
         } else {
-          unlockCost += "${gift.name} ";
+          unlockCost.add("${gift.name}");
         }
       }
     }
+    _giftCostId =
+        idToCoinMap.entries.reduce((a, b) => a.value < b.value ? a : b).key;
     String previewDescription = "";
     if ((gift.wordCount ?? 0) > 0) {
       previewDescription = "${gift.wordCount}字";
@@ -376,7 +381,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     }
     _giftTypeString = typeString;
     _giftPreviewDescription = previewDescription;
-    _giftCost = unlockCost;
+    _giftCost = " ${unlockCost.join("或")} ";
   }
 
   _fetchHotComments() async {
@@ -1054,6 +1059,11 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     );
   }
 
+  Future<UserBag> getUserBag() async {
+    var value = await PostApi.getUserBag(postId: postId, blogId: blogId);
+    return UserBag.fromJson(value['data']);
+  }
+
   _buildEggContent() {
     ReturnGift? gift = _getReturnGift();
     ReturnContent? returnContent = _getReturnContent();
@@ -1061,6 +1071,12 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     var bodySmall = Theme.of(context).textTheme.bodySmall;
     var labelSmall = Theme.of(context).textTheme.labelSmall;
     var coinCount = _giftInfoData!.userBag.coin;
+    int liangpiaoCount = 0;
+    var currentGifts = _giftInfoData!.userBag.gifts
+        .where((element) => element.id == LIANGPIAO_GIFTID);
+    if (currentGifts.isNotEmpty) {
+      liangpiaoCount = currentGifts.first.count ?? 0;
+    }
     Widget promotionWidget = Utils.isNotEmpty(gift.promotion)
         ? Container(
             color: Colors.transparent,
@@ -1114,14 +1130,11 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               text: "$_giftCost解锁回礼",
               background: Theme.of(context).primaryColor,
               onTap: () async {
-                DialogBuilder.showConfirmDialog(context,
-                    title: "支付$_giftCost解锁回礼",
-                    message: "你当前拥有$coinCount个乐乎币，是否确认支付以解锁回礼？",
-                    onTapConfirm: () async {
+                presentAndGetGift() async {
                   var value = await PostApi.presentGift(
                     postId: _postDetailData!.post!.id,
                     blogId: blogId,
-                    giftId: 1,
+                    giftId: _giftCostId,
                     count: 1,
                     myBlogId: _myBlogId,
                   );
@@ -1138,6 +1151,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                         returnGiftData['ok'] != true) {
                       IToast.showTop(returnGiftData['msg']);
                     } else {
+                      IToast.showTop("解锁成功");
                       var returnGift =
                           ReturnGift.fromJson(returnGiftData['data']['plan']);
                       returnGift.digest = gift.digest;
@@ -1145,6 +1159,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                           gift.defaultSelectedGifts;
                       returnGift.imgCount = gift.imgCount;
                       returnGift.wordCount = gift.wordCount;
+                      returnGift.unlockCount = (gift.unlockCount ?? 0) + 1;
                       _giftInfoData!.returnGifts.clear();
                       _giftInfoData!.returnGifts.add(returnGift);
                       _postDetailData!.post!.returnContent.add(
@@ -1160,7 +1175,44 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                       setState(() {});
                     }
                   }
-                });
+                }
+
+                try {
+                  UserBag userBag = await getUserBag();
+                  coinCount = userBag.coin;
+                  var bag = userBag.bag
+                      .where((element) => element.id == LIANGPIAO_GIFTID);
+                  if (bag.isNotEmpty) {
+                    liangpiaoCount = bag.first.count ?? 0;
+                  }
+                } catch (e, t) {
+                  ILogger.error("Failed to get user bag", e, t);
+                  return;
+                }
+
+                if (_giftCostId == LIANGPIAO_GIFTID) {
+                  if (liangpiaoCount > 0) {
+                    DialogBuilder.showConfirmDialog(
+                      context,
+                      title: "支付粮票解锁回礼",
+                      message: "你当前拥有$liangpiaoCount张粮票，是否确认支付以解锁回礼？",
+                      onTapConfirm: () async {
+                        await presentAndGetGift();
+                      },
+                    );
+                  } else {
+                    IToast.showTop("粮票不足");
+                  }
+                } else {
+                  DialogBuilder.showConfirmDialog(
+                    context,
+                    title: "支付$_giftCost解锁回礼",
+                    message: "你当前拥有$coinCount个乐乎币，是否确认支付以解锁回礼？",
+                    onTapConfirm: () async {
+                      await presentAndGetGift();
+                    },
+                  );
+                }
               },
             ),
           ),

@@ -66,7 +66,7 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
         appBar: ItemBuilder.buildDesktopAppBar(
           transparent: true,
           showBack: true,
-          title: S.current.apprearanceSetting,
+          title: S.current.appearanceSetting,
           context: context,
           background: Theme.of(context).scaffoldBackgroundColor,
         ),

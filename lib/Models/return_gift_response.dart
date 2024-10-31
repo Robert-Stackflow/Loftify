@@ -129,6 +129,11 @@ class Gift {
       type: type ?? this.type,
     );
   }
+
+  @override
+  String toString() {
+    return 'Gift(coin: $coin, count: $count, coupons: $coupons, expireDays: $expireDays, giftType: $giftType, id: $id, image: $image, name: $name, type: $type)';
+  }
 }
 
 class PurpleGift {
@@ -383,6 +388,7 @@ class SupportInfo {
 ///UserBag
 class UserBag {
   int coin;
+  List<Gift> bag;
   List<Gift> exchangeCoupons;
   List<Gift> gifts;
   String pageUrl;
@@ -390,6 +396,7 @@ class UserBag {
   UserBag({
     required this.coin,
     required this.exchangeCoupons,
+    required this.bag,
     required this.gifts,
     required this.pageUrl,
   });
@@ -398,7 +405,12 @@ class UserBag {
         coin: json["coin"] ?? 0,
         exchangeCoupons: List<Gift>.from(
             json["exchangeCoupons"].map((x) => Gift.fromJson(x))),
-        gifts: List<Gift>.from(json["gifts"].map((x) => Gift.fromJson(x))),
+        gifts: json["gifts"] == null
+            ? []
+            : List<Gift>.from(json["gifts"].map((x) => Gift.fromJson(x))),
+        bag: json["bag"] == null
+            ? []
+            : List<Gift>.from(json["bag"].map((x) => Gift.fromJson(x))),
         pageUrl: json["pageUrl"] ?? "",
       );
 
@@ -407,6 +419,7 @@ class UserBag {
         "exchangeCoupons":
             List<dynamic>.from(exchangeCoupons.map((x) => x.toJson())),
         "gifts": List<dynamic>.from(gifts.map((x) => x.toJson())),
+        "bag": List<dynamic>.from(bag.map((x) => x.toJson())),
         "pageUrl": pageUrl,
       };
 }

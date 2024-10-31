@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:loftify/Resources/theme.dart';
+import 'package:local_notifier/local_notifier.dart';
+import 'package:loftify/Utils/responsive_util.dart';
+import 'package:loftify/Utils/utils.dart';
 
 import 'app_provider.dart';
 
@@ -41,4 +44,39 @@ class IToast {
   }) {
     return show(text, icon: icon, gravity: ToastGravity.BOTTOM);
   }
+
+  static LocalNotification? showDesktopNotification(
+      String title, {
+        String? subTitle,
+        String? body,
+        List<String> actions = const [],
+        Function()? onClick,
+        Function(int)? onClickAction,
+      }) {
+    if (!ResponsiveUtil.isDesktop()) return null;
+    var nActions =
+    actions.map((e) => LocalNotificationAction(text: e)).toList();
+    LocalNotification notification = LocalNotification(
+      identifier: Utils.getRandomString(),
+      title: title,
+      subtitle: subTitle,
+      body: body,
+      actions: nActions,
+    );
+    notification.onShow = () {};
+    notification.onClose = (closeReason) {
+      switch (closeReason) {
+        case LocalNotificationCloseReason.userCanceled:
+          break;
+        case LocalNotificationCloseReason.timedOut:
+          break;
+        default:
+      }
+    };
+    notification.onClick = onClick;
+    notification.onClickAction = onClickAction;
+    notification.show();
+    return notification;
+  }
+
 }

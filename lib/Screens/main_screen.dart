@@ -36,7 +36,6 @@ import '../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../Widgets/General/LottieCupertinoRefresh/lottie_cupertino_refresh.dart';
 import '../Widgets/Scaffold/my_scaffold.dart';
 import '../Widgets/Window/window_button.dart';
-import 'Suit/dress_screen.dart';
 import 'Info/system_notice_screen.dart';
 import 'Info/user_detail_screen.dart';
 import 'Lock/pin_verify_screen.dart';
@@ -209,15 +208,15 @@ class MainScreenState extends State<MainScreen>
       Utils.getReleases(
         context: context,
         showLoading: false,
-        showUpdateDialog: true,
-        showNoUpdateToast: false,
+        showUpdateDialog: HiveUtil.getBool(HiveUtil.autoCheckUpdateKey),
+        showFailedToast: false,
+        showLatestToast: false,
       );
     }
   }
 
   @override
   void initState() {
-    trayManager.addListener(this);
     windowManager.addListener(this);
     super.initState();
     WidgetsBinding.instance.addObserver(this);
@@ -227,15 +226,20 @@ class MainScreenState extends State<MainScreen>
     if (ResponsiveUtil.isDesktop()) initHotKey();
     if (HiveUtil.getBool(HiveUtil.autoCheckUpdateKey)) fetchReleases();
     darkModeController = AnimationController(vsync: this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       jumpToLogin();
-      jumpToPinVerify(autoAuth: true);
+      jumpToLock(autoAuth: true);
       darkModeWidget = LottieUtil.load(
         LottieUtil.sunLight,
         size: 25,
         autoForward: !Utils.isDark(context),
         controller: darkModeController,
       );
+      if (ResponsiveUtil.isDesktop()) {
+        await Utils.initTray();
+        trayManager.addListener(this);
+        keyboardHandlerState?.focus();
+      }
     });
     initGlobalConfig();
     fetchData();
@@ -296,7 +300,7 @@ class MainScreenState extends State<MainScreen>
     }
   }
 
-  void jumpToPinVerify({bool autoAuth = false}) {
+  void jumpToLock({bool autoAuth = false}) {
     if (HiveUtil.shouldAutoLock()) {
       _hasJumpedToPinVerify = true;
       RouteUtil.pushCupertinoRoute(
@@ -645,7 +649,7 @@ class MainScreenState extends State<MainScreen>
       _timer = Timer(
         Duration(minutes: appProvider.autoLockTime),
         () {
-          jumpToPinVerify();
+          jumpToLock();
         },
       );
     }
@@ -681,9 +685,7 @@ class MainScreenState extends State<MainScreen>
 
   @override
   void onTrayIconMouseDown() {
-    windowManager.show();
-    windowManager.focus();
-    windowManager.restore();
+    Utils.displayApp();
   }
 
   @override
@@ -695,36 +697,8 @@ class MainScreenState extends State<MainScreen>
   void onTrayIconRightMouseUp() {}
 
   @override
-  void onTrayMenuItemClick(MenuItem menuItem) {
-    if (menuItem.key == 'show_window') {
-      windowManager.show();
-      windowManager.focus();
-      windowManager.restore();
-    } else if (menuItem.key == 'lock_window') {
-      if (HiveUtil.canLock()) {
-        _hasJumpedToPinVerify = true;
-        RouteUtil.pushCupertinoRoute(
-            context,
-            PinVerifyScreen(
-              onSuccess: () {},
-              isModal: true,
-              autoAuth: false,
-            ), onThen: (_) {
-          _hasJumpedToPinVerify = false;
-        });
-      } else {
-        windowManager.show();
-        windowManager.focus();
-        windowManager.restore();
-        IToast.showTop("尚未设置手势密码");
-      }
-    } else if (menuItem.key == 'show_official_website') {
-      UriUtil.launchUrlUri(context, officialWebsite);
-    } else if (menuItem.key == 'show_github_repo') {
-      UriUtil.launchUrlUri(context, repoUrl);
-    } else if (menuItem.key == 'exit_app') {
-      windowManager.close();
-    }
+  Future<void> onTrayMenuItemClick(MenuItem menuItem) async {
+    Utils.processTrayMenuItemClick(context, menuItem, false);
   }
 
   @override

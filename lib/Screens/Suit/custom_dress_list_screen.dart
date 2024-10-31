@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:loftify/Api/gift_api.dart';
 import 'package:loftify/Models/gift_response.dart';
 import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Screens/Suit/custom_bg_avatar_list_screen.dart';
@@ -18,11 +19,14 @@ class CustomDressListScreen extends StatefulWidget {
     super.key,
     this.tags = const [],
     this.propType = 2,
+    this.blogId,
   });
 
   final int propType;
 
   final List<String> tags;
+
+  final int? blogId;
 
   static const String routeName = "/suit/customDress";
 
@@ -49,25 +53,42 @@ class _CustomDressListScreenState extends State<CustomDressListScreen>
       _noMore = false;
       if (offset < 0) offset = 0;
     }
-    if(offset<0) return IndicatorResult.noMore;
+    if (offset < 0) return IndicatorResult.noMore;
     _loading = true;
-    return await DressApi.getDressList(
-      offset: refresh ? 0 : offset,
-      tag: tag ?? "",
-      propType: widget.propType,
-    ).then((value) {
-      try {
-        if (value['code'] != 0) {
-          IToast.showTop(value['msg']);
-          return IndicatorResult.fail;
+    List<dynamic> t = [];
+    try {
+      Map<String, dynamic> value = {};
+      if (widget.blogId == null) {
+        value = await DressApi.getDressList(
+          offset: refresh ? 0 : offset,
+          tag: tag ?? "",
+          propType: widget.propType,
+        );
+        offset = value['data']['offset'];
+        t = value['data']['propReturnGifts'];
+      } else {
+        value = await GiftApi.getUserProductList(
+          offset: refresh ? 0 : offset,
+          blogId: widget.blogId!,
+          type: widget.propType,
+        );
+        offset = value['data']['offset'];
+        if (widget.propType == 2) {
+          t = value['data']['returnGiftDressList'];
         } else {
-          offset = value['data']['offset'];
-          List<dynamic> t = value['data']['propReturnGifts'];
-          if (refresh) {
-            _giftList.clear();
-            _giftDressList.clear();
-            _giftEmoteList.clear();
-          }
+          t = value['data']['returnGiftEmotePackageList'];
+        }
+      }
+      if (value['code'] != 0 && value['code'] != 200) {
+        IToast.showTop(value['msg']);
+        return IndicatorResult.fail;
+      } else {
+        if (refresh) {
+          _giftList.clear();
+          _giftDressList.clear();
+          _giftEmoteList.clear();
+        }
+        if (widget.blogId == null) {
           for (var e in t) {
             if (e != null) {
               GiftData tmp = GiftData.fromJson(e);
@@ -88,23 +109,29 @@ class _CustomDressListScreenState extends State<CustomDressListScreen>
               }
             }
           }
-          if (mounted) setState(() {});
-          if (t.isEmpty || offset < 0) {
-            _noMore = true;
-            if (!refresh) return IndicatorResult.noMore;
+        } else {
+          if (widget.propType == 2) {
+            _giftDressList.addAll(t.map((e) => GiftDress.fromJson(e)).toList());
           } else {
-            return IndicatorResult.success;
+            _giftEmoteList.addAll(t.map((e) => GiftEmote.fromJson(e)).toList());
           }
         }
-      } catch (e, t) {
-        ILogger.error("Failed to load dress list", e, t);
-        if (mounted) IToast.showTop("加载失败");
-        return IndicatorResult.fail;
-      } finally {
         if (mounted) setState(() {});
-        _loading = false;
+        if (t.isEmpty || offset < 0) {
+          _noMore = true;
+          if (!refresh) return IndicatorResult.noMore;
+        } else {
+          return IndicatorResult.success;
+        }
       }
-    });
+    } catch (e, t) {
+      ILogger.error("Failed to load dress list", e, t);
+      if (mounted) IToast.showTop("加载失败");
+      return IndicatorResult.fail;
+    } finally {
+      if (mounted) setState(() {});
+      _loading = false;
+    }
   }
 
   _onRefresh() async {
@@ -120,13 +147,14 @@ class _CustomDressListScreenState extends State<CustomDressListScreen>
     super.build(context);
     return Column(
       children: [
-        CustomBgAvatarListScreenState.buildTagBar(context, widget.tags, tag,
-            (tag) {
-          this.tag = tag;
-          setState(() {});
-          _refreshController.resetHeader();
-          _refreshController.callRefresh();
-        }),
+        if (widget.blogId == null)
+          CustomBgAvatarListScreenState.buildTagBar(context, widget.tags, tag,
+              (tag) {
+            this.tag = tag;
+            setState(() {});
+            _refreshController.resetHeader();
+            _refreshController.callRefresh();
+          }),
         Expanded(
           child: EasyRefresh.builder(
             refreshOnStart: true,
@@ -136,8 +164,14 @@ class _CustomDressListScreenState extends State<CustomDressListScreen>
             triggerAxis: Axis.vertical,
             childBuilder: (context, physics) {
               return widget.propType == 3
-                  ? _buildEmoteBody(physics)
-                  : _buildDressBody(physics);
+                  ? _giftEmoteList.isNotEmpty
+                      ? _buildEmoteBody(physics)
+                      : ItemBuilder.buildEmptyPlaceholder(
+                          context: context, text: "暂无表情包")
+                  : _giftDressList.isNotEmpty
+                      ? _buildDressBody(physics)
+                      : ItemBuilder.buildEmptyPlaceholder(
+                          context: context, text: "暂无装扮");
             },
           ),
         ),

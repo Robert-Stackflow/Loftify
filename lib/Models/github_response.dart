@@ -129,7 +129,7 @@ class ReleaseAsset {
   dynamic uploader;
   String url;
 
-  String? pkgsDownloadUrl;
+  String pkgsDownloadUrl="";
 
   ReleaseAsset({
     required this.browserDownloadUrl,

@@ -90,7 +90,9 @@ class ResponsiveUtil {
   static Future<void> returnToMainScreen(BuildContext context) async {
     if (ResponsiveUtil.isDesktop()) {
       globalNavigatorState?.pushAndRemoveUntil(
-        RouteUtil.getFadeRoute(ItemBuilder.buildContextMenuOverlay(const MainScreen()), duration: Duration.zero),
+        RouteUtil.getFadeRoute(
+            ItemBuilder.buildContextMenuOverlay(MainScreen(key: mainScreenKey)),
+            duration: Duration.zero),
         (route) => false,
       );
     } else {

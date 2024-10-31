@@ -11,6 +11,7 @@ import '../../Utils/file_util.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
+import '../../Widgets/Dialog/widgets/dialog_wrapper_widget.dart';
 import '../../Widgets/Item/item_builder.dart';
 
 class UpdateScreen extends StatefulWidget {
@@ -19,11 +20,14 @@ class UpdateScreen extends StatefulWidget {
     required this.latestReleaseItem,
     required this.latestVersion,
     required this.currentVersion,
+    this.overrideDialogNavigatorKey,
   });
 
   final String latestVersion;
   final String currentVersion;
   final ReleaseItem latestReleaseItem;
+  final GlobalKey<DialogWrapperWidgetState>? overrideDialogNavigatorKey;
+
 
   static const String routeName = "/setting/update";
 
@@ -118,7 +122,11 @@ class _UpdateScreenState extends State<UpdateScreen>
               context,
               text: "暂不更新",
               onTap: () {
-                dialogNavigatorState?.popPage();
+                if (widget.overrideDialogNavigatorKey != null) {
+                  widget.overrideDialogNavigatorKey?.currentState?.popPage();
+                } else {
+                  dialogNavigatorState?.popPage();
+                }
               },
               fontSizeDelta: 2,
             ),

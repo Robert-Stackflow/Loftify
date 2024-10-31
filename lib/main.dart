@@ -8,16 +8,18 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:hive/hive.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
+import 'package:launch_at_startup/launch_at_startup.dart';
+import 'package:local_notifier/local_notifier.dart';
 import 'package:loftify/Database/database_manager.dart';
 import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/file_util.dart';
-import 'package:loftify/Utils/fontsize_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/request_header_util.dart';
 import 'package:loftify/Utils/request_util.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart';
 import 'package:provider/provider.dart';
-import 'package:tray_manager/tray_manager.dart';
+import 'package:protocol_handler/protocol_handler.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'Screens/main_screen.dart';
@@ -25,8 +27,11 @@ import 'Utils/constant.dart';
 import 'Utils/ilogger.dart';
 import 'Utils/notification_util.dart';
 import 'Utils/responsive_util.dart';
+import 'Utils/utils.dart';
 import 'Widgets/Item/item_builder.dart';
 import 'generated/l10n.dart';
+
+const List<String> kWindowsSchemes = ["lofter"];
 
 Future<void> main(List<String> args) async {
   runMyApp(args);
@@ -46,10 +51,26 @@ Future<void> runMyApp(List<String> args) async {
   }
   if (ResponsiveUtil.isDesktop()) {
     await initWindow();
-    initTray();
+    Utils.initTray();
+    PackageInfo packageInfo=await PackageInfo.fromPlatform();
+    launchAtStartup.setup(
+      appName: packageInfo.appName,
+      appPath: Platform.resolvedExecutable,
+    );
+    await launchAtStartup.enable();
+    await launchAtStartup.disable();
+    await LocalNotifier.instance.setup(
+      appName: packageInfo.appName,
+      shortcutPolicy: ShortcutPolicy.requireCreate,
+    );
+    HiveUtil.put(HiveUtil.launchAtStartupKey,
+        await LaunchAtStartup.instance.isEnabled());
+    for (String scheme in kWindowsSchemes) {
+      await protocolHandler.register(scheme);
+    }
     await HotKeyManager.instance.unregisterAll();
   }
-  runApp(const MyApp());
+  runApp(MyApp(home: MainScreen(key: mainScreenKey)));
   FlutterNativeSplash.remove();
 }
 
@@ -84,41 +105,6 @@ Future<void> initWindow() async {
   });
 }
 
-Future<void> initTray() async {
-  await trayManager.setIcon(
-    Platform.isWindows
-        ? 'assets/logo-transparent-big.ico'
-        : 'assets/logo-transparent-big.png',
-  );
-  Menu menu = Menu(
-    items: [
-      MenuItem(
-        key: 'show_window',
-        label: '显示 Loftify',
-      ),
-      MenuItem(
-        key: 'lock_window',
-        label: '锁定 Loftify',
-      ),
-      MenuItem.separator(),
-      MenuItem(
-        key: 'show_official_website',
-        label: '官网',
-      ),
-      MenuItem(
-        key: 'show_github_repo',
-        label: 'GitHub',
-      ),
-      MenuItem.separator(),
-      MenuItem(
-        key: 'exit_app',
-        label: '退出 Loftify',
-      ),
-    ],
-  );
-  await trayManager.setContextMenu(menu);
-}
-
 Future<void> initDisplayMode() async {
   await FlutterDisplayMode.setHighRefreshRate();
   await FlutterDisplayMode.setPreferredMode(await FlutterDisplayMode.preferred);
@@ -145,7 +131,7 @@ class MyApp extends StatelessWidget {
 
   const MyApp({
     super.key,
-    this.home = const MainScreen(),
+    required this.home,
     this.title = 'Loftify',
   });
 
@@ -197,21 +183,14 @@ class MyApp extends StatelessWidget {
               initialEntries: [
                 if (widget != null) ...[
                   OverlayEntry(
-                    builder: (context) => MediaQuery(
-                      data: MediaQuery.of(context).copyWith(
-                        textScaler: TextScaler.linear(
-                          FontSizeUtil.getTextFactor(globalProvider.fontSize),
-                        ),
-                      ),
-                      child: Listener(
-                        onPointerDown: (_) {
-                          if (!ResponsiveUtil.isDesktop() &&
-                              searchScreenState?.hasSearchFocus == true) {
-                            FocusManager.instance.primaryFocus?.unfocus();
-                          }
-                        },
-                        child: widget,
-                      ),
+                    builder: (context) => Listener(
+                      onPointerDown: (_) {
+                        if (!ResponsiveUtil.isDesktop() &&
+                            searchScreenState?.hasSearchFocus == true) {
+                          FocusManager.instance.primaryFocus?.unfocus();
+                        }
+                      },
+                      child: widget,
                     ),
                   ),
                 ],

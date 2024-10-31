@@ -56,14 +56,14 @@ class _SettingScreenState extends State<SettingScreen>
                 title: S.current.generalSetting,
                 showLeading: true,
                 onTap: () {
-                  RouteUtil.pushPanelCupertinoRoute(
-                      context, const GeneralSettingScreen());
+                  RouteUtil.pushPanelCupertinoRoute(context,
+                      GeneralSettingScreen(key: generalSettingScreenKey));
                 },
                 leading: Icons.settings_outlined,
               ),
               ItemBuilder.buildEntryItem(
                 context: context,
-                title: S.current.apprearanceSetting,
+                title: S.current.appearanceSetting,
                 showLeading: true,
                 onTap: () {
                   RouteUtil.pushPanelCupertinoRoute(

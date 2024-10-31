@@ -1121,7 +1121,7 @@ class ItemBuilder {
                               ],
                             )
                           : Text(
-                              S.current.fontNotExist,
+                              S.current.fontFileNotExist,
                               style: textTheme.titleLarge?.apply(
                                 fontFamily: font.fontFamily,
                                 fontWeightDelta: 0,

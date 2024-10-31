@@ -205,7 +205,7 @@ class PostApi {
   }) async {
     return RequestUtil.post(
       "/v1.1/trade/gift/present",
-      domainType: DomainType.www,
+      domainType: DomainType.api,
       params: {
         "_": DateTime.now().millisecondsSinceEpoch.toString(),
       },
@@ -232,6 +232,22 @@ class PostApi {
       domainType: DomainType.www,
       params: {
         "_": DateTime.now().millisecondsSinceEpoch.toString(),
+      },
+    );
+  }
+
+  static Future getUserBag({
+    required int postId,
+    required int blogId,
+  }) async {
+    return RequestUtil.get(
+      "/v1.1/trade/gift/userBag",
+      domainType: DomainType.api,
+      params: {
+        "scene": "0",
+        "postId": postId,
+        "blogId": blogId,
+        "planTypeId": 0,
       },
     );
   }

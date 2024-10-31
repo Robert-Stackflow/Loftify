@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:launch_at_startup/launch_at_startup.dart';
 import 'package:loftify/Models/github_response.dart';
 import 'package:loftify/Utils/cache_util.dart';
 import 'package:loftify/Utils/itoast.dart';
@@ -29,10 +30,10 @@ class GeneralSettingScreen extends StatefulWidget {
   static const String routeName = "/setting/general";
 
   @override
-  State<GeneralSettingScreen> createState() => _GeneralSettingScreenState();
+  State<GeneralSettingScreen> createState() => GeneralSettingScreenState();
 }
 
-class _GeneralSettingScreenState extends State<GeneralSettingScreen>
+class GeneralSettingScreenState extends State<GeneralSettingScreen>
     with TickerProviderStateMixin {
   String _cacheSize = "";
   List<Tuple2<String, Locale?>> _supportedLocaleTuples = [];
@@ -41,7 +42,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
   String latestVersion = "";
   ReleaseItem? latestReleaseItem;
   bool autoCheckUpdate = HiveUtil.getBool(HiveUtil.autoCheckUpdateKey);
-  bool enableCloseToTray = HiveUtil.getBool(HiveUtil.enableCloseToTrayKey);
+  bool enableMinimizeToTray = HiveUtil.getBool(HiveUtil.enableCloseToTrayKey);
   bool recordWindowState = HiveUtil.getBool(HiveUtil.recordWindowStateKey);
   bool enableCloseNotice = HiveUtil.getBool(HiveUtil.enableCloseNoticeKey);
   int doubleTapAction = Utils.patchEnum(
@@ -51,11 +52,19 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
       HiveUtil.getInt(HiveUtil.downloadSuccessActionKey),
       DownloadSuccessAction.values.length);
   String _logSize = "";
+  bool launchAtStartup = HiveUtil.getBool(HiveUtil.launchAtStartupKey);
+  bool showTray = HiveUtil.getBool(HiveUtil.showTrayKey);
 
   Future<void> getLogSize() async {
     double size = await FileOutput.getLogsSize();
     setState(() {
       _logSize = CacheUtil.renderSize(size);
+    });
+  }
+
+  refreshLauchAtStartup() {
+    setState(() {
+      launchAtStartup = HiveUtil.getBool(HiveUtil.launchAtStartupKey);
     });
   }
 
@@ -99,7 +108,8 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
       context: context,
       showLoading: showTip,
       showUpdateDialog: showTip,
-      showNoUpdateToast: showTip,
+      showFailedToast: showTip,
+      showLatestToast: showTip,
       onGetCurrentVersion: (currentVersion) {
         setState(() {
           this.currentVersion = currentVersion;
@@ -195,7 +205,7 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
                 description:
                     Utils.compareVersion(latestVersion, currentVersion) > 0
                         ? "新版本：$latestVersion"
-                        : S.current.checkUpdatesAlreadyLatest,
+                        : S.current.alreadyLatestVersion,
                 descriptionColor:
                     Utils.compareVersion(latestVersion, currentVersion) > 0
                         ? Colors.redAccent
@@ -339,50 +349,89 @@ class _GeneralSettingScreenState extends State<GeneralSettingScreen>
   _desktopSetting() {
     return [
       const SizedBox(height: 10),
-      ItemBuilder.buildEntryItem(
+      ItemBuilder.buildCaptionItem(
+          context: context, title: S.current.desktopSetting),
+      ItemBuilder.buildRadioItem(
         context: context,
-        title: "关闭主界面时",
-        tip: enableCloseToTray ? "最小化到系统托盘" : "退出Loftify",
-        topRadius: true,
-        onTap: () {
-          List<Tuple2<String, dynamic>> options = [
-            const Tuple2("最小化到系统托盘", 0),
-            const Tuple2("退出Loftify", 1),
-          ];
-          BottomSheetBuilder.showListBottomSheet(
-            context,
-            (sheetContext) => TileList.fromOptions(
-              options,
-              (idx) {
-                Navigator.pop(sheetContext);
-                if (idx == 0) {
-                  setState(() {
-                    enableCloseToTray = true;
-                    HiveUtil.put(
-                        HiveUtil.enableCloseToTrayKey, enableCloseToTray);
-                  });
-                } else if (idx == 1) {
-                  setState(() {
-                    enableCloseToTray = false;
-                    HiveUtil.put(
-                        HiveUtil.enableCloseToTrayKey, enableCloseToTray);
-                  });
-                }
-              },
-              selected: enableCloseToTray ? 0 : 1,
-              title: "关闭主界面时",
-              context: context,
-              onCloseTap: () => Navigator.pop(sheetContext),
-              crossAxisAlignment: CrossAxisAlignment.start,
-            ),
-          );
+        title: S.current.launchAtStartup,
+        value: launchAtStartup,
+        onTap: () async {
+          setState(() {
+            launchAtStartup = !launchAtStartup;
+            HiveUtil.put(HiveUtil.launchAtStartupKey, launchAtStartup);
+          });
+          if (launchAtStartup) {
+            await LaunchAtStartup.instance.enable();
+          } else {
+            await LaunchAtStartup.instance.disable();
+          }
+          Utils.initTray();
         },
       ),
       ItemBuilder.buildRadioItem(
         context: context,
-        title: "记忆窗口位置和大小",
+        title: S.current.showTray,
+        value: showTray,
+        onTap: () async {
+          setState(() {
+            showTray = !showTray;
+            HiveUtil.put(HiveUtil.showTrayKey, showTray);
+            if (showTray) {
+              Utils.initTray();
+            } else {
+              Utils.removeTray();
+            }
+          });
+        },
+      ),
+      Visibility(
+        visible: showTray,
+        child: ItemBuilder.buildEntryItem(
+          context: context,
+          title: S.current.closeWindowOption,
+          tip: enableMinimizeToTray
+              ? S.current.minimizeToTray
+              : S.current.exitApp,
+          onTap: () {
+            List<Tuple2<String, dynamic>> options = [
+              Tuple2(S.current.minimizeToTray, 0),
+              Tuple2(S.current.exitApp, 1),
+            ];
+            BottomSheetBuilder.showListBottomSheet(
+              context,
+                  (sheetContext) => TileList.fromOptions(
+                options,
+                    (idx) {
+                  Navigator.pop(sheetContext);
+                  if (idx == 0) {
+                    setState(() {
+                      enableMinimizeToTray = true;
+                      HiveUtil.put(
+                          HiveUtil.enableCloseToTrayKey, enableMinimizeToTray);
+                    });
+                  } else if (idx == 1) {
+                    setState(() {
+                      enableMinimizeToTray = false;
+                      HiveUtil.put(
+                          HiveUtil.enableCloseToTrayKey, enableMinimizeToTray);
+                    });
+                  }
+                },
+                selected: enableMinimizeToTray ? 0 : 1,
+                title: S.current.chooseCloseWindowOption,
+                context: context,
+                onCloseTap: () => Navigator.pop(sheetContext),
+                crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+            );
+          },
+        ),
+      ),
+      ItemBuilder.buildRadioItem(
+        context: context,
+        title: S.current.autoMemoryWindowPositionAndSize,
         value: recordWindowState,
-        description: "关闭后，每次打开Loftify都会居中显示且具有默认窗口大小",
+        description: S.current.autoMemoryWindowPositionAndSizeTip,
         bottomRadius: true,
         onTap: () async {
           setState(() {

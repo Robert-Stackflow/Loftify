@@ -181,7 +181,7 @@ class _AboutSettingScreenState extends State<AboutSettingScreen>
                     const SizedBox(height: 10),
                     ItemBuilder.buildEntryItem(
                       context: context,
-                      title: S.current.changeLog,
+                      title: S.current.changelog,
                       topRadius: true,
                       showLeading: true,
                       onTap: () {

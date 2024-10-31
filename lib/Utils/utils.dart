@@ -10,21 +10,31 @@ import 'package:flutter/services.dart';
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:launch_at_startup/launch_at_startup.dart';
 import 'package:loftify/Models/github_response.dart';
 import 'package:loftify/Models/illust.dart';
+import 'package:loftify/Screens/Setting/experiment_setting_screen.dart';
 import 'package:loftify/Screens/Setting/update_screen.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/responsive_util.dart';
+import 'package:loftify/Utils/route_util.dart';
+import 'package:loftify/Utils/shortcuts_util.dart';
 import 'package:loftify/Utils/uri_util.dart';
 import 'package:loftify/Widgets/BottomSheet/slide_captcha_bottom_sheet.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:palette_generator/palette_generator.dart';
+import 'package:tray_manager/tray_manager.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../Api/github_api.dart';
+import '../Screens/Setting/about_setting_screen.dart';
+import '../Screens/Setting/setting_screen.dart';
+import '../Widgets/Custom/keymap_widget.dart';
 import '../Widgets/Dialog/custom_dialog.dart';
 import '../Widgets/Dialog/dialog_builder.dart';
+import '../Widgets/Dialog/widgets/dialog_wrapper_widget.dart';
 import '../generated/l10n.dart';
 import 'app_provider.dart';
 import 'constant.dart';
@@ -496,7 +506,10 @@ class Utils {
     Function(String, ReleaseItem)? onUpdate,
     bool showLoading = false,
     bool showUpdateDialog = true,
-    bool showNoUpdateToast = true,
+    bool showFailedToast = true,
+    bool showLatestToast = true,
+    bool showDesktopNotification = false,
+    String? noUpdateToastText,
   }) async {
     if (showLoading) {
       CustomLoadingDialog.showLoading(title: "检查更新中...");
@@ -510,7 +523,15 @@ class Utils {
         CustomLoadingDialog.dismissLoading();
       }
       if (releases.isEmpty) {
-        if (showNoUpdateToast) IToast.showTop("检查更新失败");
+        if (showFailedToast) {
+          IToast.showTop(noUpdateToastText ?? "检查更新失败");
+        }
+        if (showDesktopNotification) {
+          IToast.showDesktopNotification(
+            "检查更新失败",
+            body: "检查更新失败，请重试",
+          );
+        }
         return;
       }
       onGetReleases?.call(releases);
@@ -524,25 +545,34 @@ class Utils {
         }
       }
       onGetLatestRelease?.call(latestVersion, latestReleaseItem!);
+      Utils.initTray();
+      ILogger.info("Loftify",
+          "Current version: $currentVersion, Latest version: $latestVersion");
       if (compareVersion(latestVersion, currentVersion) > 0) {
         onUpdate?.call(latestVersion, latestReleaseItem!);
+        appProvider.latestVersion = latestVersion;
         if (showUpdateDialog && latestReleaseItem != null) {
           if (ResponsiveUtil.isMobile()) {
             DialogBuilder.showConfirmDialog(
               context,
-              title: "发现新版本$latestVersion",
-              message:
-                  "是否立即更新？${Utils.isNotEmpty(latestReleaseItem.body) ? "更新日志如下：\n${latestReleaseItem.body}" : ""}",
-              confirmButtonText: "立即下载",
-              cancelButtonText: "暂不更新",
+              renderHtml: true,
+              messageTextAlign: TextAlign.start,
+              title: S.current.getNewVersion(latestVersion),
+              message: S.current.doesImmediateUpdate +
+                  S.current.changelogAsFollow(
+                      "<br/>${Utils.replaceLineBreak(latestReleaseItem.body ?? "")}"),
+              confirmButtonText: ResponsiveUtil.isAndroid()
+                  ? S.current.immediatelyDownload
+                  : S.current.goToUpdate,
+              cancelButtonText: S.current.updateLater,
               onTapConfirm: () async {
                 if (ResponsiveUtil.isAndroid()) {
                   ReleaseAsset androidAssset = await FileUtil.getAndroidAsset(
                       latestVersion, latestReleaseItem!);
-                  ILogger.info("Get android asset: $androidAssset");
+                  ILogger.info("Loftify", "Get android asset: $androidAssset");
                   FileUtil.downloadAndUpdate(
                     context,
-                    androidAssset.browserDownloadUrl,
+                    androidAssset.pkgsDownloadUrl,
                     latestReleaseItem.htmlUrl,
                     version: latestVersion,
                   );
@@ -552,24 +582,290 @@ class Utils {
                 }
               },
               onTapCancel: () {},
-              customDialogType: CustomDialogType.normal,
             );
           } else {
-            DialogBuilder.showPageDialog(
-              context,
-              child: UpdateScreen(
-                currentVersion: currentVersion,
-                latestReleaseItem: latestReleaseItem,
-                latestVersion: latestVersion,
-              ),
-            );
+            showDialog(ReleaseItem latestReleaseItem) {
+              GlobalKey<DialogWrapperWidgetState> overrideDialogNavigatorKey =
+                  GlobalKey();
+              DialogBuilder.showPageDialog(
+                context,
+                overrideDialogNavigatorKey: overrideDialogNavigatorKey,
+                child: UpdateScreen(
+                  currentVersion: currentVersion,
+                  latestReleaseItem: latestReleaseItem,
+                  latestVersion: latestVersion,
+                  overrideDialogNavigatorKey: overrideDialogNavigatorKey,
+                ),
+              );
+              Utils.displayApp();
+            }
+
+            if (showDesktopNotification) {
+              IToast.showDesktopNotification(
+                S.current.getNewVersion(latestVersion),
+                body: S.current
+                    .changelogAsFollow("\n${latestReleaseItem.body ?? ""}"),
+                actions: [S.current.updateLater, S.current.goToUpdate],
+                onClick: () {
+                  showDialog(latestReleaseItem!);
+                },
+                onClickAction: (index) {
+                  if (index == 1) {
+                    showDialog(latestReleaseItem!);
+                  }
+                },
+              );
+            } else {
+              showDialog(latestReleaseItem);
+            }
           }
         }
       } else {
-        if (showNoUpdateToast) {
-          IToast.showTop(S.current.checkUpdatesAlreadyLatest);
+        appProvider.latestVersion = "";
+        if (showLatestToast) {
+          IToast.showTop(S.current.alreadyLatestVersion);
+        }
+        if (showDesktopNotification) {
+          IToast.showDesktopNotification(
+            S.current.alreadyLatestVersion,
+            body: S.current.alreadyLatestVersionTip(currentVersion),
+          );
         }
       }
     });
+  }
+
+  static displayApp() {
+    windowManager.show();
+    windowManager.focus();
+    // windowManager.restore();
+  }
+
+  static Future<void> removeTray() async {
+    await trayManager.destroy();
+  }
+
+  static Future<void> initTray() async {
+    if (!ResponsiveUtil.isDesktop()) return;
+    await trayManager.destroy();
+    if (!HiveUtil.getBool(HiveUtil.showTrayKey)) {
+      await trayManager.destroy();
+      return;
+    }
+
+    // Ensure tray icon display in linux sandboxed environments
+    if (Platform.environment.containsKey('FLATPAK_ID') ||
+        Platform.environment.containsKey('SNAP')) {
+      await trayManager.setIcon('com.cloudchewie.twitee');
+    } else if (ResponsiveUtil.isWindows()) {
+      await trayManager.setIcon('assets/logo-transparent-big.ico');
+    } else {
+      await trayManager.setIcon('assets/logo-transparent-big.png');
+    }
+
+    var packageInfo = await PackageInfo.fromPlatform();
+    bool lauchAtStartup = await LaunchAtStartup.instance.isEnabled();
+    if (!ResponsiveUtil.isLinux()) {
+      await trayManager.setToolTip(packageInfo.appName);
+    }
+    Menu menu = Menu(
+      items: [
+        MenuItem(
+          key: TrayKey.checkUpdates.key,
+          label: appProvider.latestVersion.isNotEmpty
+              ? S.current.getNewVersion(appProvider.latestVersion)
+              : S.current.checkUpdates,
+        ),
+        // MenuItem(
+        //   key: TrayKey.shortcutHelp.key,
+        //   label: S.current.shortcutHelp,
+        // ),
+        MenuItem.separator(),
+        MenuItem(
+          key: TrayKey.displayApp.key,
+          label: S.current.displayAppTray,
+        ),
+        MenuItem(
+          key: TrayKey.lockApp.key,
+          label: S.current.lockAppTray,
+        ),
+        MenuItem.separator(),
+        MenuItem(
+          key: TrayKey.setting.key,
+          label: S.current.setting,
+        ),
+        MenuItem(
+          key: TrayKey.officialWebsite.key,
+          label: S.current.officialWebsiteTray,
+        ),
+        MenuItem(
+          key: TrayKey.about.key,
+          label: S.current.about,
+        ),
+        MenuItem(
+          key: TrayKey.githubRepository.key,
+          label: S.current.repoTray,
+        ),
+        MenuItem.separator(),
+        MenuItem.checkbox(
+          checked: lauchAtStartup,
+          key: TrayKey.launchAtStartup.key,
+          label: S.current.launchAtStartup,
+        ),
+        MenuItem.separator(),
+        MenuItem(
+          key: TrayKey.exitApp.key,
+          label: S.current.exitAppTray,
+        ),
+      ],
+    );
+    await trayManager.setContextMenu(menu);
+  }
+
+  static Future<void> initSimpleTray() async {
+    if (!ResponsiveUtil.isDesktop()) return;
+    await trayManager.destroy();
+    if (!HiveUtil.getBool(HiveUtil.showTrayKey)) {
+      await trayManager.destroy();
+      return;
+    }
+
+    // Ensure tray icon display in linux sandboxed environments
+    if (Platform.environment.containsKey('FLATPAK_ID') ||
+        Platform.environment.containsKey('SNAP')) {
+      await trayManager.setIcon('com.cloudchewie.twitee');
+    } else if (ResponsiveUtil.isWindows()) {
+      await trayManager.setIcon('assets/logo-transparent.ico');
+    } else {
+      await trayManager.setIcon('assets/logo-transparent.png');
+    }
+
+    var packageInfo = await PackageInfo.fromPlatform();
+    bool lauchAtStartup = await LaunchAtStartup.instance.isEnabled();
+    if (!ResponsiveUtil.isLinux()) {
+      await trayManager.setToolTip(packageInfo.appName);
+    }
+    Menu menu = Menu(
+      items: [
+        MenuItem(
+          key: TrayKey.displayApp.key,
+          label: S.current.displayAppTray,
+        ),
+        MenuItem.separator(),
+        MenuItem(
+          key: TrayKey.officialWebsite.key,
+          label: S.current.officialWebsiteTray,
+        ),
+        MenuItem(
+          key: TrayKey.githubRepository.key,
+          label: S.current.repoTray,
+        ),
+        MenuItem.separator(),
+        MenuItem.checkbox(
+          checked: lauchAtStartup,
+          key: TrayKey.launchAtStartup.key,
+          label: S.current.launchAtStartup,
+        ),
+        MenuItem.separator(),
+        MenuItem(
+          key: TrayKey.exitApp.key,
+          label: S.current.exitAppTray,
+        ),
+      ],
+    );
+    await trayManager.setContextMenu(menu);
+  }
+
+  static showHelp(BuildContext context) {
+    if (appProvider.shownShortcutHelp) return;
+    appProvider.shownShortcutHelp = true;
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (context) {
+        return KeyboardWidget(
+          bindings: defaultLoftifyShortcuts,
+          callbackOnHide: () {
+            appProvider.shownShortcutHelp = false;
+            entry.remove();
+          },
+          title: Text(
+            S.current.shortcut,
+            style: Theme.of(rootContext).textTheme.titleLarge,
+          ),
+        );
+      },
+    );
+    Overlay.of(context).insert(entry);
+    return null;
+  }
+
+  static processTrayMenuItemClick(
+    BuildContext context,
+    MenuItem menuItem, [
+    bool isSimple = false,
+  ]) async {
+    if (menuItem.key == TrayKey.displayApp.key) {
+      Utils.displayApp();
+    } else if (menuItem.key == TrayKey.shortcutHelp.key) {
+      Utils.displayApp();
+      Utils.showHelp(context);
+    } else if (menuItem.key == TrayKey.lockApp.key) {
+      if (HiveUtil.canLock()) {
+        mainScreenState?.jumpToLock();
+      } else {
+        IToast.showDesktopNotification(
+          S.current.noGestureLock,
+          body: S.current.noGestureLockTip,
+          actions: [S.current.cancel, S.current.goToSetGestureLock],
+          onClick: () {
+            Utils.displayApp();
+            RouteUtil.pushPanelCupertinoRoute(
+                context, const ExperimentSettingScreen());
+          },
+          onClickAction: (index) {
+            if (index == 1) {
+              Utils.displayApp();
+              RouteUtil.pushPanelCupertinoRoute(
+                  context, const ExperimentSettingScreen());
+            }
+          },
+        );
+      }
+    } else if (menuItem.key == TrayKey.setting.key) {
+      Utils.displayApp();
+      RouteUtil.pushPanelCupertinoRoute(context, const SettingScreen());
+    } else if (menuItem.key == TrayKey.about.key) {
+      Utils.displayApp();
+      RouteUtil.pushPanelCupertinoRoute(context, const AboutSettingScreen());
+    } else if (menuItem.key == TrayKey.officialWebsite.key) {
+      UriUtil.launchUrlUri(context, officialWebsite);
+    } else if (menuItem.key == TrayKey.githubRepository.key) {
+      UriUtil.launchUrlUri(context, repoUrl);
+    } else if (menuItem.key == TrayKey.checkUpdates.key) {
+      Utils.getReleases(
+        context: context,
+        showLoading: false,
+        showUpdateDialog: true,
+        showFailedToast: false,
+        showLatestToast: false,
+        showDesktopNotification: true,
+      );
+    } else if (menuItem.key == TrayKey.launchAtStartup.key) {
+      menuItem.checked = !(menuItem.checked == true);
+      HiveUtil.put(HiveUtil.launchAtStartupKey, menuItem.checked);
+      generalSettingScreenState?.refreshLauchAtStartup();
+      if (menuItem.checked == true) {
+        await LaunchAtStartup.instance.enable();
+      } else {
+        await LaunchAtStartup.instance.disable();
+      }
+      if (isSimple) {
+        Utils.initSimpleTray();
+      } else {
+        Utils.initTray();
+      }
+    } else if (menuItem.key == TrayKey.exitApp.key) {
+      windowManager.close();
+    }
   }
 }

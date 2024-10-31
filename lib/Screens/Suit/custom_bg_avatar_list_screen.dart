@@ -22,9 +22,12 @@ class CustomBgAvatarListScreen extends StatefulWidget {
   const CustomBgAvatarListScreen({
     super.key,
     this.tags = const [],
+    this.blogId,
   });
 
   final List<String> tags;
+
+  final int? blogId;
 
   static const String routeName = "/info/customBgAvatarList";
 
@@ -160,41 +163,55 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
     }
     if (offset < 0) return IndicatorResult.noMore;
     _loading = true;
-    return await GiftApi.getCustomBgAvatarList(
-      type: 0,
-      offset: refresh ? 0 : offset,
-      tag: tag ?? "",
-    ).then((value) {
-      try {
-        if (value['code'] != 200) {
-          IToast.showTop(value['msg']);
-          return IndicatorResult.fail;
+    Map<String, dynamic> value = {};
+    try {
+      List<dynamic> t = [];
+      if (widget.blogId != null) {
+        value = await GiftApi.getUserProductList(
+          type: 1,
+          blogId: widget.blogId!,
+          offset: refresh ? 0 : offset,
+        );
+      } else {
+        value = await GiftApi.getCustomBgAvatarList(
+          type: 0,
+          offset: refresh ? 0 : offset,
+          tag: tag ?? "",
+        );
+      }
+      if (value['code'] != 200) {
+        IToast.showTop(value['msg']);
+        return IndicatorResult.fail;
+      } else {
+        if (widget.blogId != null) {
+          offset = value['data']['offset'];
+          t = value['data']['imageProducts'];
         } else {
           offset = value['data']['offset'];
-          List<dynamic> t = value['data']['products'];
-          if (refresh) {
-            _productList.clear();
-          }
-          _productList.addAll(t.map((e) => ProductItem.fromJson(e)).toList());
-          _productList.removeWhere((element) =>
-              _productList.where((e) => e.isSame(element)).length > 1);
-          if (mounted) setState(() {});
-          if (t.isEmpty || offset < 0) {
-            _noMore = true;
-            if (!refresh) return IndicatorResult.noMore;
-          } else {
-            return IndicatorResult.success;
-          }
+          t = value['data']['products'];
         }
-      } catch (e, t) {
-        ILogger.error("Failed to load dress list", e, t);
-        if (mounted) IToast.showTop("加载失败");
-        return IndicatorResult.fail;
-      } finally {
+        if (refresh) {
+          _productList.clear();
+        }
+        _productList.addAll(t.map((e) => ProductItem.fromJson(e)).toList());
+        _productList.removeWhere((element) =>
+            _productList.where((e) => e.isSame(element)).length > 1);
         if (mounted) setState(() {});
-        _loading = false;
+        if (t.isEmpty || offset < 0) {
+          _noMore = true;
+          if (!refresh) return IndicatorResult.noMore;
+        } else {
+          return IndicatorResult.success;
+        }
       }
-    });
+    } catch (e, t) {
+      ILogger.error("Failed to load dress list", e, t);
+      if (mounted) IToast.showTop("加载失败");
+      return IndicatorResult.fail;
+    } finally {
+      if (mounted) setState(() {});
+      _loading = false;
+    }
   }
 
   _onRefresh() async {
@@ -210,12 +227,13 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
     super.build(context);
     return Column(
       children: [
-        buildTagBar(context, widget.tags, tag, (tag) {
-          this.tag = tag;
-          setState(() {});
-          _refreshController.resetHeader();
-          _refreshController.callRefresh();
-        }),
+        if (widget.blogId == null)
+          buildTagBar(context, widget.tags, tag, (tag) {
+            this.tag = tag;
+            setState(() {});
+            _refreshController.resetHeader();
+            _refreshController.callRefresh();
+          }),
         Expanded(
           child: EasyRefresh.builder(
             refreshOnStart: true,
@@ -224,7 +242,10 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
             onLoad: _onLoad,
             triggerAxis: Axis.vertical,
             childBuilder: (context, physics) {
-              return _buildBody(physics);
+              return _productList.isNotEmpty
+                  ? _buildBody(physics)
+                  : ItemBuilder.buildEmptyPlaceholder(
+                      context: context, text: "暂无壁纸头像");
             },
           ),
         ),
@@ -429,7 +450,7 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
       height: height,
     );
     image = isHero
-        ? GestureDetector(
+        ? ItemBuilder.buildClickItem(GestureDetector(
             onTap: () {
               RouteUtil.pushDialogRoute(
                 context,
@@ -445,7 +466,7 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
               );
             },
             child: image,
-          )
+          ))
         : image;
     return Container(
       width: width,
@@ -509,7 +530,7 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
       height: height,
     );
     image = isHero
-        ? GestureDetector(
+        ? ItemBuilder.buildClickItem(GestureDetector(
             onTap: () {
               RouteUtil.pushDialogRoute(
                 context,
@@ -525,7 +546,7 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
               );
             },
             child: image,
-          )
+          ))
         : image;
     return Container(
       width: width,

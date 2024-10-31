@@ -13,6 +13,7 @@ import 'package:loftify/Screens/Info/post_screen.dart';
 import 'package:loftify/Screens/Info/share_screen.dart';
 import 'package:loftify/Screens/Info/supporter_screen.dart';
 import 'package:loftify/Screens/Post/post_detail_screen.dart';
+import 'package:loftify/Screens/Suit/user_market_screen.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/ilogger.dart';
@@ -232,6 +233,14 @@ class UserDetailScreenState extends State<UserDetailScreen>
                 captions: ["「${_fullBlogData!.blogInfo.blogNickName}」"],
               ),
             );
+          },
+        ),
+        ContextMenuButtonConfig(
+          "查看TA的商品",
+          icon: const Icon(Icons.shopping_bag_outlined),
+          onPressed: () {
+            RouteUtil.pushPanelCupertinoRoute(
+                context, UserMarketScreen(blogId: _fullBlogData!.blogInfo.blogId));
           },
         ),
         if (infoMode == InfoMode.other) ...[

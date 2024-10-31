@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:loftify/Screens/Setting/general_setting_screen.dart';
 import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Widgets/Dialog/widgets/dialog_wrapper_widget.dart';
 import 'package:tuple/tuple.dart';
 
-import '../Models/nav_entry.dart';
 import '../Resources/fonts.dart';
 import '../Resources/theme_color_data.dart';
 import '../Screens/Navigation/home_screen.dart';
 import '../Screens/Navigation/search_screen.dart';
 import '../Screens/main_screen.dart';
 import '../Screens/panel_screen.dart';
+import '../Widgets/Custom/keyboard_handler.dart';
 import '../generated/l10n.dart';
 import 'enums.dart';
 import 'hive_util.dart';
@@ -19,6 +20,10 @@ GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>();
 NavigatorState? get globalNavigatorState => globalNavigatorKey.currentState;
 
 BuildContext get rootContext => globalNavigatorState!.context;
+
+GlobalKey<MainScreenState> mainScreenKey = GlobalKey<MainScreenState>();
+
+MainScreenState? get mainScreenState => mainScreenKey.currentState;
 
 GlobalKey<PanelScreenState> panelScreenKey = GlobalKey<PanelScreenState>();
 
@@ -32,23 +37,49 @@ GlobalKey<HomeScreenState> homeScreenKey = GlobalKey<HomeScreenState>();
 
 HomeScreenState? get homeScreenState => homeScreenKey.currentState;
 
+GlobalKey<GeneralSettingScreenState> generalSettingScreenKey =
+    GlobalKey<GeneralSettingScreenState>();
+
+GeneralSettingScreenState? get generalSettingScreenState =>
+    generalSettingScreenKey.currentState;
+
 GlobalKey<DialogWrapperWidgetState> dialogNavigatorKey =
     GlobalKey<DialogWrapperWidgetState>();
 
 DialogWrapperWidgetState? get dialogNavigatorState =>
     dialogNavigatorKey.currentState;
 
+GlobalKey<KeyboardHandlerState> keyboardHandlerKey =
+    GlobalKey<KeyboardHandlerState>();
+
+KeyboardHandlerState? get keyboardHandlerState =>
+    keyboardHandlerKey.currentState;
+
 RouteObserver<PageRoute> routeObserver = RouteObserver();
 
 AppProvider appProvider = AppProvider();
 
 class AppProvider with ChangeNotifier {
+  String latestVersion = "";
+
+  bool shownShortcutHelp = false;
+
   String _captchaToken = "";
 
   String get captchaToken => _captchaToken;
 
   set captchaToken(String value) {
     _captchaToken = value;
+    notifyListeners();
+  }
+
+  Map<Type, Action<Intent>> _dynamicShortcuts =
+      KeyboardHandlerState.mainScreenShortcuts;
+
+  Map<Type, Action<Intent>> get dynamicShortcuts => _dynamicShortcuts;
+
+  set dynamicShortcuts(Map<Type, Action<Intent>> value) {
+    _dynamicShortcuts = value;
     notifyListeners();
   }
 

@@ -165,6 +165,24 @@ class GiftApi {
     );
   }
 
+  static Future getUserProductList({
+    int type = 1,
+    int offset = 0,
+    required int blogId,
+  }) async {
+    //1壁纸，2装扮，3表情
+    return RequestUtil.get(
+      "/trade/imageMarket/creator/products.json",
+      domainType: DomainType.www,
+      params: {
+        "blogId": "$blogId",
+        "type": type,
+        "offset": "$offset",
+        "_": DateTime.now().millisecondsSinceEpoch.toString(),
+      },
+    );
+  }
+
   static Future getDressSuitList({
     int offset = 0,
   }) async {
