@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Screens/Suit/custom_bg_avatar_list_screen.dart';
+import 'package:loftify/Screens/Suit/dress_suit_list_screen.dart';
 import 'package:loftify/Utils/ilogger.dart';
 import 'package:loftify/Utils/responsive_util.dart';
 
@@ -26,7 +27,7 @@ class _SuitScreenState extends State<SuitScreen>
   @override
   bool get wantKeepAlive => true;
 
-  final List<String> _tabLabelList = ["定制", "官方"];
+  final List<String> _tabLabelList = ["官方", "定制"];
   late TabController _tabController;
   int _currentTabIndex = 0;
   int _currentOfficialBottomBarIndex = 0;
@@ -70,8 +71,7 @@ class _SuitScreenState extends State<SuitScreen>
 
   initPage() {
     _officialPageList = [
-      Container(),
-      Container(),
+      const DressSuitListScreen(),
     ];
     _customPageList = [
       CustomBgAvatarListScreen(tags: tags),
@@ -80,14 +80,13 @@ class _SuitScreenState extends State<SuitScreen>
     ];
     _pageList = [
       PageView(
-        physics: const NeverScrollableScrollPhysics(),
-        controller: _customPageController,
-        children: _customPageList,
-      ),
-      PageView(
-        physics: const NeverScrollableScrollPhysics(),
         controller: _officialPageController,
         children: _officialPageList,
+      ),
+      PageView(
+        physics: const ClampingScrollPhysics(),
+        controller: _customPageController,
+        children: _customPageList,
       ),
     ];
     _customPageController.addListener(() {
@@ -100,7 +99,8 @@ class _SuitScreenState extends State<SuitScreen>
     _officialPageController.addListener(() {
       if (_officialPageController.page != _currentOfficialBottomBarIndex) {
         setState(() {
-          _currentOfficialBottomBarIndex = _officialPageController.page!.round();
+          _currentOfficialBottomBarIndex =
+              _officialPageController.page!.round();
         });
       }
     });
@@ -140,7 +140,7 @@ class _SuitScreenState extends State<SuitScreen>
         const SizedBox(width: 5),
       ],
       bottomHeight: 56,
-      bottom: _currentTabIndex == 1
+      bottom: _currentTabIndex == 0
           ? _buildOfficialBottomBar()
           : _buildCustomBottomBar(),
     );
@@ -207,13 +207,12 @@ class _SuitScreenState extends State<SuitScreen>
               curve: Curves.easeInOut,
               children: const <int, Widget>{
                 0: Text("装扮主题"),
-                1: Text("头像框"),
+                // 1: Text("头像框"),
               },
               initialValue: _currentOfficialBottomBarIndex,
               onValueChanged: (index) {
-                setState(() {
-                  _currentOfficialBottomBarIndex = index;
-                });
+                _currentOfficialBottomBarIndex = index;
+                setState(() {});
                 _officialPageController.animateToPage(
                   index,
                   duration: const Duration(milliseconds: 300),
@@ -258,9 +257,8 @@ class _SuitScreenState extends State<SuitScreen>
               },
               initialValue: _currentCustomBottomBarIndex,
               onValueChanged: (index) {
-                setState(() {
-                  _currentCustomBottomBarIndex = index;
-                });
+                _currentCustomBottomBarIndex = index;
+                setState(() {});
                 _customPageController.animateToPage(
                   index,
                   duration: const Duration(milliseconds: 300),

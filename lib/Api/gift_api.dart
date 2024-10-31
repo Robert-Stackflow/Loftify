@@ -150,7 +150,6 @@ class GiftApi {
     );
   }
 
-
   static Future getProductDetail({
     int type = 0,
     required int id,
@@ -161,6 +160,33 @@ class GiftApi {
       params: {
         "productId": "$id",
         "productType": type,
+        "_": DateTime.now().millisecondsSinceEpoch.toString(),
+      },
+    );
+  }
+
+  static Future getDressSuitList({
+    int offset = 0,
+  }) async {
+    return RequestUtil.get(
+      "/newweb/dressingStore/list.json",
+      domainType: DomainType.www,
+      params: {
+        "offset": "$offset",
+        "_": DateTime.now().millisecondsSinceEpoch.toString(),
+      },
+    );
+  }
+
+  static Future getDressSuitDetail({
+    required int suitId,
+  }) async {
+    return RequestUtil.get(
+      "/newweb/dressingStore/suitDetail.json",
+      domainType: DomainType.www,
+      params: {
+        "suitId": "$suitId",
+        "groupBuyingId": "",
         "_": DateTime.now().millisecondsSinceEpoch.toString(),
       },
     );

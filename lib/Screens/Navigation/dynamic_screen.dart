@@ -51,14 +51,16 @@ class DynamicScreenState extends State<DynamicScreen>
   bool get wantKeepAlive => true;
   late TabController _tabController;
   int _currentTabIndex = 0;
-  final List<String> _tabLabelList = ["标签", "合集", "粮单"];
+  final List<String> _tabLabelList = ["标签", "合集", "粮单", "关注"];
   int lastRefreshTime = 0;
   final GlobalKey _tagTabKey = GlobalKey();
   final GlobalKey _collectionTabKey = GlobalKey();
   final GlobalKey _grainTabKey = GlobalKey();
+  final GlobalKey _followTabKey = GlobalKey();
   final ScrollController _tagScrollController = ScrollController();
   final ScrollController _collectionScrollController = ScrollController();
   final ScrollController _grainScrollController = ScrollController();
+  final ScrollController _followScrollController = ScrollController();
 
   late AnimationController _refreshRotationController;
   final ScrollToHideController _scrollToHideController =
@@ -69,7 +71,8 @@ class DynamicScreenState extends State<DynamicScreen>
     return [
       _tagScrollController,
       _collectionScrollController,
-      _grainScrollController
+      _grainScrollController,
+      _followScrollController,
     ];
   }
 
@@ -109,6 +112,9 @@ class DynamicScreenState extends State<DynamicScreen>
       case 2:
         controller = _grainScrollController;
         break;
+      case 3:
+        controller = _followScrollController;
+        break;
     }
     return controller;
   }
@@ -128,6 +134,10 @@ class DynamicScreenState extends State<DynamicScreen>
       case 2:
         callRefresh =
             (_grainTabKey.currentState as SubscribeGrainTabState).callRefresh;
+        break;
+      case 3:
+        callRefresh =
+            (_followTabKey.currentState as SubscribeGrainTabState).callRefresh;
         break;
     }
     return callRefresh;
@@ -181,6 +191,10 @@ class DynamicScreenState extends State<DynamicScreen>
                     SubscribeGrainTab(
                       key: _grainTabKey,
                       scrollController: _grainScrollController,
+                    ),
+                    SubscribeGrainTab(
+                      key: _followTabKey,
+                      scrollController: _followScrollController,
                     ),
                   ],
                 ),

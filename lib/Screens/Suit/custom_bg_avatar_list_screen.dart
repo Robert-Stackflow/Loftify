@@ -13,6 +13,8 @@ import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
+import '../../Utils/route_util.dart';
+import '../../Widgets/Custom/hero_photo_view_screen.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 
@@ -341,6 +343,8 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
     String tag = "",
     double height = 240,
     bool isHero = true,
+    List<String>? urls,
+    Function(int)? onIndexChanged,
   }) {
     return Stack(
       alignment: Alignment.center,
@@ -368,10 +372,26 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
         ),
         Center(
           child: isAvatar
-              ? buildAvatarCard(context, url, height / 2, height / 2, 0.5,
-                  isHero: isHero)
-              : buildBgCard(context, url, height / 2, height * 3 / 4, 0.5,
-                  isHero: isHero),
+              ? buildAvatarCard(
+                  context,
+                  url,
+                  height / 2,
+                  height / 2,
+                  0.5,
+                  isHero: isHero,
+                  urls: urls,
+                  onIndexChanged: onIndexChanged,
+                )
+              : buildBgCard(
+                  context,
+                  url,
+                  height / 2,
+                  height * 3 / 4,
+                  0.5,
+                  isHero: isHero,
+                  urls: urls,
+                  onIndexChanged: onIndexChanged,
+                ),
         ),
         if (tag.isNotEmpty)
           Positioned(
@@ -396,26 +416,37 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
     double height,
     double opacity, {
     bool isHero = true,
+    List<String>? urls,
+    Function(int)? onIndexChanged,
   }) {
-    var image = isHero
-        ? ItemBuilder.buildHeroCachedImage(
-            imageUrl: url,
-            context: context,
-            showLoading: false,
-            fit: BoxFit.cover,
-            width: width,
-            placeholderBackground: Colors.transparent,
-            height: height,
+    Widget image = ItemBuilder.buildCachedImage(
+      imageUrl: url,
+      context: context,
+      showLoading: false,
+      fit: BoxFit.cover,
+      width: width,
+      placeholderBackground: Colors.transparent,
+      height: height,
+    );
+    image = isHero
+        ? GestureDetector(
+            onTap: () {
+              RouteUtil.pushDialogRoute(
+                context,
+                showClose: false,
+                fullScreen: true,
+                useFade: true,
+                HeroPhotoViewScreen(
+                  imageUrls: urls ?? [url],
+                  initIndex: urls != null ? urls.indexOf(url) : 0,
+                  useMainColor: true,
+                  onIndexChanged: onIndexChanged,
+                ),
+              );
+            },
+            child: image,
           )
-        : ItemBuilder.buildCachedImage(
-            imageUrl: url,
-            context: context,
-            showLoading: false,
-            fit: BoxFit.cover,
-            width: width,
-            placeholderBackground: Colors.transparent,
-            height: height,
-          );
+        : image;
     return Container(
       width: width,
       decoration: BoxDecoration(
@@ -465,26 +496,37 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
     double height,
     double opacity, {
     bool isHero = true,
+    List<String>? urls,
+    Function(int)? onIndexChanged,
   }) {
-    var image = isHero
-        ? ItemBuilder.buildHeroCachedImage(
-            imageUrl: url,
-            context: context,
-            showLoading: false,
-            fit: BoxFit.cover,
-            width: width,
-            placeholderBackground: Colors.transparent,
-            height: height,
+    Widget image = ItemBuilder.buildCachedImage(
+      imageUrl: url,
+      context: context,
+      showLoading: false,
+      fit: BoxFit.cover,
+      width: width,
+      placeholderBackground: Colors.transparent,
+      height: height,
+    );
+    image = isHero
+        ? GestureDetector(
+            onTap: () {
+              RouteUtil.pushDialogRoute(
+                context,
+                showClose: false,
+                fullScreen: true,
+                useFade: true,
+                HeroPhotoViewScreen(
+                  imageUrls: urls ?? [url],
+                  initIndex: urls != null ? urls.indexOf(url) : 0,
+                  useMainColor: true,
+                  onIndexChanged: onIndexChanged,
+                ),
+              );
+            },
+            child: image,
           )
-        : ItemBuilder.buildCachedImage(
-            imageUrl: url,
-            context: context,
-            showLoading: false,
-            fit: BoxFit.cover,
-            width: width,
-            placeholderBackground: Colors.transparent,
-            height: height,
-          );
+        : image;
     return Container(
       width: width,
       height: height,

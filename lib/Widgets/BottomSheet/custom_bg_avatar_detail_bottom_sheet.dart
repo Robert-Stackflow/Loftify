@@ -153,6 +153,15 @@ class CustomBgAvatarDetailBottomSheetState
     }
   }
 
+  getAllImages() {
+    if (isLootBox) {
+      return item.lootBox!.productItems.map((e) => e.img.raw).toList();
+    } else {
+      return item.product!.wallpapers.map((e) => e.img.raw).toList()
+        ..addAll(item.product!.avatars.map((e) => e.img.raw).toList());
+    }
+  }
+
   _buildContent() {
     return Container(
       padding: const EdgeInsets.only(top: 24, bottom: 16),
@@ -173,7 +182,17 @@ class CustomBgAvatarDetailBottomSheetState
                     String url = getUrlByIndex(index);
                     bool isAvatar = getIsAvatarByIndex(index);
                     var res = CustomBgAvatarListScreenState.buildProductBg(
-                        context, url, height: 300, isAvatar);
+                      context,
+                      url,
+                      height: 300,
+                      isAvatar,
+                      urls: getAllImages(),
+                      onIndexChanged: (index) {
+                        _currentIndex = index;
+                        setState(() {});
+                        _swiperController.move(index);
+                      },
+                    );
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       child: res,
@@ -351,7 +370,7 @@ class CustomBgAvatarDetailBottomSheetState
               context,
               icon: const Icon(Icons.download_done_rounded, size: 24),
               direction: Axis.vertical,
-              text: "当前",
+              text: "单张",
               fontSizeDelta: -2,
               onTap: () async {
                 CustomLoadingDialog.showLoading(title: "下载中...");
