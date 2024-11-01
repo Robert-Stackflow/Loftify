@@ -133,6 +133,7 @@ class MainScreenState extends State<MainScreen>
   @override
   Future<void> onWindowResized() async {
     super.onWindowResized();
+    appProvider.windowSize = await windowManager.getSize();
     HiveUtil.setWindowSize(await windowManager.getSize());
   }
 
@@ -347,7 +348,10 @@ class MainScreenState extends State<MainScreen>
     } else if (ResponsiveUtil.isMobile()) {
       return Scaffold(
         resizeToAvoidBottomInset: false,
-        body: _buildDesktopBody(),
+        backgroundColor: Theme.of(context).canvasColor,
+        body: SafeArea(
+          child: _buildDesktopBody(),
+        ),
       );
     } else {
       return _buildDesktopBody();

@@ -68,6 +68,8 @@ class PanelScreenState extends State<PanelScreen>
 
   NavigatorState? get panelNavigatorState => panelNavigatorKey.currentState;
 
+  bool canPop = true;
+
   @override
   void initState() {
     super.initState();
@@ -87,6 +89,7 @@ class PanelScreenState extends State<PanelScreen>
     while (panelNavigatorState?.canPop() ?? false) {
       panelNavigatorState?.pop();
     }
+    canPop = !(panelNavigatorState?.canPop() ?? false);
     appProvider.showPanelNavigator = false;
     _pageController =
         PageController(initialPage: appProvider.sidebarChoice.index);
@@ -99,6 +102,7 @@ class PanelScreenState extends State<PanelScreen>
     } else {
       RouteUtil.pushCupertinoRoute(rootContext, page);
     }
+    canPop = !(panelNavigatorState?.canPop() ?? false);
   }
 
   popPage() {
@@ -116,6 +120,7 @@ class PanelScreenState extends State<PanelScreen>
     } else {
       Navigator.pop(rootContext);
     }
+    canPop = !(panelNavigatorState?.canPop() ?? false);
   }
 
   Future<void> initPage() async {
@@ -168,50 +173,54 @@ class PanelScreenState extends State<PanelScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return MyScaffold(
-      key: scaffoldKey,
-      body: Stack(
-        children: [
-          if (!unlogin)
-            PageView(
-              physics: const NeverScrollableScrollPhysics(),
-              controller: _pageController,
-              children: _pageList,
-            ),
-          if (unlogin && ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
-          if (unlogin)
-            Center(
-              child: ItemBuilder.buildRoundButton(
-                context,
-                text: "前往登录",
-                background: Theme.of(context).primaryColor,
-                onTap: () {
-                  RouteUtil.pushDialogRoute(
-                    rootContext,
-                    const LoginByCaptchaScreen(),
-                    popAll: true,
-                  );
-                },
+    return PopScope(
+      canPop: canPop,
+      onPopInvokedWithResult: (_, __) => popPage(),
+      child: MyScaffold(
+        key: scaffoldKey,
+        body: Stack(
+          children: [
+            if (!unlogin)
+              PageView(
+                physics: const NeverScrollableScrollPhysics(),
+                controller: _pageController,
+                children: _pageList,
+              ),
+            if (unlogin && ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
+            if (unlogin)
+              Center(
+                child: ItemBuilder.buildRoundButton(
+                  context,
+                  text: "前往登录",
+                  background: Theme.of(context).primaryColor,
+                  onTap: () {
+                    RouteUtil.pushDialogRoute(
+                      rootContext,
+                      const LoginByCaptchaScreen(),
+                      popAll: true,
+                    );
+                  },
+                ),
+              ),
+            Selector<AppProvider, bool>(
+              selector: (context, provider) => provider.showPanelNavigator,
+              builder: (context, value, child) => Offstage(
+                offstage: !value,
+                child: Navigator(
+                  key: panelNavigatorKey,
+                  onGenerateRoute: (settings) {
+                    return MaterialPageRoute(builder: (context) => emptyWidget);
+                  },
+                ),
               ),
             ),
-          Selector<AppProvider, bool>(
-            selector: (context, provider) => provider.showPanelNavigator,
-            builder: (context, value, child) => Offstage(
-              offstage: !value,
-              child: Navigator(
-                key: panelNavigatorKey,
-                onGenerateRoute: (settings) {
-                  return MaterialPageRoute(builder: (context) => emptyWidget);
-                },
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
+        extendBody: true,
+        bottomNavigationBar: !ResponsiveUtil.isLandscape() && !unlogin
+            ? _buildBottomNavigationBar()
+            : null,
       ),
-      extendBody: true,
-      bottomNavigationBar: !ResponsiveUtil.isLandscape() && !unlogin
-          ? _buildBottomNavigationBar()
-          : null,
     );
   }
 

@@ -167,11 +167,11 @@ class _CustomDressListScreenState extends State<CustomDressListScreen>
                   ? _giftEmoteList.isNotEmpty
                       ? _buildEmoteBody(physics)
                       : ItemBuilder.buildEmptyPlaceholder(
-                          context: context, text: "暂无表情包")
+                          context: context, text: "暂无表情包",physics: physics)
                   : _giftDressList.isNotEmpty
                       ? _buildDressBody(physics)
                       : ItemBuilder.buildEmptyPlaceholder(
-                          context: context, text: "暂无装扮");
+                          context: context, text: "暂无装扮",physics: physics);
             },
           ),
         ),

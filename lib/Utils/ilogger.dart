@@ -12,7 +12,7 @@ class ILogger {
     Logger(
       printer: PrettyPrinter(
         methodCount: 0,
-        errorMethodCount: 5,
+        errorMethodCount: 10,
         colors: true,
         printEmojis: false,
         dateTimeFormat: (time) =>

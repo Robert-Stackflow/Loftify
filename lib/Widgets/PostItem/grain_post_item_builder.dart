@@ -76,6 +76,8 @@ class GrainPostItemBuilder {
       likeCount: item.postData.postView.postCount?.favoriteCount ?? 0,
       tags: item.postData.postView.tagList,
       bigAvaImg: item.postData.blogInfo.bigAvaImg,
+      publishTime: item.postData.postView.publishTime,
+      opTime: item.opTime,
     );
   }
 
@@ -86,6 +88,20 @@ class GrainPostItemBuilder {
     Function()? onTap,
   }) {
     return GeneralPostItemBuilder.buildWaterfallFlowPostItem(
+      context,
+      getGeneralPostItem(item),
+      onTap: onTap,
+      onLikeTap: onLikeTap,
+    );
+  }
+
+  static Widget buildTilePostItem(
+    BuildContext context,
+    GrainPostItem item, {
+    Future<int> Function()? onLikeTap,
+    Function()? onTap,
+  }) {
+    return GeneralPostItemBuilder.buildTilePostItem(
       context,
       getGeneralPostItem(item),
       onTap: onTap,

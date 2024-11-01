@@ -448,3 +448,35 @@ class SubscribeGrainItem {
     return data;
   }
 }
+
+class TimelineBlog {
+  SimpleBlogInfo blogInfo;
+  bool newEvent;
+  int type;
+  int newPostType;
+
+  TimelineBlog({
+    required this.blogInfo,
+    required this.newEvent,
+    required this.type,
+    required this.newPostType,
+  });
+
+  factory TimelineBlog.fromJson(Map<String, dynamic> json) {
+    return TimelineBlog(
+      blogInfo: SimpleBlogInfo.fromJson(json['blogInfo']),
+      newEvent: json['newEvent'],
+      type: json['type'],
+      newPostType: json['newPostType'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['blogInfo'] = blogInfo.toJson();
+    data['newEvent'] = newEvent;
+    data['type'] = type;
+    data['newPostType'] = newPostType;
+    return data;
+  }
+}

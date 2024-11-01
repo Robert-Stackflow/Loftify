@@ -25,6 +25,7 @@ import 'package:loftify/Widgets/BottomSheet/collection_bottom_sheet.dart';
 import 'package:loftify/Widgets/BottomSheet/comment_bottom_sheet.dart';
 import 'package:loftify/Widgets/Dialog/dialog_builder.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+import 'package:provider/provider.dart';
 import 'package:responsive_builder/responsive_builder.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 import 'package:window_manager/window_manager.dart';
@@ -664,9 +665,15 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   _buildMainBody(ScrollPhysics physics) {
-    return ScreenTypeLayout.builder(
-      mobile: (context) => _buildMobileMainBody(physics),
-      tablet: (context) => _buildTabletMainBody(),
+    return Selector<AppProvider, Size>(
+      selector: (context, appProvider) => appProvider.windowSize,
+      builder: (context, windowSize, child) =>
+          windowSize.width > minimumSize.width + 200
+              ? ScreenTypeLayout.builder(
+                  mobile: (context) => _buildMobileMainBody(physics),
+                  tablet: (context) => _buildTabletMainBody(),
+                )
+              : _buildMobileMainBody(physics),
     );
   }
 
@@ -721,7 +728,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           ),
         ),
         ResizableChild(
-          minSize: 200,
+          minSize: 2,
           size: const ResizableSize.expand(),
           child: _buildRecommendFlow(sliver: false),
         ),
@@ -1227,12 +1234,15 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               color: Colors.transparent,
               padding:
                   const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
-              child: Text(
-                returnContent.content,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.apply(fontSizeDelta: 3, heightDelta: 0.3),
+              child: ItemBuilder.buildSelectableArea(
+                context: context,
+                child: Text(
+                  returnContent.content,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.apply(fontSizeDelta: 3, heightDelta: 0.3),
+                ),
               ),
             ),
           if (isArticle && _previewImages.isNotEmpty)
@@ -1252,8 +1262,11 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     return ItemBuilder.buildClickItem(
       Container(
         color: Colors.transparent,
-        padding:
-            const EdgeInsets.only(left: 16, right: 16, top: 10, bottom: 10),
+        padding: EdgeInsets.only(
+            left: 16,
+            right: ResponsiveUtil.isLandscape() ? 10 : 16,
+            top: 10,
+            bottom: 10),
         child: Row(
           children: [
             ItemBuilder.buildAvatar(

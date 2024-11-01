@@ -24,6 +24,8 @@ class GeneralPostItem {
   PostType type;
   List<PhotoLink> photoLinks;
   int blogId;
+  int publishTime;
+  int opTime;
   int postId;
   String permalink;
   int collectionId;
@@ -73,6 +75,8 @@ class GeneralPostItem {
     required this.tags,
     required this.bigAvaImg,
     this.excludeTag,
+    this.publishTime = 0,
+    this.opTime = 0,
     this.showMoreButton = false,
     this.onShieldTag,
     this.onShieldContent,
@@ -734,5 +738,316 @@ class GeneralPostItemBuilder {
       ),
       context: context,
     );
+  }
+
+  static Widget buildTilePostItem(
+    BuildContext context,
+    GeneralPostItem item, {
+    Future<int> Function()? onLikeTap,
+    Function()? onTap,
+  }) {
+    double width = (MediaQuery.sizeOf(context).width - 24) / 2;
+    PostType type = item.type;
+    late Widget main;
+    switch (type) {
+      case PostType.image:
+        main = buildTileImageItem(context, item,
+            width: width, onLikeTap: onLikeTap);
+      case PostType.article:
+        main = item.showArticle ?? true
+            ? buildTileArticleItem(context, item,
+                width: width, onLikeTap: onLikeTap)
+            : emptyWidget;
+      case PostType.video:
+        main = item.showVideo ?? true
+            ? buildTileVideoItem(context, item,
+                width: width, onLikeTap: onLikeTap)
+            : emptyWidget;
+      case PostType.grain:
+      case PostType.invalid:
+        main = emptyWidget;
+    }
+    main = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: main,
+    );
+    return GestureDetector(
+      onTap: () {
+        onTap?.call();
+        onTapItem(context, item);
+      },
+      onLongPress: item.showMoreButton
+          ? () {
+              HapticFeedback.mediumImpact();
+              showMoreSheet(context, item);
+            }
+          : null,
+      child: ItemBuilder.buildClickItem(main),
+    );
+  }
+
+  static Widget buildTileUserRow(BuildContext context, GeneralPostItem item) {
+    return GestureDetector(
+      onTap: () {
+        RouteUtil.pushPanelCupertinoRoute(
+          context,
+          UserDetailScreen(
+            blogId: item.blogId,
+            blogName: item.blogName,
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Row(
+          children: [
+            ItemBuilder.buildAvatar(
+              context: context,
+              imageUrl: item.bigAvaImg,
+              showLoading: false,
+              size: 36,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.blogNickName,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.apply(fontSizeDelta: -2),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    Utils.formatTimestamp(item.opTime),
+                    style: Theme.of(context).textTheme.bodySmall,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            ItemBuilder.buildIconButton(
+              context: context,
+              icon: Icon(
+                Icons.more_vert_rounded,
+                size: 20,
+                color: Theme.of(context).textTheme.labelSmall?.color,
+              ),
+              onTap: () {},
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static Widget buildTileContentRow(
+      BuildContext context, GeneralPostItem item) {
+    String title = Utils.clearBlank(item.title);
+    String content = item.digest;
+    String htmlTitle = Utils.isNotEmpty(title)
+        ? "<p id='title-medium'><strong>$title</strong></p>"
+        : "";
+    return title.isNotEmpty || content.isNotEmpty
+        ? Container(
+            color: Colors.transparent,
+            padding: const EdgeInsets.only(top: 8, bottom: 8),
+            child: ItemBuilder.buildHtmlWidget(
+              context,
+              "$htmlTitle$content",
+              textStyle: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.apply(fontSizeDelta: 2),
+            ),
+          )
+        : emptyWidget;
+  }
+
+  static Widget buildTileImageItem(
+    BuildContext context,
+    GeneralPostItem item, {
+    required double width,
+    double maxHeight = 300,
+    double minHeight = 120,
+    Function()? onLikeTap,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        buildTileUserRow(context, item),
+        buildTileContentRow(context, item),
+        Stack(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(
+                    color: Theme.of(context).dividerColor, width: 0.3),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: SizedBox(
+                  height: max(
+                    min(item.photoLinks[0].oh * (width / item.photoLinks[0].ow),
+                        maxHeight),
+                    minHeight,
+                  ),
+                  width: width,
+                  child: ItemBuilder.buildCachedImage(
+                    context: context,
+                    fit: BoxFit.cover,
+                    showLoading: false,
+                    imageUrl: Utils.getUrlByQuality(
+                        item.photoLinks[0].middle,
+                        HiveUtil.getImageQuality(
+                            HiveUtil.waterfallFlowImageQualityKey)),
+                  ),
+                ),
+              ),
+            ),
+            if (Utils.isGIF(item.firstImageUrl))
+              Positioned(
+                left: 4,
+                top: 4,
+                child: ItemBuilder.buildTransparentTag(context, text: "动图"),
+              ),
+            if ((item.photoCount ?? item.photoLinks.length) > 1)
+              Positioned(
+                bottom: 4,
+                right: 4,
+                child: ItemBuilder.buildTransparentTag(
+                  context,
+                  text: '${(item.photoCount ?? item.photoLinks.length)}',
+                  isCircle: true,
+                  padding: EdgeInsets.all(
+                      (item.photoCount ?? item.photoLinks.length) > 10 ? 3 : 5),
+                ),
+              ),
+          ],
+        ),
+        buildTilePostItemMeta(context, item, onLikeTap: onLikeTap),
+      ],
+    );
+  }
+
+  static Widget buildTileArticleItem(
+    BuildContext context,
+    GeneralPostItem item, {
+    required double width,
+    Function()? onLikeTap,
+  }) {
+    return Column(
+      children: [
+        buildTileUserRow(context, item),
+        buildTileContentRow(context, item),
+        buildTilePostItemMeta(context, item,
+            showTitle: false, onLikeTap: onLikeTap),
+      ],
+    );
+  }
+
+  static Widget buildTileVideoItem(
+    BuildContext context,
+    GeneralPostItem item, {
+    required double width,
+    Function()? onLikeTap,
+    double maxHeight = 300,
+    double minHeight = 120,
+  }) {
+    var height = max(
+      min(item.photoLinks[0].oh * (width / item.photoLinks[0].ow), maxHeight),
+      minHeight,
+    );
+    return Column(
+      children: [
+        buildTileUserRow(context, item),
+        Stack(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(
+                    color: Theme.of(context).dividerColor, width: 0.3),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: SizedBox(
+                  height: height.isNaN ? maxHeight : height,
+                  width: width,
+                  child: ItemBuilder.buildCachedImage(
+                    context: context,
+                    fit: BoxFit.cover,
+                    showLoading: false,
+                    imageUrl: Utils.getUrlByQuality(
+                        item.photoLinks[0].orign,
+                        HiveUtil.getImageQuality(
+                            HiveUtil.waterfallFlowImageQualityKey)),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 4,
+              top: 4,
+              child: ItemBuilder.buildTransparentTag(context, text: "视频"),
+            ),
+            Positioned(
+              bottom: 4,
+              right: 4,
+              child: ItemBuilder.buildTransparentTag(
+                context,
+                text: Utils.formatDuration(item.duration),
+              ),
+            ),
+          ],
+        ),
+        buildTilePostItemMeta(context, item, onLikeTap: onLikeTap),
+      ],
+    );
+  }
+
+  static Widget buildTilePostItemMeta(
+    BuildContext context,
+    GeneralPostItem item, {
+    bool showTitle = true,
+    Function()? onLikeTap,
+  }) {
+    buildTagList(List<String> tagList) {
+      Map<String, TagType> tags = {};
+      for (var e in tagList) {
+        tags[e] = TagType.normal;
+      }
+      List<MapEntry<String, TagType>> sortedTags = tags.entries.toList();
+      sortedTags.sort((a, b) => b.value.index.compareTo(a.value.index));
+      return Container(
+        color: Colors.transparent,
+        width: double.infinity,
+        padding: const EdgeInsets.only(top: 10, bottom: 8),
+        child: Wrap(
+          spacing: 8.0,
+          runSpacing: 8.0,
+          alignment: WrapAlignment.start,
+          children: List.generate(sortedTags.length, (index) {
+            return MouseRegion(
+              cursor: sortedTags[index].value != TagType.egg
+                  ? SystemMouseCursors.click
+                  : SystemMouseCursors.basic,
+              child: ItemBuilder.buildTagItem(
+                context,
+                sortedTags[index].key,
+                sortedTags[index].value,
+                fontSizeDelta: -2,
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              ),
+            );
+          }),
+        ),
+      );
+    }
+
+    return buildTagList(item.tags);
   }
 }

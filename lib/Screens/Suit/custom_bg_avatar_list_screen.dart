@@ -60,7 +60,7 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
 
   static buildTagBar(BuildContext context, List<String> tags, String? selected,
       Function(String? tag) onSelectedTag) {
-    if (ResponsiveUtil.isLandscape()) {
+    if (ResponsiveUtil.isDesktop()) {
       return buildWrapTagBar(context, tags, selected, onSelectedTag);
     } else {
       return buildListTagBar(tags, selected, onSelectedTag);
@@ -112,7 +112,8 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
       String? selected, Function(String? tag) onSelectedTag) {
     return Container(
       alignment: Alignment.centerLeft,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10)
+          .add(const EdgeInsets.only(bottom: 10)),
       child: Wrap(
         spacing: 10,
         runSpacing: 5,
@@ -245,7 +246,7 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
               return _productList.isNotEmpty
                   ? _buildBody(physics)
                   : ItemBuilder.buildEmptyPlaceholder(
-                      context: context, text: "暂无壁纸头像");
+                      context: context, text: "暂无壁纸头像", physics: physics);
             },
           ),
         ),

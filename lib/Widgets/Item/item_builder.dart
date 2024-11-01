@@ -3107,15 +3107,15 @@ class ItemBuilder {
                   if (icon != null && showIcon)
                     RotatedBox(quarterTurns: quarterTurns, child: icon),
                   if (icon != null && showIcon) SizedBox(width: spacing),
-                  if(text.isNotEmpty)
-                  Text(
-                    text,
-                    style: Theme.of(context).textTheme.titleSmall?.apply(
-                          fontSizeDelta: fontSizeDelta,
-                          color: color,
-                          fontWeightDelta: fontWeightDelta,
-                        ),
-                  ),
+                  if (text.isNotEmpty)
+                    Text(
+                      text,
+                      style: Theme.of(context).textTheme.titleSmall?.apply(
+                            fontSizeDelta: fontSizeDelta,
+                            color: color,
+                            fontWeightDelta: fontWeightDelta,
+                          ),
+                    ),
                 ],
               )
             : Column(
@@ -3125,15 +3125,15 @@ class ItemBuilder {
                   if (icon != null && showIcon)
                     RotatedBox(quarterTurns: quarterTurns, child: icon),
                   if (icon != null && showIcon) SizedBox(height: spacing),
-                  if(text.isNotEmpty)
-                  Text(
-                    text,
-                    style: Theme.of(context).textTheme.titleSmall?.apply(
-                          fontSizeDelta: fontSizeDelta,
-                          color: color,
-                          fontWeightDelta: fontWeightDelta,
-                        ),
-                  ),
+                  if (text.isNotEmpty)
+                    Text(
+                      text,
+                      style: Theme.of(context).textTheme.titleSmall?.apply(
+                            fontSizeDelta: fontSizeDelta,
+                            color: color,
+                            fontWeightDelta: fontWeightDelta,
+                          ),
+                    ),
                 ],
               ),
       ),
@@ -3422,6 +3422,7 @@ class ItemBuilder {
     bool parseImage = true,
     bool showLoading = true,
     Function()? onDownloadSuccess,
+    bool linkBold = true,
   }) {
     return ItemBuilder.buildSelectableArea(
       context: context,
@@ -3442,13 +3443,17 @@ class ItemBuilder {
             return {
               'color':
                   '#${MyColors.getLinkColor(context).value.toRadixString(16).substring(2, 8)}',
-              'font-weight': '700',
+              'font-weight': linkBold ? '700' : '500',
               'text-decoration-line': 'none',
             };
           } else if (e.id == "title") {
             return {
               'font-weight': '700',
               'font-size': 'larger',
+            };
+          } else if (e.id == "title-medium") {
+            return {
+              'font-weight': '700',
             };
           }
           return null;

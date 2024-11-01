@@ -132,11 +132,13 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(56),
-        child: Stack(
-          children: [
-            _buildAppBar(),
-            if (ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
-          ],
+        child: SafeArea(
+          child: Stack(
+            children: [
+              _buildAppBar(),
+              if (ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
+            ],
+          ),
         ),
       ),
       extendBody: true,

@@ -60,6 +60,8 @@ RouteObserver<PageRoute> routeObserver = RouteObserver();
 AppProvider appProvider = AppProvider();
 
 class AppProvider with ChangeNotifier {
+  Size windowSize = const Size(0, 0);
+
   String latestVersion = "";
 
   bool shownShortcutHelp = false;

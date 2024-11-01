@@ -66,10 +66,11 @@ class GrainPostItem {
   });
 
   factory GrainPostItem.fromJson(Map<String, dynamic> json) {
+    print(json);
     return GrainPostItem(
-      followed: json['followed'],
-      liked: json['liked'],
-      opTime: json['opTime'],
+      followed: json['followed'] ?? false,
+      liked: json['liked'] ?? false,
+      opTime: json['opTime'] ?? 0,
       postData: GrainPostData.fromJson(json['postData']),
       shared: json['shared'],
       showFullText: json['showFullText'],

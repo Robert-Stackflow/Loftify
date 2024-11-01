@@ -24,4 +24,19 @@ class RecommendApi {
       "blogId": blogId,
     });
   }
+
+  static Future getTimeline({
+    int showOffset = 0,
+    int publishOffset = 0,
+    int shareOffset = 0,
+  }) async {
+    return RequestUtil.get(
+      "/timeline/app/getTrackItemListWithShare.json",
+      params: {
+        "showOffset": "$showOffset",
+        "publishOffset": "$publishOffset",
+        "shareOffset": "$shareOffset",
+      },
+    );
+  }
 }

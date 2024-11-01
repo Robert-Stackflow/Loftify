@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Api/collection_api.dart';
 import 'package:loftify/Api/grain_api.dart';
+import 'package:loftify/Api/recommend_api.dart';
 import 'package:loftify/Models/dynamic_response.dart';
 import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Screens/Post/collection_detail_screen.dart';
@@ -18,6 +19,7 @@ import 'package:loftify/Utils/route_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Api/tag_api.dart';
+import '../../Models/grain_response.dart';
 import '../../Resources/colors.dart';
 import '../../Resources/theme.dart';
 import '../../Utils/app_provider.dart';
@@ -30,6 +32,7 @@ import '../../Widgets/Custom/custom_tab_indicator.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Hidable/scroll_to_hide.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/PostItem/grain_post_item_builder.dart';
 import 'home_screen.dart';
 
 class DynamicScreen extends StatefulWidget {
@@ -137,7 +140,7 @@ class DynamicScreenState extends State<DynamicScreen>
         break;
       case 3:
         callRefresh =
-            (_followTabKey.currentState as SubscribeGrainTabState).callRefresh;
+            (_followTabKey.currentState as FollowTabState).callRefresh;
         break;
     }
     return callRefresh;
@@ -192,7 +195,7 @@ class DynamicScreenState extends State<DynamicScreen>
                       key: _grainTabKey,
                       scrollController: _grainScrollController,
                     ),
-                    SubscribeGrainTab(
+                    FollowTab(
                       key: _followTabKey,
                       scrollController: _followScrollController,
                     ),
@@ -284,6 +287,239 @@ class DynamicScreenState extends State<DynamicScreen>
           setState(() {
             _currentTabIndex = index;
           });
+        },
+      ),
+    );
+  }
+}
+
+class FollowTab extends StatefulWidget {
+  const FollowTab({
+    super.key,
+    this.scrollController,
+  });
+
+  final ScrollController? scrollController;
+
+  @override
+  State<StatefulWidget> createState() => FollowTabState();
+}
+
+class FollowTabState extends State<FollowTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+  final List<GrainPostItem> _postList = [];
+  final List<TimelineBlog> _timelineBlogList = [];
+  final EasyRefreshController _refreshController = EasyRefreshController();
+  int _showOffset = 0;
+  int _shareOffset = 0;
+  int _publishOffset = 0;
+  bool _loading = false;
+  late final ScrollController _scrollController =
+      widget.scrollController ?? ScrollController();
+  bool _noMore = false;
+
+  callRefresh() {
+    if (_scrollController.offset > MediaQuery.sizeOf(context).height) {
+      _scrollController
+          .animateTo(0,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut)
+          .then((_) {
+        _refreshController.callRefresh();
+      });
+    } else {
+      _refreshController.callRefresh();
+    }
+  }
+
+  _fetchResult({bool refresh = false}) async {
+    if (_loading) return;
+    if (refresh) _noMore = false;
+    _loading = true;
+    return await RecommendApi.getTimeline(
+      showOffset: refresh ? 0 : _showOffset,
+      publishOffset: refresh ? 0 : _publishOffset,
+      shareOffset: refresh ? 0 : _shareOffset,
+    ).then((value) {
+      try {
+        if (value['code'] != 0) {
+          IToast.showTop(value['msg']);
+        } else {
+          List<GrainPostItem> tmp = [];
+          if (value['data'] != null) {
+            _showOffset = value['data']['showOffset'] ?? 0;
+            _publishOffset = value['data']['publishOffset'] ?? 0;
+            _shareOffset = value['data']['shareOffset'] ?? 0;
+            if (value['data']['items'] != null) {
+              var list = value['data']['items'] as List;
+              list =
+                  list.where((element) => element['postData'] != null).toList();
+              tmp = list.map((e) => GrainPostItem.fromJson(e)).toList();
+              if (refresh) _postList.clear();
+              _postList.addAll(tmp);
+            }
+            if (value['data']['timelineBlogList'] != null) {
+              if (refresh) _timelineBlogList.clear();
+              _timelineBlogList.addAll(
+                  (value['data']['timelineBlogList'] as List)
+                      .map((e) => TimelineBlog.fromJson(e))
+                      .toList());
+            }
+          }
+          if (mounted) setState(() {});
+          if (tmp.isEmpty && !refresh) {
+            _noMore = true;
+            return IndicatorResult.noMore;
+          } else {
+            return IndicatorResult.success;
+          }
+        }
+      } catch (e, t) {
+        IToast.showTop("加载失败");
+        ILogger.error("Failed to load tag dynamic", e, t);
+        return IndicatorResult.fail;
+      } finally {
+        if (mounted) setState(() {});
+        _loading = false;
+      }
+    });
+  }
+
+  @override
+  initState() {
+    super.initState();
+    _scrollController.addListener(() {
+      if (!_noMore &&
+          _scrollController.position.pixels >
+              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
+        _fetchResult();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return EasyRefresh.builder(
+      refreshOnStart: true,
+      controller: _refreshController,
+      onRefresh: () async {
+        return await _fetchResult(refresh: true);
+      },
+      onLoad: () async {
+        return await _fetchResult();
+      },
+      triggerAxis: Axis.vertical,
+      childBuilder: (context, physics) => CustomScrollView(
+        controller: _scrollController,
+        physics: physics,
+        slivers: [
+          SliverList(
+            delegate: SliverChildListDelegate(
+              [
+                if (_timelineBlogList.isNotEmpty)
+                  ItemBuilder.buildTitle(
+                    context,
+                    title: "最近更新",
+                    topMargin: 10,
+                    bottomMargin: 10,
+                  ),
+                if (_timelineBlogList.isNotEmpty) _buildTimelineBlog(),
+                if (_timelineBlogList.isNotEmpty)
+                  ItemBuilder.buildDivider(
+                    context,
+                    horizontal: 0,
+                    vertical: 16,
+                  ),
+                if (_timelineBlogList.isEmpty) const SizedBox(height: 10),
+                if (_postList.isEmpty)
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: 16),
+                    height: 160,
+                    child: ItemBuilder.buildEmptyPlaceholder(
+                      context: context,
+                      text: "暂无动态",
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (_postList.isNotEmpty) _buildPostList(physics),
+        ],
+      ),
+    );
+  }
+
+  _buildTimelineBlog() {
+    return SizedBox(
+      height: 85,
+      child: ListView.builder(
+        padding: const EdgeInsets.only(left: 16, right: 16),
+        scrollDirection: Axis.horizontal,
+        itemCount: _timelineBlogList.length,
+        itemBuilder: (context, index) {
+          return ItemBuilder.buildClickItem(
+              _buildTimelineBlogItem(_timelineBlogList[index]));
+        },
+      ),
+    );
+  }
+
+  _buildTimelineBlogItem(TimelineBlog item) {
+    return GestureDetector(
+      onTap: () {
+        RouteUtil.pushPanelCupertinoRoute(
+            context,
+            UserDetailScreen(
+                blogId: item.blogInfo.blogId,
+                blogName: item.blogInfo.blogName));
+      },
+      child: Container(
+        width: 70,
+        margin: const EdgeInsets.only(right: 8),
+        color: Colors.transparent,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            ClipOval(
+              child: ItemBuilder.buildCachedImage(
+                imageUrl: item.blogInfo.bigAvaImg,
+                context: context,
+                width: 60,
+                height: 60,
+                fit: BoxFit.cover,
+                showLoading: false,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              "#${item.blogInfo.blogNickName}",
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  _buildPostList(ScrollPhysics physics) {
+    return SliverWaterfallFlow.count(
+      crossAxisCount: 1,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 6,
+      children: List.generate(
+        _postList.length,
+        (int index) {
+          return ItemBuilder.buildClickItem(
+            GrainPostItemBuilder.buildTilePostItem(
+              context,
+              _postList[index],
+            ),
+          );
         },
       ),
     );
