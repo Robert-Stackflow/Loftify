@@ -18,8 +18,8 @@ import 'package:loftify/Utils/request_header_util.dart';
 import 'package:loftify/Utils/request_util.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart';
-import 'package:provider/provider.dart';
 import 'package:protocol_handler/protocol_handler.dart';
+import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'Screens/main_screen.dart';
@@ -52,7 +52,7 @@ Future<void> runMyApp(List<String> args) async {
   if (ResponsiveUtil.isDesktop()) {
     await initWindow();
     Utils.initTray();
-    PackageInfo packageInfo=await PackageInfo.fromPlatform();
+    PackageInfo packageInfo = await PackageInfo.fromPlatform();
     launchAtStartup.setup(
       appName: packageInfo.appName,
       appPath: Platform.resolvedExecutable,
@@ -106,8 +106,26 @@ Future<void> initWindow() async {
 }
 
 Future<void> initDisplayMode() async {
-  await FlutterDisplayMode.setHighRefreshRate();
-  await FlutterDisplayMode.setPreferredMode(await FlutterDisplayMode.preferred);
+  try {
+    var modes = await FlutterDisplayMode.supported;
+    ILogger.info("Supported display modes: $modes");
+    ILogger.info("Current active display mode: ${await FlutterDisplayMode.active}");
+    ILogger.info("Current preferred display mode: ${await FlutterDisplayMode.preferred}");
+    int refreshRate =
+        HiveUtil.getInt(HiveUtil.refreshRateKey, defaultValue: -1);
+    if (refreshRate == -1) {
+      await FlutterDisplayMode.setHighRefreshRate();
+      ILogger.info("Config display mode: high refresh rate");
+    } else {
+      DisplayMode configMode = modes[refreshRate.clamp(0, modes.length - 1)];
+      await FlutterDisplayMode.setPreferredMode(configMode);
+      ILogger.info("Config display mode: ${configMode.toString()}");
+    }
+    ILogger.info("Current active display mode after config: ${await FlutterDisplayMode.active}");
+    ILogger.info("Current preferred display mode after config: ${await FlutterDisplayMode.preferred}");
+  } catch (e, t) {
+    ILogger.error("Failed to init display mode", e, t);
+  }
 }
 
 Future<void> onError(FlutterErrorDetails details) async {

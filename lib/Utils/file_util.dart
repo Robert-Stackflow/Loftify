@@ -490,10 +490,10 @@ class FileUtil {
       bool result = statusList.every((element) => element);
       if (showToast) {
         if (result) {
-          if (ResponsiveUtil.isMobile()) {
+          String? saveDirectory = await checkSaveDirectory(context);
+          if (ResponsiveUtil.isMobile() && Utils.isEmpty(saveDirectory)) {
             IToast.showTop("所有图片已保存至相册");
           } else {
-            String? saveDirectory = await checkSaveDirectory(context);
             IToast.showTop("所有图片已保存至$saveDirectory");
           }
         } else {
@@ -556,10 +556,10 @@ class FileUtil {
       bool result = statusList.every((element) => element);
       if (showToast) {
         if (result) {
-          if (ResponsiveUtil.isMobile()) {
+          String? saveDirectory = await checkSaveDirectory(context);
+          if (ResponsiveUtil.isMobile() && Utils.isEmpty(saveDirectory)) {
             IToast.showTop("所有图片已保存至相册");
           } else {
-            String? saveDirectory = await checkSaveDirectory(context);
             IToast.showTop("所有图片已保存至$saveDirectory");
           }
         } else {

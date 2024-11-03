@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:loftify/Utils/ilogger.dart';
 import 'package:provider/provider.dart';
+import 'package:tuple/tuple.dart';
 
 import '../../Utils/app_provider.dart';
 import '../../Utils/hive_util.dart';
@@ -38,11 +41,22 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
       HiveUtil.getBool(HiveUtil.enableSafeModeKey, defaultValue: false);
   bool _enableBiometric = HiveUtil.getBool(HiveUtil.enableBiometricKey);
   bool _biometricAvailable = false;
+  int _refreshRate = HiveUtil.getInt(HiveUtil.refreshRateKey);
+  List<DisplayMode> _modes = [];
+
+  List<Tuple2<String, DisplayMode>> get _supportedModeTuples =>
+      _modes.map((e) => Tuple2(e.toString(), e)).toList();
 
   @override
   void initState() {
     super.initState();
     initBiometricAuthentication();
+    getRefreshRate();
+  }
+
+  getRefreshRate() async {
+    _modes = await FlutterDisplayMode.supported;
+    setState(() {});
   }
 
   @override
@@ -61,6 +75,51 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
           children: [
             if (ResponsiveUtil.isLandscape()) const SizedBox(height: 10),
             ..._privacySettings(),
+            if (ResponsiveUtil.isAndroid()) const SizedBox(height: 10),
+            if (ResponsiveUtil.isAndroid())
+              ItemBuilder.buildEntryItem(
+                tip: _modes.isNotEmpty
+                    ? _modes[_refreshRate.clamp(0, _modes.length - 1)]
+                        .toString()
+                    : "",
+                context: context,
+                title: "刷新率",
+                description:
+                    "意在解决部分机型高刷失效的问题，如果没有问题，请不要修改；如果您的设备支持LTPO，可能会设置失败",
+                topRadius: true,
+                bottomRadius: true,
+                onTap: () {
+                  BottomSheetBuilder.showListBottomSheet(
+                    context,
+                    (context) => TileList.fromOptions(
+                      _supportedModeTuples,
+                      (item2) async {
+                        try {
+                          await FlutterDisplayMode.setPreferredMode(item2);
+                          var active = await FlutterDisplayMode.active;
+                          if (active.refreshRate != item2.refreshRate) {
+                            IToast.showTop("刷新率设置失败");
+                          } else {
+                            IToast.showTop("刷新率设置成功");
+                          }
+                        } catch (e, t) {
+                          IToast.showTop("刷新率设置失败: ${e.toString()}");
+                          ILogger.error("Failed to set refresh rate", e, t);
+                        }
+                        _refreshRate = _modes.indexOf(item2);
+                        setState(() {});
+                        HiveUtil.put(HiveUtil.refreshRateKey, _refreshRate);
+                        Navigator.pop(context);
+                      },
+                      selected:
+                          _modes[_refreshRate.clamp(0, _modes.length - 1)],
+                      context: context,
+                      title: "选择刷新率",
+                      onCloseTap: () => Navigator.pop(context),
+                    ),
+                  );
+                },
+              ),
             const SizedBox(height: 30),
           ],
         ),
