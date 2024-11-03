@@ -1075,10 +1075,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
     return illusts;
   }
 
-  Widget buildTileImageItem({
-    double maxHeight = 300,
-    double minHeight = 120,
-  }) {
+  Widget buildTileImageItem() {
     var grid = ImageGrid(
       ratios: item.photoLinks.map((e) => e.ow / e.oh).toList(),
       itemCount: item.photoLinks.length,
@@ -1158,6 +1155,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         buildTileShareRow(),
         buildTileUserRow(),

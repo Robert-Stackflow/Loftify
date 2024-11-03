@@ -471,8 +471,9 @@ class FileUtil {
       ILogger.error("Failed to save", e, t);
       if (e is PathNotFoundException) {
         IToast.showTop("保存路径不存在");
+      } else {
+        IToast.showTop("保存失败，请重试");
       }
-      IToast.showTop("保存失败，请重试");
       return false;
     }
   }
@@ -624,7 +625,8 @@ class FileUtil {
       String savePath = appDocDir.path + extractFileNameFromUrl(videoUrl);
       await Dio()
           .download(videoUrl, savePath, onReceiveProgress: onReceiveProgress);
-      if (ResponsiveUtil.isMobile()) {
+      String? saveDirectory = HiveUtil.getString(HiveUtil.savePathKey);
+      if (ResponsiveUtil.isMobile() && Utils.isEmpty(saveDirectory)) {
         var result = await ImageGallerySaver.saveFile(
           savePath,
           name: fileName ?? FileUtil.extractFileNameFromUrl(videoUrl),
@@ -632,7 +634,7 @@ class FileUtil {
         bool success = result != null && result['isSuccess'];
         if (showToast) {
           if (success) {
-            IToast.showTop("视频已保存");
+            IToast.showTop("视频已保存至相册");
           } else {
             IToast.showTop("保存失败，请重试");
           }
@@ -643,6 +645,7 @@ class FileUtil {
         if (Utils.isNotEmpty(saveDirectory)) {
           String newPath =
               '$saveDirectory/${fileName ?? FileUtil.extractFileNameFromUrl(videoUrl)}';
+          checkDirectory(newPath);
           await File(savePath).copy(newPath);
           if (showToast) {
             IToast.showTop("视频已保存至$saveDirectory");
@@ -657,8 +660,9 @@ class FileUtil {
       ILogger.error("Failed to save", e, t);
       if (e is PathNotFoundException) {
         IToast.showTop("保存路径不存在");
+      } else {
+        IToast.showTop("保存失败，请重试");
       }
-      IToast.showTop("保存失败，请重试");
       return false;
     }
   }
