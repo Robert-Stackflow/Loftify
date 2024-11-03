@@ -130,17 +130,19 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(56),
-        child: SafeArea(
-          child: Stack(
-            children: [
-              _buildAppBar(),
-              if (ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
-            ],
-          ),
-        ),
-      ),
+      appBar: ResponsiveUtil.isDesktop()
+          ? PreferredSize(
+              preferredSize: const Size.fromHeight(56),
+              child: SafeArea(
+                child: Stack(
+                  children: [
+                    _buildAppBar(),
+                    if (ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
+                  ],
+                ),
+              ),
+            )
+          : _buildAppBar(),
       extendBody: true,
       extendBodyBehindAppBar: true,
       backgroundColor: Colors.black,

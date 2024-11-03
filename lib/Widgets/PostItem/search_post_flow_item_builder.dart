@@ -76,16 +76,9 @@ class SearchPostFlowItemBuilder {
   }
 
   static Widget buildWaterfallFlowPostItem(
-    BuildContext context,
-    SearchPost item, {
-    Future<int> Function()? onLikeTap,
-    Function()? onTap,
-  }) {
-    return GeneralPostItemBuilder.buildWaterfallFlowPostItem(
-      context,
-      getGeneralPostItem(item),
-      onTap: onTap,
-      onLikeTap: onLikeTap,
+      BuildContext context, SearchPost item) {
+    return WaterfallFlowPostItemWidget(
+      item: getGeneralPostItem(item),
     );
   }
 

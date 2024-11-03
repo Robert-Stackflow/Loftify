@@ -342,6 +342,12 @@ class Utils {
     HapticFeedback.mediumImpact();
   }
 
+  static String formatAll(int timestamp) {
+    var date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+    var dateFormat = DateFormat("yyyy-MM-dd_HH-mm-ss");
+    return dateFormat.format(date);
+  }
+
   static String formatYearMonth(int timestamp) {
     var date = DateTime.fromMillisecondsSinceEpoch(timestamp);
     var dateFormat = DateFormat("yyyy年MM月");

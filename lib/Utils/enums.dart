@@ -154,20 +154,28 @@ extension DownloadSuccessEnumExtension on DownloadSuccessAction {
 }
 
 enum FilenameField {
-  originalName('original_name', '{original_name}', '图片原文件名称'),
-  postId('post_id', '{post_id}', '帖子ID'),
-  postTitle('post_title', '{post_title}', '帖子标题，若没有标题则忽略该字段'),
-  timestamp('timestamp', '{timestamp}', '时间戳'),
-  blogId('blog_id', '{blog_id}', '作者ID'),
-  blogLofterId('blog_lofter_id', '{blog_lofter_id}', '作者Lofter ID'),
-  blogNickName('blog_nick_name', '{blog_nick_name}', '作者昵称'),
-  part('part', '{part}', '图片序号'),
-  underline('_', '_', '下划线');
+  originalName('original_name', '{original_name}', '图片原文件名称', '6JKDN49SDDVMG'),
+  blogId('blog_id', '{blog_id}', '作者ID', '12345678'),
+  blogLofterId(
+      'blog_lofter_id', '{blog_lofter_id}', '作者Lofter ID', 'loftifyofficial'),
+  blogNickName('blog_nick_name', '{blog_nick_name}', '作者昵称', 'Loftify官方'),
+  postId('post_id', '{post_id}', '帖子ID', '12345678'),
+  postTitle('post_title', '{post_title}', '帖子标题，若没有标题则设置为“无标题”', '正式发布啦'),
+  postTags('post_tags', '{post_tags}', '帖子标签，若没有标签则设置为“无标签”', '第三方,Loftify'),
+  postPublishTime('post_publish_time', '{post_publish_time}', '帖子发布时间字符串',
+      '2024-11-03_12-34-56'),
+  part('part', '{part}', '当前图片在所有图片中的序号', '0'),
+  timestamp('timestamp', '{timestamp}', '当前时间戳', '1234567890'),
+  currentTime(
+      'current_time', '{current_time}', '当前时间字符串', '2024-11-03_12-34-56'),
+  underline('_', '_', '下划线', '_'),
+  slack('/', '/', '路径分隔符，用于创建文件夹', '/');
 
-  const FilenameField(this.label, this.format, this.description);
+  const FilenameField(this.label, this.format, this.description, this.example);
 
   final String format;
   final String label;
+  final String example;
   final String description;
 }
 

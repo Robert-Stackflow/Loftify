@@ -25,7 +25,6 @@ import 'package:win32/win32.dart';
 
 import '../Models/illust.dart';
 import '../Widgets/Dialog/custom_dialog.dart';
-import '../Widgets/Item/item_builder.dart';
 import '../generated/l10n.dart';
 import 'hive_util.dart';
 import 'ilogger.dart';
@@ -402,9 +401,17 @@ class FileUtil {
     );
   }
 
+  static checkDirectory(String filePath) {
+    Directory directory = Directory(dirname(filePath));
+    if (!directory.existsSync()) {
+      directory.createSync(recursive: true);
+    }
+  }
+
   static Future<File> copyAndRenameFile(File file, String newFileName) async {
     String dir = file.parent.path;
     String newPath = '$dir/$newFileName';
+    checkDirectory(newPath);
     File copiedFile = await file.copy(newPath);
     await copiedFile.rename(newPath);
     return copiedFile;
@@ -429,7 +436,8 @@ class FileUtil {
       );
       File copiedFile = await copyAndRenameFile(
           file, fileName ?? FileUtil.extractFileNameFromUrl(imageUrl));
-      if (ResponsiveUtil.isMobile()) {
+      String? saveDirectory = HiveUtil.getString(HiveUtil.savePathKey);
+      if (ResponsiveUtil.isMobile() && Utils.isEmpty(saveDirectory)) {
         var result = await ImageGallerySaver.saveFile(
           copiedFile.path,
           name: fileName ?? FileUtil.extractFileNameFromUrl(imageUrl),
@@ -448,6 +456,7 @@ class FileUtil {
         if (Utils.isNotEmpty(saveDirectory)) {
           String newPath =
               '$saveDirectory/${fileName ?? FileUtil.extractFileNameFromUrl(imageUrl)}';
+          checkDirectory(newPath);
           await copiedFile.copy(newPath);
           if (showToast) {
             IToast.showTop("图片已保存至$saveDirectory");
@@ -514,13 +523,20 @@ class FileUtil {
     illust.originalName =
         illust.originalName.replaceAll(".${illust.extension}", "");
     String fileName = fileNameFormat
-        .replaceAll(FilenameField.blogNickName.format, illust.blogNickName)
+        .replaceAll(FilenameField.originalName.format, illust.originalName)
         .replaceAll(FilenameField.blogId.format, illust.blogId.toString())
         .replaceAll(FilenameField.blogLofterId.format, illust.blogLofterId)
-        .replaceAll(FilenameField.originalName.format, illust.originalName)
-        .replaceAll(FilenameField.part.format, illust.part.toString())
+        .replaceAll(FilenameField.blogNickName.format, illust.blogNickName)
         .replaceAll(FilenameField.postId.format, illust.postId.toString())
-        .replaceAll(FilenameField.postTitle.format, illust.postTitle)
+        .replaceAll(FilenameField.postTitle.format,
+            Utils.isNotEmpty(illust.postTitle) ? illust.postTitle : '无标题')
+        .replaceAll(FilenameField.postTags.format,
+            illust.tags.isNotEmpty ? illust.tags.join(",") : '无标签')
+        .replaceAll(FilenameField.postPublishTime.format,
+            Utils.formatAll(illust.publishTime))
+        .replaceAll(FilenameField.part.format, illust.part.toString())
+        .replaceAll(FilenameField.currentTime.format,
+            Utils.formatAll(DateTime.now().millisecondsSinceEpoch))
         .replaceAll(FilenameField.timestamp.format,
             DateTime.now().millisecondsSinceEpoch.toString());
     fileName = fileName.replaceAll(RegExp(r'[\\/:*?"<>|]\n'), '');
@@ -578,7 +594,7 @@ class FileUtil {
       }
       return saveDirectory;
     }
-    return null;
+    return HiveUtil.getString(HiveUtil.savePathKey);
   }
 
   static Future<bool> saveVideoByIllust(

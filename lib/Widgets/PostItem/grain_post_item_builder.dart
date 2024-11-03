@@ -73,39 +73,32 @@ class GrainPostItemBuilder {
       content: item.postData.postView.content,
       firstImageUrl: item.postData.postView.firstImageUrl,
       duration: item.postData.postView.videoPostView?.videoInfo.duration ?? 0,
-      likeCount: item.postData.postView.postCount?.favoriteCount ?? 0,
+      likeCount: item.postData.postCountView.favoriteCount,
       tags: item.postData.postView.tagList,
       bigAvaImg: item.postData.blogInfo.bigAvaImg,
       publishTime: item.postData.postView.publishTime,
       opTime: item.opTime,
+      shareInfo: item.shareInfo,
+      followed: item.followed,
+      shareCount: item.postData.postCountView.shareCount,
+      commentCount: item.postData.postCountView.responseCount,
+      shared: item.shared,
     );
   }
 
   static Widget buildWaterfallFlowPostItem(
-    BuildContext context,
-    GrainPostItem item, {
-    Future<int> Function()? onLikeTap,
-    Function()? onTap,
-  }) {
-    return GeneralPostItemBuilder.buildWaterfallFlowPostItem(
-      context,
-      getGeneralPostItem(item),
-      onTap: onTap,
-      onLikeTap: onLikeTap,
+      BuildContext context, GrainPostItem item) {
+    return WaterfallFlowPostItemWidget(
+      item: getGeneralPostItem(item),
     );
   }
 
-  static Widget buildTilePostItem(
-    BuildContext context,
-    GrainPostItem item, {
-    Future<int> Function()? onLikeTap,
-    Function()? onTap,
+  static Widget buildTilePostItem(BuildContext context, GrainPostItem item,{
+    bool isFirst=false,
   }) {
-    return GeneralPostItemBuilder.buildTilePostItem(
-      context,
-      getGeneralPostItem(item),
-      onTap: onTap,
-      onLikeTap: onLikeTap,
+    return TilePostItemWidget(
+      item: getGeneralPostItem(item),
+      isFirst: isFirst,
     );
   }
 
@@ -148,13 +141,11 @@ class GrainPostItemBuilder {
     GrainPostItem item, {
     double wh = 100,
     int? activePostId,
-    Function()? onTap,
   }) {
-    return GeneralPostItemBuilder.buildNineGridPostItem(
-      context,
-      getGeneralPostItem(item),
+    return GridPostItemWidget(
       wh: wh,
-      onTap: onTap,
+      activePostId: activePostId,
+      item: getGeneralPostItem(item),
     );
   }
 }

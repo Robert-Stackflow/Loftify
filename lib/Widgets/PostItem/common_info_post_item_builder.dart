@@ -55,16 +55,9 @@ class CommonInfoItemBuilder {
   }
 
   static Widget buildWaterfallFlowPostItem(
-    BuildContext context,
-    PostDetailData item, {
-    Future<int> Function()? onLikeTap,
-    Function()? onTap,
-  }) {
-    return GeneralPostItemBuilder.buildWaterfallFlowPostItem(
-      context,
-      getGeneralPostItem(item),
-      onTap: onTap,
-      onLikeTap: onLikeTap,
+      BuildContext context, PostDetailData item) {
+    return WaterfallFlowPostItemWidget(
+      item: getGeneralPostItem(item),
     );
   }
 
@@ -101,14 +94,11 @@ class CommonInfoItemBuilder {
     PostDetailData item, {
     double wh = 100,
     int? activePostId,
-    Function()? onTap,
   }) {
-    return GeneralPostItemBuilder.buildNineGridPostItem(
-      context,
-      getGeneralPostItem(item),
+    return GridPostItemWidget(
       wh: wh,
       activePostId: activePostId,
-      onTap: onTap,
+      item: getGeneralPostItem(item),
     );
   }
 }

@@ -485,6 +485,8 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
       url: rawUrl,
       postTitle: postListItem.postData!.postView.title,
       postDigest: postListItem.postData!.postView.digest,
+      tags: postListItem.postData!.postView.tagList,
+      publishTime: postListItem.postData!.postView.publishTime,
     );
   }
 
@@ -753,10 +755,11 @@ class _IconButton extends StatelessWidget {
         Container(height: 2),
         Text(
           text ?? '??',
-          style: const TextStyle(
-            fontSize: 13,
-            color: Colors.white,
-          ),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
         ),
       ],
     );

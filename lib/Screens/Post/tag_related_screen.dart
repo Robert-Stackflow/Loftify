@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:loftify/Api/tag_api.dart';
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
-import '../../Api/post_api.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/ilogger.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
@@ -121,27 +119,6 @@ class _TagRelatedScreenState extends State<TagRelatedScreen>
             child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
               context,
               _postList[index],
-              onLikeTap: () async {
-                var item = _postList[index];
-                HapticFeedback.mediumImpact();
-                return await PostApi.likeOrUnLike(
-                        isLike: !item.favorite,
-                        postId: item.itemId,
-                        blogId: item.blogInfo!.blogId)
-                    .then((value) {
-                  setState(() {
-                    if (value['meta']['status'] != 200) {
-                      IToast.showTop(
-                          value['meta']['desc'] ?? value['meta']['msg']);
-                    } else {
-                      item.favorite = !item.favorite;
-                      item.postData!.postCount!.favoriteCount +=
-                          item.favorite ? 1 : -1;
-                    }
-                  });
-                  return value['meta']['status'];
-                });
-              },
               excludeTag: widget.tag,
             ),
           );

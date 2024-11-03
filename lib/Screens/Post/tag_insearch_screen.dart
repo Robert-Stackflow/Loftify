@@ -201,27 +201,6 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
               child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
                 context,
                 _postList[index],
-                onLikeTap: () async {
-                  var item = _postList[index];
-                  HapticFeedback.mediumImpact();
-                  return await PostApi.likeOrUnLike(
-                          isLike: !item.favorite,
-                          postId: item.itemId,
-                          blogId: item.blogInfo!.blogId)
-                      .then((value) {
-                    setState(() {
-                      if (value['meta']['status'] != 200) {
-                        IToast.showTop(
-                            value['meta']['desc'] ?? value['meta']['msg']);
-                      } else {
-                        item.favorite = !item.favorite;
-                        item.postData!.postCount!.favoriteCount +=
-                            item.favorite ? 1 : -1;
-                      }
-                    });
-                    return value['meta']['status'];
-                  });
-                },
                 excludeTag: widget.tag,
               ),
             );

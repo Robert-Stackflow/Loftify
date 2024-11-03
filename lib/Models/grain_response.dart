@@ -45,6 +45,34 @@ class GrainDetailData {
   }
 }
 
+class ShareInfo {
+  SimpleBlogInfo blogInfo;
+  int shareCount;
+  int userId;
+
+  ShareInfo({
+    required this.blogInfo,
+    required this.shareCount,
+    required this.userId,
+  });
+
+  factory ShareInfo.fromJson(Map<String, dynamic> json) {
+    return ShareInfo(
+      blogInfo: SimpleBlogInfo.fromJson(json['blogInfo']),
+      shareCount: json['shareCount'],
+      userId: json['userId'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['blogInfo'] = blogInfo.toJson();
+    data['shareCount'] = shareCount;
+    data['userId'] = userId;
+    return data;
+  }
+}
+
 ///GrainPostItem
 class GrainPostItem {
   bool followed;
@@ -54,9 +82,11 @@ class GrainPostItem {
   bool shared;
   bool showFullText;
   bool subscribed;
+  ShareInfo? shareInfo;
 
   GrainPostItem({
     required this.followed,
+    required this.shareInfo,
     required this.liked,
     required this.opTime,
     required this.postData,
@@ -75,6 +105,9 @@ class GrainPostItem {
       shared: json['shared'],
       showFullText: json['showFullText'],
       subscribed: json['subscribed'],
+      shareInfo: json['shareInfo'] == null
+          ? null
+          : ShareInfo.fromJson(json['shareInfo']),
     );
   }
 
@@ -87,6 +120,7 @@ class GrainPostItem {
     data['shared'] = shared;
     data['showFullText'] = showFullText;
     data['subscribed'] = subscribed;
+    data['shareInfo'] = shareInfo?.toJson();
     return data;
   }
 }

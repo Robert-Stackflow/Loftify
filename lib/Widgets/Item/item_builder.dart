@@ -1389,6 +1389,7 @@ class ItemBuilder {
     bool tailingEnable = true,
     IconData? tailingIcon,
     Function()? onTailingTap,
+    Function(String)? onSubmitted,
     Widget? tailingWidget,
     Color? backgroundColor,
     TextInputType? keyboardType,
@@ -1462,6 +1463,7 @@ class ItemBuilder {
                   ItemBuilder.editTextContextMenuBuilder(
                       contextMenuContext, details,
                       context: context),
+              onSubmitted: onSubmitted,
             ),
           ),
           if (tailing != null)
@@ -3003,9 +3005,11 @@ class ItemBuilder {
     double vertical = 8,
     double horizontal = 16,
     double? width,
+    EdgeInsets? margin,
   }) {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: vertical, horizontal: horizontal),
+      margin: margin ??
+          EdgeInsets.symmetric(vertical: vertical, horizontal: horizontal),
       height: width ?? 0.5,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
@@ -3423,115 +3427,119 @@ class ItemBuilder {
     bool showLoading = true,
     Function()? onDownloadSuccess,
     bool linkBold = true,
+    bool selectable = true,
   }) {
-    return ItemBuilder.buildSelectableArea(
-      context: context,
-      child: HtmlWidget(
-        content,
-        enableCaching: true,
-        renderMode: RenderMode.column,
-        textStyle: textStyle ??
-            Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.apply(fontSizeDelta: 3, heightDelta: 0.3),
-        factoryBuilder: () {
-          return CustomImageFactory();
-        },
-        customStylesBuilder: (e) {
-          if (e.attributes.containsKey('href')) {
-            return {
-              'color':
-                  '#${MyColors.getLinkColor(context).value.toRadixString(16).substring(2, 8)}',
-              'font-weight': linkBold ? '700' : '500',
-              'text-decoration-line': 'none',
-            };
-          } else if (e.id == "title") {
-            return {
-              'font-weight': '700',
-              'font-size': 'larger',
-            };
-          } else if (e.id == "title-medium") {
-            return {
-              'font-weight': '700',
-            };
-          }
-          return null;
-        },
-        customWidgetBuilder: (element) {
-          if (element.localName == 'img' && parseImage) {
-            String imageUrl = Utils.getUrlByQuality(
-                element.attributes['src'] ?? "",
-                HiveUtil.getImageQuality(HiveUtil.postDetailImageQualityKey));
-            return enableImageDetail
-                ? ItemBuilder.buildClickItem(
-                    GestureDetector(
-                      onTap: () {
-                        if (imageUrl.isNotEmpty) {
-                          RouteUtil.pushDialogRoute(
-                            context,
-                            showClose: false,
-                            fullScreen: true,
-                            useFade: true,
-                            HeroPhotoViewScreen(
-                              imageUrls: illusts ?? [imageUrl],
-                              useMainColor: true,
-                              initIndex: Utils.getIndexOfImage(
-                                imageUrl,
-                                illusts ?? [],
-                              ),
-                              onDownloadSuccess: onDownloadSuccess,
+    var htmlWidget = HtmlWidget(
+      content,
+      enableCaching: true,
+      renderMode: RenderMode.column,
+      textStyle: textStyle ??
+          Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.apply(fontSizeDelta: 3, heightDelta: 0.3),
+      factoryBuilder: () {
+        return CustomImageFactory();
+      },
+      customStylesBuilder: (e) {
+        if (e.attributes.containsKey('href')) {
+          return {
+            'color':
+                '#${MyColors.getLinkColor(context).value.toRadixString(16).substring(2, 8)}',
+            'font-weight': linkBold ? '700' : '500',
+            'text-decoration-line': 'none',
+          };
+        } else if (e.id == "title") {
+          return {
+            'font-weight': '700',
+            'font-size': 'larger',
+          };
+        } else if (e.id == "title-medium") {
+          return {
+            'font-weight': '700',
+          };
+        }
+        return null;
+      },
+      customWidgetBuilder: (element) {
+        if (element.localName == 'img' && parseImage) {
+          String imageUrl = Utils.getUrlByQuality(
+              element.attributes['src'] ?? "",
+              HiveUtil.getImageQuality(HiveUtil.postDetailImageQualityKey));
+          return enableImageDetail
+              ? ItemBuilder.buildClickItem(
+                  GestureDetector(
+                    onTap: () {
+                      if (imageUrl.isNotEmpty) {
+                        RouteUtil.pushDialogRoute(
+                          context,
+                          showClose: false,
+                          fullScreen: true,
+                          useFade: true,
+                          HeroPhotoViewScreen(
+                            imageUrls: illusts ?? [imageUrl],
+                            useMainColor: true,
+                            initIndex: Utils.getIndexOfImage(
+                              imageUrl,
+                              illusts ?? [],
                             ),
-                          );
-                        }
-                      },
-                      child: Hero(
-                        tag: Utils.getHeroTag(url: imageUrl),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: ItemBuilder.buildCachedImage(
-                            context: context,
-                            imageUrl: imageUrl,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            placeholderHeight: 300,
+                            onDownloadSuccess: onDownloadSuccess,
                           ),
+                        );
+                      }
+                    },
+                    child: Hero(
+                      tag: Utils.getHeroTag(url: imageUrl),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: ItemBuilder.buildCachedImage(
+                          context: context,
+                          imageUrl: imageUrl,
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          placeholderHeight: 300,
                         ),
                       ),
                     ),
-                  )
-                : ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: ItemBuilder.buildCachedImage(
-                      context: context,
-                      showLoading: false,
-                      imageUrl: imageUrl,
-                      fit: BoxFit.cover,
-                    ),
-                  );
-          }
-          return null;
-        },
-        onTapUrl: (url) async {
-          UriUtil.processUrl(context, url);
-          return true;
-        },
-        onLoadingBuilder: showLoading
-            ? (context, _, __) {
-                return ClipRRect(
+                  ),
+                )
+              : ClipRRect(
                   borderRadius: BorderRadius.circular(10),
-                  child: ItemBuilder.buildLoadingDialog(
-                    context,
-                    text: "文章加载中...",
-                    size: 40,
-                    bottomPadding: 30,
-                    topPadding: 30,
+                  child: ItemBuilder.buildCachedImage(
+                    context: context,
+                    showLoading: false,
+                    imageUrl: imageUrl,
+                    fit: BoxFit.cover,
                   ),
                 );
-              }
-            : null,
-      ),
+        }
+        return null;
+      },
+      onTapUrl: (url) async {
+        UriUtil.processUrl(context, url);
+        return true;
+      },
+      onLoadingBuilder: showLoading
+          ? (context, _, __) {
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: ItemBuilder.buildLoadingDialog(
+                  context,
+                  text: "文章加载中...",
+                  size: 40,
+                  bottomPadding: 30,
+                  topPadding: 30,
+                ),
+              );
+            }
+          : null,
     );
+    if (selectable) {
+      return ItemBuilder.buildSelectableArea(
+          context: context, child: htmlWidget);
+    } else {
+      return htmlWidget;
+    }
   }
 
   static Widget buildCommentRow(

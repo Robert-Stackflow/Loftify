@@ -531,33 +531,6 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
     );
   }
 
-  Widget _buildTagList() {
-    Map<String, TagType> tags = {};
-    postCollection!.tags.split(",").forEach((e) {
-      tags[e] = TagType.normal;
-    });
-    List<MapEntry<String, TagType>> sortedTags = tags.entries.toList();
-    sortedTags.sort((a, b) => b.value.index.compareTo(a.value.index));
-    return Container(
-      padding: const EdgeInsets.only(top: 8, bottom: 8),
-      height: 42,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: List.generate(sortedTags.length, (index) {
-          return Container(
-            margin: const EdgeInsets.only(right: 8),
-            child: ItemBuilder.buildTagItem(
-              context,
-              sortedTags[index].key,
-              sortedTags[index].value,
-              showIcon: false,
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
   Widget _buildNineGridGroup() {
     List<Widget> widgets = [];
     int startIndex = 0;

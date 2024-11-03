@@ -5,7 +5,6 @@ import 'package:loftify/Widgets/Custom/no_shadow_scroll_behavior.dart';
 
 import '../../Utils/constant.dart';
 import '../../Utils/enums.dart';
-import '../../Utils/responsive_util.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 
@@ -25,7 +24,7 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   String filenameFormat = HiveUtil.getString(HiveUtil.filenameFormatKey,
-      defaultValue: defaultFilenameFormat) ??
+          defaultValue: defaultFilenameFormat) ??
       defaultFilenameFormat;
 
   @override
@@ -33,6 +32,25 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
     super.initState();
     _controller.text = filenameFormat;
     _focusNode.requestFocus();
+  }
+
+  _save() {
+    HiveUtil.put(
+      HiveUtil.filenameFormatKey,
+      _controller.text,
+    );
+    widget.onSaved?.call(_controller.text);
+    IToast.showTop("保存成功");
+  }
+
+  _reset() {
+    _controller.text = defaultFilenameFormat;
+    HiveUtil.put(
+      HiveUtil.filenameFormatKey,
+      defaultFilenameFormat,
+    );
+    widget.onSaved?.call(defaultFilenameFormat);
+    IToast.showTop("重置成功");
   }
 
   @override
@@ -43,16 +61,13 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
         transparent: true,
         title: "文件命名格式",
         context: context,
-        background: Theme
-            .of(context)
-            .scaffoldBackgroundColor,
+        background: Theme.of(context).scaffoldBackgroundColor,
       ),
       body: EasyRefresh(
         child: ScrollConfiguration(
           behavior: NoShadowScrollBehavior(),
           child: ListView(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             children: [
               ItemBuilder.buildInputItem(
                 context: context,
@@ -61,33 +76,21 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
                 textInputAction: TextInputAction.done,
                 controller: _controller,
                 tailingType: TailingType.widget,
+                onSubmitted: (text) {
+                  _save();
+                },
                 tailingWidget: Row(
                   children: [
                     const SizedBox(width: 5),
                     ItemBuilder.buildIconButton(
                       context: context,
                       icon: const Icon(Icons.refresh_rounded),
-                      onTap: () {
-                        _controller.text = defaultFilenameFormat;
-                        HiveUtil.put(
-                          HiveUtil.filenameFormatKey,
-                          defaultFilenameFormat,
-                        );
-                        widget.onSaved?.call(defaultFilenameFormat);
-                        IToast.showTop("重置成功");
-                      },
+                      onTap: _reset,
                     ),
                     ItemBuilder.buildIconButton(
                       context: context,
                       icon: const Icon(Icons.save_rounded),
-                      onTap: () {
-                        HiveUtil.put(
-                          HiveUtil.filenameFormatKey,
-                          _controller.text,
-                        );
-                        widget.onSaved?.call(_controller.text);
-                        IToast.showTop("保存成功");
-                      },
+                      onTap: _save,
                     ),
                   ],
                 ),
@@ -103,30 +106,24 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
                     ItemBuilder.buildRoundButton(
                       context,
                       text: "可用字段: ",
-                      textStyle: Theme
-                          .of(context)
+                      textStyle: Theme.of(context)
                           .textTheme
                           .titleSmall
                           ?.apply(fontWeightDelta: 2),
                       radius: 10,
                       padding:
-                      const EdgeInsets.only(top: 8, bottom: 8, left: 8),
+                          const EdgeInsets.only(top: 8, bottom: 8, left: 8),
                       background: Colors.transparent,
                     ),
                     ...FilenameField.values.map((field) {
                       return ItemBuilder.buildRoundButton(
                         context,
                         text: field.label,
-                        textStyle: Theme
-                            .of(context)
-                            .textTheme
-                            .titleSmall,
+                        textStyle: Theme.of(context).textTheme.titleSmall,
                         radius: 10,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
-                        background: Theme
-                            .of(context)
-                            .canvasColor,
+                        background: Theme.of(context).canvasColor,
                         onTap: () {
                           _focusNode.requestFocus();
                           final text = _controller.text;
@@ -148,24 +145,24 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
               Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
-                  color: Theme
-                      .of(context)
-                      .canvasColor,
+                  color: Theme.of(context).canvasColor,
                 ),
                 child: Table(
-                  defaultColumnWidth: const IntrinsicColumnWidth(),
+                  // defaultColumnWidth: const IntrinsicColumnWidth(),
                   defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                   children: [
                     _buildRow([
                       "字段",
                       "描述",
+                      '示例',
                     ], fontWeightDelta: 2),
                     ...List.generate(
                       FilenameField.values.length,
-                          (index) {
+                      (index) {
                         return _buildRow([
                           FilenameField.values[index].label,
                           FilenameField.values[index].description,
+                          FilenameField.values[index].example,
                         ], useBorder: index != FilenameField.values.length - 1);
                       },
                     ),
@@ -183,15 +180,15 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
   Widget _buildCell(String text, {int fontWeightDelta = 0}) {
     return TableCell(
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
         child: Center(
           child: Text(
             text,
-            style: Theme
-                .of(context)
+            style: Theme.of(context)
                 .textTheme
                 .bodyMedium
                 ?.apply(fontWeightDelta: fontWeightDelta),
+            textAlign: TextAlign.center,
           ),
         ),
       ),
@@ -204,13 +201,11 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
       decoration: BoxDecoration(
         border: useBorder
             ? Border(
-          bottom: BorderSide(
-            color: Theme
-                .of(context)
-                .dividerColor,
-            width: 0.5,
-          ),
-        )
+                bottom: BorderSide(
+                  color: Theme.of(context).dividerColor,
+                  width: 0.5,
+                ),
+              )
             : null,
       ),
       children: cells

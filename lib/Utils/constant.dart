@@ -5,6 +5,8 @@ const defaultPassword = "";
 const defaultLofterID = "";
 const defaultMail = "";
 
+const double maxMediaOrQuoteWidth = 480;
+
 const double searchBarWidth = 400;
 
 const defaultFilenameFormat = "{original_name}";

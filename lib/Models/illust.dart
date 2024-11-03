@@ -9,6 +9,8 @@ class Illust {
   String extension;
   String postTitle;
   String postDigest;
+  List<String> tags;
+  int publishTime;
 
   Illust({
     required this.extension,
@@ -21,6 +23,8 @@ class Illust {
     required this.part,
     required this.postTitle,
     required this.postDigest,
+    required this.tags,
+    required this.publishTime,
   });
 
   @override

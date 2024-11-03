@@ -54,7 +54,7 @@ class DynamicScreenState extends State<DynamicScreen>
   bool get wantKeepAlive => true;
   late TabController _tabController;
   int _currentTabIndex = 0;
-  final List<String> _tabLabelList = ["标签", "合集", "粮单", "关注"];
+  final List<String> _tabLabelList = ["关注","标签", "合集", "粮单"];
   int lastRefreshTime = 0;
   final GlobalKey _tagTabKey = GlobalKey();
   final GlobalKey _collectionTabKey = GlobalKey();
@@ -183,6 +183,10 @@ class DynamicScreenState extends State<DynamicScreen>
                 TabBarView(
                   controller: _tabController,
                   children: [
+                    FollowTab(
+                      key: _followTabKey,
+                      scrollController: _followScrollController,
+                    ),
                     SubscribeTagTab(
                       key: _tagTabKey,
                       scrollController: _tagScrollController,
@@ -194,10 +198,6 @@ class DynamicScreenState extends State<DynamicScreen>
                     SubscribeGrainTab(
                       key: _grainTabKey,
                       scrollController: _grainScrollController,
-                    ),
-                    FollowTab(
-                      key: _followTabKey,
-                      scrollController: _followScrollController,
                     ),
                   ],
                 ),
@@ -319,6 +319,7 @@ class FollowTabState extends State<FollowTab>
   late final ScrollController _scrollController =
       widget.scrollController ?? ScrollController();
   bool _noMore = false;
+  ScrollController primaryScrollController = ScrollController();
 
   callRefresh() {
     if (_scrollController.offset > MediaQuery.sizeOf(context).height) {
@@ -390,6 +391,9 @@ class FollowTabState extends State<FollowTab>
   @override
   initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      primaryScrollController = PrimaryScrollController.of(context);
+    });
     _scrollController.addListener(() {
       if (!_noMore &&
           _scrollController.position.pixels >
@@ -402,38 +406,27 @@ class FollowTabState extends State<FollowTab>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return EasyRefresh.builder(
-      refreshOnStart: true,
-      controller: _refreshController,
-      onRefresh: () async {
-        return await _fetchResult(refresh: true);
-      },
-      onLoad: () async {
-        return await _fetchResult();
-      },
-      triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => CustomScrollView(
+    return _buildEasyRefresh(
+      (context, physics) => CustomScrollView(
         controller: _scrollController,
         physics: physics,
         slivers: [
-          SliverList(
-            delegate: SliverChildListDelegate(
-              [
-                if (_timelineBlogList.isNotEmpty)
+          SliverToBoxAdapter(
+            child: Column(
+              children: [
+                if (_timelineBlogList.isNotEmpty) ...[
                   ItemBuilder.buildTitle(
                     context,
                     title: "最近更新",
                     topMargin: 10,
                     bottomMargin: 10,
                   ),
-                if (_timelineBlogList.isNotEmpty) _buildTimelineBlog(),
-                if (_timelineBlogList.isNotEmpty)
+                  _buildTimelineBlog(),
                   ItemBuilder.buildDivider(
                     context,
-                    horizontal: 0,
-                    vertical: 16,
+                    margin: const EdgeInsets.only(top: 16),
                   ),
-                if (_timelineBlogList.isEmpty) const SizedBox(height: 10),
+                ],
                 if (_postList.isEmpty)
                   Container(
                     margin: const EdgeInsets.symmetric(vertical: 16),
@@ -446,7 +439,7 @@ class FollowTabState extends State<FollowTab>
               ],
             ),
           ),
-          if (_postList.isNotEmpty) _buildPostList(physics),
+          _buildPostList(),
         ],
       ),
     );
@@ -456,7 +449,7 @@ class FollowTabState extends State<FollowTab>
     return SizedBox(
       height: 85,
       child: ListView.builder(
-        padding: const EdgeInsets.only(left: 16, right: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         scrollDirection: Axis.horizontal,
         itemCount: _timelineBlogList.length,
         itemBuilder: (context, index) {
@@ -495,7 +488,7 @@ class FollowTabState extends State<FollowTab>
             ),
             const SizedBox(height: 6),
             Text(
-              "#${item.blogInfo.blogNickName}",
+              item.blogInfo.blogNickName,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.titleSmall,
@@ -506,11 +499,25 @@ class FollowTabState extends State<FollowTab>
     );
   }
 
-  _buildPostList(ScrollPhysics physics) {
-    return SliverWaterfallFlow.count(
-      crossAxisCount: 1,
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 6,
+  _buildEasyRefresh(ERChildBuilder builder) {
+    return EasyRefresh.builder(
+      refreshOnStart: true,
+      controller: _refreshController,
+      scrollController: _scrollController,
+      onRefresh: () async {
+        return await _fetchResult(refresh: true);
+      },
+      onLoad: () async {
+        return await _fetchResult();
+      },
+      triggerAxis: Axis.vertical,
+      childBuilder: builder,
+    );
+  }
+
+  _buildPostList() {
+    return SliverWaterfallFlow.extent(
+      maxCrossAxisExtent: 600,
       children: List.generate(
         _postList.length,
         (int index) {
@@ -518,6 +525,7 @@ class FollowTabState extends State<FollowTab>
             GrainPostItemBuilder.buildTilePostItem(
               context,
               _postList[index],
+              isFirst: ResponsiveUtil.isLandscape() && index == 0,
             ),
           );
         },

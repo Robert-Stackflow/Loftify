@@ -88,27 +88,23 @@ class RecommendFlowItemBuilder {
   static Widget buildWaterfallFlowPostItem(
     BuildContext context,
     PostListItem item, {
-    Future<int> Function()? onLikeTap,
-    final Function(String tag)? onShieldTag,
-    final Function()? onShieldContent,
-    final Function()? onShieldUser,
-    Function()? onTap,
+    // final Function(String tag)? onShieldTag,
+    // final Function()? onShieldContent,
+    // final Function()? onShieldUser,
     String? excludeTag,
     bool showMoreButton = false,
   }) {
     if (item.postData == null) return emptyWidget;
-    return GeneralPostItemBuilder.buildWaterfallFlowPostItem(
-      context,
+    return WaterfallFlowPostItemWidget(
+      item:
       getGeneralPostItem(
         item,
         excludeTag: excludeTag,
-        onShieldTag: onShieldTag,
-        onShieldContent: onShieldContent,
-        onShieldUser: onShieldUser,
+        // onShieldTag: onShieldTag,
+        // onShieldContent: onShieldContent,
+        // onShieldUser: onShieldUser,
         showMoreButton: showMoreButton,
       ),
-      onTap: onTap,
-      onLikeTap: onLikeTap,
     );
   }
 

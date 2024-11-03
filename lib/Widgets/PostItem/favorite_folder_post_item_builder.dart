@@ -68,13 +68,12 @@ class FavoriteFolderPostItemBuilder {
     BuildContext context,
     FavoritePostDetailData item, {
     double wh = 100,
-    Function()? onTap,
+    int? activePostId,
   }) {
-    return GeneralPostItemBuilder.buildNineGridPostItem(
-      context,
-      getGeneralPostItem(item),
+    return GridPostItemWidget(
       wh: wh,
-      onTap: onTap,
+      activePostId: activePostId,
+      item: getGeneralPostItem(item),
     );
   }
 

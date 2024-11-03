@@ -367,7 +367,9 @@ class PostDetail {
           : null,
       postCount: json['postCount'] != null
           ? PostCount.fromJson(json['postCount'])
-          : null,
+          : json['postCountView'] != null
+              ? PostCount.fromJson(json['postCountView'])
+              : null,
       postSource: json['postSource'] ?? 0,
       postStyle: json['postStyle'] ?? 0,
       publisherMainBlogInfo: json['publisherMainBlogInfo'] != null

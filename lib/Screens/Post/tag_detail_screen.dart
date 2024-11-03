@@ -803,27 +803,6 @@ class RecommendTabState extends State<RecommendTab>
               child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
                 context,
                 _recommendList[index],
-                onLikeTap: () async {
-                  var item = _recommendList[index];
-                  HapticFeedback.mediumImpact();
-                  return await PostApi.likeOrUnLike(
-                          isLike: !item.favorite,
-                          postId: item.itemId,
-                          blogId: item.blogInfo!.blogId)
-                      .then((value) {
-                    setState(() {
-                      if (value['meta']['status'] != 200) {
-                        IToast.showTop(
-                            value['meta']['desc'] ?? value['meta']['msg']);
-                      } else {
-                        item.favorite = !item.favorite;
-                        item.postData!.postCount!.favoriteCount +=
-                            item.favorite ? 1 : -1;
-                      }
-                    });
-                    return value['meta']['status'];
-                  });
-                },
                 excludeTag: widget.tag,
               ),
             );
@@ -943,27 +922,6 @@ class HottestTabState extends State<HottestTab>
               child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
                 context,
                 _hottestList[index],
-                onLikeTap: () async {
-                  var item = _hottestList[index];
-                  HapticFeedback.mediumImpact();
-                  return await PostApi.likeOrUnLike(
-                          isLike: !item.favorite,
-                          postId: item.itemId,
-                          blogId: item.blogInfo!.blogId)
-                      .then((value) {
-                    setState(() {
-                      if (value['meta']['status'] != 200) {
-                        IToast.showTop(
-                            value['meta']['desc'] ?? value['meta']['msg']);
-                      } else {
-                        item.favorite = !item.favorite;
-                        item.postData!.postCount!.favoriteCount +=
-                            item.favorite ? 1 : -1;
-                      }
-                    });
-                    return value['meta']['status'];
-                  });
-                },
                 excludeTag: widget.tag,
               ),
             );
@@ -1083,27 +1041,6 @@ class NewestTabState extends State<NewestTab>
               child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
                 context,
                 _newestList[index],
-                onLikeTap: () async {
-                  var item = _newestList[index];
-                  HapticFeedback.mediumImpact();
-                  return await PostApi.likeOrUnLike(
-                          isLike: !item.favorite,
-                          postId: item.itemId,
-                          blogId: item.blogInfo!.blogId)
-                      .then((value) {
-                    setState(() {
-                      if (value['meta']['status'] != 200) {
-                        IToast.showTop(
-                            value['meta']['desc'] ?? value['meta']['msg']);
-                      } else {
-                        item.favorite = !item.favorite;
-                        item.postData!.postCount!.favoriteCount +=
-                            item.favorite ? 1 : -1;
-                      }
-                    });
-                    return value['meta']['status'];
-                  });
-                },
                 excludeTag: widget.tag,
               ),
             );

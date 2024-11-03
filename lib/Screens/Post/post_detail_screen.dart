@@ -1374,7 +1374,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     List<String> captions =
         Utils.parseJsonList(photoCaptionJson).map((e) => e.toString()).toList();
     double heightMinThreshold = 200;
-    double heightMaxThreshold = MediaQuery.sizeOf(context).height - 340;
+    // double heightMaxThreshold = MediaQuery.sizeOf(context).height - 340;
+    double heightMaxThreshold = 600;
     double preferedHeight = 0;
     double preferedWidth = MediaQuery.sizeOf(context).width;
     preferedHeight =
@@ -1594,6 +1595,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           url: rawUrl,
           postTitle: _postDetailData!.post!.title,
           postDigest: _postDetailData!.post!.digest,
+          tags: _postDetailData!.post?.tagList??[],
+          publishTime: _postDetailData!.post!.publishTime,
         ),
       );
     }
@@ -1617,6 +1620,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           url: rawUrl,
           postTitle: _postDetailData!.post!.title,
           postDigest: _postDetailData!.post!.digest,
+          tags: _postDetailData!.post?.tagList??[],
+          publishTime: _postDetailData!.post!.publishTime,
         ),
       );
     }
@@ -2054,39 +2059,18 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                 context,
                 _recommendPosts[index],
                 showMoreButton: true,
-                onLikeTap: () async {
-                  var item = _recommendPosts[index];
-                  HapticFeedback.mediumImpact();
-                  return await PostApi.likeOrUnLike(
-                          isLike: !item.favorite,
-                          postId: item.itemId,
-                          blogId: item.blogInfo!.blogId)
-                      .then((value) {
-                    setState(() {
-                      if (value['meta']['status'] != 200) {
-                        IToast.showTop(
-                            value['meta']['desc'] ?? value['meta']['msg']);
-                      } else {
-                        item.favorite = !item.favorite;
-                        item.postData!.postCount!.favoriteCount +=
-                            item.favorite ? 1 : -1;
-                      }
-                    });
-                    return value['meta']['status'];
-                  });
-                },
-                onShieldContent: () {
-                  _recommendPosts.remove(_recommendPosts[index]);
-                  setState(() {});
-                },
-                onShieldTag: (tag) {
-                  _recommendPosts.remove(_recommendPosts[index]);
-                  setState(() {});
-                },
-                onShieldUser: () {
-                  _recommendPosts.remove(_recommendPosts[index]);
-                  setState(() {});
-                },
+                // onShieldContent: () {
+                //   _recommendPosts.remove(_recommendPosts[index]);
+                //   setState(() {});
+                // },
+                // onShieldTag: (tag) {
+                //   _recommendPosts.remove(_recommendPosts[index]);
+                //   setState(() {});
+                // },
+                // onShieldUser: () {
+                //   _recommendPosts.remove(_recommendPosts[index]);
+                //   setState(() {});
+                // },
               ),
             );
           },

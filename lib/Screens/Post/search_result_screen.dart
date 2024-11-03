@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:loftify/Api/search_api.dart';
 import 'package:loftify/Models/collection_response.dart';
 import 'package:loftify/Models/recommend_response.dart';
@@ -14,7 +13,6 @@ import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Widgets/PostItem/search_post_flow_item_builder.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
-import '../../Api/post_api.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/responsive_util.dart';
@@ -667,31 +665,9 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                             return GestureDetector(
                               child: RecommendFlowItemBuilder
                                   .buildWaterfallFlowPostItem(
-                                      context, _allResult!.posts[index],
-                                      onLikeTap: () async {
-                                var item = _allResult!.posts[index];
-                                HapticFeedback.mediumImpact();
-                                return await PostApi.likeOrUnLike(
-                                        isLike: !item.favorite,
-                                        postId: item.itemId,
-                                        blogId: item.postData!.postView.blogId)
-                                    .then((value) {
-                                  setState(() {
-                                    if (value['meta']['status'] != 200) {
-                                      IToast.showTop(value['meta']['desc'] ??
-                                          value['meta']['msg']);
-                                    } else {
-                                      item.favorite = !item.favorite;
-                                      if (item.postData!.postCount != null) {
-                                        item.postData!.postCount!
-                                                .favoriteCount +=
-                                            item.favorite ? 1 : -1;
-                                      }
-                                    }
-                                  });
-                                  return value['meta']['status'];
-                                });
-                              }),
+                                context,
+                                _allResult!.posts[index],
+                              ),
                             );
                           },
                           childCount: _allResult!.posts.length,
