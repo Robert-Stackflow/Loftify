@@ -39,15 +39,13 @@ Future<void> main(List<String> args) async {
 
 Future<void> runMyApp(List<String> args) async {
   await initApp();
-  if (ResponsiveUtil.isMobile()) {
+  if (ResponsiveUtil.isAndroid()) {
     await initDisplayMode();
-    if (ResponsiveUtil.isAndroid()) {
-      await RequestHeaderUtil.initAndroidInfo();
-      SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark);
-      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-    }
+    await RequestHeaderUtil.initAndroidInfo();
+    SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark);
+    SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
   }
   if (ResponsiveUtil.isDesktop()) {
     await initWindow();
@@ -109,8 +107,8 @@ Future<void> initDisplayMode() async {
   try {
     var modes = await FlutterDisplayMode.supported;
     ILogger.info("Supported display modes: $modes");
-    ILogger.info("Current active display mode: ${await FlutterDisplayMode.active}");
-    ILogger.info("Current preferred display mode: ${await FlutterDisplayMode.preferred}");
+    ILogger.info(
+        "Current active display mode: ${await FlutterDisplayMode.active}\nCurrent preferred display mode: ${await FlutterDisplayMode.preferred}");
     int refreshRate =
         HiveUtil.getInt(HiveUtil.refreshRateKey, defaultValue: -1);
     if (refreshRate == -1) {
@@ -121,8 +119,8 @@ Future<void> initDisplayMode() async {
       await FlutterDisplayMode.setPreferredMode(configMode);
       ILogger.info("Config display mode: ${configMode.toString()}");
     }
-    ILogger.info("Current active display mode after config: ${await FlutterDisplayMode.active}");
-    ILogger.info("Current preferred display mode after config: ${await FlutterDisplayMode.preferred}");
+    ILogger.info(
+        "Current active display mode after config: ${await FlutterDisplayMode.active}\nCurrent preferred display mode after config: ${await FlutterDisplayMode.preferred}");
   } catch (e, t) {
     ILogger.error("Failed to init display mode", e, t);
   }

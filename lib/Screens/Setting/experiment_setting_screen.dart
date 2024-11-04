@@ -43,6 +43,8 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
   bool _biometricAvailable = false;
   int _refreshRate = HiveUtil.getInt(HiveUtil.refreshRateKey);
   List<DisplayMode> _modes = [];
+  DisplayMode? _activeMode;
+  DisplayMode? _preferredMode;
 
   List<Tuple2<String, DisplayMode>> get _supportedModeTuples =>
       _modes.map((e) => Tuple2(e.toString(), e)).toList();
@@ -51,11 +53,15 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
   void initState() {
     super.initState();
     initBiometricAuthentication();
-    getRefreshRate();
+    if (ResponsiveUtil.isAndroid()) getRefreshRate();
   }
 
   getRefreshRate() async {
     _modes = await FlutterDisplayMode.supported;
+    _activeMode = await FlutterDisplayMode.active;
+    _preferredMode = await FlutterDisplayMode.preferred;
+    ILogger.info(
+        "Current active display mode: $_activeMode\nCurrent preferred display mode: $_preferredMode");
     setState(() {});
   }
 
@@ -78,36 +84,48 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
             if (ResponsiveUtil.isAndroid()) const SizedBox(height: 10),
             if (ResponsiveUtil.isAndroid())
               ItemBuilder.buildEntryItem(
-                tip: _modes.isNotEmpty
-                    ? _modes[_refreshRate.clamp(0, _modes.length - 1)]
-                        .toString()
-                    : "",
+                // tip: _modes.isNotEmpty
+                //     ? _modes[_refreshRate.clamp(0, _modes.length - 1)]
+                //         .toString()
+                //     : "",
                 context: context,
                 title: "刷新率",
                 description:
-                    "意在解决部分机型高刷失效的问题，如果没有问题，请不要修改；如果您的设备支持LTPO，可能会设置失败",
+                    "意在解决部分机型高刷失效的问题，如无问题，请不要修改\n如果您的设备支持LTPO，可能会设置失败\n已选模式: ${_modes.isNotEmpty ? _modes[_refreshRate.clamp(0, _modes.length - 1)].toString() : ""}\n首选模式: ${_preferredMode?.toString() ?? "Unknown"}\n活动模式: ${_activeMode?.toString() ?? "Unknown"}",
                 topRadius: true,
                 bottomRadius: true,
                 onTap: () {
+                  getRefreshRate();
                   BottomSheetBuilder.showListBottomSheet(
                     context,
                     (context) => TileList.fromOptions(
                       _supportedModeTuples,
                       (item2) async {
                         try {
+                          ILogger.info(
+                              "Try to set display mode: ${item2.toString()}");
+                          ILogger.info(
+                              "Active display mode before set: ${_activeMode.toString()}\nPreferred display mode before set: ${_preferredMode.toString()}");
                           await FlutterDisplayMode.setPreferredMode(item2);
-                          var active = await FlutterDisplayMode.active;
-                          if (active.refreshRate != item2.refreshRate) {
+                          _activeMode = await FlutterDisplayMode.active;
+                          _preferredMode = await FlutterDisplayMode.preferred;
+                          ILogger.info(
+                              "Active display mode after set: ${_activeMode.toString()}\nPreferred display mode after set: ${_preferredMode.toString()}");
+                          if (_preferredMode?.toString() != item2.toString()) {
                             IToast.showTop("刷新率设置失败");
                           } else {
-                            IToast.showTop("刷新率设置成功");
+                            if (_activeMode?.toString() != item2.toString()) {
+                              IToast.showTop("刷新率设置成功，但当前显示模式未改变");
+                            } else {
+                              IToast.showTop("刷新率设置成功");
+                            }
                           }
                         } catch (e, t) {
                           IToast.showTop("刷新率设置失败: ${e.toString()}");
-                          ILogger.error("Failed to set refresh rate", e, t);
+                          ILogger.error("Failed to set display mode", e, t);
                         }
                         _refreshRate = _modes.indexOf(item2);
-                        setState(() {});
+                        getRefreshRate();
                         HiveUtil.put(HiveUtil.refreshRateKey, _refreshRate);
                         Navigator.pop(context);
                       },
