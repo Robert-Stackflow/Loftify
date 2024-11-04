@@ -20,6 +20,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart';
 import 'package:protocol_handler/protocol_handler.dart';
 import 'package:provider/provider.dart';
+import 'package:show_fps/show_fps.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'Screens/main_screen.dart';
@@ -151,6 +152,27 @@ class MyApp extends StatelessWidget {
     this.title = 'Loftify',
   });
 
+  _buildFPS(BuildContext context, Widget child) {
+    if (appProvider.showFPS) {
+      return ShowFPS(
+        alignment: Alignment.topRight,
+        visible: true,
+        showChart: false,
+        textStyle: Theme.of(context)
+            .textTheme
+            .titleLarge
+            ?.apply(color: Colors.red, fontSizeDelta: 10),
+        // decoration: BoxDecoration(
+        //   color: Colors.black54,
+        //   borderRadius: BorderRadius.circular(8),
+        // ),
+        child: child,
+      );
+    } else {
+      return child;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -206,7 +228,7 @@ class MyApp extends StatelessWidget {
                           FocusManager.instance.primaryFocus?.unfocus();
                         }
                       },
-                      child: widget,
+                      child: _buildFPS(context, widget),
                     ),
                   ),
                 ],

@@ -81,68 +81,77 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
           children: [
             if (ResponsiveUtil.isLandscape()) const SizedBox(height: 10),
             ..._privacySettings(),
-            if (ResponsiveUtil.isAndroid()) const SizedBox(height: 10),
-            if (ResponsiveUtil.isAndroid())
-              ItemBuilder.buildEntryItem(
-                // tip: _modes.isNotEmpty
-                //     ? _modes[_refreshRate.clamp(0, _modes.length - 1)]
-                //         .toString()
-                //     : "",
-                context: context,
-                title: "刷新率",
-                description:
-                    "意在解决部分机型高刷失效的问题，如无问题，请不要修改\n如果您的设备支持LTPO，可能会设置失败\n已选模式: ${_modes.isNotEmpty ? _modes[_refreshRate.clamp(0, _modes.length - 1)].toString() : ""}\n首选模式: ${_preferredMode?.toString() ?? "Unknown"}\n活动模式: ${_activeMode?.toString() ?? "Unknown"}",
-                topRadius: true,
-                bottomRadius: true,
-                onTap: () {
-                  getRefreshRate();
-                  BottomSheetBuilder.showListBottomSheet(
-                    context,
-                    (context) => TileList.fromOptions(
-                      _supportedModeTuples,
-                      (item2) async {
-                        try {
-                          ILogger.info(
-                              "Try to set display mode: ${item2.toString()}");
-                          ILogger.info(
-                              "Active display mode before set: ${_activeMode.toString()}\nPreferred display mode before set: ${_preferredMode.toString()}");
-                          await FlutterDisplayMode.setPreferredMode(item2);
-                          _activeMode = await FlutterDisplayMode.active;
-                          _preferredMode = await FlutterDisplayMode.preferred;
-                          ILogger.info(
-                              "Active display mode after set: ${_activeMode.toString()}\nPreferred display mode after set: ${_preferredMode.toString()}");
-                          if (_preferredMode?.toString() != item2.toString()) {
-                            IToast.showTop("刷新率设置失败");
-                          } else {
-                            if (_activeMode?.toString() != item2.toString()) {
-                              IToast.showTop("刷新率设置成功，但当前显示模式未改变");
-                            } else {
-                              IToast.showTop("刷新率设置成功");
-                            }
-                          }
-                        } catch (e, t) {
-                          IToast.showTop("刷新率设置失败: ${e.toString()}");
-                          ILogger.error("Failed to set display mode", e, t);
-                        }
-                        _refreshRate = _modes.indexOf(item2);
-                        getRefreshRate();
-                        HiveUtil.put(HiveUtil.refreshRateKey, _refreshRate);
-                        Navigator.pop(context);
-                      },
-                      selected:
-                          _modes[_refreshRate.clamp(0, _modes.length - 1)],
-                      context: context,
-                      title: "选择刷新率",
-                      onCloseTap: () => Navigator.pop(context),
-                    ),
-                  );
-                },
-              ),
+            if (ResponsiveUtil.isAndroid()) ..._fpsSettings(),
             const SizedBox(height: 30),
           ],
         ),
       ),
     );
+  }
+
+  _fpsSettings() {
+    return [
+      const SizedBox(height: 10),
+      ItemBuilder.buildEntryItem(
+        context: context,
+        title: "刷新率",
+        description:
+            "意在解决部分机型高刷失效的问题，如无问题，请不要修改\n如果您的设备支持LTPO，可能会设置失败\n已选模式: ${_modes.isNotEmpty ? _modes[_refreshRate.clamp(0, _modes.length - 1)].toString() : ""}\n首选模式: ${_preferredMode?.toString() ?? "Unknown"}\n活动模式: ${_activeMode?.toString() ?? "Unknown"}",
+        topRadius: true,
+        onTap: () {
+          getRefreshRate();
+          BottomSheetBuilder.showListBottomSheet(
+            context,
+            (context) => TileList.fromOptions(
+              _supportedModeTuples,
+              (item2) async {
+                try {
+                  ILogger.info("Try to set display mode: ${item2.toString()}");
+                  ILogger.info(
+                      "Active display mode before set: ${_activeMode.toString()}\nPreferred display mode before set: ${_preferredMode.toString()}");
+                  await FlutterDisplayMode.setPreferredMode(item2);
+                  _activeMode = await FlutterDisplayMode.active;
+                  _preferredMode = await FlutterDisplayMode.preferred;
+                  ILogger.info(
+                      "Active display mode after set: ${_activeMode.toString()}\nPreferred display mode after set: ${_preferredMode.toString()}");
+                  if (_preferredMode?.toString() != item2.toString()) {
+                    IToast.showTop("刷新率设置失败");
+                  } else {
+                    if (_activeMode?.toString() != item2.toString()) {
+                      IToast.showTop("刷新率设置成功，但当前显示模式未改变");
+                    } else {
+                      IToast.showTop("刷新率设置成功");
+                    }
+                  }
+                } catch (e, t) {
+                  IToast.showTop("刷新率设置失败: ${e.toString()}");
+                  ILogger.error("Failed to set display mode", e, t);
+                }
+                _refreshRate = _modes.indexOf(item2);
+                getRefreshRate();
+                HiveUtil.put(HiveUtil.refreshRateKey, _refreshRate);
+                Navigator.pop(context);
+              },
+              selected: _modes[_refreshRate.clamp(0, _modes.length - 1)],
+              context: context,
+              title: "选择刷新率",
+              onCloseTap: () => Navigator.pop(context),
+            ),
+          );
+        },
+      ),
+      ItemBuilder.buildRadioItem(
+        context: context,
+        value: appProvider.showFPS,
+        title: "显示实时FPS",
+        bottomRadius: true,
+        onTap: () {
+          setState(() {
+            appProvider.showFPS = !appProvider.showFPS;
+          });
+        },
+      ),
+    ];
   }
 
   _privacySettings() {

@@ -1499,6 +1499,13 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.1.2"
+  show_fps:
+    dependency: "direct main"
+    description:
+      path: "third-party/show_fps"
+      relative: true
+    source: path
+    version: "1.0.6"
   sky_engine:
     dependency: transitive
     description: flutter

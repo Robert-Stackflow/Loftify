@@ -66,6 +66,16 @@ class AppProvider with ChangeNotifier {
 
   bool shownShortcutHelp = false;
 
+  bool _showFPS = HiveUtil.getBool(HiveUtil.showFPSKey, defaultValue: false);
+
+  bool get showFPS => _showFPS;
+
+  set showFPS(bool value) {
+    _showFPS = value;
+    HiveUtil.put(HiveUtil.showFPSKey, value);
+    notifyListeners();
+  }
+
   String _captchaToken = "";
 
   String get captchaToken => _captchaToken;

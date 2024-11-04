@@ -77,6 +77,8 @@ dependencies:
   flutter_native_splash: ^2.4.1 # Splash屏
   palette_generator: ^0.3.3+3 # 获取主色调
   vector_math: ^2.1.4
+  show_fps:
+    path: third-party/show_fps
   # 平台适配
   responsive_builder: ^0.7.1 # 响应式布局
   tray_manager: ^0.2.3 # 托盘图标
