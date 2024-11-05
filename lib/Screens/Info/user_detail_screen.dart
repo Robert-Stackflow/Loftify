@@ -239,8 +239,8 @@ class UserDetailScreenState extends State<UserDetailScreen>
           "查看TA的商品",
           icon: const Icon(Icons.shopping_bag_outlined),
           onPressed: () {
-            RouteUtil.pushPanelCupertinoRoute(
-                context, UserMarketScreen(blogId: _fullBlogData!.blogInfo.blogId));
+            RouteUtil.pushPanelCupertinoRoute(context,
+                UserMarketScreen(blogId: _fullBlogData!.blogInfo.blogId));
           },
         ),
         if (infoMode == InfoMode.other) ...[
@@ -409,7 +409,6 @@ class UserDetailScreenState extends State<UserDetailScreen>
       if (value['code'] != 200) {
         IToast.showTop(value['msg']);
       } else if (value['data']['showCaseList'] != null) {
-        print(value['data']['showCaseList']);
         showCases = (value['data']['showCaseList'] as List)
             .map((e) => ShowCaseItem.fromJson(e))
             .toList();
@@ -1032,7 +1031,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
         );
       };
     } else {
-      print(item.toJson());
+      ILogger.info("Loftify", item.toJson());
     }
     return ItemBuilder.buildClickItem(
       GestureDetector(

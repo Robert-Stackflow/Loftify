@@ -294,7 +294,6 @@ class Features {
   });
 
   factory Features.fromJson(Map<String, dynamic> json) {
-    print("dddddddddddddddddddd:$json");
     return Features(
       showDress: json['showDress'],
       showTagDress: json['showTagDress'],

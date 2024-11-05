@@ -111,7 +111,6 @@ class LoginApi {
 
   static Future<dynamic> loginByMailL(
       String mail, String password, String tk) async {
-    print(CryptUtil.encryptDataByRSA(password, RSA_PUBLIC_KEY));
     return RequestUtil.post(
       "/dl/zj/mail/l",
       domainType: DomainType.passport,
