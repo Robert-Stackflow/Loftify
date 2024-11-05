@@ -6,9 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
+import 'package:loftify/Api/server_api.dart';
 import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
 import 'package:loftify/Screens/panel_screen.dart';
 import 'package:loftify/Utils/asset_util.dart';
+import 'package:loftify/Utils/cloud_control_provider.dart';
 import 'package:loftify/Utils/constant.dart';
 import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Utils/uri_util.dart';
@@ -221,6 +223,7 @@ class MainScreenState extends State<MainScreen>
     windowManager.addListener(this);
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    ServerApi.getCloudControl();
     initDeepLinks();
     CustomFont.downloadFont(showToast: false);
     if (ResponsiveUtil.isLandscape()) _fetchUserInfo();
@@ -228,6 +231,7 @@ class MainScreenState extends State<MainScreen>
     if (HiveUtil.getBool(HiveUtil.autoCheckUpdateKey)) fetchReleases();
     darkModeController = AnimationController(vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      showQQGroupDialog();
       jumpToLogin();
       jumpToLock(autoAuth: true);
       darkModeWidget = LottieUtil.load(
@@ -244,6 +248,26 @@ class MainScreenState extends State<MainScreen>
     });
     initGlobalConfig();
     fetchData();
+  }
+
+  showQQGroupDialog() {
+    bool haveShownQQGroupDialog = HiveUtil.getBool(
+        HiveUtil.haveShownQQGroupDialogKey,
+        defaultValue: false);
+    if (!haveShownQQGroupDialog) {
+      HiveUtil.put(HiveUtil.haveShownQQGroupDialogKey, true);
+      DialogBuilder.showConfirmDialog(
+        context,
+        title: "欢迎反馈",
+        message: "加入QQ群，反馈BUG、建议和想法，欢迎你的加入！",
+        messageTextAlign: TextAlign.center,
+        confirmButtonText: "跳转至QQ",
+        cancelButtonText: "暂不加入",
+        onTapConfirm: () {
+          UriUtil.openExternal(controlProvider.globalControl.qqGroupUrl);
+        },
+      );
+    }
   }
 
   initGlobalConfig() {
@@ -456,153 +480,158 @@ class MainScreenState extends State<MainScreen>
       child: Stack(
         children: [
           if (ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
-          Selector<AppProvider, SideBarChoice>(
-            selector: (context, appProvider) => appProvider.sidebarChoice,
-            builder: (context, sidebarChoice, child) =>
-                Selector<AppProvider, bool>(
-              selector: (context, appProvider) =>
-                  !appProvider.showPanelNavigator,
-              builder: (context, hideNavigator, child) => Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  if (ResponsiveUtil.isDesktop()) const SizedBox(height: 5),
-                  if (ResponsiveUtil.isDesktop()) _buildLogo(),
-                  const SizedBox(height: 8),
-                  ToolButton(
-                    context: context,
-                    selected:
-                        hideNavigator && sidebarChoice == SideBarChoice.Home,
-                    icon: Icons.explore_outlined,
-                    selectedIcon: Icons.explore_rounded,
-                    onTap: () async {
-                      appProvider.sidebarChoice = SideBarChoice.Home;
-                      panelScreenState?.popAll();
-                    },
-                    iconSize: 24,
-                  ),
-                  const SizedBox(height: 8),
-                  ToolButton(
-                    context: context,
-                    selected:
-                        hideNavigator && sidebarChoice == SideBarChoice.Search,
-                    icon: Icons.search_rounded,
-                    selectedIcon: Icons.manage_search_rounded,
-                    onTap: () async {
-                      appProvider.sidebarChoice = SideBarChoice.Search;
-                      panelScreenState?.popAll();
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  ToolButton(
-                    context: context,
-                    selected:
-                        hideNavigator && sidebarChoice == SideBarChoice.Dynamic,
-                    icon: Icons.favorite_border_rounded,
-                    selectedIcon: Icons.favorite_rounded,
-                    onTap: () async {
-                      appProvider.sidebarChoice = SideBarChoice.Dynamic;
-                      panelScreenState?.popAll();
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  ToolButton(
-                    context: context,
-                    selected:
-                        hideNavigator && sidebarChoice == SideBarChoice.Mine,
-                    icon: Icons.person_outline_rounded,
-                    selectedIcon: Icons.person_rounded,
-                    onTap: () async {
-                      appProvider.sidebarChoice = SideBarChoice.Mine;
-                      panelScreenState?.popAll();
-                    },
-                  ),
-                  const Spacer(),
-                  const SizedBox(height: 8),
-                  ItemBuilder.buildClickItem(
-                    GestureDetector(
+          Consumer<LoftifyControlProvider>(
+            builder: (_, cloudControlProvider, __) =>
+                Selector<AppProvider, SideBarChoice>(
+              selector: (context, appProvider) => appProvider.sidebarChoice,
+              builder: (context, sidebarChoice, child) =>
+                  Selector<AppProvider, bool>(
+                selector: (context, appProvider) =>
+                    !appProvider.showPanelNavigator,
+                builder: (context, hideNavigator, child) => Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    if (ResponsiveUtil.isDesktop()) const SizedBox(height: 5),
+                    if (ResponsiveUtil.isDesktop()) _buildLogo(),
+                    const SizedBox(height: 8),
+                    ToolButton(
+                      context: context,
+                      selected:
+                          hideNavigator && sidebarChoice == SideBarChoice.Home,
+                      icon: Icons.explore_outlined,
+                      selectedIcon: Icons.explore_rounded,
                       onTap: () async {
-                        if (blogInfo == null) {
-                          RouteUtil.pushDialogRoute(
-                              context, const LoginByCaptchaScreen());
-                        } else {
-                          BottomSheetBuilder.showContextMenu(
-                              context, _buildAvatarContextMenuButtons());
-                        }
+                        appProvider.sidebarChoice = SideBarChoice.Home;
+                        panelScreenState?.popAll(false);
                       },
-                      child: ItemBuilder.buildAvatar(
-                        showLoading: false,
-                        context: context,
-                        imageUrl: blogInfo?.bigAvaImg ?? "",
-                        useDefaultAvatar: blogInfo == null,
-                        size: 30,
+                      iconSize: 24,
+                    ),
+                    const SizedBox(height: 8),
+                    ToolButton(
+                      context: context,
+                      selected: hideNavigator &&
+                          sidebarChoice == SideBarChoice.Search,
+                      icon: Icons.search_rounded,
+                      selectedIcon: Icons.manage_search_rounded,
+                      onTap: () async {
+                        appProvider.sidebarChoice = SideBarChoice.Search;
+                        panelScreenState?.popAll(false);
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    ToolButton(
+                      context: context,
+                      selected: hideNavigator &&
+                          sidebarChoice == SideBarChoice.Dynamic,
+                      icon: Icons.favorite_border_rounded,
+                      selectedIcon: Icons.favorite_rounded,
+                      onTap: () async {
+                        appProvider.sidebarChoice = SideBarChoice.Dynamic;
+                        panelScreenState?.popAll(false);
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    ToolButton(
+                      context: context,
+                      selected:
+                          hideNavigator && sidebarChoice == SideBarChoice.Mine,
+                      icon: Icons.person_outline_rounded,
+                      selectedIcon: Icons.person_rounded,
+                      onTap: () async {
+                        appProvider.sidebarChoice = SideBarChoice.Mine;
+                        panelScreenState?.popAll(false);
+                      },
+                    ),
+                    const Spacer(),
+                    const SizedBox(height: 8),
+                    ItemBuilder.buildClickItem(
+                      GestureDetector(
+                        onTap: () async {
+                          if (blogInfo == null) {
+                            RouteUtil.pushDialogRoute(
+                                context, const LoginByCaptchaScreen());
+                          } else {
+                            BottomSheetBuilder.showContextMenu(
+                                context, _buildAvatarContextMenuButtons());
+                          }
+                        },
+                        child: ItemBuilder.buildAvatar(
+                          showLoading: false,
+                          context: context,
+                          imageUrl: blogInfo?.bigAvaImg ?? "",
+                          useDefaultAvatar: blogInfo == null,
+                          size: 30,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  ItemBuilder.buildDynamicToolButton(
-                    context: context,
-                    iconBuilder: (colors) => darkModeWidget ?? emptyWidget,
-                    onTap: changeMode,
-                    onChangemode: (context, themeMode, child) {
-                      if (darkModeController.duration != null) {
-                        if (themeMode == ActiveThemeMode.light) {
-                          darkModeController.forward();
-                        } else if (themeMode == ActiveThemeMode.dark) {
-                          darkModeController.reverse();
-                        } else {
-                          if (Utils.isDark(context)) {
+                    const SizedBox(height: 8),
+                    ItemBuilder.buildDynamicToolButton(
+                      context: context,
+                      iconBuilder: (colors) => darkModeWidget ?? emptyWidget,
+                      onTap: changeMode,
+                      onChangemode: (context, themeMode, child) {
+                        if (darkModeController.duration != null) {
+                          if (themeMode == ActiveThemeMode.light) {
+                            darkModeController.forward();
+                          } else if (themeMode == ActiveThemeMode.dark) {
                             darkModeController.reverse();
                           } else {
-                            darkModeController.forward();
+                            if (Utils.isDark(context)) {
+                              darkModeController.reverse();
+                            } else {
+                              darkModeController.forward();
+                            }
                           }
                         }
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 2),
-                  ToolButton(
-                    context: context,
-                    iconBuilder: (_) => AssetUtil.loadDouble(
-                      context,
-                      AssetUtil.dressLightIcon,
-                      AssetUtil.dressDarkIcon,
+                      },
                     ),
-                    padding: const EdgeInsets.all(8),
-                    onTap: () {
-                      RouteUtil.pushPanelCupertinoRoute(
-                          context, const SuitScreen());
-                    },
-                  ),
-                  const SizedBox(height: 2),
-                  ToolButton(
-                    context: context,
-                    iconBuilder: (_) => Icon(
-                      Icons.notifications_on_outlined,
-                      color: Theme.of(context).iconTheme.color,
-                      size: 20,
+                    const SizedBox(height: 2),
+                    if (cloudControlProvider.globalControl.showDress) ...[
+                      ToolButton(
+                        context: context,
+                        iconBuilder: (_) => AssetUtil.loadDouble(
+                          context,
+                          AssetUtil.dressLightIcon,
+                          AssetUtil.dressDarkIcon,
+                        ),
+                        padding: const EdgeInsets.all(8),
+                        onTap: () {
+                          RouteUtil.pushPanelCupertinoRoute(
+                              context, const SuitScreen());
+                        },
+                      ),
+                      const SizedBox(height: 2),
+                    ],
+                    ToolButton(
+                      context: context,
+                      iconBuilder: (_) => Icon(
+                        Icons.notifications_on_outlined,
+                        color: Theme.of(context).iconTheme.color,
+                        size: 20,
+                      ),
+                      onTap: () {
+                        RouteUtil.pushPanelCupertinoRoute(
+                            context, const SystemNoticeScreen());
+                      },
                     ),
-                    onTap: () {
-                      RouteUtil.pushPanelCupertinoRoute(
-                          context, const SystemNoticeScreen());
-                    },
-                  ),
-                  const SizedBox(height: 2),
-                  ToolButton(
-                    context: context,
-                    iconBuilder: (_) => AssetUtil.loadDouble(
-                      context,
-                      AssetUtil.settingLightIcon,
-                      AssetUtil.settingDarkIcon,
+                    const SizedBox(height: 2),
+                    ToolButton(
+                      context: context,
+                      iconBuilder: (_) => AssetUtil.loadDouble(
+                        context,
+                        AssetUtil.settingLightIcon,
+                        AssetUtil.settingDarkIcon,
+                      ),
+                      padding: const EdgeInsets.all(8),
+                      onTap: () {
+                        RouteUtil.pushPanelCupertinoRoute(
+                            context, const SettingScreen());
+                      },
                     ),
-                    padding: const EdgeInsets.all(8),
-                    onTap: () {
-                      RouteUtil.pushPanelCupertinoRoute(
-                          context, const SettingScreen());
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                ],
+                    const SizedBox(height: 8),
+                  ],
+                ),
               ),
             ),
           ),

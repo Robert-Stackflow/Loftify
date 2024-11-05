@@ -37,6 +37,7 @@ import '../../Models/search_response.dart';
 import '../../Resources/theme.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/asset_util.dart';
+import '../../Utils/cloud_control_provider.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/lottie_util.dart';
 import '../../Utils/responsive_util.dart';
@@ -317,11 +318,13 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       _previewImages = _getReturnGiftImages();
       _isCatutu = false;
     } else {
-      _previewImages = [];
-      for (var gift in _giftInfoData!.returnGifts) {
-        _previewImages.addAll(gift.previewImages ?? []);
+      if (controlProvider.globalControl.showCatutu) {
+        _previewImages = [];
+        for (var gift in _giftInfoData!.returnGifts) {
+          _previewImages.addAll(gift.previewImages ?? []);
+        }
+        _isCatutu = true;
       }
-      _isCatutu = true;
     }
   }
 
@@ -1595,7 +1598,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           url: rawUrl,
           postTitle: _postDetailData!.post!.title,
           postDigest: _postDetailData!.post!.digest,
-          tags: _postDetailData!.post?.tagList??[],
+          tags: _postDetailData!.post?.tagList ?? [],
           publishTime: _postDetailData!.post!.publishTime,
         ),
       );
@@ -1620,7 +1623,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           url: rawUrl,
           postTitle: _postDetailData!.post!.title,
           postDigest: _postDetailData!.post!.digest,
-          tags: _postDetailData!.post?.tagList??[],
+          tags: _postDetailData!.post?.tagList ?? [],
           publishTime: _postDetailData!.post!.publishTime,
         ),
       );
@@ -2218,11 +2221,14 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   List<Widget> _buildButtons() {
+    bool showDownloadButton = controlProvider
+            .globalControl.showDownloadButton &&
+        (_hasImage() ||
+            _hasArticleImage() &&
+                HiveUtil.getBool(HiveUtil.showDownloadKey, defaultValue: true));
     return [
       const SizedBox(width: 5),
-      if (_hasImage() ||
-          _hasArticleImage() &&
-              HiveUtil.getBool(HiveUtil.showDownloadKey, defaultValue: true))
+      if (showDownloadButton) ...[
         ItemBuilder.buildIconButton(
           context: context,
           icon: downloadIcon,
@@ -2230,9 +2236,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             _handleDownloadAll();
           },
         ),
-      if ((_hasImage() || _hasArticleImage()) &&
-          HiveUtil.getBool(HiveUtil.showDownloadKey, defaultValue: true))
         const SizedBox(width: 5),
+      ],
       ItemBuilder.buildIconButton(
         context: context,
         icon: Icon(Icons.more_vert_rounded,

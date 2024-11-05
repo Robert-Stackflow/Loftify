@@ -25,6 +25,7 @@ import 'package:video_player/video_player.dart';
 import '../../Models/illust.dart';
 import '../../Resources/colors.dart';
 import '../../Resources/theme.dart';
+import '../../Utils/cloud_control_provider.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/uri_util.dart';
@@ -377,6 +378,8 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
             isShared: postListItem.share ?? false,
             isLiked: postListItem.favorite,
             isFollowing: postListItem.following,
+            showDownloadButton:
+                controlProvider.globalControl.showVideoDownloadButton,
             onLike: () {
               HapticFeedback.mediumImpact();
               PostApi.likeOrUnLike(
@@ -604,10 +607,12 @@ class VideoListButtonColumn extends StatelessWidget {
   final int commentCount;
   final SimpleBlogInfo blogInfo;
   final double? downloadProgress;
+  final bool showDownloadButton;
 
   const VideoListButtonColumn({
     super.key,
     this.bottomPadding,
+    this.showDownloadButton = true,
     this.onLike,
     this.onComment,
     this.onShare,
@@ -703,27 +708,28 @@ class VideoListButtonColumn extends StatelessWidget {
             text: '$commentCount',
             onTap: onComment,
           ),
-          downloadProgress != null
-              ? _IconButton(
-                  icon: Container(
-                    width: 32,
-                    height: 32,
-                    margin: const EdgeInsets.only(bottom: 3),
-                    child: CircularProgressIndicator(
-                      value: downloadProgress,
-                      color: Colors.white,
-                      strokeWidth: 3,
+          if (showDownloadButton)
+            downloadProgress != null
+                ? _IconButton(
+                    icon: Container(
+                      width: 32,
+                      height: 32,
+                      margin: const EdgeInsets.only(bottom: 3),
+                      child: CircularProgressIndicator(
+                        value: downloadProgress,
+                        color: Colors.white,
+                        strokeWidth: 3,
+                      ),
                     ),
+                    text: '${(downloadProgress! * 100).toStringAsFixed(0)}%',
+                    onTap: onDownload,
+                  )
+                : _IconButton(
+                    icon: const Icon(Icons.download_rounded,
+                        size: 35, color: Colors.white),
+                    text: '下载',
+                    onTap: onDownload,
                   ),
-                  text: '${(downloadProgress! * 100).toStringAsFixed(0)}%',
-                  onTap: onDownload,
-                )
-              : _IconButton(
-                  icon: const Icon(Icons.download_rounded,
-                      size: 35, color: Colors.white),
-                  text: '下载',
-                  onTap: onDownload,
-                ),
           const SizedBox(height: 20),
         ],
       ),

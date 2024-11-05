@@ -4,6 +4,7 @@ import 'package:loftify/Screens/Setting/filename_setting_screen.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/route_util.dart';
 
+import '../../Utils/cloud_control_provider.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/responsive_util.dart';
@@ -73,6 +74,10 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
 
   @override
   Widget build(BuildContext context) {
+    bool showImageQualitySettings =
+        controlProvider.globalControl.showImageQualitySettings;
+    bool showBigImageSettings =
+        controlProvider.globalControl.showBigImageSettings;
     return Container(
       color: Colors.transparent,
       child: Scaffold(
@@ -89,124 +94,11 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
             padding: const EdgeInsets.symmetric(horizontal: 10),
             children: [
               if (ResponsiveUtil.isLandscape()) const SizedBox(height: 10),
-              ItemBuilder.buildCaptionItem(context: context, title: "图片质量"),
-              ItemBuilder.buildEntryItem(
-                context: context,
-                title: "瀑布流图片质量",
-                tip: EnumsLabelGetter.getImageQualityLabel(
-                    waterfallFlowImageQuality),
-                onTap: () {
-                  showImageQualitySelect(
-                    onSelected: (quality) {
-                      setState(() {
-                        waterfallFlowImageQuality = quality;
-                        HiveUtil.put(HiveUtil.waterfallFlowImageQualityKey,
-                            quality.index);
-                      });
-                    },
-                    selected: waterfallFlowImageQuality,
-                    title: "选择瀑布流图片质量",
-                  );
-                },
-              ),
-              ItemBuilder.buildEntryItem(
-                context: context,
-                title: "详情页图片质量",
-                tip: EnumsLabelGetter.getImageQualityLabel(
-                    postDetailImageQuality),
-                onTap: () {
-                  showImageQualitySelect(
-                    onSelected: (quality) {
-                      setState(() {
-                        postDetailImageQuality = quality;
-                        HiveUtil.put(
-                            HiveUtil.postDetailImageQualityKey, quality.index);
-                      });
-                    },
-                    selected: postDetailImageQuality,
-                    title: "选择详情页图片质量",
-                  );
-                },
-              ),
-              ItemBuilder.buildEntryItem(
-                context: context,
-                title: "查看大图时图片质量",
-                tip: EnumsLabelGetter.getImageQualityLabel(
-                    imageDetailImageQuality),
-                bottomRadius: true,
-                onTap: () {
-                  showImageQualitySelect(
-                    onSelected: (quality) {
-                      setState(() {
-                        imageDetailImageQuality = quality;
-                        HiveUtil.put(
-                            HiveUtil.imageDetailImageQualityKey, quality.index);
-                      });
-                    },
-                    selected: imageDetailImageQuality,
-                    title: "选择查看大图时图片质量",
-                  );
-                },
-              ),
-              const SizedBox(height: 10),
-              ItemBuilder.buildCaptionItem(context: context, title: "大图设置"),
-              ItemBuilder.buildRadioItem(
-                value: followMainColor,
-                context: context,
-                title: "背景跟随图片主色调",
-                onTap: () {
-                  setState(() {
-                    followMainColor = !followMainColor;
-                    HiveUtil.put(
-                      HiveUtil.followMainColorKey,
-                      followMainColor,
-                    );
-                  });
-                },
-              ),
-              ItemBuilder.buildEntryItem(
-                context: context,
-                title: "点按链接按钮",
-                tip: EnumsLabelGetter.getImageQualityLabel(
-                    tapLinkButtonImageQuality),
-                description: "点按链接按钮时复制的图片链接质量",
-                onTap: () {
-                  showImageQualitySelect(
-                    onSelected: (quality) {
-                      setState(() {
-                        tapLinkButtonImageQuality = quality;
-                        HiveUtil.put(HiveUtil.tapLinkButtonImageQualityKey,
-                            quality.index);
-                      });
-                    },
-                    selected: tapLinkButtonImageQuality,
-                    title: "选择点按链接按钮时复制的图片链接质量",
-                  );
-                },
-              ),
-              ItemBuilder.buildEntryItem(
-                context: context,
-                title: "长按链接按钮",
-                tip: EnumsLabelGetter.getImageQualityLabel(
-                    longPressLinkButtonImageQuality),
-                description: "长按链接按钮时复制的图片链接质量",
-                bottomRadius: true,
-                onTap: () {
-                  showImageQualitySelect(
-                    onSelected: (quality) {
-                      setState(() {
-                        longPressLinkButtonImageQuality = quality;
-                        HiveUtil.put(
-                            HiveUtil.longPressLinkButtonImageQualityKey,
-                            quality.index);
-                      });
-                    },
-                    selected: longPressLinkButtonImageQuality,
-                    title: "选择长按链接按钮时复制的图片链接质量",
-                  );
-                },
-              ),
-              const SizedBox(height: 10),
+              if (showImageQualitySettings) ..._imageQualitySettings(),
+              if (showImageQualitySettings) const SizedBox(height: 10),
+              if (showBigImageSettings) ..._bigImageSettings(),
+              if (showImageQualitySettings || showBigImageSettings)
+                const SizedBox(height: 10),
               ItemBuilder.buildCaptionItem(context: context, title: "保存设置"),
               ItemBuilder.buildEntryItem(
                 context: context,
@@ -250,5 +142,125 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
         ),
       ),
     );
+  }
+
+  _imageQualitySettings() {
+    return [
+      ItemBuilder.buildCaptionItem(context: context, title: "图片质量"),
+      ItemBuilder.buildEntryItem(
+        context: context,
+        title: "瀑布流图片质量",
+        tip: EnumsLabelGetter.getImageQualityLabel(waterfallFlowImageQuality),
+        onTap: () {
+          showImageQualitySelect(
+            onSelected: (quality) {
+              setState(() {
+                waterfallFlowImageQuality = quality;
+                HiveUtil.put(
+                    HiveUtil.waterfallFlowImageQualityKey, quality.index);
+              });
+            },
+            selected: waterfallFlowImageQuality,
+            title: "选择瀑布流图片质量",
+          );
+        },
+      ),
+      ItemBuilder.buildEntryItem(
+        context: context,
+        title: "详情页图片质量",
+        tip: EnumsLabelGetter.getImageQualityLabel(postDetailImageQuality),
+        onTap: () {
+          showImageQualitySelect(
+            onSelected: (quality) {
+              setState(() {
+                postDetailImageQuality = quality;
+                HiveUtil.put(HiveUtil.postDetailImageQualityKey, quality.index);
+              });
+            },
+            selected: postDetailImageQuality,
+            title: "选择详情页图片质量",
+          );
+        },
+      ),
+      ItemBuilder.buildEntryItem(
+        context: context,
+        title: "查看大图时图片质量",
+        tip: EnumsLabelGetter.getImageQualityLabel(imageDetailImageQuality),
+        bottomRadius: true,
+        onTap: () {
+          showImageQualitySelect(
+            onSelected: (quality) {
+              setState(() {
+                imageDetailImageQuality = quality;
+                HiveUtil.put(
+                    HiveUtil.imageDetailImageQualityKey, quality.index);
+              });
+            },
+            selected: imageDetailImageQuality,
+            title: "选择查看大图时图片质量",
+          );
+        },
+      ),
+    ];
+  }
+
+  _bigImageSettings() {
+    return [
+      ItemBuilder.buildCaptionItem(context: context, title: "大图设置"),
+      ItemBuilder.buildRadioItem(
+        value: followMainColor,
+        context: context,
+        title: "背景跟随图片主色调",
+        onTap: () {
+          setState(() {
+            followMainColor = !followMainColor;
+            HiveUtil.put(
+              HiveUtil.followMainColorKey,
+              followMainColor,
+            );
+          });
+        },
+      ),
+      ItemBuilder.buildEntryItem(
+        context: context,
+        title: "点按链接按钮",
+        tip: EnumsLabelGetter.getImageQualityLabel(tapLinkButtonImageQuality),
+        description: "点按链接按钮时复制的图片链接质量",
+        onTap: () {
+          showImageQualitySelect(
+            onSelected: (quality) {
+              setState(() {
+                tapLinkButtonImageQuality = quality;
+                HiveUtil.put(
+                    HiveUtil.tapLinkButtonImageQualityKey, quality.index);
+              });
+            },
+            selected: tapLinkButtonImageQuality,
+            title: "选择点按链接按钮时复制的图片链接质量",
+          );
+        },
+      ),
+      ItemBuilder.buildEntryItem(
+        context: context,
+        title: "长按链接按钮",
+        tip: EnumsLabelGetter.getImageQualityLabel(
+            longPressLinkButtonImageQuality),
+        description: "长按链接按钮时复制的图片链接质量",
+        bottomRadius: true,
+        onTap: () {
+          showImageQualitySelect(
+            onSelected: (quality) {
+              setState(() {
+                longPressLinkButtonImageQuality = quality;
+                HiveUtil.put(
+                    HiveUtil.longPressLinkButtonImageQualityKey, quality.index);
+              });
+            },
+            selected: longPressLinkButtonImageQuality,
+            title: "选择长按链接按钮时复制的图片链接质量",
+          );
+        },
+      ),
+    ];
   }
 }

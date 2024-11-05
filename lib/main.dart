@@ -12,6 +12,7 @@ import 'package:launch_at_startup/launch_at_startup.dart';
 import 'package:local_notifier/local_notifier.dart';
 import 'package:loftify/Database/database_manager.dart';
 import 'package:loftify/Utils/app_provider.dart';
+import 'package:loftify/Utils/cloud_control_provider.dart';
 import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/request_header_util.dart';
@@ -50,7 +51,6 @@ Future<void> runMyApp(List<String> args) async {
   }
   if (ResponsiveUtil.isDesktop()) {
     await initWindow();
-    Utils.initTray();
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     launchAtStartup.setup(
       appName: packageInfo.appName,
@@ -152,32 +152,12 @@ class MyApp extends StatelessWidget {
     this.title = 'Loftify',
   });
 
-  _buildFPS(BuildContext context, Widget child) {
-    if (appProvider.showFPS) {
-      return ShowFPS(
-        alignment: Alignment.topRight,
-        visible: true,
-        showChart: false,
-        textStyle: Theme.of(context)
-            .textTheme
-            .titleLarge
-            ?.apply(color: Colors.red, fontSizeDelta: 10),
-        // decoration: BoxDecoration(
-        //   color: Colors.black54,
-        //   borderRadius: BorderRadius.circular(8),
-        // ),
-        child: child,
-      );
-    } else {
-      return child;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: appProvider),
+        ChangeNotifierProvider.value(value: controlProvider),
       ],
       child: Consumer<AppProvider>(
         builder: (context, globalProvider, child) => MaterialApp(
@@ -228,7 +208,7 @@ class MyApp extends StatelessWidget {
                           FocusManager.instance.primaryFocus?.unfocus();
                         }
                       },
-                      child: _buildFPS(context, widget),
+                      child: widget,
                     ),
                   ),
                 ],

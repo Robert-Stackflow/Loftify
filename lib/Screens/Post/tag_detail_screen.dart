@@ -7,10 +7,10 @@ import 'package:loftify/Api/tag_api.dart';
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Models/tag_response.dart';
 import 'package:loftify/Resources/theme.dart';
-import 'package:loftify/Screens/Suit/dress_screen.dart';
 import 'package:loftify/Screens/Post/tag_collection_grain_screen.dart';
 import 'package:loftify/Screens/Post/tag_insearch_screen.dart';
 import 'package:loftify/Screens/Post/tag_related_screen.dart';
+import 'package:loftify/Screens/Suit/dress_screen.dart';
 import 'package:loftify/Utils/asset_util.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/ilogger.dart';
@@ -19,7 +19,7 @@ import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Utils/route_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
-import '../../Api/post_api.dart';
+import '../../Utils/cloud_control_provider.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
@@ -343,8 +343,9 @@ class _TagDetailScreenState extends State<TagDetailScreen>
   }
 
   Widget _buildEntries() {
+    bool showTagDress = controlProvider.globalControl.showTagDress;
     bool showEntries = _tagDetailData!.collectionRank != null ||
-        _tagDetailData!.propGiftTagConfig != null ||
+        (_tagDetailData!.propGiftTagConfig != null && showTagDress) ||
         Utils.isNotEmpty(_tagDetailData!.relatedTags);
     return showEntries
         ? Container(
@@ -375,7 +376,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                         RouteUtil.pushPanelCupertinoRoute(
                             context, TagRelatedScreen(tag: widget.tag));
                       }),
-                if (_tagDetailData!.propGiftTagConfig != null)
+                if (_tagDetailData!.propGiftTagConfig != null && showTagDress)
                   _buildEntryItem(
                     darkBg: AssetUtil.dressDarkIllust,
                     lightBg: AssetUtil.dressLightIllust,

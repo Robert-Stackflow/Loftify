@@ -20,7 +20,6 @@ import 'package:loftify/Screens/Navigation/mine_screen.dart';
 import 'package:loftify/Screens/refresh_interface.dart';
 import 'package:loftify/Utils/ilogger.dart';
 import 'package:provider/provider.dart';
-import 'package:show_fps/show_fps.dart';
 
 import '../Utils/app_provider.dart';
 import '../Utils/constant.dart';
@@ -86,14 +85,16 @@ class PanelScreenState extends State<PanelScreen>
     });
   }
 
-  popAll() {
+  popAll([bool initPage = true]) {
     while (panelNavigatorState?.canPop() ?? false) {
       panelNavigatorState?.pop();
     }
     canPop = !(panelNavigatorState?.canPop() ?? false);
     appProvider.showPanelNavigator = false;
-    _pageController =
-        PageController(initialPage: appProvider.sidebarChoice.index);
+    if (initPage) {
+      _pageController =
+          PageController(initialPage: appProvider.sidebarChoice.index);
+    }
   }
 
   pushPage(Widget page) {

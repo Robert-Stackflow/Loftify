@@ -54,7 +54,7 @@ class DynamicScreenState extends State<DynamicScreen>
   bool get wantKeepAlive => true;
   late TabController _tabController;
   int _currentTabIndex = 0;
-  final List<String> _tabLabelList = ["关注","标签", "合集", "粮单"];
+  final List<String> _tabLabelList = ["关注", "标签", "合集", "粮单"];
   int lastRefreshTime = 0;
   final GlobalKey _tagTabKey = GlobalKey();
   final GlobalKey _collectionTabKey = GlobalKey();
@@ -95,7 +95,7 @@ class DynamicScreenState extends State<DynamicScreen>
 
   void scrollToTopOrRefresh() {
     ScrollController controller = getCurrentController();
-    if (controller.offset > 30) {
+    if (controller.hasClients && controller.offset > 30) {
       controller.animateTo(0,
           duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
     } else {

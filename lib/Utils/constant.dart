@@ -26,8 +26,12 @@ const windowsKeyPath = r'SOFTWARE\Cloudchewie\Loftify';
 const String feedbackBody = "";
 const String downloadPkgsUrl = "https://pkgs.cloudchewie.com/Loftify";
 const String officialWebsite = "https://apps.cloudchewie.com/loftify";
-const String telegramLink = "https://t.me/Loftify";
+const String telegramGroupUrl = "https://t.me/Loftify";
+const String qqGroupUrl = "https://qm.qq.com/q/2HJ8PC1XcQ";
 const String repoUrl = "https://github.com/Robert-Stackflow/Loftify";
 const String releaseUrl =
     "https://github.com/Robert-Stackflow/Loftify/releases";
 const String issueUrl = "https://github.com/Robert-Stackflow/Loftify/issues";
+
+const String cloudControlUrl="https://apps.cloudchewie.com/loftify/control.json";
+const String fontsUrl="https://apps.cloudchewie.com/loftify/fonts.json";

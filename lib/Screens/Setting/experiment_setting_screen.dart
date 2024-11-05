@@ -98,6 +98,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
         description:
             "意在解决部分机型高刷失效的问题，如无问题，请不要修改\n如果您的设备支持LTPO，可能会设置失败\n已选模式: ${_modes.isNotEmpty ? _modes[_refreshRate.clamp(0, _modes.length - 1)].toString() : ""}\n首选模式: ${_preferredMode?.toString() ?? "Unknown"}\n活动模式: ${_activeMode?.toString() ?? "Unknown"}",
         topRadius: true,
+        bottomRadius: true,
         onTap: () {
           getRefreshRate();
           BottomSheetBuilder.showListBottomSheet(
@@ -138,17 +139,6 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
               onCloseTap: () => Navigator.pop(context),
             ),
           );
-        },
-      ),
-      ItemBuilder.buildRadioItem(
-        context: context,
-        value: appProvider.showFPS,
-        title: "显示实时FPS",
-        bottomRadius: true,
-        onTap: () {
-          setState(() {
-            appProvider.showFPS = !appProvider.showFPS;
-          });
         },
       ),
     ];

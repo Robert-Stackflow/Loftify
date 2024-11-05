@@ -3759,7 +3759,9 @@ class ItemBuilder {
                       onTap: () => onL2CommentTap?.call(comment),
                       child: ItemBuilder.buildClickItem(
                         Text.rich(
+                          style: Theme.of(context).textTheme.labelMedium,
                           TextSpan(
+                            style: Theme.of(context).textTheme.labelMedium,
                             children: [
                               TextSpan(
                                 text:

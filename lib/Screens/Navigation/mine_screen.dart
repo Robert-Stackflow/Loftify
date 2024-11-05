@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:loftify/Api/user_api.dart';
 import 'package:loftify/Models/account_response.dart';
 import 'package:loftify/Screens/Info/collection_screen.dart';
-import 'package:loftify/Screens/Suit/dress_screen.dart';
 import 'package:loftify/Screens/Info/favorite_folder_list_screen.dart';
 import 'package:loftify/Screens/Info/grain_screen.dart';
 import 'package:loftify/Screens/Info/history_screen.dart';
@@ -12,14 +11,17 @@ import 'package:loftify/Screens/Info/share_screen.dart';
 import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
 import 'package:loftify/Utils/asset_util.dart';
+import 'package:loftify/Utils/constant.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/lottie_util.dart';
+import 'package:provider/provider.dart';
 import 'package:responsive_builder/responsive_builder.dart';
 
 import '../../Models/user_response.dart';
 import '../../Utils/app_provider.dart';
+import '../../Utils/cloud_control_provider.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
@@ -623,40 +625,6 @@ class _MineScreenState extends State<MineScreen>
     ];
   }
 
-  List<Widget> _buildMessage() {
-    return [
-      const SizedBox(height: 10),
-      ItemBuilder.buildCaptionItem(context: context, title: "我的消息"),
-      ItemBuilder.buildEntryItem(
-        context: context,
-        title: "评论回复",
-        padding: 15,
-        showLeading: true,
-        onTap: () {
-          RouteUtil.pushPanelCupertinoRoute(
-            context,
-            CollectionScreen(),
-          );
-        },
-        leading: Icons.mode_comment_outlined,
-      ),
-      ItemBuilder.buildEntryItem(
-        context: context,
-        title: "聊天消息",
-        padding: 15,
-        showLeading: true,
-        bottomRadius: true,
-        onTap: () {
-          RouteUtil.pushPanelCupertinoRoute(
-            context,
-            GrainScreen(),
-          );
-        },
-        leading: Icons.chat_outlined,
-      ),
-    ];
-  }
-
   List<Widget> _buildCreation() {
     return [
       const SizedBox(height: 10),
@@ -752,20 +720,29 @@ class _MineScreenState extends State<MineScreen>
               }
             }),
         const SizedBox(width: 5),
-        ItemBuilder.buildIconButton(
-            context: context,
-            icon: AssetUtil.loadDouble(
-              context,
-              AssetUtil.dressLightIcon,
-              AssetUtil.dressDarkIcon,
-            ),
-            onTap: () {
-              RouteUtil.pushPanelCupertinoRoute(
-                context,
-                const SuitScreen(),
-              );
-            }),
-        const SizedBox(width: 5),
+        Consumer<LoftifyControlProvider>(
+          builder: (_, cloudControlProvider, __) =>
+              cloudControlProvider.globalControl.showDress
+                  ? Row(
+                      children: [
+                        ItemBuilder.buildIconButton(
+                            context: context,
+                            icon: AssetUtil.loadDouble(
+                              context,
+                              AssetUtil.dressLightIcon,
+                              AssetUtil.dressDarkIcon,
+                            ),
+                            onTap: () {
+                              RouteUtil.pushPanelCupertinoRoute(
+                                context,
+                                const SuitScreen(),
+                              );
+                            }),
+                        const SizedBox(width: 5),
+                      ],
+                    )
+                  : emptyWidget,
+        ),
         ItemBuilder.buildIconButton(
           context: context,
           icon: Icon(

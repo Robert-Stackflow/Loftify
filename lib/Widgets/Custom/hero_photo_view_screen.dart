@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Models/illust.dart';
+import 'package:loftify/Utils/cloud_control_provider.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
@@ -261,9 +262,9 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
   getPreferedScale(dynamic item) {
     dynamic preferScale = initialScale;
     if (item is PhotoLink) {
-      double preferHeight =
-          MediaQuery.sizeOf(context).width * item.oh / item.ow;
-      double scale = preferHeight / MediaQuery.sizeOf(context).height;
+      // double preferHeight =
+      //     MediaQuery.sizeOf(context).width * item.oh / item.ow;
+      // double scale = preferHeight / MediaQuery.sizeOf(context).height;
       // if (scale > 1 && ResponsiveUtil.isMobile()) {
       //   preferScale = PhotoViewComputedScale.covered;
       // }
@@ -432,6 +433,10 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
+    bool showDownloadButton =
+        controlProvider.globalControl.showDownloadButton;
+    bool showCopyLinkButton =
+        controlProvider.globalControl.showCopyLinkButton;
     return ItemBuilder.buildAppBar(
       context: context,
       backgroundColor: widget.transparentBar
@@ -458,31 +463,32 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
                 )
               : emptyWidget,
       actions: [
-        ItemBuilder.buildIconButton(
-          context: context,
-          icon: AssetUtil.load(AssetUtil.linkWhiteIcon),
-          onTap: () {
-            Utils.copy(
-              context,
-              Utils.getUrlByQuality(
-                  currentUrl,
-                  HiveUtil.getImageQuality(
-                      HiveUtil.tapLinkButtonImageQualityKey)),
-              toastText: "已复制图片链接",
-            );
-          },
-          onLongPress: () {
-            Utils.copy(
-              context,
-              Utils.getUrlByQuality(
-                  currentUrl,
-                  HiveUtil.getImageQuality(
-                      HiveUtil.longPressLinkButtonImageQualityKey)),
-              toastText: "已复制图片链接",
-            );
-          },
-        ),
-        const SizedBox(width: 5),
+        if (showCopyLinkButton)
+          ItemBuilder.buildIconButton(
+            context: context,
+            icon: AssetUtil.load(AssetUtil.linkWhiteIcon),
+            onTap: () {
+              Utils.copy(
+                context,
+                Utils.getUrlByQuality(
+                    currentUrl,
+                    HiveUtil.getImageQuality(
+                        HiveUtil.tapLinkButtonImageQualityKey)),
+                toastText: "已复制图片链接",
+              );
+            },
+            onLongPress: () {
+              Utils.copy(
+                context,
+                Utils.getUrlByQuality(
+                    currentUrl,
+                    HiveUtil.getImageQuality(
+                        HiveUtil.longPressLinkButtonImageQualityKey)),
+                toastText: "已复制图片链接",
+              );
+            },
+          ),
+        if (showCopyLinkButton) const SizedBox(width: 5),
         ItemBuilder.buildIconButton(
           context: context,
           icon: const Icon(Icons.share_rounded, color: Colors.white, size: 22),
@@ -497,45 +503,46 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
           },
         ),
         const SizedBox(width: 5),
-        ItemBuilder.buildIconButton(
-          context: context,
-          icon: downloadIcon,
-          onTap: () {
-            if (downloadState == DownloadState.none) {
-              setDownloadState(DownloadState.loading, recover: false);
-              if (type == UrlType.illust) {
-                FileUtil.saveIllust(
-                  context,
-                  imageUrls[currentIndex],
-                ).then((res) {
-                  if (res) {
-                    widget.onDownloadSuccess?.call();
-                    setDownloadState(DownloadState.succeed);
-                  } else {
-                    setDownloadState(DownloadState.failed);
-                  }
-                });
-              } else {
-                FileUtil.saveImage(
-                  context,
-                  Utils.getUrlByQuality(
-                    currentUrl,
-                    ImageQuality.raw,
-                  ),
-                ).then((res) {
-                  if (res) {
-                    widget.onDownloadSuccess?.call();
-                    setDownloadState(DownloadState.succeed);
-                  } else {
-                    setDownloadState(DownloadState.failed);
-                  }
-                });
+        if (showDownloadButton)
+          ItemBuilder.buildIconButton(
+            context: context,
+            icon: downloadIcon,
+            onTap: () {
+              if (downloadState == DownloadState.none) {
+                setDownloadState(DownloadState.loading, recover: false);
+                if (type == UrlType.illust) {
+                  FileUtil.saveIllust(
+                    context,
+                    imageUrls[currentIndex],
+                  ).then((res) {
+                    if (res) {
+                      widget.onDownloadSuccess?.call();
+                      setDownloadState(DownloadState.succeed);
+                    } else {
+                      setDownloadState(DownloadState.failed);
+                    }
+                  });
+                } else {
+                  FileUtil.saveImage(
+                    context,
+                    Utils.getUrlByQuality(
+                      currentUrl,
+                      ImageQuality.raw,
+                    ),
+                  ).then((res) {
+                    if (res) {
+                      widget.onDownloadSuccess?.call();
+                      setDownloadState(DownloadState.succeed);
+                    } else {
+                      setDownloadState(DownloadState.failed);
+                    }
+                  });
+                }
               }
-            }
-          },
-        ),
-        const SizedBox(width: 5),
-        if (imageUrls.length > 1)
+            },
+          ),
+        if (showDownloadButton) const SizedBox(width: 5),
+        if (showDownloadButton && imageUrls.length > 1)
           ItemBuilder.buildIconButton(
             context: context,
             icon: allDownloadIcon,
@@ -577,7 +584,8 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
               }
             },
           ),
-        if (imageUrls.length > 1) const SizedBox(width: 5),
+        if (showDownloadButton && imageUrls.length > 1)
+          const SizedBox(width: 5),
         if (ResponsiveUtil.isLandscape())
           ItemBuilder.buildIconButton(
             context: context,

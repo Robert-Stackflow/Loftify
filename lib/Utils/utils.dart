@@ -37,13 +37,14 @@ import '../Widgets/Dialog/dialog_builder.dart';
 import '../Widgets/Dialog/widgets/dialog_wrapper_widget.dart';
 import '../generated/l10n.dart';
 import 'app_provider.dart';
+import 'cloud_control_provider.dart';
 import 'constant.dart';
 import 'ilogger.dart';
 import 'itoast.dart';
 
 class Utils {
   static getDownloadUrl(String version, String name) {
-    return "$downloadPkgsUrl/$version/$name";
+    return "${controlProvider.globalControl.downloadPkgsUrl}/$version/$name";
   }
 
   static String getFormattedDate(DateTime dateTime) {

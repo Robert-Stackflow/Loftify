@@ -12,7 +12,7 @@ String dressingListDataToJson(DressingListData data) =>
 
 ///ApifoxModel
 class DressingListData {
-  ExpiredSuit expiredSuit;
+  ExpiredSuit? expiredSuit;
   List<DressingItem> list;
   int offset;
   int totalCount;
@@ -26,15 +26,19 @@ class DressingListData {
 
   factory DressingListData.fromJson(Map<String, dynamic> json) =>
       DressingListData(
-        expiredSuit: ExpiredSuit.fromJson(json["expiredSuit"]),
-        list: List<DressingItem>.from(
-            json["list"].map((x) => DressingItem.fromJson(x))),
-        offset: json["offset"],
-        totalCount: json["totalCount"],
+        expiredSuit: json["expiredSuit"] != null
+            ? ExpiredSuit.fromJson(json["expiredSuit"])
+            : null,
+        list: json["list"] == null
+            ? []
+            : List<DressingItem>.from(
+                json["list"].map((x) => DressingItem.fromJson(x))),
+        offset: json["offset"] ?? 0,
+        totalCount: json["totalCount"] ?? 0,
       );
 
   Map<String, dynamic> toJson() => {
-        "expiredSuit": expiredSuit.toJson(),
+        "expiredSuit": expiredSuit?.toJson(),
         "list": List<dynamic>.from(list.map((x) => x.toJson())),
         "offset": offset,
         "totalCount": totalCount,
@@ -52,8 +56,8 @@ class ExpiredSuit {
   });
 
   factory ExpiredSuit.fromJson(Map<String, dynamic> json) => ExpiredSuit(
-        id: json["id"],
-        name: json["name"],
+        id: json["id"] ?? 0,
+        name: json["name"] ?? "",
       );
 
   Map<String, dynamic> toJson() => {
@@ -105,24 +109,24 @@ class DressingItem {
             ? []
             : List<BarrageList>.from(
                 json["barrageList"].map((x) => BarrageList.fromJson(x))),
-        groupBuying: json["groupBuying"],
-        id: json["id"],
-        img: json["img"],
-        intro: json["intro"],
-        limitedStock: json["limitedStock"],
-        name: json["name"],
-        payType: json["payType"],
-        reserved: json["reserved"],
-        reserveType: json["reserveType"],
-        rewardCenter: json["rewardCenter"],
-        saleTime: json["saleTime"],
-        showPrice: json["showPrice"],
-        specialLabel: json["specialLabel"],
+        groupBuying: json["groupBuying"] ?? 0,
+        id: json["id"] ?? 0,
+        img: json["img"] ?? "",
+        intro: json["intro"] ?? "",
+        limitedStock: json["limitedStock"] ?? 0,
+        name: json["name"] ?? "",
+        payType: json["payType"] ?? 0,
+        reserved: json["reserved"] ?? 0,
+        reserveType: json["reserveType"] ?? 0,
+        rewardCenter: json["rewardCenter"] ?? 0,
+        saleTime: json["saleTime"] ?? "",
+        showPrice: json["showPrice"] ?? "0.0",
+        specialLabel: json["specialLabel"] ?? "",
         stockList: json["stockList"] == null
             ? []
             : List<StockList>.from(
                 json["stockList"].map((x) => StockList.fromJson(x))),
-        underLinePrice: json["underLinePrice"],
+        underLinePrice: json["underLinePrice"] ?? "",
       );
 
   Map<String, dynamic> toJson() => {
@@ -162,11 +166,11 @@ class BarrageList {
   });
 
   factory BarrageList.fromJson(Map<String, dynamic> json) => BarrageList(
-        avatarUrl: json["avatarUrl"],
-        luckyNo: json["luckyNo"],
-        nickName: json["nickName"],
-        number: json["number"],
-        userId: json["userId"],
+        avatarUrl: json["avatarUrl"] ?? "",
+        luckyNo: json["luckyNo"] ?? "",
+        nickName: json["nickName"] ?? "",
+        number: json["number"] ?? 0,
+        userId: json["userId"] ?? 0,
       );
 
   Map<String, dynamic> toJson() => {
@@ -195,11 +199,11 @@ class StockList {
   });
 
   factory StockList.fromJson(Map<String, dynamic> json) => StockList(
-        price: json["price"],
-        saleCount: json["saleCount"],
-        selected: json["selected"],
-        stock: json["stock"],
-        type: json["type"],
+        price: json["price"] ?? "0.0",
+        saleCount: json["saleCount"] ?? 0,
+        selected: json["selected"] ?? false,
+        stock: json["stock"] ?? 0,
+        type: json["type"] ?? 0,
       );
 
   Map<String, dynamic> toJson() => {

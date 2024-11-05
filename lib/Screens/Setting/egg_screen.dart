@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../Models/cloud_control.dart';
+import '../../Utils/cloud_control_provider.dart';
+import '../../Utils/hive_util.dart';
 import '../../Utils/lottie_util.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
@@ -17,6 +20,8 @@ class _EggScreenState extends State<EggScreen> with TickerProviderStateMixin {
   Widget? celebrateWidget;
   bool _showCelebrate = false;
   late AnimationController _celebrateController;
+  bool overrideCloudControl =
+      HiveUtil.getBool(HiveUtil.overrideCloudControlKey, defaultValue: false);
 
   @override
   void initState() {
@@ -111,6 +116,7 @@ class _EggScreenState extends State<EggScreen> with TickerProviderStateMixin {
                   ),
                   context: context,
                 ),
+                ..._buildButton(),
               ],
             ),
           ),
@@ -128,5 +134,34 @@ class _EggScreenState extends State<EggScreen> with TickerProviderStateMixin {
         ),
       ],
     );
+  }
+
+  _buildButton() {
+    return [
+      const SizedBox(height: 10),
+      ItemBuilder.buildRadioItem(
+        value: overrideCloudControl,
+        context: context,
+        title: "覆盖云控值",
+        description: "覆盖云控值，使Loftify的功能更加丰富",
+        topRadius: true,
+        bottomRadius: true,
+        onTap: () {
+          setState(() {
+            overrideCloudControl = !overrideCloudControl;
+            HiveUtil.put(
+                HiveUtil.overrideCloudControlKey, overrideCloudControl);
+            if (overrideCloudControl) {
+              controlProvider.globalControl =
+                  LoftifyControl.getOverridedCloudControl(
+                      controlProvider.originalCloudControl);
+            } else {
+              controlProvider.globalControl =
+                  controlProvider.originalCloudControl;
+            }
+          });
+        },
+      ),
+    ];
   }
 }

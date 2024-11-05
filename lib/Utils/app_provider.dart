@@ -4,6 +4,7 @@ import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Widgets/Dialog/widgets/dialog_wrapper_widget.dart';
 import 'package:tuple/tuple.dart';
 
+import '../Models/cloud_control.dart';
 import '../Resources/fonts.dart';
 import '../Resources/theme_color_data.dart';
 import '../Screens/Navigation/home_screen.dart';
@@ -60,21 +61,12 @@ RouteObserver<PageRoute> routeObserver = RouteObserver();
 AppProvider appProvider = AppProvider();
 
 class AppProvider with ChangeNotifier {
+
   Size windowSize = const Size(0, 0);
 
   String latestVersion = "";
 
   bool shownShortcutHelp = false;
-
-  bool _showFPS = HiveUtil.getBool(HiveUtil.showFPSKey, defaultValue: false);
-
-  bool get showFPS => _showFPS;
-
-  set showFPS(bool value) {
-    _showFPS = value;
-    HiveUtil.put(HiveUtil.showFPSKey, value);
-    notifyListeners();
-  }
 
   String _captchaToken = "";
 

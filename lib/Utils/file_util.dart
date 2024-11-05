@@ -11,6 +11,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:loftify/Models/github_response.dart';
+import 'package:loftify/Utils/app_provider.dart';
+import 'package:loftify/Utils/cloud_control_provider.dart';
 import 'package:loftify/Utils/constant.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/responsive_util.dart';
@@ -697,8 +699,12 @@ class FileUtil {
       }
     } finally {}
     resAsset ??= generalAsset;
-    resAsset.pkgsDownloadUrl =
-        Utils.getDownloadUrl(latestVersion, resAsset.name);
+    if (controlProvider.globalControl.showCatutu) {
+      resAsset.pkgsDownloadUrl =
+          Utils.getDownloadUrl(latestVersion, resAsset.name);
+    } else {
+      resAsset.pkgsDownloadUrl = resAsset.browserDownloadUrl;
+    }
     return resAsset;
   }
 

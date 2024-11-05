@@ -104,7 +104,8 @@ class HiveUtil {
   //System
   static const String firstLoginKey = "firstLogin";
   static const String refreshRateKey = "refreshRate";
-  static const String showFPSKey = "showFPS";
+  static const String haveShownQQGroupDialogKey = "haveShownQQGroupDialog";
+  static const String overrideCloudControlKey = "overrideCloudControl";
 
   static confirmLogout(BuildContext context) {
     DialogBuilder.showConfirmDialog(
