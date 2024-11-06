@@ -6,11 +6,17 @@ import 'package:loftify/Api/user_api.dart';
 import 'package:loftify/Models/favorites_response.dart';
 import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Screens/Info/favorite_folder_detail_screen.dart';
+import 'package:loftify/Widgets/Dialog/dialog_builder.dart';
+import 'package:waterfall_flow/waterfall_flow.dart';
 
+import '../../Utils/constant.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
+import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
+import '../../Widgets/BottomSheet/input_bottom_sheet.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 
@@ -92,21 +98,32 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
     return Scaffold(
       backgroundColor: MyTheme.getBackground(context),
       appBar: _buildAppBar(),
-      body: EasyRefresh(
-        refreshOnStart: true,
-        controller: _refreshController,
-        onRefresh: _onRefresh,
-        onLoad: _onLoad,
-        triggerAxis: Axis.vertical,
-        child: _buildBody(),
+      body: Stack(
+        children: [
+          EasyRefresh(
+            refreshOnStart: true,
+            controller: _refreshController,
+            onRefresh: _onRefresh,
+            onLoad: _onLoad,
+            triggerAxis: Axis.vertical,
+            child: _buildBody(),
+          ),
+          Positioned(
+            right: ResponsiveUtil.isLandscape() ? 16 : 12,
+            bottom: ResponsiveUtil.isLandscape() ? 16 : 76,
+            child: _buildFloatingButtons(),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildBody() {
-    return ListView(
-      cacheExtent: 9999,
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+    return WaterfallFlow.extent(
+      maxCrossAxisExtent: 800,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
       children: List.generate(_favoriteFolderList.length, (index) {
         return _buildFolderItem(
           context,
@@ -116,7 +133,7 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
     );
   }
 
-  static Widget _buildFolderItem(BuildContext context, FavoriteFolder item) {
+  Widget _buildFolderItem(BuildContext context, FavoriteFolder item) {
     return ItemBuilder.buildClickItem(
       GestureDetector(
         onTap: () {
@@ -187,10 +204,89 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
                   ),
                 ),
               ),
+              ItemBuilder.buildIconButton(
+                context: context,
+                icon: const Icon(Icons.edit_note_rounded),
+                onTap: () {
+                  BottomSheetBuilder.showBottomSheet(
+                    context,
+                    (sheetContext) => InputBottomSheet(
+                      buttonText: "确认",
+                      title: "编辑收藏夹名称",
+                      hint: "输入收藏夹名称",
+                      text: item.name ?? "",
+                      onConfirm: (text) {
+                        var tmp = item;
+                        tmp.name = text;
+                        UserApi.editFolder(folder: tmp).then((value) {
+                          if (value['code'] == 0) {
+                            IToast.showTop("编辑成功");
+                            item.name = text;
+                            setState(() {});
+                          } else {
+                            IToast.showTop(value['msg']);
+                          }
+                        });
+                      },
+                    ),
+                    preferMinWidth: 400,
+                    responsive: true,
+                  );
+                },
+              ),
+              if (item.isDefault != 1)
+                ItemBuilder.buildIconButton(
+                  context: context,
+                  icon: const Icon(Icons.delete_outline_rounded,
+                      color: Colors.red),
+                  onTap: () {
+                    DialogBuilder.showConfirmDialog(
+                      context,
+                      title: "删除收藏夹",
+                      message: "确定删除收藏夹 ${item.name} ？删除后，其中的文章也将取消收藏",
+                      messageTextAlign: TextAlign.center,
+                      onTapConfirm: () async {
+                        UserApi.deleteFolder(folderId: item.id ?? 0)
+                            .then((value) {
+                          if (value['code'] == 0) {
+                            IToast.showTop("删除成功");
+                            _refreshController.callRefresh();
+                          } else {
+                            IToast.showTop(value['msg']);
+                          }
+                        });
+                      },
+                    );
+                  },
+                ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  handleAdd() {
+    BottomSheetBuilder.showBottomSheet(
+      context,
+      (sheetContext) => InputBottomSheet(
+        buttonText: "确认",
+        title: "新建收藏夹",
+        hint: "输入收藏夹名称",
+        text: "",
+        onConfirm: (text) {
+          UserApi.createFolder(name: text).then((value) {
+            if (value['code'] == 0) {
+              IToast.showTop("创建成功");
+              _refreshController.callRefresh();
+            } else {
+              IToast.showTop(value['msg']);
+            }
+          });
+        },
+      ),
+      preferMinWidth: 400,
+      responsive: true,
     );
   }
 
@@ -200,19 +296,34 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
       showBack: true,
       title: "我的收藏",
       actions: [
+        // ItemBuilder.buildIconButton(
+        //     context: context,
+        //     icon: Icon(Icons.search_rounded,
+        //         color: Theme.of(context).iconTheme.color),
+        //     onTap: () {}),
+        // const SizedBox(width: 5),
         ItemBuilder.buildIconButton(
-            context: context,
-            icon: Icon(Icons.search_rounded,
-                color: Theme.of(context).iconTheme.color),
-            onTap: () {}),
-        const SizedBox(width: 5),
-        ItemBuilder.buildIconButton(
-            context: context,
-            icon: Icon(Icons.more_vert_rounded,
-                color: Theme.of(context).iconTheme.color),
-            onTap: () {}),
+          context: context,
+          icon:
+              Icon(Icons.add_rounded, color: Theme.of(context).iconTheme.color),
+          onTap: handleAdd,
+        ),
         const SizedBox(width: 5),
       ],
     );
+  }
+
+  _buildFloatingButtons() {
+    return ResponsiveUtil.isLandscape()
+        ? Column(
+            children: [
+              ItemBuilder.buildShadowIconButton(
+                context: context,
+                icon: const Icon(Icons.add_rounded),
+                onTap: handleAdd,
+              ),
+            ],
+          )
+        : emptyWidget;
   }
 }

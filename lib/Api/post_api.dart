@@ -38,6 +38,25 @@ class PostApi {
     );
   }
 
+  static Future subscribeOrUnSubscribe({
+    int postId = 0,
+    int blogId = 0,
+    List<String> folderIds = const [],
+  }) async {
+    var data = {
+      "postid": postId,
+      "blogid": blogId,
+      "method": "updateSubscribe",
+    };
+    if (folderIds.isNotEmpty) {
+      data['folderIds'] = folderIds.join(",");
+    }
+    return RequestUtil.post(
+      "/v2.0/subscribePost.api",
+      data: data,
+    );
+  }
+
   static Future getDetail({
     required int postId,
     required int blogId,

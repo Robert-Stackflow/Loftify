@@ -17,6 +17,8 @@ class PostDetailData {
   bool? subscribed;
   int? opTime;
 
+  bool get subscribedNotNull => subscribed == true;
+
   PostDetailData({
     this.followed,
     this.liked,

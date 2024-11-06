@@ -23,6 +23,7 @@ import 'package:loftify/Utils/ilogger.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Widgets/BottomSheet/collection_bottom_sheet.dart';
 import 'package:loftify/Widgets/BottomSheet/comment_bottom_sheet.dart';
+import 'package:loftify/Widgets/BottomSheet/subscribe_post_bottom_sheet.dart';
 import 'package:loftify/Widgets/Dialog/dialog_builder.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:provider/provider.dart';
@@ -372,7 +373,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       }
     }
     _giftCostId =
-        idToCoinMap.entries.reduce((a, b) => a.value < b.value ? a : b).key;
+        idToCoinMap.entries
+            .reduce((a, b) => a.value < b.value ? a : b)
+            .key;
     String previewDescription = "";
     if ((gift.wordCount ?? 0) > 0) {
       previewDescription = "${gift.wordCount}字";
@@ -540,11 +543,12 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     int count = 3;
     while (count-- > 0) {
       Future.delayed(const Duration(milliseconds: 300),
-          () => _likeController.value = _postDetailData!.liked == true ? 1 : 0);
+              () =>
+          _likeController.value = _postDetailData!.liked == true ? 1 : 0);
       Future.delayed(
           const Duration(milliseconds: 300),
-          () =>
-              _shareController.value = _postDetailData!.shared == true ? 1 : 0);
+              () =>
+          _shareController.value = _postDetailData!.shared == true ? 1 : 0);
     }
     if (swipeToFirst) {
       setState(() {
@@ -623,47 +627,50 @@ class _PostDetailScreenState extends State<PostDetailScreen>
 
   Widget _buildNormalBody() {
     return ScreenTypeLayout.builder(
-      mobile: (context) => EasyRefresh.builder(
-        onRefresh: _onRefresh,
-        onLoad: _onLoad,
-        triggerAxis: Axis.vertical,
-        childBuilder: (context, physics) => Stack(
-          children: [
-            AbsorbPointer(
-              absorbing: false,
-              child: _buildMainBody(physics),
-            ),
-            Visibility(
-              visible: _showDoubleTapLike,
-              child: Positioned(
-                left: doubleTapDx,
-                top: doubleTapDy,
-                child: IgnorePointer(
-                  child: doubleTapLikeWidget,
+      mobile: (context) =>
+          EasyRefresh.builder(
+            onRefresh: _onRefresh,
+            onLoad: _onLoad,
+            triggerAxis: Axis.vertical,
+            childBuilder: (context, physics) =>
+                Stack(
+                  children: [
+                    AbsorbPointer(
+                      absorbing: false,
+                      child: _buildMainBody(physics),
+                    ),
+                    Visibility(
+                      visible: _showDoubleTapLike,
+                      child: Positioned(
+                        left: doubleTapDx,
+                        top: doubleTapDy,
+                        child: IgnorePointer(
+                          child: doubleTapLikeWidget,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+          ),
+      tablet: (context) =>
+          Stack(
+            children: [
+              AbsorbPointer(
+                absorbing: false,
+                child: _buildMainBody(const ScrollPhysics()),
+              ),
+              Visibility(
+                visible: _showDoubleTapLike,
+                child: Positioned(
+                  left: doubleTapDx,
+                  top: doubleTapDy,
+                  child: IgnorePointer(
+                    child: doubleTapLikeWidget,
+                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-      tablet: (context) => Stack(
-        children: [
-          AbsorbPointer(
-            absorbing: false,
-            child: _buildMainBody(const ScrollPhysics()),
+            ],
           ),
-          Visibility(
-            visible: _showDoubleTapLike,
-            child: Positioned(
-              left: doubleTapDx,
-              top: doubleTapDy,
-              child: IgnorePointer(
-                child: doubleTapLikeWidget,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -671,12 +678,12 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     return Selector<AppProvider, Size>(
       selector: (context, appProvider) => appProvider.windowSize,
       builder: (context, windowSize, child) =>
-          windowSize.width > minimumSize.width + 200
-              ? ScreenTypeLayout.builder(
-                  mobile: (context) => _buildMobileMainBody(physics),
-                  tablet: (context) => _buildTabletMainBody(),
-                )
-              : _buildMobileMainBody(physics),
+      windowSize.width > minimumSize.width + 200
+          ? ScreenTypeLayout.builder(
+        mobile: (context) => _buildMobileMainBody(physics),
+        tablet: (context) => _buildTabletMainBody(),
+      )
+          : _buildMobileMainBody(physics),
     );
   }
 
@@ -702,7 +709,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       direction: Axis.horizontal,
       controller: _resizableController,
       divider: ResizableDivider(
-        color: Theme.of(context).dividerColor,
+        color: Theme
+            .of(context)
+            .dividerColor,
         thickness: ResponsiveUtil.isMobile() ? 2 : 1,
         size: 6,
         onHoverEnter: () {
@@ -715,8 +724,12 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         ResizableChild(
           size: ResizableSize.pixels(
             isArticle
-                ? MediaQuery.sizeOf(context).width * 2 / 3
-                : max(MediaQuery.sizeOf(context).width * 1 / 3, 400),
+                ? MediaQuery
+                .sizeOf(context)
+                .width * 2 / 3
+                : max(MediaQuery
+                .sizeOf(context)
+                .width * 1 / 3, 400),
           ),
           minSize: 300,
           child: ListView(
@@ -801,9 +814,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }) {
     HapticFeedback.mediumImpact();
     PostApi.likeOrUnLike(
-            isLike: isLike ?? !(_postDetailData!.liked == true),
-            postId: _postDetailData!.post!.id,
-            blogId: _postDetailData!.post!.blogId)
+        isLike: isLike ?? !(_postDetailData!.liked == true),
+        postId: _postDetailData!.post!.id,
+        blogId: _postDetailData!.post!.blogId)
         .then((value) {
       setState(() {
         if (value['meta']['status'] != 200) {
@@ -822,7 +835,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             _likeController.value = 0;
           }
           _postDetailData!.post!.postCount!.favoriteCount +=
-              (_postDetailData!.liked == true) ? 1 : -1;
+          (_postDetailData!.liked == true) ? 1 : -1;
           if (_postDetailData!.post!.postCount!.postHot != null) {
             _postDetailData!.post!.postCount!.postHot =
                 _postDetailData!.post!.postCount!.postHot! +
@@ -837,11 +850,10 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     bool? isRecommend,
   }) {
     HapticFeedback.mediumImpact();
-    HapticFeedback.mediumImpact();
     PostApi.shareOrUnShare(
-            isShare: isRecommend ?? !(_postDetailData!.shared == true),
-            postId: _postDetailData!.post!.id,
-            blogId: _postDetailData!.post!.blogId)
+        isShare: isRecommend ?? !(_postDetailData!.shared == true),
+        postId: _postDetailData!.post!.id,
+        blogId: _postDetailData!.post!.blogId)
         .then((value) {
       setState(() {
         if (value['meta']['status'] != 200) {
@@ -861,11 +873,41 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             _shareController.value = 0;
           }
           _postDetailData!.post!.postCount!.shareCount +=
-              (_postDetailData!.shared == true) ? 1 : -1;
+          (_postDetailData!.shared == true) ? 1 : -1;
           if (_postDetailData!.post!.postCount!.postHot != null) {
             _postDetailData!.post!.postCount!.postHot =
                 _postDetailData!.post!.postCount!.postHot! +
                     ((_postDetailData!.shared == true) ? 1 : -1);
+          }
+        }
+      });
+    });
+  }
+
+  _handleSubscribe(List<String> folderIds) {
+    HapticFeedback.mediumImpact();
+    PostApi.subscribeOrUnSubscribe(
+        folderIds: folderIds,
+        postId: _postDetailData!.post!.id,
+        blogId: _postDetailData!.post!.blogId)
+        .then((value) {
+      setState(() {
+        if (value['meta']['status'] != 200) {
+          if (Utils.isNotEmpty(value['meta']['desc']) &&
+              Utils.isNotEmpty(value['meta']['msg'])) {
+            IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+          }
+          if (value['meta']['status'] == 4071) {
+            Utils.validSlideCaptcha(context);
+          }
+        } else {
+          _postDetailData!.subscribed = folderIds.isNotEmpty;
+          _postDetailData!.post!.postCount!.subscribeCount +=
+          (_postDetailData!.subscribedNotNull) ? 1 : -1;
+          if (_postDetailData!.post!.postCount!.postHot != null) {
+            _postDetailData!.post!.postCount!.postHot =
+                _postDetailData!.post!.postCount!.postHot! +
+                    ((_postDetailData!.subscribedNotNull) ? 1 : -1);
           }
         }
       });
@@ -962,7 +1004,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       Flexible(
         fit: FlexFit.loose,
         child:
-            _buildComments(hotComments.isNotEmpty ? hotComments : newComments),
+        _buildComments(hotComments.isNotEmpty ? hotComments : newComments),
       ),
       if (totalHotOrNewComments <= 0)
         Container(
@@ -975,8 +1017,12 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         Center(
           child: Container(
             margin: EdgeInsets.only(
-              left: isTablet ? 0 : MediaQuery.sizeOf(context).width / 5,
-              right: isTablet ? 0 : MediaQuery.sizeOf(context).width / 5,
+              left: isTablet ? 0 : MediaQuery
+                  .sizeOf(context)
+                  .width / 5,
+              right: isTablet ? 0 : MediaQuery
+                  .sizeOf(context)
+                  .width / 5,
               top: 12,
               bottom: isTablet ? 20 : 0,
             ),
@@ -988,14 +1034,15 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               onTap: () {
                 BottomSheetBuilder.showBottomSheet(
                   context,
-                  (context) => SingleChildScrollView(
-                    controller: ModalScrollController.of(context),
-                    child: CommentBottomSheet(
-                      postId: postId,
-                      blogId: blogId,
-                      publishTime: _postDetailData!.post!.publishTime,
-                    ),
-                  ),
+                      (context) =>
+                      SingleChildScrollView(
+                        controller: ModalScrollController.of(context),
+                        child: CommentBottomSheet(
+                          postId: postId,
+                          blogId: blogId,
+                          publishTime: _postDetailData!.post!.publishTime,
+                        ),
+                      ),
                   enableDrag: false,
                   backgroundColor: MyTheme.getBackground(context),
                 );
@@ -1032,7 +1079,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           ),
           TextSpan(
             text: title,
-            style: Theme.of(context)
+            style: Theme
+                .of(context)
                 .textTheme
                 .titleMedium
                 ?.apply(fontSizeDelta: -1),
@@ -1061,7 +1109,10 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             alignment: PlaceholderAlignment.middle,
             child: Text(
               text,
-              style: Theme.of(context).textTheme.labelSmall,
+              style: Theme
+                  .of(context)
+                  .textTheme
+                  .labelSmall,
             ),
           ),
         ],
@@ -1078,8 +1129,14 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     ReturnGift? gift = _getReturnGift();
     ReturnContent? returnContent = _getReturnContent();
     if (gift == null) return emptyWidget;
-    var bodySmall = Theme.of(context).textTheme.bodySmall;
-    var labelSmall = Theme.of(context).textTheme.labelSmall;
+    var bodySmall = Theme
+        .of(context)
+        .textTheme
+        .bodySmall;
+    var labelSmall = Theme
+        .of(context)
+        .textTheme
+        .labelSmall;
     var coinCount = _giftInfoData!.userBag.coin;
     int liangpiaoCount = 0;
     var currentGifts = _giftInfoData!.userBag.gifts
@@ -1089,20 +1146,20 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     }
     Widget promotionWidget = Utils.isNotEmpty(gift.promotion)
         ? Container(
-            color: Colors.transparent,
-            padding: const EdgeInsets.only(left: 16, right: 16, top: 8),
-            child: _buildRichIconTextButton(
-              icon: RotatedBox(
-                quarterTurns: 2,
-                child: Icon(
-                  Icons.format_quote,
-                  size: 16,
-                  color: labelSmall?.color,
-                ),
-              ),
-              text: gift.promotion!,
-            ),
-          )
+      color: Colors.transparent,
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 8),
+      child: _buildRichIconTextButton(
+        icon: RotatedBox(
+          quarterTurns: 2,
+          child: Icon(
+            Icons.format_quote,
+            size: 16,
+            color: labelSmall?.color,
+          ),
+        ),
+        text: gift.promotion!,
+      ),
+    )
         : emptyWidget;
     List<Widget> topWidgets = [
       const SizedBox(height: 16),
@@ -1110,7 +1167,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         child: ItemBuilder.buildTextDivider(
             context: context,
             text:
-                "$_giftTypeString${(gift.unlockCount ?? 0) > 0 ? "(${gift.unlockCount!}次解锁)" : ""}"),
+            "$_giftTypeString${(gift.unlockCount ?? 0) > 0 ? "(${gift
+                .unlockCount!}次解锁)" : ""}"),
       ),
       const SizedBox(height: 20),
       _buildEggTitle(
@@ -1127,7 +1185,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             Container(
               color: Colors.transparent,
               padding:
-                  const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
+              const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
               child: Text(
                 "${gift.digest!}...",
                 style: bodySmall?.apply(fontSizeDelta: 2),
@@ -1138,7 +1196,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             child: ItemBuilder.buildRoundButton(
               context,
               text: "$_giftCost解锁回礼",
-              background: Theme.of(context).primaryColor,
+              background: Theme
+                  .of(context)
+                  .primaryColor,
               onTap: () async {
                 presentAndGetGift() async {
                   var value = await PostApi.presentGift(
@@ -1163,7 +1223,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                     } else {
                       IToast.showTop("解锁成功");
                       var returnGift =
-                          ReturnGift.fromJson(returnGiftData['data']['plan']);
+                      ReturnGift.fromJson(returnGiftData['data']['plan']);
                       returnGift.digest = gift.digest;
                       returnGift.defaultSelectedGifts =
                           gift.defaultSelectedGifts;
@@ -1236,12 +1296,13 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             Container(
               color: Colors.transparent,
               padding:
-                  const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
+              const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
               child: ItemBuilder.buildSelectableArea(
                 context: context,
                 child: Text(
                   returnContent.content,
-                  style: Theme.of(context)
+                  style: Theme
+                      .of(context)
                       .textTheme
                       .bodyMedium
                       ?.apply(fontSizeDelta: 3, heightDelta: 0.3),
@@ -1275,7 +1336,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             ItemBuilder.buildAvatar(
               context: context,
               avatarBoxImageUrl:
-                  _postDetailData!.post?.blogInfo!.avatarBoxImage ?? "",
+              _postDetailData!.post?.blogInfo!.avatarBoxImage ?? "",
               imageUrl: _postDetailData!.post?.blogInfo!.bigAvaImg ?? "",
               tagPrefix: "postDetailScreen${_postDetailData!.post!.id}",
             ),
@@ -1293,17 +1354,29 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                     copyText: _postDetailData!.post?.blogInfo!.blogNickName,
                     child: Text(
                       _postDetailData!.post?.blogInfo!.blogNickName ?? "",
-                      style: Theme.of(context).textTheme.titleSmall?.apply(
-                            fontWeightDelta: 2,
-                          ),
+                      style: Theme
+                          .of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.apply(
+                        fontWeightDelta: 2,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   if (hasAvatarBox) const SizedBox(height: 3),
                   Text(
-                    "${Utils.formatTimestamp(_postDetailData!.post?.publishTime ?? 0)} · ${Utils.isNotEmpty(_postDetailData!.post?.ipLocation) ? _postDetailData!.post?.ipLocation : ""} · ${_postDetailData!.post?.postCount?.postHot ?? 0}热度",
-                    style: Theme.of(context).textTheme.bodySmall,
+                    "${Utils.formatTimestamp(
+                        _postDetailData!.post?.publishTime ?? 0)} · ${Utils
+                        .isNotEmpty(_postDetailData!.post?.ipLocation)
+                        ? _postDetailData!.post?.ipLocation
+                        : ""} · ${_postDetailData!.post?.postCount?.postHot ??
+                        0}热度",
+                    style: Theme
+                        .of(context)
+                        .textTheme
+                        .bodySmall,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1318,16 +1391,16 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                 onTap: () {
                   HapticFeedback.mediumImpact();
                   UserApi.followOrUnfollow(
-                          isFollow: !(_postDetailData!.followed == 1),
-                          blogId: _postDetailData!.post!.blogId,
-                          blogName: _postDetailData!.post!.blogInfo!.blogName)
+                      isFollow: !(_postDetailData!.followed == 1),
+                      blogId: _postDetailData!.post!.blogId,
+                      blogName: _postDetailData!.post!.blogInfo!.blogName)
                       .then((value) {
                     if (value['meta']['status'] != 200) {
                       IToast.showTop(
                           value['meta']['desc'] ?? value['meta']['msg']);
                     } else {
                       _postDetailData!.followed =
-                          !(_postDetailData!.followed == 1) ? 1 : 0;
+                      !(_postDetailData!.followed == 1) ? 1 : 0;
                       setState(() {});
                     }
                   });
@@ -1342,7 +1415,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
 
   List<String> _getArticleImages() {
     List<String> imageUrls =
-        Utils.extractImagesFromHtml(_postDetailData!.post!.content);
+    Utils.extractImagesFromHtml(_postDetailData!.post!.content);
     return imageUrls;
   }
 
@@ -1375,12 +1448,14 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     String photoCaptionJson = _postDetailData!.post!.photoCaptions;
     if (Utils.isEmpty(photoCaptionJson)) photoCaptionJson = "[]";
     List<String> captions =
-        Utils.parseJsonList(photoCaptionJson).map((e) => e.toString()).toList();
+    Utils.parseJsonList(photoCaptionJson).map((e) => e.toString()).toList();
     double heightMinThreshold = 200;
     // double heightMaxThreshold = MediaQuery.sizeOf(context).height - 340;
     double heightMaxThreshold = 600;
     double preferedHeight = 0;
-    double preferedWidth = MediaQuery.sizeOf(context).width;
+    double preferedWidth = MediaQuery
+        .sizeOf(context)
+        .width;
     preferedHeight =
         (photoLinks[0].oh * 1.0) * preferedWidth / photoLinks[0].ow;
     preferedHeight =
@@ -1444,7 +1519,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                         height: trueHeight,
                         decoration: BoxDecoration(
                           border: Border.all(
-                              color: Theme.of(context).dividerColor,
+                              color: Theme
+                                  .of(context)
+                                  .dividerColor,
                               width: 0.5),
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -1481,14 +1558,16 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             itemCount: photoLinks.length,
             pagination: photoLinks.length > 1
                 ? SwiperPagination(
-                    margin: const EdgeInsets.only(top: 15),
-                    builder: DotSwiperPaginationBuilder(
-                      color: Colors.grey[300],
-                      activeColor: Theme.of(context).primaryColor,
-                      size: 4,
-                      activeSize: 6,
-                    ),
-                  )
+              margin: const EdgeInsets.only(top: 15),
+              builder: DotSwiperPaginationBuilder(
+                color: Colors.grey[300],
+                activeColor: Theme
+                    .of(context)
+                    .primaryColor,
+                size: 4,
+                activeSize: 6,
+              ),
+            )
                 : null,
             onIndexChanged: (index) {
               setState(() {
@@ -1576,8 +1655,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   _hasArticleImage() {
     return _postDetailData == null
         ? false
-        : Utils.extractImagesFromHtml(_postDetailData!.post!.content)
-            .isNotEmpty;
+        : Utils
+        .extractImagesFromHtml(_postDetailData!.post!.content)
+        .isNotEmpty;
   }
 
   List<Illust> _getImageIllusts() {
@@ -1657,20 +1737,21 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         : "";
     return _hasContent() || title.isNotEmpty || content.isNotEmpty
         ? Container(
-            color: Colors.transparent,
-            padding:
-                const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 8),
-            child: ItemBuilder.buildHtmlWidget(
-              context,
-              "$htmlTitle${_postDetailData!.post?.content}",
-              illusts: _getIllusts(),
-              textStyle: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.apply(fontSizeDelta: 3, heightDelta: 0.3),
-              onDownloadSuccess: _handleDownloadSuccessAction,
-            ),
-          )
+      color: Colors.transparent,
+      padding:
+      const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 8),
+      child: ItemBuilder.buildHtmlWidget(
+        context,
+        "$htmlTitle${_postDetailData!.post?.content}",
+        illusts: _getIllusts(),
+        textStyle: Theme
+            .of(context)
+            .textTheme
+            .bodyMedium
+            ?.apply(fontSizeDelta: 3, heightDelta: 0.3),
+        onDownloadSuccess: _handleDownloadSuccessAction,
+      ),
+    )
         : emptyWidget;
   }
 
@@ -1700,7 +1781,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: Theme.of(context).cardColor,
+              color: Theme
+                  .of(context)
+                  .cardColor,
               width: 1,
             ),
           ),
@@ -1716,7 +1799,11 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                   const SizedBox(width: 3),
                   Text(
                     "收录至",
-                    style: Theme.of(context).textTheme.titleSmall?.apply(
+                    style: Theme
+                        .of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.apply(
                         fontSizeDelta: -1,
                         fontWeightDelta: 2,
                         color: MyColors.getHotTagTextColor(context)),
@@ -1725,7 +1812,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                   Expanded(
                     child: Text(
                       _postDetailData!.grainInfo!.name,
-                      style: Theme.of(context)
+                      style: Theme
+                          .of(context)
                           .textTheme
                           .titleSmall
                           ?.apply(fontSizeDelta: -1),
@@ -1734,7 +1822,11 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                   Icon(
                     Icons.keyboard_arrow_right_rounded,
                     size: 16,
-                    color: Theme.of(context).textTheme.labelSmall?.color,
+                    color: Theme
+                        .of(context)
+                        .textTheme
+                        .labelSmall
+                        ?.color,
                   ),
                 ],
               ),
@@ -1750,7 +1842,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       margin: const EdgeInsets.only(left: 16, right: 16, top: 8),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: Theme
+            .of(context)
+            .cardColor,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -1767,7 +1861,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               Expanded(
                 child: Text(
                   _postDetailData!.post!.postCollection!.name,
-                  style: Theme.of(context)
+                  style: Theme
+                      .of(context)
                       .textTheme
                       .titleSmall
                       ?.apply(fontSizeDelta: -1),
@@ -1779,14 +1874,14 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                   CollectionApi.subscribeOrUnSubscribe(
                     collectionId: collectionId,
                     isSubscribe:
-                        !(_postDetailData!.post!.postCollection!.subscribed),
+                    !(_postDetailData!.post!.postCollection!.subscribed),
                   ).then((value) {
                     if (value['meta']['status'] != 200) {
                       IToast.showTop(
                           value['meta']['desc'] ?? value['meta']['msg']);
                     } else {
                       _postDetailData!.post!.postCollection!.subscribed =
-                          !(_postDetailData!.post!.postCollection!.subscribed);
+                      !(_postDetailData!.post!.postCollection!.subscribed);
                       setState(() {});
                     }
                   });
@@ -1796,14 +1891,24 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                     _postDetailData!.post!.postCollection!.subscribed
                         ? "已订阅"
                         : "订阅合集",
-                    style: Theme.of(context).textTheme.titleSmall?.apply(
-                          fontSizeDelta: -2,
-                          fontWeightDelta: 2,
-                          color: _postDetailData!
-                                  .post!.postCollection!.subscribed
-                              ? Theme.of(context).textTheme.labelSmall?.color
-                              : Theme.of(context).primaryColor,
-                        ),
+                    style: Theme
+                        .of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.apply(
+                      fontSizeDelta: -2,
+                      fontWeightDelta: 2,
+                      color: _postDetailData!
+                          .post!.postCollection!.subscribed
+                          ? Theme
+                          .of(context)
+                          .textTheme
+                          .labelSmall
+                          ?.color
+                          : Theme
+                          .of(context)
+                          .primaryColor,
+                    ),
                   ),
                 ),
               ),
@@ -1838,7 +1943,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               Expanded(
                 child: _buildButton(
                   text: _postDetailData!.post!.pos <
-                          _postDetailData!.post!.postCollection!.postCount
+                      _postDetailData!.post!.postCollection!.postCount
                       ? "下一篇"
                       : "已在末篇",
                   disabled: _postDetailData!.post!.pos >=
@@ -1875,9 +1980,20 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           child: Text(
             text ?? "",
             style: disabled
-                ? Theme.of(context).textTheme.titleSmall?.apply(
-                    color: Theme.of(context).textTheme.labelSmall?.color)
-                : Theme.of(context).textTheme.titleSmall,
+                ? Theme
+                .of(context)
+                .textTheme
+                .titleSmall
+                ?.apply(
+                color: Theme
+                    .of(context)
+                    .textTheme
+                    .labelSmall
+                    ?.color)
+                : Theme
+                .of(context)
+                .textTheme
+                .titleSmall,
           ),
         ),
       ),
@@ -1927,7 +2043,11 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   Widget _buildMarkInfo() {
-    var color = Theme.of(context).textTheme.labelSmall?.color;
+    var color = Theme
+        .of(context)
+        .textTheme
+        .labelSmall
+        ?.color;
     bool showMark = Utils.isNotEmpty(_postDetailData!.post!.imageMarkInfo);
     bool showReBlog = _postDetailData!.post!.imageReblogMark == 1 &&
         Utils.isNotEmpty(_postDetailData!.post!.reblogAuthorFromEmbed);
@@ -1944,13 +2064,14 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                   if (showCopyright)
                     ItemBuilder.buildIconTextButton(
                       context,
-                      text: Copyright.fromInt(_postDetailData!.post!.cctype)
+                      text: Copyright
+                          .fromInt(_postDetailData!.post!.cctype)
                           .label,
                       start: true,
                       color: color,
                       spacing: 6,
                       icon:
-                          Icon(Icons.copyright_rounded, size: 16, color: color),
+                      Icon(Icons.copyright_rounded, size: 16, color: color),
                     ),
                   if (showCopyright && (showMark || showReBlog))
                     const SizedBox(height: 4),
@@ -1969,7 +2090,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                     ItemBuilder.buildIconTextButton(
                       context,
                       text:
-                          "授权转载自${_postDetailData!.post!.reblogAuthorFromEmbed}",
+                      "授权转载自${_postDetailData!.post!
+                          .reblogAuthorFromEmbed}",
                       spacing: 6,
                       start: true,
                       color: color,
@@ -1990,38 +2112,76 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   Widget _buildOperationRow() {
     return Container(
       padding: const EdgeInsets.only(left: 6, right: 16, top: 8, bottom: 8),
-      child: Row(
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Stack(
+          Row(
+            mainAxisSize: MainAxisSize.max,
             children: [
-              ItemBuilder.buildLikedLottieButton(
-                context,
-                showCount: true,
-                iconSize: 52,
-                animationController: _likeController,
-                likeCount: _postDetailData!.post!.postCount!.favoriteCount,
-                isLiked: _postDetailData!.liked,
-                onTap: () async {
-                  _handleLike();
-                },
+              Stack(
+                children: [
+                  ItemBuilder.buildLikedLottieButton(
+                    context,
+                    showCount: true,
+                    iconSize: 52,
+                    animationController: _likeController,
+                    likeCount: _postDetailData!.post!.postCount!.favoriteCount,
+                    isLiked: _postDetailData!.liked,
+                    onTap: () async {
+                      _handleLike();
+                    },
+                  ),
+                  Container(
+                    margin: const EdgeInsets.only(left: 42),
+                    child: ItemBuilder.buildLottieSharedButton(
+                      context,
+                      showCount: true,
+                      iconSize: 52,
+                      shareCount: _postDetailData!.post!.postCount!.shareCount,
+                      isShared: _postDetailData!.shared,
+                      animationController: _shareController,
+                      onTap: () async {
+                        _handleRecommend();
+                      },
+                    ),
+                  ),
+                ],
               ),
-              Container(
-                margin: const EdgeInsets.only(left: 42),
-                child: ItemBuilder.buildLottieSharedButton(
-                  context,
-                  showCount: true,
-                  iconSize: 52,
-                  shareCount: _postDetailData!.post!.postCount!.shareCount,
-                  isShared: _postDetailData!.shared,
-                  animationController: _shareController,
-                  onTap: () async {
-                    _handleRecommend();
-                  },
-                ),
-              ),
+              const Spacer(),
             ],
           ),
-          const Spacer(),
+          Positioned(
+            top: 12,
+            right: 0,
+            child: ItemBuilder.buildIconTextButton(
+              context,
+              text: _postDetailData!.subscribedNotNull ? "已收藏" : "收藏",
+              icon: _postDetailData!.subscribedNotNull
+                  ? const Icon(Icons.star_rounded,
+                  size: 28, color: Colors.yellow)
+                  : const Icon(Icons.star_border_rounded, size: 28),
+              direction: Axis.vertical,
+              spacing: 0,
+              style: Theme
+                  .of(context)
+                  .textTheme
+                  .labelSmall,
+              onTap: () {
+                BottomSheetBuilder.showBottomSheet(
+                  context,
+                  enableDrag: false,
+                      (context) =>
+                      SubscribePostBottomSheet(
+                        postId: postId,
+                        blogId: blogId,
+                        onConfirm: (folderIds) {
+                          _handleSubscribe(folderIds);
+                        },
+                      ),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -2032,23 +2192,24 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       shrinkWrap: true,
       itemCount: comments.length,
       physics: const NeverScrollableScrollPhysics(),
-      itemBuilder: (context, index) => ItemBuilder.buildCommentRow(
-        context,
-        comments[index],
-        writerId: blogId,
-        l2Padding: const EdgeInsets.only(top: 12),
-        onL2CommentTap: (comment) {
-          HapticFeedback.mediumImpact();
-          _fetchL2Comments(comment);
-        },
-      ),
+      itemBuilder: (context, index) =>
+          ItemBuilder.buildCommentRow(
+            context,
+            comments[index],
+            writerId: blogId,
+            l2Padding: const EdgeInsets.only(top: 12),
+            onL2CommentTap: (comment) {
+              HapticFeedback.mediumImpact();
+              _fetchL2Comments(comment);
+            },
+          ),
     );
   }
 
   Widget _buildRecommendFlow({bool sliver = true}) {
     Widget list = SliverPadding(
       padding:
-          EdgeInsets.only(top: sliver ? 10 : 0, left: sliver ? 8 : 5, right: 8),
+      EdgeInsets.only(top: sliver ? 10 : 0, left: sliver ? 8 : 5, right: 8),
       sliver: SliverWaterfallFlow(
         gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
           mainAxisSpacing: 12,
@@ -2056,7 +2217,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           maxCrossAxisExtent: 300,
         ),
         delegate: SliverChildBuilderDelegate(
-          (BuildContext context, int index) {
+              (BuildContext context, int index) {
             return GestureDetector(
               child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
                 context,
@@ -2090,22 +2251,23 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           onRefresh: _onRefresh,
           onLoad: _onLoad,
           triggerAxis: Axis.vertical,
-          childBuilder: (context, physics) => CustomScrollView(
-            physics: physics,
-            controller: _scrollController,
-            slivers: [
-              SliverToBoxAdapter(
-                child: ItemBuilder.buildTitle(
-                  context,
-                  title: "更多推荐",
-                  bottomMargin: 16,
-                  topMargin: 16,
-                  left: 8,
-                ),
+          childBuilder: (context, physics) =>
+              CustomScrollView(
+                physics: physics,
+                controller: _scrollController,
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: ItemBuilder.buildTitle(
+                      context,
+                      title: "更多推荐",
+                      bottomMargin: 16,
+                      topMargin: 16,
+                      left: 8,
+                    ),
+                  ),
+                  list,
+                ],
               ),
-              list,
-            ],
-          ),
         ),
       );
     }
@@ -2123,16 +2285,17 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   showCollectionBottomSheet() {
     BottomSheetBuilder.showBottomSheet(
       context,
-      (context) => SingleChildScrollView(
-        controller: ModalScrollController.of(context),
-        child: CollectionBottomSheet(
-          postCollection: _postDetailData!.post!.postCollection!,
-          collectionId: collectionId,
-          postId: postId,
-          blogId: blogId,
-          blogName: blogName,
-        ),
-      ),
+          (context) =>
+          SingleChildScrollView(
+            controller: ModalScrollController.of(context),
+            child: CollectionBottomSheet(
+              postCollection: _postDetailData!.post!.postCollection!,
+              collectionId: collectionId,
+              postId: postId,
+              blogId: blogId,
+              blogName: blogName,
+            ),
+          ),
       enableDrag: false,
     );
   }
@@ -2141,7 +2304,10 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     switch (state) {
       case DownloadState.none:
         downloadIcon = Icon(Icons.download_rounded,
-            color: Theme.of(rootContext).iconTheme.color);
+            color: Theme
+                .of(rootContext)
+                .iconTheme
+                .color);
         break;
       case DownloadState.loading:
         downloadIcon = Container(
@@ -2149,7 +2315,10 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           height: 20,
           padding: const EdgeInsets.all(2),
           child: CircularProgressIndicator(
-            color: Theme.of(context).iconTheme.color,
+            color: Theme
+                .of(context)
+                .iconTheme
+                .color,
             strokeWidth: 2,
           ),
         );
@@ -2159,7 +2328,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         break;
       case DownloadState.failed:
         downloadIcon =
-            const Icon(Icons.warning_amber_rounded, color: Colors.redAccent);
+        const Icon(Icons.warning_amber_rounded, color: Colors.redAccent);
         break;
     }
     downloadState = state;
@@ -2177,9 +2346,13 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       showBack: true,
       titleWidget: Text(
         "帖子详情",
-        style: Theme.of(context).textTheme.titleLarge?.apply(
-              fontWeightDelta: 2,
-            ),
+        style: Theme
+            .of(context)
+            .textTheme
+            .titleLarge
+            ?.apply(
+          fontWeightDelta: 2,
+        ),
       ),
       actions: [
         if (hasCollection())
@@ -2188,9 +2361,11 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               onTap: showCollectionBottomSheet,
               child: Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
+                  color: Theme
+                      .of(context)
+                      .cardColor,
                   borderRadius: BorderRadius.circular(50),
                 ),
                 child: Row(
@@ -2203,8 +2378,10 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                     ),
                     const SizedBox(width: 3),
                     Text(
-                      "合集 ${_postDetailData!.post!.pos}/${_postDetailData!.post!.postCollection!.postCount}",
-                      style: Theme.of(context)
+                      "合集 ${_postDetailData!.post!.pos}/${_postDetailData!
+                          .post!.postCollection!.postCount}",
+                      style: Theme
+                          .of(context)
                           .textTheme
                           .titleMedium
                           ?.apply(fontSizeDelta: -3),
@@ -2222,7 +2399,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
 
   List<Widget> _buildButtons() {
     bool showDownloadButton = controlProvider
-            .globalControl.showDownloadButton &&
+        .globalControl.showDownloadButton &&
         (_hasImage() ||
             _hasArticleImage() &&
                 HiveUtil.getBool(HiveUtil.showDownloadKey, defaultValue: true));
@@ -2241,7 +2418,10 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       ItemBuilder.buildIconButton(
         context: context,
         icon: Icon(Icons.more_vert_rounded,
-            color: Theme.of(context).iconTheme.color),
+            color: Theme
+                .of(context)
+                .iconTheme
+                .color),
         onTap: () {
           BottomSheetBuilder.showContextMenu(context, _buildMoreButtons());
         },
@@ -2267,35 +2447,35 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         ),
         ContextMenuButtonConfig("访问原文",
             icon: const Icon(Icons.view_carousel_outlined), onPressed: () {
-          UriUtil.openInternal(
-            context,
-            UriUtil.getPostUrlById(
-              blogName,
-              postId,
-              blogId,
-            ),
-            processUri: false,
-          );
-        }),
+              UriUtil.openInternal(
+                context,
+                UriUtil.getPostUrlById(
+                  blogName,
+                  postId,
+                  blogId,
+                ),
+                processUri: false,
+              );
+            }),
         ContextMenuButtonConfig("在浏览器打开",
             icon: const Icon(Icons.open_in_browser_rounded), onPressed: () {
-          UriUtil.openExternal(
-            UriUtil.getPostUrlByPermalink(
-              _postDetailData!.post!.blogInfo!.blogName,
-              _postDetailData!.post!.permalink,
-            ),
-          );
-        }),
+              UriUtil.openExternal(
+                UriUtil.getPostUrlByPermalink(
+                  _postDetailData!.post!.blogInfo!.blogName,
+                  _postDetailData!.post!.permalink,
+                ),
+              );
+            }),
         ContextMenuButtonConfig("分享到其他应用",
             icon: const Icon(Icons.share_rounded), onPressed: () {
-          UriUtil.share(
-            context,
-            UriUtil.getPostUrlByPermalink(
-              _postDetailData!.post!.blogInfo!.blogName,
-              _postDetailData!.post!.permalink,
-            ),
-          );
-        }),
+              UriUtil.share(
+                context,
+                UriUtil.getPostUrlByPermalink(
+                  _postDetailData!.post!.blogInfo!.blogName,
+                  _postDetailData!.post!.permalink,
+                ),
+              );
+            }),
       ],
     );
   }

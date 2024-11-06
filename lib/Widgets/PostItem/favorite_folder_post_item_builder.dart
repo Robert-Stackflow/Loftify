@@ -78,7 +78,8 @@ class FavoriteFolderPostItemBuilder {
   }
 
   static bool hasImage(FavoritePostDetailData item) {
-    return item.postData!.postView.photoPostView!.photoLinks.isNotEmpty;
+    return item.postData!.postView.photoPostView != null &&
+        item.postData!.postView.photoPostView!.photoLinks.isNotEmpty;
   }
 
   static bool isVideo(FavoritePostDetailData item) {

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/request_header_util.dart';
 
+import '../Models/favorites_response.dart';
 import '../Utils/request_util.dart';
 import '../Utils/utils.dart';
 
@@ -136,6 +137,19 @@ class UserApi {
     );
   }
 
+  static Future getSubscribeFolderList({
+    int postId = 0,
+    int blogId = 0,
+  }) async {
+    return RequestUtil.get(
+      "/newapi/subFolder/getSubscribeFolders.json",
+      params: {
+        "postId": "$postId",
+        "blogId": blogId,
+      },
+    );
+  }
+
   static Future getFavoriteFolderDetail({
     int offset = 0,
     int folderId = 0,
@@ -147,6 +161,51 @@ class UserApi {
         "offset": "$offset",
         "folderId": folderId,
         "limit": limit,
+      },
+    );
+  }
+
+  static Future createFolder({
+    required String name,
+  }) async {
+    return RequestUtil.post(
+      "/newapi/subFolder/modifyFolder.json",
+      params: {
+        "coverUrl": "",
+        "id": 0,
+        "status": 0,
+        "tags": "",
+        "description": "",
+        "name": name,
+        "themeIds": "",
+      },
+    );
+  }
+
+  static Future deleteFolder({
+    required int folderId,
+  }) async {
+    return RequestUtil.post(
+      "/newapi/subFolder/delFolder.json",
+      params: {
+        "id": "$folderId",
+      },
+    );
+  }
+
+  static Future editFolder({
+    required FavoriteFolder folder,
+  }) async {
+    return RequestUtil.post(
+      "/newapi/subFolder/modifyFolder.json",
+      params: {
+        "coverUrl": folder.coverUrl,
+        "id": folder.id,
+        "status": folder.status,
+        "tags": folder.tags,
+        "description": "",
+        "name": folder.name,
+        "themeIds": folder.themes,
       },
     );
   }

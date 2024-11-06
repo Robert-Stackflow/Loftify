@@ -241,21 +241,21 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
       showBack: true,
       title: _favoriteFolder?.name ?? "收藏夹详情",
       actions: [
-        ItemBuilder.buildIconButton(
-            context: context,
-            icon: Icon(icon, color: Theme.of(context).iconTheme.color),
-            onTap: () {
-              _layoutMode = FavoriteFolderDetailLayoutMode.values[
-                  (_layoutMode.index + 1) %
-                      FavoriteFolderDetailLayoutMode.values.length];
-              setState(() {});
-            }),
-        const SizedBox(width: 5),
-        ItemBuilder.buildIconButton(
-            context: context,
-            icon: Icon(Icons.more_vert_rounded,
-                color: Theme.of(context).iconTheme.color),
-            onTap: () {}),
+        // ItemBuilder.buildIconButton(
+        //     context: context,
+        //     icon: Icon(icon, color: Theme.of(context).iconTheme.color),
+        //     onTap: () {
+        //       _layoutMode = FavoriteFolderDetailLayoutMode.values[
+        //           (_layoutMode.index + 1) %
+        //               FavoriteFolderDetailLayoutMode.values.length];
+        //       setState(() {});
+        //     }),
+        // const SizedBox(width: 5),
+        // ItemBuilder.buildIconButton(
+        //     context: context,
+        //     icon: Icon(Icons.more_vert_rounded,
+        //         color: Theme.of(context).iconTheme.color),
+        //     onTap: () {}),
         const SizedBox(width: 5),
       ],
     );

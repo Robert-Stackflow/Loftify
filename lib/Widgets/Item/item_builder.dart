@@ -3097,6 +3097,7 @@ class ItemBuilder {
     Color? color,
     int quarterTurns = 0,
     bool start = false,
+        TextStyle? style,
   }) {
     return ItemBuilder.buildClickItem(
       clickable: onTap != null,
@@ -3114,7 +3115,7 @@ class ItemBuilder {
                   if (text.isNotEmpty)
                     Text(
                       text,
-                      style: Theme.of(context).textTheme.titleSmall?.apply(
+                      style:style?? Theme.of(context).textTheme.titleSmall?.apply(
                             fontSizeDelta: fontSizeDelta,
                             color: color,
                             fontWeightDelta: fontWeightDelta,
@@ -3132,7 +3133,7 @@ class ItemBuilder {
                   if (text.isNotEmpty)
                     Text(
                       text,
-                      style: Theme.of(context).textTheme.titleSmall?.apply(
+                      style: style??Theme.of(context).textTheme.titleSmall?.apply(
                             fontSizeDelta: fontSizeDelta,
                             color: color,
                             fontWeightDelta: fontWeightDelta,
