@@ -663,7 +663,7 @@ class Utils {
     // Ensure tray icon display in linux sandboxed environments
     if (Platform.environment.containsKey('FLATPAK_ID') ||
         Platform.environment.containsKey('SNAP')) {
-      await trayManager.setIcon('com.cloudchewie.twitee');
+      await trayManager.setIcon('com.cloudchewie.loftify');
     } else if (ResponsiveUtil.isWindows()) {
       await trayManager.setIcon('assets/logo-transparent-big.ico');
     } else {
@@ -740,7 +740,7 @@ class Utils {
     // Ensure tray icon display in linux sandboxed environments
     if (Platform.environment.containsKey('FLATPAK_ID') ||
         Platform.environment.containsKey('SNAP')) {
-      await trayManager.setIcon('com.cloudchewie.twitee');
+      await trayManager.setIcon('com.cloudchewie.loftify');
     } else if (ResponsiveUtil.isWindows()) {
       await trayManager.setIcon('assets/logo-transparent.ico');
     } else {
