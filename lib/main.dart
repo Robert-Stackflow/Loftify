@@ -149,7 +149,7 @@ class MyApp extends StatelessWidget {
   const MyApp({
     super.key,
     required this.home,
-    this.title = 'Lofter',
+    this.title = 'Loftify',
   });
 
   @override

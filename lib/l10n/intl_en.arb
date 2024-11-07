@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appName": "Lofter",
+  "appName": "Loftify",
   "all": "全部",
   "save": "保存",
   "saveSuccess": "保存成功",
@@ -392,7 +392,7 @@
   "noDynamic": "暂无动态",
   "noLike": "暂无喜欢",
   "noRecommend": "暂无推荐",
-  "noHistory": "暂无历史",
+  "noHistory": "暂无足迹",
   "noFavorite": "暂无收藏",
   "noArticle": "暂无文章",
   "noEmotePackage": "暂无表情包",

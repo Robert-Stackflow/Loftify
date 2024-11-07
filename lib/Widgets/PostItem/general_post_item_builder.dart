@@ -25,6 +25,7 @@ import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
+import '../../generated/l10n.dart';
 import '../BottomSheet/bottom_sheet_builder.dart';
 import '../Custom/floating_modal.dart';
 import '../Custom/hero_photo_view_screen.dart';

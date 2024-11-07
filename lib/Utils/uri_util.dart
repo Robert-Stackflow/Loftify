@@ -19,6 +19,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../Screens/Info/user_detail_screen.dart';
 import '../Screens/Post/post_detail_screen.dart';
 import '../Widgets/Dialog/custom_dialog.dart';
+import '../generated/l10n.dart';
 import 'ilogger.dart';
 
 class UriUtil {
