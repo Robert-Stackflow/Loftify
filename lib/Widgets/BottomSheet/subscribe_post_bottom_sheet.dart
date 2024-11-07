@@ -6,6 +6,7 @@ import '../../Api/user_api.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/utils.dart';
+import '../../generated/l10n.dart';
 import '../General/EasyRefresh/easy_refresh.dart';
 import 'bottom_sheet_builder.dart';
 import 'input_bottom_sheet.dart';
@@ -62,7 +63,7 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
         }
       } catch (e, t) {
         ILogger.error("Failed to load folder list", e, t);
-        if (mounted) IToast.showTop("加载失败");
+        if (mounted) IToast.showTop(S.current.loadFailed);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -93,7 +94,7 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
         }
       } catch (e, t) {
         ILogger.error("Failed to load folder list", e, t);
-        if (mounted) IToast.showTop("加载失败");
+        if (mounted) IToast.showTop(S.current.loadFailed);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});

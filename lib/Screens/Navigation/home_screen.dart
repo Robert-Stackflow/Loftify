@@ -10,7 +10,6 @@ import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Widgets/PostItem/recommend_flow_item_builder.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
-import '../../Api/post_api.dart';
 import '../../Models/recommend_response.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/ilogger.dart';
@@ -106,7 +105,7 @@ class HomeScreenState extends State<HomeScreen>
           return IndicatorResult.success;
         }
       } catch (e, t) {
-        IToast.showTop("加载失败");
+        IToast.showTop(S.current.loadFailed);
         ILogger.error("Failed to load data", e, t);
         return IndicatorResult.fail;
       } finally {
@@ -152,24 +151,22 @@ class HomeScreenState extends State<HomeScreen>
                 maxCrossAxisExtent: 300,
               ),
               itemBuilder: (BuildContext context, int index) {
-                return GestureDetector(
-                  child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
-                    context,
-                    _recommendPosts[index],
-                    showMoreButton: true,
-                    // onShieldContent: () {
-                    //   _recommendPosts.remove(_recommendPosts[index]);
-                    //   setState(() {});
-                    // },
-                    // onShieldTag: (tag) {
-                    //   _recommendPosts.remove(_recommendPosts[index]);
-                    //   setState(() {});
-                    // },
-                    // onShieldUser: () {
-                    //   _recommendPosts.remove(_recommendPosts[index]);
-                    //   setState(() {});
-                    // },
-                  ),
+                return RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
+                  context,
+                  _recommendPosts[index],
+                  showMoreButton: true,
+                  // onShieldContent: () {
+                  //   _recommendPosts.remove(_recommendPosts[index]);
+                  //   setState(() {});
+                  // },
+                  // onShieldTag: (tag) {
+                  //   _recommendPosts.remove(_recommendPosts[index]);
+                  //   setState(() {});
+                  // },
+                  // onShieldUser: () {
+                  //   _recommendPosts.remove(_recommendPosts[index]);
+                  //   setState(() {});
+                  // },
                 );
               },
               itemCount: _recommendPosts.length,

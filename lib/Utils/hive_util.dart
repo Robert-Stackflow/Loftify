@@ -98,7 +98,7 @@ class HiveUtil {
   static const String guesturePasswdKey = "guesturePasswd";
   static const String enableBiometricKey = "enableBiometric";
   static const String autoLockKey = "autoLock";
-  static const String autoLockTimeKey = "autoLockTime";
+  static const String autoLockSecondsKey = "autoLockSeconds";
   static const String enableSafeModeKey = "enableSafeMode";
 
   //System

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:math';
 
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
@@ -220,9 +219,8 @@ class RequestUtil {
           response.data['meta']['msg'] != null) {
         list['Message'] = response.data['meta']['msg'];
       }
-      list['Data'] = response.data
-          .toString()
-          .substring(0, min(1000, response.data.toString().length));
+      list['Data'] = response.data.toString();
+      // .substring(0, min(1000, response.data.toString().length));
     }
     IPrint.format(
       tag: response.requestOptions.method,

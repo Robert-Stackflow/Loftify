@@ -1,3 +1,4 @@
+import '../../generated/l10n.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -68,7 +69,7 @@ class _ShareScreenState extends State<ShareScreen>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Future.delayed(const Duration(milliseconds: 300), () => _onRefresh());
       });
-    }else{
+    } else {
       _initPhase = InitPhase.successful;
       setState(() {});
     }
@@ -136,7 +137,7 @@ class _ShareScreenState extends State<ShareScreen>
         } catch (e, t) {
           _initPhase = InitPhase.failed;
           ILogger.error("Failed to load share list", e, t);
-          if (mounted) IToast.showTop("加载失败");
+          if (mounted) IToast.showTop(S.current.loadFailed);
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
@@ -187,7 +188,7 @@ class _ShareScreenState extends State<ShareScreen>
             return _archiveDataList.isNotEmpty
                 ? _buildNineGridGroup(physics)
                 : ItemBuilder.buildEmptyPlaceholder(
-                    context: context, text: "暂无推荐",physics: physics);
+                    context: context, text: "暂无推荐", physics: physics);
           },
         );
       default:

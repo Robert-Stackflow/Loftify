@@ -1,4 +1,5 @@
 import 'dart:math';
+import '../../generated/l10n.dart';
 
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/search_api.dart';
@@ -167,7 +168,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           return IndicatorResult.success;
         }
       } catch (e, t) {
-        IToast.showTop("加载失败");
+        IToast.showTop(S.current.loadFailed);
         ILogger.error("Failed to load all result", e, t);
         return IndicatorResult.fail;
       } finally {
@@ -201,7 +202,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           return IndicatorResult.success;
         }
       } catch (e, t) {
-        IToast.showTop("加载失败");
+        IToast.showTop(S.current.loadFailed);
         ILogger.error("Failed to load all post result", e, t);
         return IndicatorResult.fail;
       } finally {
@@ -251,7 +252,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           }
         }
       } catch (e, t) {
-        IToast.showTop("加载失败");
+        IToast.showTop(S.current.loadFailed);
         ILogger.error("Failed to load tag result", e, t);
         return IndicatorResult.fail;
       } finally {
@@ -298,7 +299,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           }
         }
       } catch (e, t) {
-        IToast.showTop("加载失败");
+        IToast.showTop(S.current.loadFailed);
         ILogger.error("Failed to load collection result", e, t);
         return IndicatorResult.fail;
       } finally {
@@ -345,7 +346,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           }
         }
       } catch (e, t) {
-        IToast.showTop("加载失败");
+        IToast.showTop(S.current.loadFailed);
         ILogger.error("Failed to load post result", e, t);
         return IndicatorResult.fail;
       } finally {
@@ -392,7 +393,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           }
         }
       } catch (e, t) {
-        IToast.showTop("加载失败");
+        IToast.showTop(S.current.loadFailed);
         ILogger.error("Failed to load grain result", e, t);
         return IndicatorResult.fail;
       } finally {
@@ -440,7 +441,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
           }
         }
       } catch (e, t) {
-        IToast.showTop("加载失败");
+        IToast.showTop(S.current.loadFailed);
         ILogger.error("Failed to load user result", e, t);
         return IndicatorResult.fail;
       } finally {

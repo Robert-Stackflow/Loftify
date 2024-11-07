@@ -1,3 +1,4 @@
+import '../../generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Models/favorites_response.dart';
 import 'package:loftify/Models/recommend_response.dart';
@@ -104,7 +105,7 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
           }
         } catch (e, t) {
           ILogger.error("Failed to load folder detail", e, t);
-          if (mounted) IToast.showTop("加载失败");
+          if (mounted) IToast.showTop(S.current.loadFailed);
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});

@@ -7,7 +7,6 @@ import '../../Resources/theme.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
-import '../../Widgets/Dialog/custom_dialog.dart';
 import '../../Widgets/Dialog/dialog_builder.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
@@ -50,7 +49,7 @@ class _UserDynamicShieldSettingScreenState
         }
       } catch (e, t) {
         ILogger.error("Failed to load user dynamic shield list", e, t);
-        IToast.showTop("不看TA的动态列表加载失败");
+        IToast.showTop(S.current.loadFailed);
         return IndicatorResult.fail;
       } finally {
         loading = false;
@@ -121,15 +120,14 @@ class _UserDynamicShieldSettingScreenState
             ItemBuilder.buildFramedDoubleButton(
               context: context,
               isFollowed: false,
-              positiveText: "恢复查看",
-              negtiveText: "恢复查看",
+              positiveText: S.current.resumeView,
+              negtiveText: S.current.resumeView,
               onTap: () {
                 DialogBuilder.showConfirmDialog(
                   context,
-                  title: "恢复查看动态",
-                  message: "确认恢复查看「${blogInfo.blogNickName}」的动态？",
-                  confirmButtonText: "确认",
-                  cancelButtonText: "取消",
+                  title: S.current.resumeViewDynamic,
+                  message:
+                      S.current.resumeViewDynamicMessage(blogInfo.blogNickName),
                   onTapConfirm: () {
                     UserApi.shieldBlogOrUnShield(
                       blogId: blogInfo.blogId,
@@ -143,8 +141,6 @@ class _UserDynamicShieldSettingScreenState
                       }
                     });
                   },
-                  onTapCancel: () {},
-                  customDialogType: CustomDialogType.normal,
                 );
               },
             ),

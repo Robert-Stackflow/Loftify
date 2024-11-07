@@ -8,6 +8,7 @@ import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Screens/Post/grain_detail_screen.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
+import '../../generated/l10n.dart';
 
 import '../../Utils/enums.dart';
 import '../../Utils/ilogger.dart';
@@ -68,7 +69,7 @@ class _GrainScreenState extends State<GrainScreen>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Future.delayed(const Duration(milliseconds: 300), () => _onRefresh());
       });
-    }else{
+    } else {
       _initPhase = InitPhase.successful;
       setState(() {});
     }
@@ -114,7 +115,7 @@ class _GrainScreenState extends State<GrainScreen>
         } catch (e, t) {
           _initPhase = InitPhase.failed;
           ILogger.error("Failed to load grain list", e, t);
-          if (mounted) IToast.showTop("加载失败");
+          if (mounted) IToast.showTop(S.current.loadFailed);
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
@@ -165,7 +166,7 @@ class _GrainScreenState extends State<GrainScreen>
             return _grainList.isNotEmpty
                 ? _buildMainBody(physics)
                 : ItemBuilder.buildEmptyPlaceholder(
-                    context: context, text: "暂无粮单",physics: physics);
+                    context: context, text: "暂无粮单", physics: physics);
           },
         );
       default:

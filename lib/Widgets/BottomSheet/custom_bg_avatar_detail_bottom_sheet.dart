@@ -13,6 +13,7 @@ import 'package:loftify/Widgets/Item/item_builder.dart';
 import '../../Screens/Suit/custom_bg_avatar_list_screen.dart';
 import '../../Utils/file_util.dart';
 import '../../Utils/ilogger.dart';
+import '../../generated/l10n.dart';
 
 class CustomBgAvatarDetailBottomSheet extends StatefulWidget {
   const CustomBgAvatarDetailBottomSheet({super.key, required this.item});
@@ -70,7 +71,7 @@ class CustomBgAvatarDetailBottomSheetState
     } catch (e, t) {
       ILogger.error(
           "Failed to load custom bg avatar detail:${item.toJson()}", e, t);
-      if (mounted) IToast.showTop("加载失败");
+      if (mounted) IToast.showTop(S.current.loadFailed);
     }
   }
 
@@ -122,7 +123,7 @@ class CustomBgAvatarDetailBottomSheetState
       padding: const EdgeInsets.symmetric(vertical: 20),
       alignment: Alignment.center,
       child: Text(
-        "装扮详情",
+        S.current.dressDetail,
         style: Theme.of(context).textTheme.titleLarge,
       ),
     );
@@ -315,7 +316,7 @@ class CustomBgAvatarDetailBottomSheetState
                           }
                         } catch (e, t) {
                           ILogger.error("Failed to open user detail", e, t);
-                          IToast.showTop("跳转失败");
+                          IToast.showTop(S.current.jumpFailed);
                         }
                       },
                       child: ItemBuilder.buildTransparentTag(
@@ -370,10 +371,10 @@ class CustomBgAvatarDetailBottomSheetState
               context,
               icon: const Icon(Icons.download_done_rounded, size: 24),
               direction: Axis.vertical,
-              text: "单张",
+              text: S.current.singleImage,
               fontSizeDelta: -2,
               onTap: () async {
-                CustomLoadingDialog.showLoading(title: "下载中...");
+                CustomLoadingDialog.showLoading(title: S.current.downloading);
                 String url = getUrlByIndex(_currentIndex);
                 await FileUtil.saveImage(context, url);
                 CustomLoadingDialog.dismissLoading();
@@ -387,10 +388,10 @@ class CustomBgAvatarDetailBottomSheetState
                 context,
                 icon: const Icon(Icons.done_all_rounded, size: 24),
                 direction: Axis.vertical,
-                text: "所有",
+                text: S.current.all,
                 fontSizeDelta: -2,
                 onTap: () async {
-                  CustomLoadingDialog.showLoading(title: "下载中...");
+                  CustomLoadingDialog.showLoading(title: S.current.downloading);
                   List<String> urls = [];
                   if (isLootBox) {
                     for (var item in item.lootBox!.productItems) {
@@ -416,7 +417,7 @@ class CustomBgAvatarDetailBottomSheetState
               child: ItemBuilder.buildRoundButton(
                 context,
                 background: Theme.of(context).primaryColor,
-                text: "确认",
+                text: S.current.confirm,
                 onTap: () async {
                   Navigator.of(context).pop();
                 },

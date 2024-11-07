@@ -28,11 +28,11 @@ class FloatingModal extends StatelessWidget {
     double preferHeight = min(width, 500);
     double preferHorizontalMargin = isLandScape
         ? width > preferWidth
-        ? (width - preferWidth) / 2
-        : 0
+            ? (width - preferWidth) / 2
+            : 0
         : 0;
     double preferVerticalMargin =
-    height > preferHeight ? (height - preferHeight) / 2 : 0;
+        height > preferHeight ? (height - preferHeight) / 2 : 0;
     return Container(
       margin: EdgeInsets.only(
         left: preferHorizontalMargin,
@@ -40,8 +40,8 @@ class FloatingModal extends StatelessWidget {
         top: useVerticalMargin
             ? preferVerticalMargin
             : ResponsiveUtil.isLandscape()
-            ? 0
-            : 100,
+                ? 0
+                : 100,
         bottom: useVerticalMargin ? preferVerticalMargin : 0,
       ),
       child: child,

@@ -15,6 +15,7 @@ import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
 
 class DressScreen extends StatefulWidget {
   const DressScreen({
@@ -103,7 +104,7 @@ class _DressScreenState extends State<DressScreen>
         }
       } catch (e, t) {
         ILogger.error("Failed to load dress list", e, t);
-        if (mounted) IToast.showTop("加载失败");
+        if (mounted) IToast.showTop(S.current.loadFailed);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -193,13 +194,13 @@ class _DressScreenState extends State<DressScreen>
               style: Theme.of(context).textTheme.titleLarge,
             ),
             Text(
-              "${item.partCount}个挂件",
+              S.current.pendantCount(item.partCount),
               style: Theme.of(context).textTheme.labelMedium,
             ),
             const SizedBox(height: 10),
             ItemBuilder.buildRoundButton(
               context,
-              text: "查看详情",
+              text: S.current.viewDetail,
               background: Theme.of(context).primaryColor,
               onTap: () {
                 RouteUtil.pushPanelCupertinoRoute(
@@ -228,7 +229,7 @@ class _DressScreenState extends State<DressScreen>
                 context,
                 widget.tag!,
                 TagType.normal,
-                shownTag: "#${widget.tag}#的相关装扮",
+                shownTag: S.current.relatedDress(widget.tag ?? ""),
                 backgroundColor: Theme.of(context).primaryColor.withAlpha(30),
                 color: Theme.of(context).primaryColor,
                 padding:
@@ -238,7 +239,7 @@ class _DressScreenState extends State<DressScreen>
               ),
             )
           : Text(
-              "装扮列表",
+              S.current.dressList,
               style: Theme.of(context).textTheme.titleLarge,
             ),
       actions: [

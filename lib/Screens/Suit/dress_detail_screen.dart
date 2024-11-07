@@ -18,6 +18,7 @@ import '../../Widgets/Custom/hero_photo_view_screen.dart';
 import '../../Widgets/Dialog/custom_dialog.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
 
 class DressDetailScreen extends StatefulWidgetForNested {
   const DressDetailScreen({
@@ -77,7 +78,7 @@ class _DressDetailScreenState extends State<DressDetailScreen>
         }
       } catch (e, t) {
         ILogger.error("Failed to load dress detail", e, t);
-        if (mounted) IToast.showTop("加载失败");
+        if (mounted) IToast.showTop(S.current.loadFailed);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -130,12 +131,12 @@ class _DressDetailScreenState extends State<DressDetailScreen>
       await HiveUtil.put(HiveUtil.customAvatarBoxKey, "");
       currentAvatarImg = "";
       setState(() {});
-      IToast.showTop("取消佩戴成功");
+      IToast.showTop(S.current.unDressSuccess);
     } else {
       await HiveUtil.put(HiveUtil.customAvatarBoxKey, item.partUrl);
       currentAvatarImg = item.partUrl;
       setState(() {});
-      IToast.showTop("佩戴成功");
+      IToast.showTop(S.current.dressSuccess);
     }
   }
 
@@ -194,7 +195,7 @@ class _DressDetailScreenState extends State<DressDetailScreen>
           ),
           const SizedBox(height: 5),
           Text(
-            item.partType == 1 ? "头像框" : "评论气泡",
+            item.partType == 1 ? S.current.avatarBox : S.current.commentBubble,
             style: Theme.of(context).textTheme.labelMedium,
           ),
           const SizedBox(height: 10),
@@ -207,7 +208,8 @@ class _DressDetailScreenState extends State<DressDetailScreen>
                     context: context,
                     icon: const Icon(Icons.download_done_rounded, size: 24),
                     onTap: () async {
-                      CustomLoadingDialog.showLoading(title: "下载中...");
+                      CustomLoadingDialog.showLoading(
+                          title: S.current.downloading);
                       String url = item.partUrl;
                       await FileUtil.saveImage(context, url);
                       CustomLoadingDialog.dismissLoading();
@@ -217,9 +219,10 @@ class _DressDetailScreenState extends State<DressDetailScreen>
               if (item.partType != 1)
                 Expanded(
                   flex: 2,
-                  child: ItemBuilder.buildRoundButton(context, text: "下载",
-                      onTap: () async {
-                    CustomLoadingDialog.showLoading(title: "下载中...");
+                  child: ItemBuilder.buildRoundButton(context,
+                      text: S.current.download, onTap: () async {
+                    CustomLoadingDialog.showLoading(
+                        title: S.current.downloading);
                     String url = item.partUrl;
                     await FileUtil.saveImage(context, url);
                     CustomLoadingDialog.dismissLoading();
@@ -231,7 +234,9 @@ class _DressDetailScreenState extends State<DressDetailScreen>
                   flex: 3,
                   child: ItemBuilder.buildRoundButton(
                     context,
-                    text: currentAvatarImg == item.partUrl ? "正在佩戴" : "立即佩戴",
+                    text: currentAvatarImg == item.partUrl
+                        ? S.current.dressingCurrently
+                        : S.current.dressImmediately,
                     background: currentAvatarImg == item.partUrl
                         ? null
                         : Theme.of(context).primaryColor,
@@ -251,7 +256,7 @@ class _DressDetailScreenState extends State<DressDetailScreen>
     return ItemBuilder.buildDesktopAppBar(
       context: context,
       showBack: true,
-      title: "装扮详情",
+      title: S.current.dressDetail,
     );
   }
 }

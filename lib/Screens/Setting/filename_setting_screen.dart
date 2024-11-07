@@ -7,13 +7,14 @@ import '../../Utils/constant.dart';
 import '../../Utils/enums.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
 
 class FilenameSettingScreen extends StatefulWidget {
   const FilenameSettingScreen({super.key, this.onSaved});
 
   final Function(String)? onSaved;
 
-  static const String routeName = "/setting/fiilename";
+  static const String routeName = "/setting/filename";
 
   @override
   State<FilenameSettingScreen> createState() => _FilenameSettingScreenState();
@@ -40,7 +41,7 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
       _controller.text,
     );
     widget.onSaved?.call(_controller.text);
-    IToast.showTop("保存成功");
+    IToast.showTop(S.current.saveSuccess);
   }
 
   _reset() {
@@ -50,7 +51,7 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
       defaultFilenameFormat,
     );
     widget.onSaved?.call(defaultFilenameFormat);
-    IToast.showTop("重置成功");
+    IToast.showTop(S.current.resetSuccess);
   }
 
   @override
@@ -59,7 +60,7 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
       appBar: ItemBuilder.buildDesktopAppBar(
         showBack: true,
         transparent: true,
-        title: "文件命名格式",
+        title: S.current.filenameFormat,
         context: context,
         background: Theme.of(context).scaffoldBackgroundColor,
       ),
@@ -72,7 +73,7 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
               ItemBuilder.buildInputItem(
                 context: context,
                 focusNode: _focusNode,
-                hint: "输入文件命名格式",
+                hint: S.current.inputFilenameFormat,
                 textInputAction: TextInputAction.done,
                 controller: _controller,
                 tailingType: TailingType.widget,
@@ -105,7 +106,7 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
                   children: [
                     ItemBuilder.buildRoundButton(
                       context,
-                      text: "可用字段: ",
+                      text: S.current.availableFields,
                       textStyle: Theme.of(context)
                           .textTheme
                           .titleSmall
@@ -152,9 +153,9 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
                   defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                   children: [
                     _buildRow([
-                      "字段",
-                      "描述",
-                      '示例',
+                      S.current.field,
+                      S.current.description,
+                      S.current.example,
                     ], fontWeightDelta: 2),
                     ...List.generate(
                       FilenameField.values.length,

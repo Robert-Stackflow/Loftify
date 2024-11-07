@@ -1,3 +1,4 @@
+import '../../generated/l10n.dart';
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
@@ -187,7 +188,7 @@ class MainScreenState extends State<MainScreen>
           }
         } catch (e, t) {
           ILogger.error("Failed to load user info", e, t);
-          if (mounted) IToast.showTop("加载失败");
+          if (mounted) IToast.showTop(S.current.loadFailed);
           return IndicatorResult.fail;
         } finally {}
       });
@@ -258,11 +259,11 @@ class MainScreenState extends State<MainScreen>
       HiveUtil.put(HiveUtil.haveShownQQGroupDialogKey, true);
       DialogBuilder.showConfirmDialog(
         context,
-        title: "欢迎反馈",
-        message: "加入QQ群，反馈BUG、建议和想法，欢迎你的加入！",
+        title: S.current.feedbackWelcome,
+        message: S.current.feedbackWelcomeMessage,
         messageTextAlign: TextAlign.center,
-        confirmButtonText: "跳转至QQ",
-        cancelButtonText: "暂不加入",
+        confirmButtonText: S.current.goToQQ,
+        cancelButtonText: S.current.joinLater,
         onTapConfirm: () {
           UriUtil.openExternal(controlProvider.globalControl.qqGroupUrl);
         },
@@ -413,7 +414,7 @@ class MainScreenState extends State<MainScreen>
     return GenericContextMenu(
       buttonConfigs: [
         ContextMenuButtonConfig(
-          "查看个人主页",
+          S.current.viewPersonalHomepage,
           onPressed: () async {
             panelScreenState?.pushPage(UserDetailScreen(
               blogId: blogInfo!.blogId,
@@ -423,7 +424,7 @@ class MainScreenState extends State<MainScreen>
         ),
         ContextMenuButtonConfig.divider(),
         ContextMenuButtonConfig.warning(
-          "退出登录",
+          S.current.logout,
           onPressed: () async {
             HiveUtil.confirmLogout(context);
           },
@@ -680,7 +681,7 @@ class MainScreenState extends State<MainScreen>
   void setTimer() {
     if (!_hasJumpedToPinVerify) {
       _timer = Timer(
-        Duration(minutes: appProvider.autoLockTime),
+        Duration(seconds: appProvider.autoLockSeconds),
         () {
           jumpToLock();
         },

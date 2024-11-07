@@ -17,6 +17,7 @@ import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/route_util.dart';
+import 'package:loftify/Widgets/Dialog/dialog_builder.dart';
 import 'package:provider/provider.dart';
 
 import '../../Resources/colors.dart';
@@ -27,6 +28,7 @@ import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/Custom/sliver_appbar_delegate.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -159,6 +161,7 @@ class SearchScreenState extends State<SearchScreen>
   }
 
   _performSearch(String str) async {
+    if (str.isEmpty) return;
     Utils.addSearchHistory(str);
     bool processed = await UriUtil.processUrl(context, str, quiet: true);
     if (!processed) {
@@ -253,10 +256,17 @@ class SearchScreenState extends State<SearchScreen>
                       searchHistoryList.isNotEmpty
                           ? ItemBuilder.buildTitle(
                               context,
-                              title: "最近搜索",
+                              title: S.current.searchRecently,
                               icon: Icons.delete_outline_rounded,
                               onTap: () {
-                                appProvider.searchHistoryList = [];
+                                DialogBuilder.showConfirmDialog(
+                                  context,
+                                  title: S.current.clearSearchHistory,
+                                  message: S.current.clearSearchHistoryMessage,
+                                  onTapConfirm: () {
+                                    appProvider.searchHistoryList = [];
+                                  },
+                                );
                               },
                             )
                           : emptyWidget,
@@ -274,7 +284,7 @@ class SearchScreenState extends State<SearchScreen>
               if (showSearchGuess && _guessList.isNotEmpty)
                 ItemBuilder.buildTitle(
                   context,
-                  title: "猜你想搜",
+                  title: S.current.guessYouSearch,
                   icon: Icons.refresh_rounded,
                   onTap: () {
                     fetchGuessList();
@@ -405,7 +415,7 @@ class SearchScreenState extends State<SearchScreen>
             } else if (UriUtil.isVideoUrl(item.url)) {
               Map<String, String> map = UriUtil.extractVideoInfo(item.url);
               if (ResponsiveUtil.isDesktop()) {
-                IToast.showTop("桌面端不支持播放视频");
+                IToast.showTop(S.current.unSupportVideoInDesktop);
               } else {
                 RouteUtil.pushPanelCupertinoRoute(
                   context,
@@ -517,7 +527,7 @@ class SearchScreenState extends State<SearchScreen>
               alignment: Alignment.centerRight,
               child: Text(
                 item.pv != 0
-                    ? "${Utils.formatCount(item.pv)}人在搜"
+                    ? S.current.searchingCount(Utils.formatCount(item.pv))
                     : "${item.score}",
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -641,7 +651,7 @@ class SearchScreenState extends State<SearchScreen>
         focusNode: _focusNode,
         controller: _searchController,
         background: Colors.grey.withAlpha(40),
-        hintText: "搜标签、合集、文章、讨论、粮单、用户",
+        hintText: S.current.searchHint,
         onSubmitted: (text) async {
           _performSearch(text);
         },

@@ -12,6 +12,7 @@ import '../../Resources/theme.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/utils.dart';
+import '../../generated/l10n.dart';
 
 class SlideCaptchaBottomSheet extends StatefulWidget {
   const SlideCaptchaBottomSheet({
@@ -91,7 +92,7 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
               children: [
                 ItemBuilder.buildLoadingDialog(
                   context,
-                  text: "加载中...",
+                  text: S.current.loading,
                   background: Colors.transparent,
                   size: 40,
                   topPadding: 77,

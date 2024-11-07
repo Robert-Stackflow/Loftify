@@ -433,10 +433,8 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    bool showDownloadButton =
-        controlProvider.globalControl.showDownloadButton;
-    bool showCopyLinkButton =
-        controlProvider.globalControl.showCopyLinkButton;
+    bool showDownloadButton = controlProvider.globalControl.showDownloadButton;
+    bool showCopyLinkButton = controlProvider.globalControl.showCopyLinkButton;
     return ItemBuilder.buildAppBar(
       context: context,
       backgroundColor: widget.transparentBar

@@ -57,6 +57,7 @@ class CommonInfoItemBuilder {
   static Widget buildWaterfallFlowPostItem(
       BuildContext context, PostDetailData item) {
     return WaterfallFlowPostItemWidget(
+      key: ValueKey(item.post!.id),
       item: getGeneralPostItem(item),
     );
   }

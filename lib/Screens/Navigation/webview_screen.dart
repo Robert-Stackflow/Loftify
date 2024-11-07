@@ -14,6 +14,7 @@ import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
 
 class WebviewScreen extends StatefulWidget {
   const WebviewScreen({
@@ -125,10 +126,10 @@ class _WebviewScreenState extends State<WebviewScreen>
                           color: Theme.of(context).iconTheme.color),
                       onTap: () {
                         List<Tuple2<String, dynamic>> options = [
-                          const Tuple2("刷新", -1),
-                          const Tuple2("复制链接", 0),
-                          const Tuple2("在浏览器打开", 1),
-                          const Tuple2("分享到其他应用", 2),
+                          Tuple2(S.current.refresh, -1),
+                          Tuple2(S.current.copyLink, 0),
+                          Tuple2(S.current.openWithBrowser, 1),
+                          Tuple2(S.current.shareToOtherApps, 2),
                         ];
                         BottomSheetBuilder.showListBottomSheet(
                           context,
@@ -185,7 +186,7 @@ class _WebviewScreenState extends State<WebviewScreen>
                     action: PermissionResponseAction.GRANT);
               },
               onDownloadStartRequest: (controller, url) async {
-                IToast.showTop("即将跳转到浏览器下载");
+                IToast.showTop(S.current.jumpToBrowserDownload);
                 Future.delayed(const Duration(milliseconds: 300), () {
                   UriUtil.openExternalUri(url.url);
                 });
@@ -298,12 +299,14 @@ class _WebviewScreenState extends State<WebviewScreen>
               ),
               const SizedBox(height: 10),
               Text(
-                "加载失败",
+                S.current.loadFailed,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 10),
               Text(
-                "错误类型：${currentError != null ? currentError?.type : "未知"}",
+                S.current.loadErrorType(currentError != null
+                    ? currentError?.type ?? ""
+                    : S.current.loadUnkownError),
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 10),
@@ -312,7 +315,7 @@ class _WebviewScreenState extends State<WebviewScreen>
                 margin: const EdgeInsets.symmetric(vertical: 12),
                 child: ItemBuilder.buildRoundButton(
                   context,
-                  text: "重新加载",
+                  text: S.current.reload,
                   onTap: () {
                     webViewController?.reload();
                   },

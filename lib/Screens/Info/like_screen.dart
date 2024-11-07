@@ -1,3 +1,4 @@
+import '../../generated/l10n.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -141,7 +142,7 @@ class _LikeScreenState extends State<LikeScreen>
         } catch (e, t) {
           _initPhase = InitPhase.failed;
           ILogger.error("Failed to load like list", e, t);
-          if (mounted) IToast.showTop("加载失败");
+          if (mounted) IToast.showTop(S.current.loadFailed);
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
@@ -192,7 +193,7 @@ class _LikeScreenState extends State<LikeScreen>
             return _archiveDataList.isNotEmpty
                 ? _buildNineGridGroup(physics)
                 : ItemBuilder.buildEmptyPlaceholder(
-                    context: context, text: "暂无喜欢",physics: physics);
+                    context: context, text: "暂无喜欢", physics: physics);
           },
         );
       default:

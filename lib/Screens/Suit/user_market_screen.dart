@@ -7,6 +7,7 @@ import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Screens/Suit/custom_bg_avatar_list_screen.dart';
 
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
 import 'custom_dress_list_screen.dart';
 
 class UserMarketScreen extends StatefulWidget {
@@ -75,7 +76,7 @@ class _UserMarketScreenState extends State<UserMarketScreen>
     return ItemBuilder.buildDesktopAppBar(
       context: context,
       showBack: true,
-      title: "TA的商品",
+      title: S.current.shop,
       actions: [
         ItemBuilder.buildBlankIconButton(context),
         const SizedBox(width: 5),
@@ -109,10 +110,10 @@ class _UserMarketScreenState extends State<UserMarketScreen>
               height: height,
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOut,
-              children: const <int, Widget>{
-                0: Text("壁纸头像"),
-                1: Text("装扮"),
-                2: Text("表情包"),
+              children: <int, Widget>{
+                0: Text(S.current.bgAvatar),
+                1: Text(S.current.dress),
+                2: Text(S.current.emotePackage),
               },
               initialValue: _currentCustomBottomBarIndex,
               onValueChanged: (index) {

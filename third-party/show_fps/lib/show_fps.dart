@@ -134,7 +134,7 @@ class ShowFPSState extends State<ShowFPS> {
                                           decoration: BoxDecoration(
                                             color: Color.lerp(
                                               const Color(0xfff44336),
-                                               Colors.transparent,
+                                              Colors.transparent,
                                               p,
                                             ),
                                             borderRadius:

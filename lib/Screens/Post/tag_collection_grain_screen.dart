@@ -1,3 +1,4 @@
+import '../../generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/tag_api.dart';
 import 'package:loftify/Models/tag_response.dart';
@@ -206,7 +207,7 @@ class CollectionTabState extends State<CollectionTab>
         }
       } catch (e, t) {
         ILogger.error("Failed to load tag collection list", e, t);
-        IToast.showTop("加载失败");
+        IToast.showTop(S.current.loadFailed);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -584,7 +585,7 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
         }
       } catch (e, t) {
         ILogger.error("Failed to load tag grain list", e, t);
-        IToast.showTop("加载失败");
+        IToast.showTop(S.current.loadFailed);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});

@@ -55,7 +55,7 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
         }
       } catch (e, t) {
         ILogger.error("Failed to load blacklist", e, t);
-        IToast.showTop("黑名单加载失败");
+        IToast.showTop(S.current.loadBlacklistFailed);
         return IndicatorResult.fail;
       } finally {
         loading = false;
@@ -134,15 +134,15 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
             ItemBuilder.buildFramedDoubleButton(
               context: context,
               isFollowed: false,
-              positiveText: "解除黑名单",
-              negtiveText: "解除黑名单",
+              positiveText: S.current.unlockBlacklist,
+              negtiveText: S.current.unlockBlacklist,
               onTap: () {
                 DialogBuilder.showConfirmDialog(
                   context,
-                  title: "解除黑名单",
-                  message: "确认解除「${blacklistItem.blogInfo.blogNickName}」的黑名单？",
-                  confirmButtonText: "解除",
-                  cancelButtonText: "取消",
+                  title: S.current.unlockBlacklist,
+                  message: S.current.unlockBlacklistMessage(
+                      blacklistItem.blogInfo.blogNickName),
+                  confirmButtonText: S.current.unlock,
                   onTapConfirm: () {
                     UserApi.blockOrUnBlock(
                       blogId: blacklistItem.blogInfo.blogId,

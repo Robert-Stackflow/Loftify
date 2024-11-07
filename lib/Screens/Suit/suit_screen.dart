@@ -11,6 +11,7 @@ import 'package:loftify/Utils/responsive_util.dart';
 
 import '../../Api/gift_api.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
 import 'custom_dress_list_screen.dart';
 
 class SuitScreen extends StatefulWidget {
@@ -205,9 +206,9 @@ class _SuitScreenState extends State<SuitScreen>
               height: height,
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOut,
-              children: const <int, Widget>{
-                0: Text("装扮主题"),
-                // 1: Text("头像框"),
+              children: <int, Widget>{
+                0: Text(S.current.dressTheme),
+                // 1: Text(S.current.avatarBox),
               },
               initialValue: _currentOfficialBottomBarIndex,
               onValueChanged: (index) {
@@ -250,10 +251,10 @@ class _SuitScreenState extends State<SuitScreen>
               height: height,
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOut,
-              children: const <int, Widget>{
-                0: Text("壁纸头像"),
-                1: Text("装扮"),
-                2: Text("表情包"),
+              children: <int, Widget>{
+                0: Text(S.current.bgAvatar),
+                1: Text(S.current.dress),
+                2: Text(S.current.emotePackage),
               },
               initialValue: _currentCustomBottomBarIndex,
               onValueChanged: (index) {

@@ -1934,7 +1934,7 @@ class ItemBuilder {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            text ?? "加载失败",
+            text ?? S.current.loadFailed,
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 10),
@@ -3097,7 +3097,7 @@ class ItemBuilder {
     Color? color,
     int quarterTurns = 0,
     bool start = false,
-        TextStyle? style,
+    TextStyle? style,
   }) {
     return ItemBuilder.buildClickItem(
       clickable: onTap != null,
@@ -3115,11 +3115,12 @@ class ItemBuilder {
                   if (text.isNotEmpty)
                     Text(
                       text,
-                      style:style?? Theme.of(context).textTheme.titleSmall?.apply(
-                            fontSizeDelta: fontSizeDelta,
-                            color: color,
-                            fontWeightDelta: fontWeightDelta,
-                          ),
+                      style: style ??
+                          Theme.of(context).textTheme.titleSmall?.apply(
+                                fontSizeDelta: fontSizeDelta,
+                                color: color,
+                                fontWeightDelta: fontWeightDelta,
+                              ),
                     ),
                 ],
               )
@@ -3133,11 +3134,12 @@ class ItemBuilder {
                   if (text.isNotEmpty)
                     Text(
                       text,
-                      style: style??Theme.of(context).textTheme.titleSmall?.apply(
-                            fontSizeDelta: fontSizeDelta,
-                            color: color,
-                            fontWeightDelta: fontWeightDelta,
-                          ),
+                      style: style ??
+                          Theme.of(context).textTheme.titleSmall?.apply(
+                                fontSizeDelta: fontSizeDelta,
+                                color: color,
+                                fontWeightDelta: fontWeightDelta,
+                              ),
                     ),
                 ],
               ),
@@ -3749,7 +3751,7 @@ class ItemBuilder {
                         ),
                         const SizedBox(width: 5),
                         Text(
-                          "加载中...",
+                          S.current.loading,
                           style: Theme.of(context).textTheme.labelMedium,
                         ),
                       ],

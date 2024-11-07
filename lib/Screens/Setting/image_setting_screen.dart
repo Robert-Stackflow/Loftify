@@ -99,16 +99,17 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
               if (showBigImageSettings) ..._bigImageSettings(),
               if (showImageQualitySettings || showBigImageSettings)
                 const SizedBox(height: 10),
-              ItemBuilder.buildCaptionItem(context: context, title: "保存设置"),
+              ItemBuilder.buildCaptionItem(
+                  context: context, title: S.current.downloadImageSetting),
               ItemBuilder.buildEntryItem(
                 context: context,
-                title: "图片/视频保存路径",
+                title: S.current.downloadImagePath,
                 description: savePath ?? "",
-                tip: "修改",
+                tip: S.current.edit,
                 onTap: () async {
                   String? selectedDirectory =
                       await FilePicker.platform.getDirectoryPath(
-                    dialogTitle: "选择图片/视频保存路径",
+                    dialogTitle: S.current.chooseDownloadImagePath,
                     lockParentWindow: true,
                   );
                   if (selectedDirectory != null) {
@@ -121,9 +122,9 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
               ),
               ItemBuilder.buildEntryItem(
                 context: context,
-                title: "文件命名格式",
+                title: S.current.filenameFormat,
                 description: _filenameFormat,
-                tip: "修改",
+                tip: S.current.edit,
                 bottomRadius: true,
                 onTap: () {
                   var page = FilenameSettingScreen(
@@ -146,10 +147,11 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
 
   _imageQualitySettings() {
     return [
-      ItemBuilder.buildCaptionItem(context: context, title: "图片质量"),
+      ItemBuilder.buildCaptionItem(
+          context: context, title: S.current.imageQuality),
       ItemBuilder.buildEntryItem(
         context: context,
-        title: "瀑布流图片质量",
+        title: S.current.waterfallFlowImageQuality,
         tip: EnumsLabelGetter.getImageQualityLabel(waterfallFlowImageQuality),
         onTap: () {
           showImageQualitySelect(
@@ -161,13 +163,13 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
               });
             },
             selected: waterfallFlowImageQuality,
-            title: "选择瀑布流图片质量",
+            title: S.current.chooseWaterfallFlowImageQuality,
           );
         },
       ),
       ItemBuilder.buildEntryItem(
         context: context,
-        title: "详情页图片质量",
+        title: S.current.postDetailImageQuality,
         tip: EnumsLabelGetter.getImageQualityLabel(postDetailImageQuality),
         onTap: () {
           showImageQualitySelect(
@@ -178,13 +180,13 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
               });
             },
             selected: postDetailImageQuality,
-            title: "选择详情页图片质量",
+            title: S.current.choosePostDetailImageQuality,
           );
         },
       ),
       ItemBuilder.buildEntryItem(
         context: context,
-        title: "查看大图时图片质量",
+        title: S.current.bigImageQuality,
         tip: EnumsLabelGetter.getImageQualityLabel(imageDetailImageQuality),
         bottomRadius: true,
         onTap: () {
@@ -197,7 +199,7 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
               });
             },
             selected: imageDetailImageQuality,
-            title: "选择查看大图时图片质量",
+            title: S.current.chooseBigImageQuality,
           );
         },
       ),
@@ -206,11 +208,12 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
 
   _bigImageSettings() {
     return [
-      ItemBuilder.buildCaptionItem(context: context, title: "大图设置"),
+      ItemBuilder.buildCaptionItem(
+          context: context, title: S.current.bigImageSetting),
       ItemBuilder.buildRadioItem(
         value: followMainColor,
         context: context,
-        title: "背景跟随图片主色调",
+        title: S.current.backgroundColorFollowMainColor,
         onTap: () {
           setState(() {
             followMainColor = !followMainColor;
@@ -223,9 +226,9 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
       ),
       ItemBuilder.buildEntryItem(
         context: context,
-        title: "点按链接按钮",
+        title: S.current.tapLinkButton,
         tip: EnumsLabelGetter.getImageQualityLabel(tapLinkButtonImageQuality),
-        description: "点按链接按钮时复制的图片链接质量",
+        description: S.current.tapLinkButtonDescription,
         onTap: () {
           showImageQualitySelect(
             onSelected: (quality) {
@@ -236,16 +239,16 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
               });
             },
             selected: tapLinkButtonImageQuality,
-            title: "选择点按链接按钮时复制的图片链接质量",
+            title: S.current.chooseTapLinkButton,
           );
         },
       ),
       ItemBuilder.buildEntryItem(
         context: context,
-        title: "长按链接按钮",
+        title: S.current.longPressLinkButton,
         tip: EnumsLabelGetter.getImageQualityLabel(
             longPressLinkButtonImageQuality),
-        description: "长按链接按钮时复制的图片链接质量",
+        description: S.current.longPressLinkButtonDescription,
         bottomRadius: true,
         onTap: () {
           showImageQualitySelect(
@@ -257,7 +260,7 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
               });
             },
             selected: longPressLinkButtonImageQuality,
-            title: "选择长按链接按钮时复制的图片链接质量",
+            title: S.current.chooseLongPressLinkButton,
           );
         },
       ),

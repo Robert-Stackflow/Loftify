@@ -4,7 +4,6 @@ import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Widgets/Dialog/widgets/dialog_wrapper_widget.dart';
 import 'package:tuple/tuple.dart';
 
-import '../Models/cloud_control.dart';
 import '../Resources/fonts.dart';
 import '../Resources/theme_color_data.dart';
 import '../Screens/Navigation/home_screen.dart';
@@ -61,7 +60,6 @@ RouteObserver<PageRoute> routeObserver = RouteObserver();
 AppProvider appProvider = AppProvider();
 
 class AppProvider with ChangeNotifier {
-
   Size windowSize = const Size(0, 0);
 
   String latestVersion = "";
@@ -228,31 +226,36 @@ class AppProvider with ChangeNotifier {
     ];
   }
 
-  int _autoLockTime = HiveUtil.getInt(HiveUtil.autoLockTimeKey);
+  int _autoLockSeconds = HiveUtil.getInt(HiveUtil.autoLockSecondsKey);
 
-  int get autoLockTime => _autoLockTime;
+  int get autoLockSeconds => _autoLockSeconds;
 
-  set autoLockTime(int value) {
-    if (value != _autoLockTime) {
-      _autoLockTime = value;
+  set autoLockSeconds(int value) {
+    if (value != _autoLockSeconds) {
+      _autoLockSeconds = value;
       notifyListeners();
-      HiveUtil.put(HiveUtil.autoLockTimeKey, value);
+      HiveUtil.put(HiveUtil.autoLockSecondsKey, value);
     }
   }
 
   static String getAutoLockOptionLabel(int time) {
-    if (time == 0)
-      return "立即锁定";
-    else
-      return "处于后台$time分钟后锁定";
+    var tuples = getAutoLockOptions();
+    for (var tuple in tuples) {
+      if (tuple.item2 == time) {
+        return tuple.item1;
+      }
+    }
+    return S.current.immediatelyLock;
   }
 
   static List<Tuple2<String, int>> getAutoLockOptions() {
     return [
-      Tuple2("立即锁定", 0),
-      Tuple2("处于后台1分钟后锁定", 1),
-      Tuple2("处于后台5分钟后锁定", 5),
-      Tuple2("处于后台10分钟后锁定", 10),
+      Tuple2(S.current.immediatelyLock, 0),
+      Tuple2(S.current.after30SecondsLock, 30),
+      Tuple2(S.current.after1MinuteLock, 60),
+      Tuple2(S.current.after3MinutesLock, 3 * 60),
+      Tuple2(S.current.after5MinutesLock, 5 * 60),
+      Tuple2(S.current.after10MinutesLock, 10 * 60),
     ];
   }
 

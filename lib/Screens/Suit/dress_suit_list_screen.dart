@@ -1,3 +1,4 @@
+import '../../generated/l10n.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -74,7 +75,7 @@ class DressSuitListScreenState extends State<DressSuitListScreen>
         }
       } catch (e, t) {
         ILogger.error("Failed to load dress list", e, t);
-        if (mounted) IToast.showTop("加载失败");
+        if (mounted) IToast.showTop(S.current.loadFailed);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -173,7 +174,7 @@ class DressSuitListScreenState extends State<DressSuitListScreen>
                   //         context,
                   //         background: Colors.white24,
                   //         color: Colors.white,
-                  //         text: "查看详情",
+                  //         text: S.current.viewDetail,
                   //         onTap: () {},
                   //       ),
                   //     ),

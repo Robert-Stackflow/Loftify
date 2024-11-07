@@ -51,7 +51,7 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
         }
       } catch (e, t) {
         ILogger.error("Failed to load gift config", e, t);
-        IToast.showTop("礼物设置加载失败");
+        IToast.showTop(S.current.loadGiftSettingFailed);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -76,7 +76,7 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
           }
         } catch (e, t) {
           ILogger.error("Failed to load user info", e, t);
-          if (mounted) IToast.showTop("加载失败");
+          if (mounted) IToast.showTop(S.current.loadFailed);
           return IndicatorResult.fail;
         } finally {
           setState(() {});
@@ -100,7 +100,7 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
           }
         } catch (e, t) {
           ILogger.error("Failed to load misc config", e, t);
-          if (mounted) IToast.showTop("加载失败");
+          if (mounted) IToast.showTop(S.current.loadFailed);
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
@@ -128,10 +128,10 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
             value['meta']['status'] == 4212) {
           DialogBuilder.showConfirmDialog(
             context,
-            title: "版权水印关闭提示",
-            message: "由于一些历史遗留问题，你需要先在电脑上关闭版权水印功能（主页设置-版权-版权水印）",
-            confirmButtonText: "前往更改",
-            cancelButtonText: "暂不更改",
+            title: S.current.copyrightWatermarkTitle,
+            message: S.current.copyrightWatermarkMessage,
+            confirmButtonText: S.current.goToEdit,
+            cancelButtonText: S.current.editLater,
             onTapConfirm: () {
               UriUtil.launchUrlUri(
                   context, "https://www.lofter.com/theme/${blogInfo.blogName}");
@@ -178,10 +178,10 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
             ItemBuilder.buildRadioItem(
               value: personalRecommend,
               context: context,
-              title: "个性化服务",
+              title: S.current.personalizedService,
               topRadius: true,
               bottomRadius: true,
-              description: "取消勾选后，将不会使用你的个性信息为你提供个性化服务",
+              description: S.current.personalizedServiceDescription,
               onTap: () {
                 SettingApi.updatePersonalRecommendSetting(
                   isEnable: !personalRecommend,
@@ -197,12 +197,13 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
               },
             ),
             const SizedBox(height: 10),
-            ItemBuilder.buildCaptionItem(context: context, title: "版权保护"),
+            ItemBuilder.buildCaptionItem(
+                context: context, title: S.current.copyrightProtection),
             ItemBuilder.buildRadioItem(
               value: appimagestamp,
               context: context,
-              title: "版权水印签名",
-              description: "勾选后，所有用户保存你的图片到手机，会显示你的签名水印，保护原创",
+              title: S.current.copyrightWatermark,
+              description: S.current.copyrightWatermarkDescription,
               onTap: () {
                 _updateCopyRightSetting(
                   copyRightType: CopyRightType.appimagestamp,
@@ -216,8 +217,8 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
             ItemBuilder.buildRadioItem(
               value: imageprotection,
               context: context,
-              title: "作品保护",
-              description: "勾选后,发布的图片日志将禁止被保存到本地",
+              title: S.current.workProtection,
+              description: S.current.workProtectionDescription,
               onTap: () {
                 _updateCopyRightSetting(
                   copyRightType: CopyRightType.imageprotection,
@@ -232,8 +233,8 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
               value: videoprotection,
               context: context,
               bottomRadius: true,
-              title: "生成分享视频",
-              description: "勾选后，你的作品将禁止生成分享视频",
+              title: S.current.shareVideoProtection,
+              description: S.current.shareVideoProtectionDescription,
               onTap: () {
                 _updateCopyRightSetting(
                   copyRightType: CopyRightType.videoprotection,
@@ -245,11 +246,12 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
               },
             ),
             const SizedBox(height: 10),
-            ItemBuilder.buildCaptionItem(context: context, title: "礼物设置"),
+            ItemBuilder.buildCaptionItem(
+                context: context, title: S.current.giftSetting),
             ItemBuilder.buildRadioItem(
               value: acceptGiftFlag,
               context: context,
-              title: "接受礼物",
+              title: S.current.acceptGift,
               onTap: () {
                 SettingApi.updateGiftSetting(
                   acceptGiftFlag: !acceptGiftFlag,
@@ -268,7 +270,7 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
               value: showReturnGiftPreviewImg,
               bottomRadius: true,
               context: context,
-              title: "支持图片模糊预览",
+              title: S.current.imageBlurPreview,
               onTap: () {
                 SettingApi.updateGiftSetting(
                   acceptGiftFlag: acceptGiftFlag,

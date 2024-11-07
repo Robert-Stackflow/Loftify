@@ -278,13 +278,14 @@ class _AboutSettingScreenState extends State<AboutSettingScreen>
                             bottomRadius: !cloudControlProvider
                                 .globalControl.showTelegramGroup,
                             onTap: () {
-                              UriUtil.openExternal(
-                                  cloudControlProvider.globalControl.qqGroupUrl);
+                              UriUtil.openExternal(cloudControlProvider
+                                  .globalControl.qqGroupUrl);
                             },
                             showLeading: true,
                             leading: Icons.group_outlined,
                           ),
-                        if (cloudControlProvider.globalControl.showTelegramGroup)
+                        if (cloudControlProvider
+                            .globalControl.showTelegramGroup)
                           ItemBuilder.buildEntryItem(
                             context: context,
                             title: S.current.telegramGroup,

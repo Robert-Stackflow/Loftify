@@ -25,6 +25,7 @@ import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/Custom/sliver_appbar_delegate.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
+import '../../generated/l10n.dart';
 
 class CollectionDetailScreen extends StatefulWidget {
   const CollectionDetailScreen({
@@ -75,7 +76,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
         }
       } catch (e, t) {
         ILogger.error("Failed to load collection url", e, t);
-        if (mounted) IToast.showTop("获取链接失败");
+        if (mounted) IToast.showTop(S.current.getLinkFailed);
         return IndicatorResult.fail;
       }
     });
@@ -84,7 +85,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
   _fetchData({bool refresh = false, bool showLoading = false}) async {
     if (loading) return;
     if (refresh) noMore = false;
-    if (showLoading) CustomLoadingDialog.showLoading(title: "加载中...");
+    if (showLoading) CustomLoadingDialog.showLoading(title: S.current.loading);
     loading = true;
     int offset = refresh ? 0 : posts.length;
     return await CollectionApi.getCollectionDetail(
@@ -144,7 +145,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
         }
       } catch (e, t) {
         ILogger.error("Failed to load collection detail", e, t);
-        if (mounted) IToast.showTop("加载失败");
+        if (mounted) IToast.showTop(S.current.loadFailed);
         return IndicatorResult.fail;
       } finally {
         if (showLoading) CustomLoadingDialog.dismissLoading();
@@ -175,7 +176,9 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
       backgroundColor: MyTheme.getBackground(context),
       appBar: ResponsiveUtil.isLandscape()
           ? ItemBuilder.buildDesktopAppBar(
-              context: context, showBack: true, title: "合集详情")
+              context: context,
+              showBack: true,
+              title: S.current.collectionDetail)
           : null,
       bottomNavigationBar:
           blogInfo != null && postCollection != null ? _buildFooter() : null,
@@ -213,7 +216,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
           ],
           center: true,
           title: Text(
-            "合集",
+            S.current.collection,
             style: Theme.of(context).textTheme.titleMedium?.apply(
                   color: Colors.white,
                   fontWeightDelta: 2,
@@ -292,7 +295,9 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
               children: [
                 Flexible(
                   child: Text(
-                    hasDesc ? postCollection!.description : "暂无简介",
+                    hasDesc
+                        ? postCollection!.description
+                        : S.current.noDescription,
                     style: Theme.of(context).textTheme.labelLarge?.apply(
                           color: Theme.of(context).textTheme.bodySmall?.color,
                         ),
@@ -303,7 +308,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
                 const SizedBox(width: 5),
                 ItemBuilder.buildIconTextButton(
                   context,
-                  text: isOldest ? "正序" : "倒序",
+                  text: isOldest ? S.current.order : S.current.reverseOrder,
                   icon: AssetUtil.load(
                     isOldest
                         ? AssetUtil.orderDownDarkIcon
@@ -350,7 +355,9 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
           Expanded(
             child: ItemBuilder.buildRoundButton(
               context,
-              text: subscribed ? "取消订阅" : "订阅合集",
+              text: subscribed
+                  ? S.current.unsubscribe
+                  : S.current.subscribeCollection,
               background: Theme.of(context).primaryColor.withAlpha(40),
               padding: const EdgeInsets.symmetric(vertical: 15),
               color: Theme.of(context).primaryColor,
@@ -376,7 +383,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
           Expanded(
             child: ItemBuilder.buildRoundButton(
               context,
-              text: "继续阅读",
+              text: S.current.continueRead,
               background: Theme.of(context).primaryColor,
               padding: const EdgeInsets.symmetric(vertical: 15),
               onTap: () {
@@ -390,7 +397,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
                     ),
                   );
                 } else {
-                  IToast.showTop("合集中暂无文章");
+                  IToast.showTop(S.current.noPostInCollection);
                 }
               },
               fontSizeDelta: 2,
@@ -415,7 +422,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
               height: 80,
               width: 80,
               tagPrefix: Utils.getRandomString(),
-              title: "合集封面",
+              title: S.current.collectionCover,
               showLoading: false,
             ),
           ),
@@ -459,7 +466,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
                         ),
                         Expanded(
                           child: Text(
-                            "${blogInfo!.blogNickName} · 更新于${Utils.formatTimestamp(postCollection!.lastPublishTime)}",
+                            "${blogInfo!.blogNickName} · ${S.current.updateAt}${Utils.formatTimestamp(postCollection!.lastPublishTime)}",
                             style: Theme.of(context)
                                 .textTheme
                                 .labelMedium
@@ -501,28 +508,28 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
       children: [
         ItemBuilder.buildStatisticItem(
           context,
-          title: '文章数',
+          title: S.current.postCount,
           count: postCollection!.postCount,
           countColor: Colors.white,
           labelColor: Colors.white.withOpacity(0.6),
         ),
         ItemBuilder.buildStatisticItem(
           context,
-          title: '订阅数',
+          title: S.current.subscribeCount,
           count: postCollection!.subscribedCount,
           countColor: Colors.white,
           labelColor: Colors.white.withOpacity(0.6),
         ),
         ItemBuilder.buildStatisticItem(
           context,
-          title: '总热度',
+          title: S.current.totalHotCount,
           count: postCollection!.postCollectionHot,
           countColor: Colors.white,
           labelColor: Colors.white.withOpacity(0.6),
         ),
         ItemBuilder.buildStatisticItem(
           context,
-          title: '浏览量',
+          title: S.current.viewCountLong,
           count: postCollection!.viewCount,
           countColor: Colors.white,
           labelColor: Colors.white.withOpacity(0.6),
@@ -545,7 +552,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
       }
       widgets.add(ItemBuilder.buildTitle(
         context,
-        title: "${e.desc}（${e.count}篇）",
+        title: S.current.descriptionWithPostCount(e.desc, e.count.toString()),
         topMargin: 16,
         bottomMargin: 0,
       ));
@@ -599,17 +606,17 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
     return GenericContextMenu(
       buttonConfigs: [
         ContextMenuButtonConfig(
-          "复制链接",
+          S.current.copyLink,
           icon: const Icon(Icons.copy_rounded),
           onPressed: () {
             Utils.copy(context, collectionUrl);
           },
         ),
-        ContextMenuButtonConfig("在浏览器打开",
+        ContextMenuButtonConfig(S.current.openWithBrowser,
             icon: const Icon(Icons.open_in_browser_rounded), onPressed: () {
           UriUtil.openExternal(collectionUrl);
         }),
-        ContextMenuButtonConfig("分享到其他应用",
+        ContextMenuButtonConfig(S.current.shareToOtherApps,
             icon: const Icon(Icons.share_rounded), onPressed: () {
           UriUtil.share(context, collectionUrl);
         }),

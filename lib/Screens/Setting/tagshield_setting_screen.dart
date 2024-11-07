@@ -44,7 +44,7 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
         }
       } catch (e, t) {
         ILogger.error("Failed to load tag shield list", e, t);
-        IToast.showTop("屏蔽标签加载失败");
+        IToast.showTop(S.current.loadFailed);
         return IndicatorResult.fail;
       } finally {
         loading = false;
@@ -71,8 +71,8 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
               BottomSheetBuilder.showBottomSheet(
                 context,
                 (sheetContext) => InputBottomSheet(
-                  buttonText: "确认",
-                  title: "添加屏蔽标签",
+                  buttonText: S.current.confirm,
+                  title: S.current.addShieldTag,
                   text: "",
                   onConfirm: (text) {
                     SettingApi.shieldOrUnshieldTag(tag: text, isShield: true)
@@ -129,15 +129,14 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
           ItemBuilder.buildFramedDoubleButton(
             context: context,
             isFollowed: false,
-            positiveText: "解除屏蔽",
-            negtiveText: "解除屏蔽",
+            positiveText: S.current.unblockShieldTag,
+            negtiveText: S.current.unblockShieldTag,
             onTap: () {
               DialogBuilder.showConfirmDialog(
                 context,
-                title: "解除屏蔽标签",
-                message: "确认解除屏蔽「$tag」？",
-                confirmButtonText: "解除",
-                cancelButtonText: "取消",
+                title: S.current.unblockShieldTag,
+                message: S.current.unblockShieldTagMessage(tag),
+                confirmButtonText: S.current.unlock,
                 onTapConfirm: () {
                   SettingApi.shieldOrUnshieldTag(tag: tag, isShield: false)
                       .then((value) {

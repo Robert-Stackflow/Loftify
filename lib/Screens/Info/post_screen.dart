@@ -1,3 +1,4 @@
+import '../../generated/l10n.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -67,7 +68,7 @@ class _PostScreenState extends State<PostScreen>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Future.delayed(const Duration(milliseconds: 300), () => _onRefresh());
       });
-    }else{
+    } else {
       _initPhase = InitPhase.successful;
       setState(() {});
     }
@@ -168,7 +169,7 @@ class _PostScreenState extends State<PostScreen>
         } catch (e, t) {
           _initPhase = InitPhase.failed;
           ILogger.error("Failed to load post list", e, t);
-          if (mounted) IToast.showTop("加载失败");
+          if (mounted) IToast.showTop(S.current.loadFailed);
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
@@ -219,7 +220,7 @@ class _PostScreenState extends State<PostScreen>
             return _archiveDataList.isNotEmpty
                 ? _buildNineGridGroup(physics)
                 : ItemBuilder.buildEmptyPlaceholder(
-                    context: context, text: "暂无文章",physics: physics);
+                    context: context, text: "暂无文章", physics: physics);
           },
         );
       default:

@@ -46,16 +46,16 @@ class IToast {
   }
 
   static LocalNotification? showDesktopNotification(
-      String title, {
-        String? subTitle,
-        String? body,
-        List<String> actions = const [],
-        Function()? onClick,
-        Function(int)? onClickAction,
-      }) {
+    String title, {
+    String? subTitle,
+    String? body,
+    List<String> actions = const [],
+    Function()? onClick,
+    Function(int)? onClickAction,
+  }) {
     if (!ResponsiveUtil.isDesktop()) return null;
     var nActions =
-    actions.map((e) => LocalNotificationAction(text: e)).toList();
+        actions.map((e) => LocalNotificationAction(text: e)).toList();
     LocalNotification notification = LocalNotification(
       identifier: Utils.getRandomString(),
       title: title,
@@ -78,5 +78,4 @@ class IToast {
     notification.show();
     return notification;
   }
-
 }

@@ -17,6 +17,7 @@ import '../../Utils/route_util.dart';
 import '../../Widgets/Custom/hero_photo_view_screen.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
 
 class CustomBgAvatarListScreen extends StatefulWidget {
   const CustomBgAvatarListScreen({
@@ -90,7 +91,7 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
             margin: const EdgeInsets.only(right: 10),
             child: ItemBuilder.buildRoundButton(
               context,
-              text: index == 0 ? "全部" : "#${tags[index - 1]}",
+              text: index == 0 ? S.current.all : "#${tags[index - 1]}",
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
               radius: 20,
               background: bg,
@@ -120,7 +121,7 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
         children: [
           ItemBuilder.buildRoundButton(
             context,
-            text: "全部",
+            text: S.current.all,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             radius: 20,
             background: selected == null
@@ -207,7 +208,7 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
       }
     } catch (e, t) {
       ILogger.error("Failed to load dress list", e, t);
-      if (mounted) IToast.showTop("加载失败");
+      if (mounted) IToast.showTop(S.current.loadFailed);
       return IndicatorResult.fail;
     } finally {
       if (mounted) setState(() {});
@@ -246,7 +247,9 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
               return _productList.isNotEmpty
                   ? _buildBody(physics)
                   : ItemBuilder.buildEmptyPlaceholder(
-                      context: context, text: "暂无壁纸头像", physics: physics);
+                      context: context,
+                      text: S.current.noBgAvatar,
+                      physics: physics);
             },
           ),
         ),
@@ -355,7 +358,8 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
       }
     }
     return buildProductBg(context, bgUrl, isAvatar,
-        tag: item.type == 0 ? "单套" : "卡池", isHero: false);
+        tag: item.type == 0 ? S.current.singleSuit : S.current.cardPool,
+        isHero: false);
   }
 
   static buildProductBg(

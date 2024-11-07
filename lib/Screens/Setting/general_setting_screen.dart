@@ -169,57 +169,12 @@ class GeneralSettingScreenState extends State<GeneralSettingScreen>
                   },
                 ),
               ),
-              if (ResponsiveUtil.isMobile()) const SizedBox(height: 10),
-              if (ResponsiveUtil.isMobile())
-                ItemBuilder.buildRadioItem(
-                  value: inAppBrowser,
-                  context: context,
-                  title: "内置浏览器",
-                  topRadius: true,
-                  bottomRadius: true,
-                  onTap: () {
-                    setState(() {
-                      inAppBrowser = !inAppBrowser;
-                      HiveUtil.put(HiveUtil.inappWebviewKey, inAppBrowser);
-                    });
-                  },
-                ),
-              if (ResponsiveUtil.isDesktop()) ..._desktopSetting(),
               const SizedBox(height: 10),
-              ItemBuilder.buildRadioItem(
-                value: autoCheckUpdate,
-                topRadius: true,
-                context: context,
-                title: "自动检查更新",
-                onTap: () {
-                  setState(() {
-                    autoCheckUpdate = !autoCheckUpdate;
-                    HiveUtil.put(HiveUtil.autoCheckUpdateKey, autoCheckUpdate);
-                  });
-                },
-              ),
+              ItemBuilder.buildCaptionItem(
+                  context: context, title: S.current.operationSetting),
               ItemBuilder.buildEntryItem(
                 context: context,
-                title: S.current.checkUpdates,
-                bottomRadius: true,
-                description:
-                    Utils.compareVersion(latestVersion, currentVersion) > 0
-                        ? "新版本：$latestVersion"
-                        : S.current.alreadyLatestVersion,
-                descriptionColor:
-                    Utils.compareVersion(latestVersion, currentVersion) > 0
-                        ? Colors.redAccent
-                        : null,
-                tip: currentVersion,
-                onTap: () {
-                  fetchReleases(true);
-                },
-              ),
-              const SizedBox(height: 10),
-              ItemBuilder.buildCaptionItem(context: context, title: "操作设置"),
-              ItemBuilder.buildEntryItem(
-                context: context,
-                title: "详情页双击页面",
+                title: S.current.doubleTapInDetailPage,
                 tip: DoubleTapAction.values[doubleTapAction].label,
                 onTap: () {
                   BottomSheetBuilder.showListBottomSheet(
@@ -235,7 +190,7 @@ class GeneralSettingScreenState extends State<GeneralSettingScreen>
                         });
                       },
                       selected: DoubleTapAction.values[doubleTapAction],
-                      title: "选择详情页双击页面操作",
+                      title: S.current.chooseDoubleTapInDetailPage,
                       context: context,
                       onCloseTap: () => Navigator.pop(sheetContext),
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,9 +200,8 @@ class GeneralSettingScreenState extends State<GeneralSettingScreen>
               ),
               ItemBuilder.buildEntryItem(
                 context: context,
-                title: "下载成功后",
-                description:
-                    "下载成功后（点击详情页的下载全部按钮、双击详情页面下载、点击图片详情页的下载或下载全部按钮）执行的操作",
+                title: S.current.afterDownloadSuccess,
+                description: S.current.afterDownloadSuccessDescription,
                 bottomRadius: true,
                 tip: DownloadSuccessAction.values[downloadSuccessAction].label,
                 onTap: () {
@@ -265,7 +219,7 @@ class GeneralSettingScreenState extends State<GeneralSettingScreen>
                       },
                       selected:
                           DownloadSuccessAction.values[downloadSuccessAction],
-                      title: "选择下载成功后操作",
+                      title: S.current.chooseAfterDownloadSuccess,
                       context: context,
                       onCloseTap: () => Navigator.pop(sheetContext),
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -273,29 +227,38 @@ class GeneralSettingScreenState extends State<GeneralSettingScreen>
                   );
                 },
               ),
-              if (ResponsiveUtil.isMobile()) const SizedBox(height: 10),
-              if (ResponsiveUtil.isMobile())
-                ItemBuilder.buildEntryItem(
-                  context: context,
-                  title: S.current.clearCache,
-                  topRadius: true,
-                  bottomRadius: true,
-                  tip: _cacheSize,
-                  onTap: () {
-                    CustomLoadingDialog.showLoading(title: "清除缓存中...");
-                    getTemporaryDirectory().then((tempDir) {
-                      CacheUtil.delDir(tempDir).then((value) {
-                        CacheUtil.loadCache().then((value) {
-                          setState(() {
-                            _cacheSize = value;
-                            CustomLoadingDialog.dismissLoading();
-                            IToast.showTop(S.current.clearCacheSuccess);
-                          });
-                        });
-                      });
-                    });
-                  },
-                ),
+              if (ResponsiveUtil.isDesktop()) ..._desktopSetting(),
+              if (ResponsiveUtil.isMobile()) ..._mobileSetting(),
+              const SizedBox(height: 10),
+              ItemBuilder.buildRadioItem(
+                value: autoCheckUpdate,
+                topRadius: true,
+                context: context,
+                title: S.current.autoCheckUpdates,
+                onTap: () {
+                  setState(() {
+                    autoCheckUpdate = !autoCheckUpdate;
+                    HiveUtil.put(HiveUtil.autoCheckUpdateKey, autoCheckUpdate);
+                  });
+                },
+              ),
+              ItemBuilder.buildEntryItem(
+                context: context,
+                title: S.current.checkUpdates,
+                bottomRadius: true,
+                description:
+                    Utils.compareVersion(latestVersion, currentVersion) > 0
+                        ? S.current.newVersion(latestVersion)
+                        : S.current.alreadyLatestVersion,
+                descriptionColor:
+                    Utils.compareVersion(latestVersion, currentVersion) > 0
+                        ? Colors.redAccent
+                        : null,
+                tip: currentVersion,
+                onTap: () {
+                  fetchReleases(true);
+                },
+              ),
               ..._logSetting(),
               const SizedBox(height: 10),
             ],
@@ -303,6 +266,44 @@ class GeneralSettingScreenState extends State<GeneralSettingScreen>
         ),
       ),
     );
+  }
+
+  _mobileSetting() {
+    return [
+      const SizedBox(height: 10),
+      ItemBuilder.buildRadioItem(
+        value: inAppBrowser,
+        context: context,
+        title: S.current.inAppBrowser,
+        topRadius: true,
+        onTap: () {
+          setState(() {
+            inAppBrowser = !inAppBrowser;
+            HiveUtil.put(HiveUtil.inappWebviewKey, inAppBrowser);
+          });
+        },
+      ),
+      ItemBuilder.buildEntryItem(
+        context: context,
+        title: S.current.clearCache,
+        bottomRadius: true,
+        tip: _cacheSize,
+        onTap: () {
+          CustomLoadingDialog.showLoading(title: S.current.clearingCache);
+          getTemporaryDirectory().then((tempDir) {
+            CacheUtil.delDir(tempDir).then((value) {
+              CacheUtil.loadCache().then((value) {
+                setState(() {
+                  _cacheSize = value;
+                  CustomLoadingDialog.dismissLoading();
+                  IToast.showTop(S.current.clearCacheSuccess);
+                });
+              });
+            });
+          });
+        },
+      ),
+    ];
   }
 
   _logSetting() {
@@ -399,9 +400,9 @@ class GeneralSettingScreenState extends State<GeneralSettingScreen>
             ];
             BottomSheetBuilder.showListBottomSheet(
               context,
-                  (sheetContext) => TileList.fromOptions(
+              (sheetContext) => TileList.fromOptions(
                 options,
-                    (idx) {
+                (idx) {
                   Navigator.pop(sheetContext);
                   if (idx == 0) {
                     setState(() {

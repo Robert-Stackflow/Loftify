@@ -1,3 +1,4 @@
+import '../../generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/tag_api.dart';
 import 'package:loftify/Models/recommend_response.dart';
@@ -85,7 +86,7 @@ class _TagRelatedScreenState extends State<TagRelatedScreen>
         }
       } catch (e, t) {
         ILogger.error("Failed to load tag related tag post result list", e, t);
-        IToast.showTop("加载失败");
+        IToast.showTop(S.current.loadFailed);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});

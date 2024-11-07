@@ -37,13 +37,13 @@ class ProductItem {
   }
 
   bool isSame(ProductItem other) {
-    if(type==other.type){
-      if(type==0){
+    if (type == other.type) {
+      if (type == 0) {
         return product?.id == other.product?.id;
-      }else{
+      } else {
         return lootBox?.id == other.lootBox?.id;
       }
-    }else{
+    } else {
       return false;
     }
   }

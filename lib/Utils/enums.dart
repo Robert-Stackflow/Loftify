@@ -1,5 +1,7 @@
 import 'package:tuple/tuple.dart';
 
+import '../generated/l10n.dart';
+
 enum ActiveThemeMode { system, light, dark }
 
 enum TokenType {
@@ -154,29 +156,90 @@ extension DownloadSuccessEnumExtension on DownloadSuccessAction {
 }
 
 enum FilenameField {
-  originalName('original_name', '{original_name}', '图片原文件名称', '6JKDN49SDDVMG'),
-  blogId('blog_id', '{blog_id}', '作者ID', '12345678'),
-  blogLofterId(
-      'blog_lofter_id', '{blog_lofter_id}', '作者Lofter ID', 'loftifyofficial'),
-  blogNickName('blog_nick_name', '{blog_nick_name}', '作者昵称', 'Loftify官方'),
-  postId('post_id', '{post_id}', '帖子ID', '12345678'),
-  postTitle('post_title', '{post_title}', '帖子标题，若没有标题则设置为“无标题”', '正式发布啦'),
-  postTags('post_tags', '{post_tags}', '帖子标签，若没有标签则设置为“无标签”', '第三方,Loftify'),
-  postPublishTime('post_publish_time', '{post_publish_time}', '帖子发布时间字符串',
-      '2024-11-03_12-34-56'),
-  part('part', '{part}', '当前图片在所有图片中的序号', '0'),
-  timestamp('timestamp', '{timestamp}', '当前时间戳', '1234567890'),
-  currentTime(
-      'current_time', '{current_time}', '当前时间字符串', '2024-11-03_12-34-56'),
-  underline('_', '_', '下划线', '_'),
-  slack('/', '/', '路径分隔符，用于创建文件夹', '/');
+  originalName('original_name', '{original_name}'),
+  blogId('blog_id', '{blog_id}'),
+  blogLofterId('blog_lofter_id', '{blog_lofter_id}'),
+  blogNickName('blog_nick_name', '{blog_nick_name}'),
+  postId('post_id', '{post_id}'),
+  postTitle('post_title', '{post_title}'),
+  postTags('post_tags', '{post_tags}'),
+  postPublishTime('post_publish_time', '{post_publish_time}'),
+  part('part', '{part}'),
+  timestamp('timestamp', '{timestamp}'),
+  currentTime('current_time', '{current_time}'),
+  underline('_', '_'),
+  slack('/', '/');
 
-  const FilenameField(this.label, this.format, this.description, this.example);
+  const FilenameField(this.label, this.format);
 
   final String format;
   final String label;
-  final String example;
-  final String description;
+
+  String get example {
+    switch (this) {
+      case originalName:
+        return S.current.fieldOriginalNameExample;
+      case blogId:
+        return S.current.fieldBlogIdExample;
+      case blogLofterId:
+        return S.current.fieldBlogLofterIdExample;
+      case blogNickName:
+        return S.current.fieldBlogNickNameExample;
+      case postId:
+        return S.current.fieldPostIdExample;
+      case postTitle:
+        return S.current.fieldPostTitleExample;
+      case postTags:
+        return S.current.fieldPostTagsExample;
+      case postPublishTime:
+        return S.current.fieldPostPublishTimeExample;
+      case part:
+        return S.current.fieldPartExample;
+      case timestamp:
+        return S.current.fieldTimestampExample;
+      case currentTime:
+        return S.current.fieldCurrentTimeExample;
+      case underline:
+        return S.current.fieldUnderlineExample;
+      case slack:
+        return S.current.fieldSlackExample;
+      default:
+        return "";
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case originalName:
+        return S.current.fieldOriginalNameDescription;
+      case blogId:
+        return S.current.fieldBlogIdDescription;
+      case blogLofterId:
+        return S.current.fieldBlogLofterIdDescription;
+      case blogNickName:
+        return S.current.fieldBlogNickNameDescription;
+      case postId:
+        return S.current.fieldPostIdDescription;
+      case postTitle:
+        return S.current.fieldPostTitleDescription;
+      case postTags:
+        return S.current.fieldPostTagsDescription;
+      case postPublishTime:
+        return S.current.fieldPostPublishTimeDescription;
+      case part:
+        return S.current.fieldPartDescription;
+      case timestamp:
+        return S.current.fieldTimestampDescription;
+      case currentTime:
+        return S.current.fieldCurrentTimeDescription;
+      case underline:
+        return S.current.fieldUnderlineDescription;
+      case slack:
+        return S.current.fieldSlackDescription;
+      default:
+        return "";
+    }
+  }
 }
 
 enum InitPhase {

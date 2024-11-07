@@ -12,6 +12,7 @@ import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
 import 'emote_detail_screen.dart';
 
 class CustomDressListScreen extends StatefulWidget {
@@ -126,7 +127,7 @@ class _CustomDressListScreenState extends State<CustomDressListScreen>
       }
     } catch (e, t) {
       ILogger.error("Failed to load dress list", e, t);
-      if (mounted) IToast.showTop("加载失败");
+      if (mounted) IToast.showTop(S.current.loadFailed);
       return IndicatorResult.fail;
     } finally {
       if (mounted) setState(() {});
@@ -167,11 +168,15 @@ class _CustomDressListScreenState extends State<CustomDressListScreen>
                   ? _giftEmoteList.isNotEmpty
                       ? _buildEmoteBody(physics)
                       : ItemBuilder.buildEmptyPlaceholder(
-                          context: context, text: "暂无表情包",physics: physics)
+                          context: context,
+                          text: S.current.noEmotePackage,
+                          physics: physics)
                   : _giftDressList.isNotEmpty
                       ? _buildDressBody(physics)
                       : ItemBuilder.buildEmptyPlaceholder(
-                          context: context, text: "暂无装扮",physics: physics);
+                          context: context,
+                          text: S.current.noDress,
+                          physics: physics);
             },
           ),
         ),
@@ -282,13 +287,13 @@ class _CustomDressListScreenState extends State<CustomDressListScreen>
             ),
             const SizedBox(height: 5),
             Text(
-              "${item.partCount}个挂件",
+              S.current.pendantCount(item.partCount),
               style: Theme.of(context).textTheme.labelMedium,
             ),
             const SizedBox(height: 10),
             ItemBuilder.buildRoundButton(
               context,
-              text: "查看详情",
+              text: S.current.viewDetail,
               background: Theme.of(context).primaryColor,
               onTap: () {
                 RouteUtil.pushPanelCupertinoRoute(
@@ -367,13 +372,13 @@ class _CustomDressListScreenState extends State<CustomDressListScreen>
             ),
             const SizedBox(height: 5),
             Text(
-              "${item.emoteCount}个永久表情",
+              S.current.emoteCount(item.emoteCount),
               style: Theme.of(context).textTheme.labelMedium,
             ),
             const SizedBox(height: 10),
             ItemBuilder.buildRoundButton(
               context,
-              text: "查看详情",
+              text: S.current.viewDetail,
               background: Theme.of(context).primaryColor,
               onTap: () {
                 RouteUtil.pushPanelCupertinoRoute(

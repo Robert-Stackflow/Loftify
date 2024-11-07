@@ -9,7 +9,6 @@ import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:loftify/Widgets/PostItem/grain_post_item_builder.dart';
-import 'package:tuple/tuple.dart';
 
 import '../../Models/history_response.dart';
 import '../../Resources/theme.dart';
@@ -22,10 +21,10 @@ import '../../Utils/route_util.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
-import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
 import '../../Widgets/Custom/sliver_appbar_delegate.dart';
 import '../../Widgets/Dialog/custom_dialog.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
+import '../../generated/l10n.dart';
 
 class GrainDetailScreen extends StatefulWidget {
   const GrainDetailScreen({
@@ -72,7 +71,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
         }
       } catch (e, t) {
         ILogger.error("Failed to load grain detail", e, t);
-        if (mounted) IToast.showTop("获取链接失败");
+        if (mounted) IToast.showTop(S.current.getLinkFailed);
         return IndicatorResult.fail;
       }
     });
@@ -81,7 +80,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
   _fetchData({bool refresh = false, bool showLoading = false}) async {
     if (loading) return;
     if (refresh) noMore = false;
-    if (showLoading) CustomLoadingDialog.showLoading(title: "加载中...");
+    if (showLoading) CustomLoadingDialog.showLoading(title: S.current.loading);
     loading = true;
     int offset = refresh ? 0 : grainDetailData?.offset ?? 0;
     return await GrainApi.getGrainDetail(
@@ -138,7 +137,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
         }
       } catch (e, t) {
         ILogger.error("Failed to load graind detail", e, t);
-        if (mounted) IToast.showTop("加载失败");
+        if (mounted) IToast.showTop(S.current.loadFailed);
         return IndicatorResult.fail;
       } finally {
         if (showLoading) CustomLoadingDialog.dismissLoading();
@@ -169,7 +168,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
       backgroundColor: MyTheme.getBackground(context),
       appBar: ResponsiveUtil.isLandscape()
           ? ItemBuilder.buildDesktopAppBar(
-              context: context, showBack: true, title: "粮单详情")
+              context: context, showBack: true, title: S.current.grainDetail)
           : null,
       bottomNavigationBar: grainDetailData != null ? _buildFooter() : null,
       body: grainDetailData != null
@@ -205,7 +204,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
             const SizedBox(width: 5),
           ],
           title: Text(
-            "粮单",
+            S.current.grain,
             style: Theme.of(context).textTheme.titleMedium?.apply(
                   color: Colors.white,
                   fontWeightDelta: 2,
@@ -264,17 +263,17 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
     return GenericContextMenu(
       buttonConfigs: [
         ContextMenuButtonConfig(
-          "复制链接",
+          S.current.copyLink,
           icon: const Icon(Icons.copy_rounded),
           onPressed: () {
             Utils.copy(context, grainUrl);
           },
         ),
-        ContextMenuButtonConfig("在浏览器打开",
+        ContextMenuButtonConfig(S.current.openWithBrowser,
             icon: const Icon(Icons.open_in_browser_rounded), onPressed: () {
           UriUtil.openExternal(grainUrl);
         }),
-        ContextMenuButtonConfig("分享到其他应用",
+        ContextMenuButtonConfig(S.current.shareToOtherApps,
             icon: const Icon(Icons.share_rounded), onPressed: () {
           UriUtil.share(context, grainUrl);
         }),
@@ -307,7 +306,9 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
               children: [
                 Flexible(
                   child: Text(
-                    hasDesc ? grainDetailData!.grainInfo.description : "暂无简介",
+                    hasDesc
+                        ? grainDetailData!.grainInfo.description
+                        : S.current.noDescription,
                     style: Theme.of(context).textTheme.labelLarge?.apply(
                           color: Theme.of(context).textTheme.bodySmall?.color,
                         ),
@@ -318,7 +319,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
                 const SizedBox(width: 5),
                 ItemBuilder.buildIconTextButton(
                   context,
-                  text: isOldest ? "正序" : "倒序",
+                  text: isOldest ? S.current.order : S.current.reverseOrder,
                   icon: AssetUtil.load(
                     isOldest
                         ? AssetUtil.orderDownDarkIcon
@@ -364,7 +365,8 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
           Expanded(
             child: ItemBuilder.buildRoundButton(
               context,
-              text: subscribed ? "取消订阅" : "订阅粮单",
+              text:
+                  subscribed ? S.current.unsubscribe : S.current.subscribeGrain,
               background: Theme.of(context).primaryColor.withAlpha(40),
               padding: const EdgeInsets.symmetric(vertical: 15),
               color: Theme.of(context).primaryColor,
@@ -390,7 +392,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
           Expanded(
             child: ItemBuilder.buildRoundButton(
               context,
-              text: "开始阅读",
+              text: S.current.startRead,
               background: Theme.of(context).primaryColor,
               padding: const EdgeInsets.symmetric(vertical: 15),
               onTap: () {
@@ -404,7 +406,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
                     ),
                   );
                 } else {
-                  IToast.showTop("粮单中暂无文章");
+                  IToast.showTop(S.current.noPostInGrain);
                 }
               },
               fontSizeDelta: 2,
@@ -430,7 +432,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
               width: 80,
               fit: BoxFit.cover,
               tagPrefix: Utils.getRandomString(),
-              title: "粮单封面",
+              title: S.current.grainCover,
               showLoading: false,
             ),
           ),
@@ -474,7 +476,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
                         ),
                         Expanded(
                           child: Text(
-                            "${grainDetailData!.blogInfo.blogNickName} · 更新于${Utils.formatTimestamp(grainDetailData!.grainInfo.updateTime)}",
+                            "${grainDetailData!.blogInfo.blogNickName} · ${S.current.updateAt}${Utils.formatTimestamp(grainDetailData!.grainInfo.updateTime)}",
                             style: Theme.of(context)
                                 .textTheme
                                 .labelMedium
@@ -516,28 +518,28 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
       children: [
         ItemBuilder.buildStatisticItem(
           context,
-          title: '文章数',
+          title: S.current.postCount,
           count: grainDetailData!.grainInfo.postCount,
           countColor: Colors.white,
           labelColor: Colors.white.withOpacity(0.6),
         ),
         ItemBuilder.buildStatisticItem(
           context,
-          title: '订阅数',
+          title: S.current.subscribeCount,
           count: grainDetailData!.grainInfo.subscribedCount,
           countColor: Colors.white,
           labelColor: Colors.white.withOpacity(0.6),
         ),
         ItemBuilder.buildStatisticItem(
           context,
-          title: '共创数',
+          title: S.current.coCreatorCount,
           count: grainDetailData!.grainInfo.joinCount,
           countColor: Colors.white,
           labelColor: Colors.white.withOpacity(0.6),
         ),
         ItemBuilder.buildStatisticItem(
           context,
-          title: '浏览量',
+          title: S.current.viewCountLong,
           count: grainDetailData!.grainInfo.viewCount,
           countColor: Colors.white,
           labelColor: Colors.white.withOpacity(0.6),
@@ -587,7 +589,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
       }
       widgets.add(ItemBuilder.buildTitle(
         context,
-        title: "${e.desc}（${e.count}篇）",
+        title: S.current.descriptionWithPostCount(e.desc, e.count.toString()),
         topMargin: 16,
         bottomMargin: 0,
       ));
@@ -631,76 +633,6 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
           wh: 160,
         );
       }),
-    );
-  }
-
-  Widget _buildAppBar() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-          colors: [
-            Colors.black.withOpacity(0),
-            Colors.black.withOpacity(0.4),
-          ],
-        ),
-      ),
-      child: ItemBuilder.buildAppBar(
-        transparent: true,
-        leading: Icons.arrow_back_rounded,
-        leadingColor: Colors.white,
-        center: true,
-        title: Text(
-          "粮单",
-          style: Theme.of(context).textTheme.titleMedium?.apply(
-                color: Colors.white,
-                fontWeightDelta: 2,
-              ),
-        ),
-        actions: [
-          ItemBuilder.buildIconButton(
-            context: context,
-            onTap: () {
-              List<Tuple2<String, dynamic>> options = [
-                const Tuple2("复制链接", 0),
-                const Tuple2("在浏览器打开", 1),
-                const Tuple2("分享到其他应用", 2),
-              ];
-              BottomSheetBuilder.showListBottomSheet(
-                context,
-                (sheetContext) => TileList.fromOptions(
-                  options,
-                  (idx) {
-                    if (idx == 0) {
-                      Utils.copy(context, grainUrl);
-                    } else if (idx == 1) {
-                      UriUtil.openExternal(grainUrl);
-                    } else if (idx == 2) {
-                      UriUtil.share(context, grainUrl);
-                    }
-                    Navigator.pop(sheetContext);
-                  },
-                  showCancel: true,
-                  context: context,
-                  showTitle: false,
-                  onCloseTap: () => Navigator.pop(sheetContext),
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                ),
-              );
-            },
-            icon: const Icon(
-              Icons.more_vert_rounded,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 5),
-        ],
-        onLeadingTap: () {
-          Navigator.pop(context);
-        },
-        context: context,
-      ),
     );
   }
 

@@ -33,5 +33,6 @@ const String releaseUrl =
     "https://github.com/Robert-Stackflow/Loftify/releases";
 const String issueUrl = "https://github.com/Robert-Stackflow/Loftify/issues";
 
-const String cloudControlUrl="https://apps.cloudchewie.com/loftify/control.json";
-const String fontsUrl="https://apps.cloudchewie.com/loftify/fonts.json";
+const String cloudControlUrl =
+    "https://apps.cloudchewie.com/loftify/control.json";
+const String fontsUrl = "https://apps.cloudchewie.com/loftify/fonts.json";

@@ -33,6 +33,7 @@ import '../Widgets/Item/item_builder.dart';
 import '../Widgets/Scaffold/my_bottom_navigation_bar.dart';
 import '../Widgets/Scaffold/my_scaffold.dart';
 import '../Widgets/Window/window_caption.dart';
+import '../generated/l10n.dart';
 import 'Navigation/home_screen.dart';
 import 'Navigation/search_screen.dart';
 import 'main_screen.dart';
@@ -193,7 +194,7 @@ class PanelScreenState extends State<PanelScreen>
               Center(
                 child: ItemBuilder.buildRoundButton(
                   context,
-                  text: "前往登录",
+                  text: S.current.goToLogin,
                   background: Theme.of(context).primaryColor,
                   onTap: () {
                     RouteUtil.pushDialogRoute(
@@ -248,26 +249,26 @@ class PanelScreenState extends State<PanelScreen>
           showUnselectedLabels: false,
           type: BottomNavigationBarType.fixed,
           elevation: 0,
-          items: const [
+          items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.explore_outlined, size: 28),
-              activeIcon: Icon(Icons.explore_rounded, size: 28),
-              label: "首页",
+              icon: const Icon(Icons.explore_outlined, size: 28),
+              activeIcon: const Icon(Icons.explore_rounded, size: 28),
+              label: S.current.home,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.search_rounded, size: 28),
-              activeIcon: Icon(Icons.manage_search_rounded, size: 28),
-              label: "搜索",
+              icon: const Icon(Icons.search_rounded, size: 28),
+              activeIcon: const Icon(Icons.manage_search_rounded, size: 28),
+              label: S.current.search,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.favorite_border_rounded, size: 28),
-              activeIcon: Icon(Icons.favorite_rounded, size: 28),
-              label: "动态",
+              icon: const Icon(Icons.favorite_border_rounded, size: 28),
+              activeIcon: const Icon(Icons.favorite_rounded, size: 28),
+              label: S.current.dynamic,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline_rounded, size: 28),
-              activeIcon: Icon(Icons.person_rounded, size: 28),
-              label: "我的",
+              icon: const Icon(Icons.person_outline_rounded, size: 28),
+              activeIcon: const Icon(Icons.person_rounded, size: 28),
+              label: S.current.mine,
             ),
           ],
           onTap: (index) {

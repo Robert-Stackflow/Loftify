@@ -1,3 +1,4 @@
+import '../../generated/l10n.dart';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -219,7 +220,7 @@ class _VideoDetailScreenState extends State<VideoDetailScreen>
         }
       } catch (e, t) {
         ILogger.error("Failed to load video detail", e, t);
-        if (mounted) IToast.showTop("加载失败");
+        if (mounted) IToast.showTop(S.current.loadFailed);
       }
       if (mounted) setState(() {});
     });

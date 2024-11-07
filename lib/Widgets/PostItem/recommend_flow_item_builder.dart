@@ -96,8 +96,8 @@ class RecommendFlowItemBuilder {
   }) {
     if (item.postData == null) return emptyWidget;
     return WaterfallFlowPostItemWidget(
-      item:
-      getGeneralPostItem(
+      key: ValueKey(item.postData!.postView.id),
+      item: getGeneralPostItem(
         item,
         excludeTag: excludeTag,
         // onShieldTag: onShieldTag,

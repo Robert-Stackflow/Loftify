@@ -85,7 +85,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
         }
       } catch (e, t) {
         ILogger.error("Failed to get user detail", e, t);
-        if (mounted) IToast.showTop("加载失败");
+        if (mounted) IToast.showTop(S.current.loadFailed);
       }
       if (mounted) setState(() {});
     });
@@ -370,11 +370,11 @@ class UserDetailScreenState extends State<UserDetailScreen>
             Utils.copy(context, _fullBlogData!.blogInfo.homePageUrl);
           },
         ),
-        ContextMenuButtonConfig("在浏览器打开",
+        ContextMenuButtonConfig(S.current.openWithBrowser,
             icon: const Icon(Icons.open_in_browser_rounded), onPressed: () {
           UriUtil.openExternal(_fullBlogData!.blogInfo.homePageUrl);
         }),
-        ContextMenuButtonConfig("分享到其他应用",
+        ContextMenuButtonConfig(S.current.shareToOtherApps,
             icon: const Icon(Icons.share_rounded), onPressed: () {
           UriUtil.share(
             context,

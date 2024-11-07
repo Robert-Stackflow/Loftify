@@ -1,3 +1,4 @@
+import '../../generated/l10n.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -75,7 +76,7 @@ class _EmoteDetailScreenState extends State<EmoteDetailScreen>
         }
       } catch (e, t) {
         ILogger.error("Failed to load dress detail", e, t);
-        if (mounted) IToast.showTop("加载失败");
+        if (mounted) IToast.showTop(S.current.loadFailed);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -146,7 +147,7 @@ class _EmoteDetailScreenState extends State<EmoteDetailScreen>
           ),
           const SizedBox(height: 5),
           Text(
-            "表情",
+            S.current.emote,
             style: Theme.of(context).textTheme.labelMedium,
           ),
           const SizedBox(height: 10),
@@ -154,9 +155,9 @@ class _EmoteDetailScreenState extends State<EmoteDetailScreen>
             children: [
               Expanded(
                 flex: 2,
-                child: ItemBuilder.buildRoundButton(context, text: "下载",
-                    onTap: () async {
-                  CustomLoadingDialog.showLoading(title: "下载中...");
+                child: ItemBuilder.buildRoundButton(context,
+                    text: S.current.download, onTap: () async {
+                  CustomLoadingDialog.showLoading(title: S.current.downloading);
                   String url = item.url;
                   await FileUtil.saveImage(context, url);
                   CustomLoadingDialog.dismissLoading();
@@ -173,7 +174,7 @@ class _EmoteDetailScreenState extends State<EmoteDetailScreen>
     return ItemBuilder.buildDesktopAppBar(
       context: context,
       showBack: true,
-      title: "表情包详情",
+      title: S.current.emotePackageDetail,
     );
   }
 }

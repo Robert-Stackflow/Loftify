@@ -1,3 +1,4 @@
+import '../../generated/l10n.dart';
 import 'package:context_menus/context_menus.dart';
 import 'package:custom_sliding_segmented_control/custom_sliding_segmented_control.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
@@ -123,7 +124,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
           if (mounted) setState(() {});
         }
       } catch (e, t) {
-        IToast.showTop("加载失败");
+        IToast.showTop(S.current.loadFailed);
         ILogger.error("Failed to load tag", e, t);
       }
     });
@@ -680,17 +681,17 @@ class _TagDetailScreenState extends State<TagDetailScreen>
     return GenericContextMenu(
       buttonConfigs: [
         ContextMenuButtonConfig(
-          "复制链接",
+          S.current.copyLink,
           icon: const Icon(Icons.copy_rounded),
           onPressed: () {
             Utils.copy(context, url);
           },
         ),
-        ContextMenuButtonConfig("在浏览器打开",
+        ContextMenuButtonConfig(S.current.openWithBrowser,
             icon: const Icon(Icons.open_in_browser_rounded), onPressed: () {
           UriUtil.openExternal(url);
         }),
-        ContextMenuButtonConfig("分享到其他应用",
+        ContextMenuButtonConfig(S.current.shareToOtherApps,
             icon: const Icon(Icons.share_rounded), onPressed: () {
           UriUtil.share(context, url);
         }),
@@ -766,7 +767,7 @@ class RecommendTabState extends State<RecommendTab>
         }
       } catch (e, t) {
         ILogger.error("Failed to load tag recommend result list", e, t);
-        IToast.showTop("加载失败");
+        IToast.showTop(S.current.loadFailed);
         return IndicatorResult.fail;
       } finally {
         _recommendResultLoading = false;
@@ -1003,7 +1004,7 @@ class NewestTabState extends State<NewestTab>
         }
       } catch (e, t) {
         ILogger.error("Failed to load tag newest result list", e, t);
-        IToast.showTop("加载失败");
+        IToast.showTop(S.current.loadFailed);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});

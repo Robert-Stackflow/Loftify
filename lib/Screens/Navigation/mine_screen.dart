@@ -114,14 +114,14 @@ class _MineScreenState extends State<MineScreen>
                   return IndicatorResult.success;
                 }
               } catch (e, t) {
-                IToast.showTop("加载失败");
+                IToast.showTop(S.current.loadFailed);
                 ILogger.error("Failed to load me info", e, t);
                 return IndicatorResult.fail;
               }
             });
           }
         } catch (e, t) {
-          IToast.showTop("加载失败");
+          IToast.showTop(S.current.loadFailed);
           ILogger.error("Failed to load user info", e, t);
           return IndicatorResult.fail;
         }
@@ -283,7 +283,7 @@ class _MineScreenState extends State<MineScreen>
         return IndicatorResult.success;
       }
     } catch (e, t) {
-      IToast.showTop("加载失败");
+      IToast.showTop(S.current.loadFailed);
       ILogger.error("Failed to load $followingMode result", e, t);
       return IndicatorResult.fail;
     } finally {
@@ -318,7 +318,8 @@ class _MineScreenState extends State<MineScreen>
         children: [
           ItemBuilder.buildTitle(
             context,
-            title: "我的关注（${meInfoData!.blogInfo.attentionCount}）",
+            title: S.current
+                .myFollowingWithCount(meInfoData!.blogInfo.attentionCount),
             icon: Icons.keyboard_arrow_right_rounded,
             onTap: () {
               RouteUtil.pushPanelCupertinoRoute(
@@ -364,7 +365,8 @@ class _MineScreenState extends State<MineScreen>
         children: [
           ItemBuilder.buildTitle(
             context,
-            title: "我的粉丝（${meInfoData!.blogInfo.followerCount}）",
+            title: S.current
+                .myFollowerWithCount(meInfoData!.blogInfo.followerCount),
             icon: Icons.keyboard_arrow_right_rounded,
             onTap: () {
               RouteUtil.pushPanelCupertinoRoute(
@@ -440,11 +442,13 @@ class _MineScreenState extends State<MineScreen>
                 children: [
                   ItemBuilder.buildCopyItem(
                     context,
-                    toastText: "已复制昵称",
+                    toastText: S.current.haveCopiedNickName,
                     copyText: blogInfo != null ? blogInfo!.blogNickName : "",
                     condition: blogInfo != null,
                     child: Text(
-                      blogInfo != null ? blogInfo!.blogNickName : "登录",
+                      blogInfo != null
+                          ? blogInfo!.blogNickName
+                          : S.current.login,
                       style: Theme.of(context).textTheme.titleLarge?.apply(
                             fontSizeDelta: 2,
                           ),
@@ -453,13 +457,13 @@ class _MineScreenState extends State<MineScreen>
                   const SizedBox(height: 5),
                   ItemBuilder.buildCopyItem(
                     context,
-                    toastText: "已复制LofterID",
+                    toastText: S.current.haveCopiedLofterID,
                     copyText: blogInfo != null ? blogInfo!.blogName : "",
                     condition: blogInfo != null,
                     child: Text(
                       blogInfo != null
-                          ? "ID: ${blogInfo!.blogName}"
-                          : "登录以获得个性化服务",
+                          ? S.current.lofterId(blogInfo!.blogName)
+                          : S.current.loginToGetPersonalizedService,
                       style: Theme.of(context).textTheme.titleSmall?.apply(
                             color:
                                 Theme.of(context).textTheme.labelSmall?.color,
@@ -471,8 +475,10 @@ class _MineScreenState extends State<MineScreen>
                   const SizedBox(height: 5),
                   Text(
                     meInfoData != null
-                        ? "${meInfoData!.blogInfo.postCount}篇文章 · ${meInfoData!.collectionCount}个合集"
-                        : "-篇文章 · -个合集",
+                        ? S.current.userMeta(
+                            "${meInfoData!.blogInfo.postCount}",
+                            "${meInfoData!.collectionCount}")
+                        : S.current.userMeta("-", "-"),
                     style: Theme.of(context).textTheme.titleSmall?.apply(
                           color: Theme.of(context).textTheme.bodySmall?.color,
                           fontSizeDelta: 0,
@@ -501,7 +507,7 @@ class _MineScreenState extends State<MineScreen>
         children: [
           ItemBuilder.buildStatisticItem(
             context,
-            title: '热度',
+            title: S.current.hotCount,
             count: meInfoData?.blogInfo.hot.hotCount,
             onTap: () {},
             labelFontWeightDelta: 2,
@@ -510,7 +516,7 @@ class _MineScreenState extends State<MineScreen>
           ),
           ItemBuilder.buildStatisticItem(
             context,
-            title: '粉丝',
+            title: S.current.follower,
             count: meInfoData?.blogInfo.followerCount,
             onTap: () {
               if (blogInfo != null && meInfoData != null) {
@@ -532,7 +538,7 @@ class _MineScreenState extends State<MineScreen>
           ),
           ItemBuilder.buildStatisticItem(
             context,
-            title: '关注',
+            title: S.current.following,
             count: meInfoData?.blogInfo.attentionCount,
             countColor: Theme.of(context).textTheme.titleLarge?.color,
             labelColor: Theme.of(context).textTheme.labelSmall?.color,
@@ -560,10 +566,11 @@ class _MineScreenState extends State<MineScreen>
   List<Widget> _buildContent() {
     return [
       const SizedBox(height: 10),
-      ItemBuilder.buildCaptionItem(context: context, title: "内容中心"),
+      ItemBuilder.buildCaptionItem(
+          context: context, title: S.current.contentCenter),
       ItemBuilder.buildEntryItem(
         context: context,
-        title: "我的喜欢",
+        title: S.current.myLikes,
         padding: 15,
         showLeading: true,
         onTap: () {
@@ -576,7 +583,7 @@ class _MineScreenState extends State<MineScreen>
       ),
       ItemBuilder.buildEntryItem(
         context: context,
-        title: "我的推荐",
+        title: S.current.myRecommends,
         padding: 15,
         showLeading: true,
         onTap: () {
@@ -589,7 +596,7 @@ class _MineScreenState extends State<MineScreen>
       ),
       ItemBuilder.buildEntryItem(
         context: context,
-        title: "我的收藏",
+        title: S.current.myFavorites,
         padding: 15,
         showLeading: true,
         onTap: () {
@@ -610,7 +617,7 @@ class _MineScreenState extends State<MineScreen>
       // ),
       ItemBuilder.buildEntryItem(
         context: context,
-        title: "我的足迹",
+        title: S.current.myHistory,
         padding: 15,
         showLeading: true,
         onTap: () {
@@ -628,10 +635,11 @@ class _MineScreenState extends State<MineScreen>
   List<Widget> _buildCreation() {
     return [
       const SizedBox(height: 10),
-      ItemBuilder.buildCaptionItem(context: context, title: "我的创作"),
+      ItemBuilder.buildCaptionItem(
+          context: context, title: S.current.myCreative),
       ItemBuilder.buildEntryItem(
         context: context,
-        title: "我的作品",
+        title: S.current.myPosts,
         padding: 15,
         showLeading: true,
         onTap: () {
@@ -644,7 +652,7 @@ class _MineScreenState extends State<MineScreen>
       ),
       ItemBuilder.buildEntryItem(
         context: context,
-        title: "我的合集",
+        title: S.current.myCollections,
         padding: 15,
         showLeading: true,
         onTap: () {
@@ -657,7 +665,7 @@ class _MineScreenState extends State<MineScreen>
       ),
       ItemBuilder.buildEntryItem(
         context: context,
-        title: "我的粮单",
+        title: S.current.myGrains,
         padding: 15,
         showLeading: true,
         bottomRadius: true,

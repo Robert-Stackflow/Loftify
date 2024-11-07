@@ -15,6 +15,7 @@ import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
 import '../Post/collection_detail_screen.dart';
 import 'nested_mixin.dart';
 
@@ -120,7 +121,7 @@ class _CollectionScreenState extends State<CollectionScreen>
         } catch (e, t) {
           _initPhase = InitPhase.failed;
           ILogger.error("Failed to load collection list", e, t);
-          if (mounted) IToast.showTop("加载失败");
+          if (mounted) IToast.showTop(S.current.loadFailed);
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
@@ -171,7 +172,7 @@ class _CollectionScreenState extends State<CollectionScreen>
             return _collectionList.isNotEmpty
                 ? _buildMainBody(physics)
                 : ItemBuilder.buildEmptyPlaceholder(
-                    context: context, text: "暂无合集",physics: physics);
+                    context: context, text: "暂无合集", physics: physics);
           },
         );
       default:

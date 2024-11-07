@@ -1,3 +1,4 @@
+import '../../generated/l10n.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -75,7 +76,7 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
         }
       } catch (e, t) {
         ILogger.error("Failed to load folder list", e, t);
-        if (mounted) IToast.showTop("加载失败");
+        if (mounted) IToast.showTop(S.current.loadFailed);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});
@@ -120,7 +121,7 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
 
   Widget _buildBody() {
     return WaterfallFlow.extent(
-      maxCrossAxisExtent: 800,
+      maxCrossAxisExtent: 600,
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),

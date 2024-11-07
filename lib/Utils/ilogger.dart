@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:archive/archive_io.dart';
-import 'package:loftify/Utils/file_util.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
+import 'package:loftify/Utils/file_util.dart';
 import 'package:loftify/Utils/responsive_util.dart';
 import 'package:logger/logger.dart';
 
@@ -118,7 +118,7 @@ class ILogger {
 
 class FileOutput extends LogOutput {
   File? file;
-  static int maxLogSize = 10 * 1024 * 1024; // 10MB
+  static int maxLogSize = 100 * 1024 * 1024; // 100MB
   static int maxLogFileCount = 10; // 10 files
   static RegExp logFilNameRegExp =
       RegExp(r'Loftify_(\d{4}-\d{2}-\d{2})_(\d{2}-\d{2}-\d{2})\.log');
@@ -211,9 +211,11 @@ class FileOutput extends LogOutput {
   @override
   Future<void> output(OutputEvent event) async {
     file = await getLogFile();
+    String content = "";
     for (var line in event.lines) {
-      file!.writeAsStringSync('$line\n', mode: FileMode.append);
+      content += "$line\n";
     }
+    file!.writeAsString(content, mode: FileMode.append);
     file = await getLogFile();
   }
 }

@@ -138,8 +138,8 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                 ItemBuilder.buildRadioItem(
                   value: _enableLandscapeInTablet,
                   context: context,
-                  title: "横屏时启用桌面端布局",
-                  description: "更改后需要重启",
+                  title: S.current.useDesktopLayoutWhenLandscape,
+                  description: S.current.haveToRestartWhenChange,
                   topRadius: true,
                   bottomRadius: true,
                   onTap: () {
@@ -151,11 +151,12 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                   },
                 ),
               const SizedBox(height: 10),
-              ItemBuilder.buildCaptionItem(context: context, title: "首页"),
+              ItemBuilder.buildCaptionItem(
+                  context: context, title: S.current.home),
               ItemBuilder.buildRadioItem(
                 value: _showRecommendArticle,
                 context: context,
-                title: "推荐流显示文章",
+                title: S.current.showArticleInRecommendFlow,
                 onTap: () {
                   setState(() {
                     _showRecommendArticle = !_showRecommendArticle;
@@ -167,7 +168,7 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
               ItemBuilder.buildRadioItem(
                 value: _showRecommendVideo,
                 context: context,
-                title: "推荐流显示视频",
+                title: S.current.showVideoInRecommendFlow,
                 bottomRadius: true,
                 onTap: () {
                   setState(() {
@@ -178,12 +179,13 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                 },
               ),
               const SizedBox(height: 10),
-              ItemBuilder.buildCaptionItem(context: context, title: "搜索结果页"),
+              ItemBuilder.buildCaptionItem(
+                  context: context, title: S.current.searchResultPage),
               ItemBuilder.buildRadioItem(
                 value: _showSearchHistory,
                 context: context,
-                title: "搜索历史",
-                description: "取消勾选将清空并不再记录搜索历史",
+                title: S.current.recordSearchHistory,
+                description: S.current.recordSearchHistoryDescription,
                 onTap: () {
                   setState(() {
                     _showSearchHistory = !_showSearchHistory;
@@ -196,8 +198,8 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
               ItemBuilder.buildRadioItem(
                 value: _showSearchGuess,
                 context: context,
-                title: "猜你想搜",
-                description: "搜索结果页显示猜你想搜",
+                title: S.current.guessYouLike,
+                description: S.current.guessYouLikeDescription,
                 onTap: () {
                   setState(() {
                     _showSearchGuess = !_showSearchGuess;
@@ -208,8 +210,8 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
               ItemBuilder.buildRadioItem(
                 value: _showSearchConfig,
                 context: context,
-                title: "外链卡片",
-                description: "搜索结果页显示外链卡片",
+                title: S.current.externalLinkCards,
+                description: S.current.externalLinkCardsDescription,
                 onTap: () {
                   setState(() {
                     _showSearchConfig = !_showSearchConfig;
@@ -221,8 +223,8 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
               ItemBuilder.buildRadioItem(
                 value: _showSearchRank,
                 context: context,
-                title: "热门榜单",
-                description: "搜索结果页显示热门榜单",
+                title: S.current.hotRank,
+                description: S.current.hotRankDescription,
                 bottomRadius: true,
                 onTap: () {
                   setState(() {
@@ -232,12 +234,13 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                 },
               ),
               const SizedBox(height: 10),
-              ItemBuilder.buildCaptionItem(context: context, title: "详情页"),
+              ItemBuilder.buildCaptionItem(
+                  context: context, title: S.current.postDetailPage),
               ItemBuilder.buildRadioItem(
                 value: _showCollectionPreNext,
                 context: context,
-                title: "上下篇",
-                description: "取消勾选将不显示上一篇、下一篇等入口",
+                title: S.current.showCollectionPreNext,
+                description: S.current.showCollectionPreNextDescription,
                 onTap: () {
                   setState(() {
                     _showCollectionPreNext = !_showCollectionPreNext;
@@ -249,8 +252,8 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
               ItemBuilder.buildRadioItem(
                 value: _showDownload,
                 context: context,
-                title: "下载按钮",
-                description: "取消勾选将不显示下载全部图片按钮",
+                title: S.current.showDownloadButton,
+                description: S.current.showDownloadButtonDescription,
                 bottomRadius: true,
                 onTap: () {
                   setState(() {
@@ -259,12 +262,6 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                   });
                 },
               ),
-              // ItemBuilder.buildEntryItem(
-              //   context: context,
-              //   title: "推荐流样式",
-              //   tip: "瀑布流",
-              //   onTap: () {},
-              // ),
               const SizedBox(height: 30),
             ],
           ),

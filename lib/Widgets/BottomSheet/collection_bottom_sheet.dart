@@ -1,3 +1,4 @@
+import '../../generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Api/collection_api.dart';
@@ -64,7 +65,7 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
     bool showLoading = false,
   }) async {
     if (loading || (upDown != -1 && startPostId == 0)) return;
-    if (showLoading) CustomLoadingDialog.showLoading(title: "加载中...");
+    if (showLoading) CustomLoadingDialog.showLoading(title: S.current.loading);
     loading = true;
     return await CollectionApi.getCollection(
       postId: widget.postId,
@@ -136,7 +137,7 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
         }
       } catch (e, t) {
         ILogger.error("Failed to load collection detail list", e, t);
-        if (mounted) IToast.showTop("加载失败");
+        if (mounted) IToast.showTop(S.current.loadFailed);
         return IndicatorResult.fail;
       } finally {
         if (showLoading) CustomLoadingDialog.dismissLoading();

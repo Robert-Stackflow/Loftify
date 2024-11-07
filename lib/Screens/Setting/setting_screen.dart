@@ -137,7 +137,6 @@ class _SettingScreenState extends State<SettingScreen>
         context: context,
         showLeading: true,
         title: S.current.lofterBasicSetting,
-        // description: "版权保护、礼物设置",
         onTap: () {
           RouteUtil.pushPanelCupertinoRoute(
               context, const LofterBasicSettingScreen());

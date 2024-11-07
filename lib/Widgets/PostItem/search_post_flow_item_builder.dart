@@ -78,6 +78,7 @@ class SearchPostFlowItemBuilder {
   static Widget buildWaterfallFlowPostItem(
       BuildContext context, SearchPost item) {
     return WaterfallFlowPostItemWidget(
+      key: ValueKey(item.id),
       item: getGeneralPostItem(item),
     );
   }

@@ -89,12 +89,15 @@ class GrainPostItemBuilder {
   static Widget buildWaterfallFlowPostItem(
       BuildContext context, GrainPostItem item) {
     return WaterfallFlowPostItemWidget(
+      key: ValueKey(item.postData.postView.id),
       item: getGeneralPostItem(item),
     );
   }
 
-  static Widget buildTilePostItem(BuildContext context, GrainPostItem item,{
-    bool isFirst=false,
+  static Widget buildTilePostItem(
+    BuildContext context,
+    GrainPostItem item, {
+    bool isFirst = false,
   }) {
     return TilePostItemWidget(
       item: getGeneralPostItem(item),

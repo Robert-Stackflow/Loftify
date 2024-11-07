@@ -271,7 +271,7 @@ class UriUtil {
     bool quiet = false,
   }) async {
     try {
-      if (!quiet) CustomLoadingDialog.showLoading(title: "加载中...");
+      if (!quiet) CustomLoadingDialog.showLoading(title: S.current.loading);
       url = Uri.decodeComponent(url);
       if (UriUtil.isShortLinkUrl(url)) {
         var tmp = url;

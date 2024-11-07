@@ -94,9 +94,14 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
       const SizedBox(height: 10),
       ItemBuilder.buildEntryItem(
         context: context,
-        title: "刷新率",
-        description:
-            "意在解决部分机型高刷失效的问题，如无问题，请不要修改\n如果您的设备支持LTPO，可能会设置失败\n已选模式: ${_modes.isNotEmpty ? _modes[_refreshRate.clamp(0, _modes.length - 1)].toString() : ""}\n首选模式: ${_preferredMode?.toString() ?? "Unknown"}\n活动模式: ${_activeMode?.toString() ?? "Unknown"}",
+        title: S.current.refreshRate,
+        description: S.current.refreshRateDescription(
+          _modes.isNotEmpty
+              ? _modes[_refreshRate.clamp(0, _modes.length - 1)].toString()
+              : "",
+          _preferredMode?.toString() ?? "Unknown",
+          _activeMode?.toString() ?? "Unknown",
+        ),
         topRadius: true,
         bottomRadius: true,
         onTap: () {
@@ -116,16 +121,18 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
                   ILogger.info(
                       "Active display mode after set: ${_activeMode.toString()}\nPreferred display mode after set: ${_preferredMode.toString()}");
                   if (_preferredMode?.toString() != item2.toString()) {
-                    IToast.showTop("刷新率设置失败");
+                    IToast.showTop(S.current.setRefreshRateFailed);
                   } else {
                     if (_activeMode?.toString() != item2.toString()) {
-                      IToast.showTop("刷新率设置成功，但当前显示模式未改变");
+                      IToast.showTop(S.current
+                          .setRefreshRateSuccessWithDisplayModeNotChanged);
                     } else {
-                      IToast.showTop("刷新率设置成功");
+                      IToast.showTop(S.current.setRefreshRateSuccess);
                     }
                   }
                 } catch (e, t) {
-                  IToast.showTop("刷新率设置失败: ${e.toString()}");
+                  IToast.showTop(
+                      S.current.setRefreshRateFailedWithError(e.toString()));
                   ILogger.error("Failed to set display mode", e, t);
                 }
                 _refreshRate = _modes.indexOf(item2);
@@ -135,7 +142,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
               },
               selected: _modes[_refreshRate.clamp(0, _modes.length - 1)],
               context: context,
-              title: "选择刷新率",
+              title: S.current.chooseRefreshRate,
               onCloseTap: () => Navigator.pop(context),
             ),
           );
@@ -151,15 +158,18 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
       ItemBuilder.buildRadioItem(
         context: context,
         value: _enableGuesturePasswd,
-        title: "启用手势密码",
+        title: S.current.enableGestureLock,
         onTap: onEnablePinTapped,
       ),
       Visibility(
         visible: _enableGuesturePasswd,
         child: ItemBuilder.buildEntryItem(
           context: context,
-          title: _hasGuesturePasswd ? "更改手势密码" : "设置手势密码",
-          description: _hasGuesturePasswd ? "" : "设置手势密码后才能使用锁定功能",
+          title: _hasGuesturePasswd
+              ? S.current.changeGestureLock
+              : S.current.setGestureLock,
+          description:
+              _hasGuesturePasswd ? "" : S.current.haveToSetGestureLockTip,
           onTap: onChangePinTapped,
         ),
       ),
@@ -170,8 +180,8 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
           context: context,
           value: _enableBiometric,
           disabled: ResponsiveUtil.isMacOS() || ResponsiveUtil.isLinux(),
-          title: "生物识别",
-          description: "仅支持Android、IOS、Windows设备；Windows设备上仅支持PIN",
+          title: S.current.biometric,
+          description: S.current.biometricUnlockTip,
           onTap: onBiometricTapped,
         ),
       ),
@@ -180,18 +190,18 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
         child: ItemBuilder.buildRadioItem(
           context: context,
           value: _autoLock,
-          title: "处于后台自动锁定",
-          description: "在Windows、Linux、MacOS设备中，窗口最小化或最小化至托盘时即表示处于后台",
+          title: S.current.autoLock,
+          description: S.current.autoLockTip,
           onTap: onEnableAutoLockTapped,
         ),
       ),
       Visibility(
         visible: _enableGuesturePasswd && _hasGuesturePasswd && _autoLock,
         child: Selector<AppProvider, int>(
-          selector: (context, globalProvider) => globalProvider.autoLockTime,
+          selector: (context, globalProvider) => globalProvider.autoLockSeconds,
           builder: (context, autoLockTime, child) => ItemBuilder.buildEntryItem(
             context: context,
-            title: "自动锁定时机",
+            title: S.current.autoLockDelay,
             tip: AppProvider.getAutoLockOptionLabel(autoLockTime),
             onTap: () {
               BottomSheetBuilder.showListBottomSheet(
@@ -199,12 +209,12 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
                 (context) => TileList.fromOptions(
                   AppProvider.getAutoLockOptions(),
                   (item2) {
-                    appProvider.autoLockTime = item2;
+                    appProvider.autoLockSeconds = item2;
                     Navigator.pop(context);
                   },
                   selected: autoLockTime,
                   context: context,
-                  title: "选择自动锁定时机",
+                  title: S.current.chooseAutoLockDelay,
                   onCloseTap: () => Navigator.pop(context),
                 ),
               );
@@ -215,10 +225,10 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
       ItemBuilder.buildRadioItem(
         context: context,
         value: _enableSafeMode,
-        title: "安全模式",
+        title: S.current.safeMode,
         disabled: ResponsiveUtil.isDesktop(),
         bottomRadius: true,
-        description: "仅支持Android、IOS设备；当软件进入最近任务列表页面，隐藏页面内容；同时禁用应用内截图",
+        description: S.current.safeModeTip,
         onTap: onSafeModeTapped,
       ),
     ];
@@ -240,7 +250,9 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
           onSuccess: () {
             setState(() {
               _enableGuesturePasswd = !_enableGuesturePasswd;
-              IToast.showTop(_enableGuesturePasswd ? "手势密码启用成功" : "手势密码关闭成功");
+              IToast.showTop(_enableGuesturePasswd
+                  ? S.current.enableGestureLockSuccess
+                  : S.current.disableGestureLockSuccess);
               HiveUtil.put(
                   HiveUtil.enableGuesturePasswdKey, _enableGuesturePasswd);
               _hasGuesturePasswd =
@@ -261,7 +273,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
         context,
         PinVerifyScreen(
           onSuccess: () {
-            IToast.showTop("生物识别开启成功");
+            IToast.showTop(S.current.enableBiometricSuccess);
             setState(() {
               _enableBiometric = !_enableBiometric;
               HiveUtil.put(HiveUtil.enableBiometricKey, _enableBiometric);

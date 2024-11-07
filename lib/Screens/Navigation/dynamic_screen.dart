@@ -33,6 +33,7 @@ import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Hidable/scroll_to_hide.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/grain_post_item_builder.dart';
+import '../../generated/l10n.dart';
 import 'home_screen.dart';
 
 class DynamicScreen extends StatefulWidget {
@@ -54,7 +55,12 @@ class DynamicScreenState extends State<DynamicScreen>
   bool get wantKeepAlive => true;
   late TabController _tabController;
   int _currentTabIndex = 0;
-  final List<String> _tabLabelList = ["关注", "标签", "合集", "粮单"];
+  final List<String> _tabLabelList = [
+    S.current.follow,
+    S.current.tag,
+    S.current.collection,
+    S.current.grain
+  ];
   int lastRefreshTime = 0;
   final GlobalKey _tagTabKey = GlobalKey();
   final GlobalKey _collectionTabKey = GlobalKey();
@@ -378,7 +384,7 @@ class FollowTabState extends State<FollowTab>
           }
         }
       } catch (e, t) {
-        IToast.showTop("加载失败");
+        IToast.showTop(S.current.loadFailed);
         ILogger.error("Failed to load tag dynamic", e, t);
         return IndicatorResult.fail;
       } finally {
@@ -417,7 +423,7 @@ class FollowTabState extends State<FollowTab>
                 if (_timelineBlogList.isNotEmpty) ...[
                   ItemBuilder.buildTitle(
                     context,
-                    title: "最近更新",
+                    title: S.current.updateRecently,
                     topMargin: 10,
                     bottomMargin: 10,
                   ),
@@ -433,7 +439,7 @@ class FollowTabState extends State<FollowTab>
                     height: 160,
                     child: ItemBuilder.buildEmptyPlaceholder(
                       context: context,
-                      text: "暂无动态",
+                      text: S.current.noDynamic,
                     ),
                   ),
               ],
@@ -615,7 +621,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
           }
         }
       } catch (e, t) {
-        IToast.showTop("加载失败");
+        IToast.showTop(S.current.loadFailed);
         ILogger.error("Failed to load tag dynamic", e, t);
         return IndicatorResult.fail;
       } finally {
@@ -660,7 +666,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
                 if (_recentVisitList.isNotEmpty)
                   ItemBuilder.buildTitle(
                     context,
-                    title: "最常访问",
+                    title: S.current.visitFrequently,
                     topMargin: 10,
                     bottomMargin: 10,
                   ),
@@ -678,7 +684,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
                     height: 160,
                     child: ItemBuilder.buildEmptyPlaceholder(
                       context: context,
-                      text: "暂无订阅的标签",
+                      text: S.current.noSubscribedTag,
                     ),
                   ),
               ],
@@ -951,7 +957,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
-                          "${Utils.formatCount(item.cardInfo!.postCard!.postHot)}热度",
+                          "${Utils.formatCount(item.cardInfo!.postCard!.postHot)}${S.current.hotCount}",
                           style: Theme.of(context).textTheme.labelMedium,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1015,7 +1021,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        "${Utils.formatCount(item.cardInfo!.collectionCard!.collectionInfo.subscribedCount)}订阅 ${Utils.formatCount(item.cardInfo!.collectionCard!.collectionInfo.viewCount)}浏览",
+                        "${Utils.formatCount(item.cardInfo!.collectionCard!.collectionInfo.subscribedCount)}${S.current.subscribe} ${Utils.formatCount(item.cardInfo!.collectionCard!.collectionInfo.viewCount)}${S.current.viewCount}",
                         style: Theme.of(context).textTheme.labelMedium,
                       ),
                     ],
@@ -1078,7 +1084,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        "圈层作品${Utils.formatCount(item.cardInfo!.blogCard!.circleHot)}热度",
+                        "${S.current.circleWorks}${(Utils.formatCount(item.cardInfo!.blogCard!.circleHot))}${S.current.hotCount}",
                         style: Theme.of(context).textTheme.labelMedium,
                       ),
                     ],
@@ -1221,7 +1227,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
           }
         }
       } catch (e, t) {
-        IToast.showTop("加载失败");
+        IToast.showTop(S.current.loadFailed);
         ILogger.error("Failed to load collection dynamic", e, t);
         return IndicatorResult.fail;
       } finally {
@@ -1257,7 +1263,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
                     height: 160,
                     child: ItemBuilder.buildEmptyPlaceholder(
                       context: context,
-                      text: "暂无订阅的合集",
+                      text: S.current.noSubscribedCollection,
                     ),
                   ),
               ],
@@ -1276,7 +1282,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
                 if (_guessLikeList.isNotEmpty)
                   ItemBuilder.buildTitle(
                     context,
-                    title: "猜你喜欢",
+                    title: S.current.guessYouLike,
                     topMargin: 10,
                     bottomMargin: 4,
                   ),
@@ -1347,7 +1353,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
                     left: 4,
                     child: ItemBuilder.buildTransparentTag(
                       context,
-                      text: "最近看过",
+                      text: S.current.viewRecently,
                       fontSizeDelta: -2,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 6,
@@ -1381,7 +1387,8 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
                       if (item.unreadCount > 0)
                         ItemBuilder.buildTagItem(
                           context,
-                          "${item.unreadCount > 100 ? 99 : item.unreadCount}篇更新",
+                          S.current.updateCount(
+                              item.unreadCount > 100 ? 99 : item.unreadCount),
                           showTagLabel: false,
                           jumpToTag: false,
                           padding: const EdgeInsets.symmetric(
@@ -1411,7 +1418,9 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
                       const Spacer(),
                       ItemBuilder.buildIconTextButton(
                         context,
-                        text: hasLastRead ? "继续阅读" : "开始阅读",
+                        text: hasLastRead
+                            ? S.current.continueRead
+                            : S.current.startRead,
                         color: Theme.of(context).primaryColor,
                         fontWeightDelta: 2,
                         onTap: !hasLastRead
@@ -1573,7 +1582,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Text(
-                        "${item.postCount}篇 · ${Utils.formatCount(item.subscribeCount)}订阅",
+                        "${item.postCount}${S.current.chapter} · ${Utils.formatCount(item.subscribeCount)}${S.current.subscribe}",
                         style: Theme.of(context)
                             .textTheme
                             .titleSmall
@@ -1584,7 +1593,9 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
                       const Spacer(),
                       ItemBuilder.buildIconTextButton(
                         context,
-                        text: item.subscribed ? "取消订阅" : "订阅",
+                        text: item.subscribed
+                            ? S.current.unsubscribe
+                            : S.current.subscribe,
                         icon: Icon(
                           item.subscribed
                               ? Icons.bookmark_added_rounded
@@ -1709,7 +1720,7 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
           }
         }
       } catch (e, t) {
-        IToast.showTop("加载失败");
+        IToast.showTop(S.current.loadFailed);
         ILogger.error("Failed to load grain dynamic", e, t);
         return IndicatorResult.fail;
       } finally {
@@ -1745,7 +1756,7 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
                     height: 160,
                     child: ItemBuilder.buildEmptyPlaceholder(
                       context: context,
-                      text: "暂无订阅的粮单",
+                      text: S.current.noSubscribedGrain,
                     ),
                   ),
               ],

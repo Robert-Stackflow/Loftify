@@ -7,6 +7,7 @@ import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
+import '../../generated/l10n.dart';
 import '../../Models/user_response.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/ilogger.dart';
@@ -93,7 +94,7 @@ class _FollowingFollowerScreenState extends State<FollowingFollowerScreen>
       }
     } catch (e, t) {
       ILogger.error("Failed to load following or follower", e, t);
-      if (mounted) IToast.showTop("加载失败");
+      if (mounted) IToast.showTop(S.current.loadFailed);
       return IndicatorResult.fail;
     } finally {
       if (mounted) setState(() {});

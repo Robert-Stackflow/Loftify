@@ -1,3 +1,4 @@
+import '../../generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Api/tag_api.dart';
@@ -163,7 +164,7 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
         }
       } catch (e, t) {
         ILogger.error("Failed to load tag insearch result list", e, t);
-        IToast.showTop("加载失败");
+        IToast.showTop(S.current.loadFailed);
         return IndicatorResult.fail;
       } finally {
         if (mounted) setState(() {});

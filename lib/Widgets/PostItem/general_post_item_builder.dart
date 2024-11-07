@@ -974,7 +974,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
     return GenericContextMenu(
       buttonConfigs: [
         ContextMenuButtonConfig(
-          "复制链接",
+          S.current.copyLink,
           icon: const Icon(Icons.copy_rounded),
           onPressed: () {
             Utils.copy(
@@ -999,7 +999,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
             processUri: false,
           );
         }),
-        ContextMenuButtonConfig("在浏览器打开",
+        ContextMenuButtonConfig(S.current.openWithBrowser,
             icon: const Icon(Icons.open_in_browser_rounded), onPressed: () {
           UriUtil.openExternal(
             UriUtil.getPostUrlById(
@@ -1009,7 +1009,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
             ),
           );
         }),
-        ContextMenuButtonConfig("分享到其他应用",
+        ContextMenuButtonConfig(S.current.shareToOtherApps,
             icon: const Icon(Icons.share_rounded), onPressed: () {
           UriUtil.share(
             context,
