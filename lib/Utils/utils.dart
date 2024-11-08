@@ -775,9 +775,9 @@ class Utils {
         Platform.environment.containsKey('SNAP')) {
       await trayManager.setIcon('com.cloudchewie.loftify');
     } else if (ResponsiveUtil.isWindows()) {
-      await trayManager.setIcon('assets/logo-transparent.ico');
+      await trayManager.setIcon('assets/logo-transparent-big.ico');
     } else {
-      await trayManager.setIcon('assets/logo-transparent.png');
+      await trayManager.setIcon('assets/logo-transparent-big.png');
     }
 
     var packageInfo = await PackageInfo.fromPlatform();
@@ -844,6 +844,7 @@ class Utils {
     MenuItem menuItem, [
     bool isSimple = false,
   ]) async {
+    ILogger.info( "Tray menu item clicked: ${menuItem.key}: ${menuItem.label}");
     if (menuItem.key == TrayKey.displayApp.key) {
       Utils.displayApp();
     } else if (menuItem.key == TrayKey.shortcutHelp.key) {
@@ -910,7 +911,6 @@ class Utils {
   }
 
   static localAuth({Function()? onAuthed}) async {
-    if (ResponsiveUtil.isDesktop()) return;
     LocalAuthentication localAuth = LocalAuthentication();
     try {
       await localAuth.authenticate(
@@ -922,7 +922,7 @@ class Utils {
         options: const AuthenticationOptions(
           useErrorDialogs: false,
           stickyAuth: true,
-          biometricOnly: true,
+          biometricOnly: false,
         ),
         localizedReason: ' ',
       ).then((value) {

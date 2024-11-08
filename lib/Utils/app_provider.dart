@@ -60,6 +60,15 @@ RouteObserver<PageRoute> routeObserver = RouteObserver();
 AppProvider appProvider = AppProvider();
 
 class AppProvider with ChangeNotifier {
+  bool _pinSettled = HiveUtil.hasGuesturePasswd();
+
+  bool get pinSettled => _pinSettled;
+
+  set pinSettled(bool value) {
+    _pinSettled = value;
+    notifyListeners();
+  }
+
   Size windowSize = const Size(0, 0);
 
   String latestVersion = "";

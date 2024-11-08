@@ -33,9 +33,6 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
     with TickerProviderStateMixin {
   bool _enableGuesturePasswd =
       HiveUtil.getBool(HiveUtil.enableGuesturePasswdKey);
-  bool _hasGuesturePasswd =
-      HiveUtil.getString(HiveUtil.guesturePasswdKey) != null &&
-          HiveUtil.getString(HiveUtil.guesturePasswdKey)!.isNotEmpty;
   bool _autoLock = HiveUtil.getBool(HiveUtil.autoLockKey);
   bool _enableSafeMode =
       HiveUtil.getBool(HiveUtil.enableSafeModeKey, defaultValue: false);
@@ -76,14 +73,17 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
         background: Theme.of(context).scaffoldBackgroundColor,
       ),
       body: EasyRefresh(
-        child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          children: [
-            if (ResponsiveUtil.isLandscape()) const SizedBox(height: 10),
-            ..._privacySettings(),
-            if (ResponsiveUtil.isAndroid()) ..._fpsSettings(),
-            const SizedBox(height: 30),
-          ],
+        child: Selector<AppProvider, bool>(
+          selector: (context, globalProvider) => globalProvider.pinSettled,
+          builder: (context, pinSettled, child) => ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            children: [
+              if (ResponsiveUtil.isLandscape()) const SizedBox(height: 10),
+              ..._privacySettings(pinSettled),
+              if (ResponsiveUtil.isAndroid()) ..._fpsSettings(),
+              const SizedBox(height: 30),
+            ],
+          ),
         ),
       ),
     );
@@ -151,7 +151,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
     ];
   }
 
-  _privacySettings() {
+  _privacySettings(bool pinSettled) {
     return [
       ItemBuilder.buildCaptionItem(
           context: context, title: S.current.privacySetting),
@@ -165,17 +165,15 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
         visible: _enableGuesturePasswd,
         child: ItemBuilder.buildEntryItem(
           context: context,
-          title: _hasGuesturePasswd
+          title: pinSettled
               ? S.current.changeGestureLock
               : S.current.setGestureLock,
-          description:
-              _hasGuesturePasswd ? "" : S.current.haveToSetGestureLockTip,
+          description: pinSettled ? "" : S.current.haveToSetGestureLockTip,
           onTap: onChangePinTapped,
         ),
       ),
       Visibility(
-        visible:
-            _enableGuesturePasswd && _hasGuesturePasswd && _biometricAvailable,
+        visible: _enableGuesturePasswd && pinSettled && _biometricAvailable,
         child: ItemBuilder.buildRadioItem(
           context: context,
           value: _enableBiometric,
@@ -186,7 +184,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
         ),
       ),
       Visibility(
-        visible: _enableGuesturePasswd && _hasGuesturePasswd,
+        visible: _enableGuesturePasswd && pinSettled,
         child: ItemBuilder.buildRadioItem(
           context: context,
           value: _autoLock,
@@ -196,7 +194,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
         ),
       ),
       Visibility(
-        visible: _enableGuesturePasswd && _hasGuesturePasswd && _autoLock,
+        visible: _enableGuesturePasswd && pinSettled && _autoLock,
         child: Selector<AppProvider, int>(
           selector: (context, globalProvider) => globalProvider.autoLockSeconds,
           builder: (context, autoLockTime, child) => ItemBuilder.buildEntryItem(
@@ -255,10 +253,6 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
                   : S.current.disableGestureLockSuccess);
               HiveUtil.put(
                   HiveUtil.enableGuesturePasswdKey, _enableGuesturePasswd);
-              _hasGuesturePasswd =
-                  HiveUtil.getString(HiveUtil.guesturePasswdKey) != null &&
-                      HiveUtil.getString(HiveUtil.guesturePasswdKey)!
-                          .isNotEmpty;
             });
           },
           isModal: false,

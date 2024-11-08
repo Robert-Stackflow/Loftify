@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:loftify/Widgets/General/Unlock/gesture_notifier.dart';
 import 'package:loftify/Widgets/General/Unlock/gesture_unlock_view.dart';
-import 'package:loftify/Widgets/Window/window_caption.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -100,10 +99,12 @@ class PinVerifyScreenState extends State<PinVerifyScreen>
 
   @override
   void initState() {
-    if (widget.jumpToMain) trayManager.addListener(this);
+    if (widget.jumpToMain) {
+      trayManager.addListener(this);
+      Utils.initSimpleTray();
+    }
     windowManager.addListener(this);
     super.initState();
-    Utils.initSimpleTray();
     if (_isUseBiometric && widget.autoAuth) {
       auth();
     }
@@ -133,74 +134,73 @@ class PinVerifyScreenState extends State<PinVerifyScreen>
       backgroundColor: MyTheme.background,
       appBar: ResponsiveUtil.isDesktop() && widget.showWindowTitle
           ? PreferredSize(
-        preferredSize: const Size(0, 86),
-        child: ItemBuilder.buildWindowTitle(
-          context,
-          forceClose: true,
-          leftWidgets: [const Spacer()],
-          backgroundColor: MyTheme.background,
-          isStayOnTop: _isStayOnTop,
-          isMaximized: _isMaximized,
-          onStayOnTopTap: () {
-            setState(() {
-              _isStayOnTop = !_isStayOnTop;
-              windowManager.setAlwaysOnTop(_isStayOnTop);
-            });
-          },
-        ),
-      )
-          : null,
-      body: Stack(
-        children: [
-          if (ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
-          Center(
-            child: PopScope(
-              canPop: !widget.isModal,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 50),
-                  Text(
-                    _notifier.gestureText,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 30),
-                  Flexible(
-                    child: GestureUnlockView(
-                      key: _gestureUnlockView,
-                      size: min(MediaQuery.sizeOf(context).width, 400),
-                      padding: 60,
-                      roundSpace: 40,
-                      defaultColor: Colors.grey.withOpacity(0.5),
-                      selectedColor: Theme.of(context).primaryColor,
-                      failedColor: Colors.redAccent,
-                      disableColor: Colors.grey,
-                      solidRadiusRatio: 0.3,
-                      lineWidth: 2,
-                      touchRadiusRatio: 0.3,
-                      onCompleted: _gestureComplete,
-                    ),
-                  ),
-                  Visibility(
-                    visible: _isUseBiometric,
-                    child: ItemBuilder.buildRoundButton(
-                      context,
-                      text: ResponsiveUtil.isWindows()
-                          ? S.current.biometricVerifyPin
-                          : S.current.biometric,
-                      onTap: () {
-                        auth();
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 50),
-                ],
+              preferredSize: const Size(0, 86),
+              child: ItemBuilder.buildWindowTitle(
+                context,
+                forceClose: true,
+                leftWidgets: [const Spacer()],
+                backgroundColor: MyTheme.background,
+                isStayOnTop: _isStayOnTop,
+                isMaximized: _isMaximized,
+                onStayOnTopTap: () {
+                  setState(() {
+                    _isStayOnTop = !_isStayOnTop;
+                    windowManager.setAlwaysOnTop(_isStayOnTop);
+                  });
+                },
               ),
-            ),
+            )
+          : null,
+      bottomNavigationBar: widget.showWindowTitle
+          ? Container(
+              height: 86,
+              color: MyTheme.background,
+            )
+          : null,
+      body: Center(
+        child: PopScope(
+          canPop: !widget.isModal,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 50),
+              Text(
+                _notifier.gestureText,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 30),
+              Flexible(
+                child: GestureUnlockView(
+                  key: _gestureUnlockView,
+                  size: min(MediaQuery.sizeOf(context).width, 400),
+                  padding: 60,
+                  roundSpace: 40,
+                  defaultColor: Colors.grey.withOpacity(0.5),
+                  selectedColor: Theme.of(context).primaryColor,
+                  failedColor: Colors.redAccent,
+                  disableColor: Colors.grey,
+                  solidRadiusRatio: 0.3,
+                  lineWidth: 2,
+                  touchRadiusRatio: 0.3,
+                  onCompleted: _gestureComplete,
+                ),
+              ),
+              if (_isUseBiometric)
+                ItemBuilder.buildRoundButton(
+                  context,
+                  text: ResponsiveUtil.isWindows()
+                      ? S.current.biometricVerifyPin
+                      : S.current.biometric,
+                  onTap: () {
+                    auth();
+                  },
+                ),
+              const SizedBox(height: 50),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -229,5 +229,23 @@ class PinVerifyScreenState extends State<PinVerifyScreen>
       case GestureStatus.createFailed:
         break;
     }
+  }
+
+  @override
+  void onTrayIconMouseDown() {
+    Utils.displayApp();
+  }
+
+  @override
+  void onTrayIconRightMouseDown() {
+    trayManager.popUpContextMenu();
+  }
+
+  @override
+  void onTrayIconRightMouseUp() {}
+
+  @override
+  Future<void> onTrayMenuItemClick(MenuItem menuItem) async {
+    Utils.processTrayMenuItemClick(context, menuItem, true);
   }
 }

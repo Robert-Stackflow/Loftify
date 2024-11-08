@@ -677,7 +677,7 @@ class FileUtil {
               .contains(element.contentType) &&
           element.name.endsWith(".apk");
     }).toList();
-    ReleaseAsset generalAsset = assets.firstWhere((element) {
+    ReleaseAsset universalAsset = assets.firstWhere((element) {
       return [
         'Loftify-$latestVersion.apk',
         'Loftify-$latestVersion-android-universal.apk'
@@ -687,6 +687,16 @@ class FileUtil {
       AndroidDeviceInfo androidInfo = await DeviceInfoPlugin().androidInfo;
       List<String> supportedAbis =
           androidInfo.supportedAbis.map((e) => e.toLowerCase()).toList();
+      ILogger.info("Supported abis: $supportedAbis");
+      supportedAbis.sort((a, b) {
+        List<String> priorityOrder = ['arm64-v8a', 'armeabi-v7a', 'x86_64'];
+        int indexA = priorityOrder.indexOf(a);
+        int indexB = priorityOrder.indexOf(b);
+        indexA = indexA == -1 ? priorityOrder.length : indexA;
+        indexB = indexB == -1 ? priorityOrder.length : indexB;
+        return indexA.compareTo(indexB);
+      });
+      ILogger.info("Supported abis after sorted: $supportedAbis");
       for (var asset in assets) {
         String abi =
             asset.name.split("Loftify-$latestVersion-").last.split(".").first;
@@ -697,9 +707,11 @@ class FileUtil {
           }
         }
       }
-    } finally {}
-    resAsset ??= generalAsset;
-    if (controlProvider.globalControl.showCatutu) {
+    } catch(e,t){
+      ILogger.error("Failed to get android info with abis", e, t);
+    }
+    resAsset ??= universalAsset;
+    if (controlProvider.globalControl.enableUpdateFromS3) {
       resAsset.pkgsDownloadUrl =
           Utils.getDownloadUrl(latestVersion, resAsset.name);
     } else {

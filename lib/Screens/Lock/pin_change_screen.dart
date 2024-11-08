@@ -1,21 +1,15 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:local_auth/error_codes.dart' as auth_error;
-import 'package:local_auth/local_auth.dart';
-import 'package:local_auth_android/local_auth_android.dart';
+import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Widgets/General/Unlock/gesture_notifier.dart';
 import 'package:loftify/Widgets/General/Unlock/gesture_unlock_indicator.dart';
 import 'package:loftify/Widgets/General/Unlock/gesture_unlock_view.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 
-import '../../Utils/constant.dart';
 import '../../Utils/hive_util.dart';
-import '../../Utils/ilogger.dart';
 import '../../Utils/utils.dart';
 import '../../generated/l10n.dart';
 
@@ -52,7 +46,6 @@ class PinChangeScreenState extends State<PinChangeScreen> {
       auth();
     }
   }
-
 
   void auth() async {
     await Utils.localAuth(onAuthed: () {
@@ -110,13 +103,8 @@ class PinChangeScreenState extends State<PinChangeScreen> {
                 onCompleted: _gestureComplete,
               ),
             ),
-            GestureDetector(
-              onTap: () {
-                if (_isEditMode && _isUseBiometric) {
-                  auth();
-                }
-              },
-              child: ItemBuilder.buildRoundButton(
+            if (_isEditMode && _isUseBiometric)
+              ItemBuilder.buildRoundButton(
                 context,
                 text: ResponsiveUtil.isWindows()
                     ? S.current.biometricVerifyPin
@@ -125,7 +113,6 @@ class PinChangeScreenState extends State<PinChangeScreen> {
                   auth();
                 },
               ),
-            ),
             const SizedBox(height: 50),
           ],
         ),
@@ -172,6 +159,7 @@ class PinChangeScreenState extends State<PinChangeScreen> {
             });
             HiveUtil.put(HiveUtil.guesturePasswdKey,
                 GestureUnlockView.selectedToString(selected));
+            appProvider.pinSettled = HiveUtil.hasGuesturePasswd();
           } else {
             setState(() {
               _notifier.setStatus(

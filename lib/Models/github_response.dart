@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 ///Release，A release.
 class ReleaseItem {
   List<ReleaseAsset> assets;
@@ -177,7 +179,13 @@ class ReleaseAsset {
         "updated_at": updatedAt.toIso8601String(),
         "uploader": uploader,
         "url": url,
+        'pkgs_download_url': pkgsDownloadUrl,
       };
+
+  @override
+  String toString() {
+    return jsonEncode(toJson());
+  }
 }
 
 ///State of the release asset.

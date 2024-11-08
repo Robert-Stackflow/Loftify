@@ -7,6 +7,7 @@ import 'package:loftify/Api/user_api.dart';
 import 'package:loftify/Models/history_response.dart';
 import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Utils/hive_util.dart';
+import 'package:loftify/Widgets/Dialog/dialog_builder.dart';
 
 import '../../Models/post_detail_response.dart';
 import '../../Utils/constant.dart';
@@ -88,7 +89,6 @@ class _HistoryScreenState extends State<HistoryScreen>
                 _histories.add(PostDetailData.fromJson(e));
               }
             }
-            if (mounted) setState(() {});
             _initPhase = InitPhase.successful;
             if (_histories.length >= _total && !refresh) {
               _noMore = true;
@@ -148,12 +148,13 @@ class _HistoryScreenState extends State<HistoryScreen>
               onLoad: _onLoad,
               triggerAxis: Axis.vertical,
               childBuilder: (context, physics) {
-                return _archiveDataList.isNotEmpty
+                return _archiveDataList.isNotEmpty && _histories.isNotEmpty
                     ? _buildNineGridGroup(physics)
                     : ItemBuilder.buildEmptyPlaceholder(
                         context: context,
                         text: S.current.noHistory,
                         physics: physics,
+                        shrinkWrap: false,
                       );
               },
             ),
@@ -264,17 +265,25 @@ class _HistoryScreenState extends State<HistoryScreen>
         ContextMenuButtonConfig(
           S.current.clearMyHistory,
           onPressed: () {
-            UserApi.clearHistory().then((value) {
-              if (value['meta']['status'] != 200) {
-                IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-              } else {
-                _histories.clear();
-                _archiveDataList.clear();
-                _total = 0;
-                setState(() {});
-                IToast.showTop(S.current.clearSuccess);
-              }
-            });
+            DialogBuilder.showConfirmDialog(
+              context,
+              title: S.current.clearMyHistory,
+              message: S.current.clearMyHistoryMessage,
+              onTapConfirm: () {
+                UserApi.clearHistory().then((value) {
+                  if (value['meta']['status'] != 200) {
+                    IToast.showTop(
+                        value['meta']['desc'] ?? value['meta']['msg']);
+                  } else {
+                    _histories.clear();
+                    _archiveDataList.clear();
+                    _total = 0;
+                    setState(() {});
+                    IToast.showTop(S.current.clearSuccess);
+                  }
+                });
+              },
+            );
           },
         ),
         ContextMenuButtonConfig(
@@ -298,23 +307,39 @@ class _HistoryScreenState extends State<HistoryScreen>
               : S.current.openMyHistory,
           onPressed: () {
             HiveUtil.getUserInfo().then((blogInfo) async {
-              UserApi.closeHistory(
-                recordHistory: _recordHistory == 1 ? 0 : 1,
-                blogName: blogInfo!.blogName,
-              ).then((value) {
-                if (value['meta']['status'] != 200) {
-                  IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-                } else {
-                  _histories.clear();
-                  _archiveDataList.clear();
-                  _total = 0;
-                  _recordHistory = _recordHistory == 1 ? 0 : 1;
-                  IToast.showTop(_recordHistory == 1
-                      ? S.current.openSuccess
-                      : S.current.closeSuccess);
-                  setState(() {});
-                }
-              });
+              close() {
+                UserApi.closeHistory(
+                  recordHistory: _recordHistory == 1 ? 0 : 1,
+                  blogName: blogInfo!.blogName,
+                ).then((value) {
+                  if (value['meta']['status'] != 200) {
+                    IToast.showTop(
+                        value['meta']['desc'] ?? value['meta']['msg']);
+                  } else {
+                    _histories.clear();
+                    _archiveDataList.clear();
+                    _total = 0;
+                    _recordHistory = _recordHistory == 1 ? 0 : 1;
+                    IToast.showTop(_recordHistory == 1
+                        ? S.current.openSuccess
+                        : S.current.closeSuccess);
+                    setState(() {});
+                  }
+                });
+              }
+
+              if (_recordHistory == 1) {
+                DialogBuilder.showConfirmDialog(
+                  context,
+                  title: S.current.closeMyHistory,
+                  message: S.current.closeMyHistoryMessage,
+                  onTapConfirm: () {
+                    close();
+                  },
+                );
+              } else {
+                close();
+              }
             });
           },
         ),

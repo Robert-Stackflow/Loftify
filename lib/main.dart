@@ -23,6 +23,7 @@ import 'package:protocol_handler/protocol_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 
+import 'Screens/Lock/pin_verify_screen.dart';
 import 'Screens/main_screen.dart';
 import 'Utils/constant.dart';
 import 'Utils/ilogger.dart';
@@ -67,7 +68,18 @@ Future<void> runMyApp(List<String> args) async {
     }
     await HotKeyManager.instance.unregisterAll();
   }
-  runApp(MyApp(home: MainScreen(key: mainScreenKey)));
+  StatefulWidget home;
+  if (HiveUtil.shouldAutoLock()) {
+    home = const PinVerifyScreen(
+      isModal: true,
+      jumpToMain: true,
+      showWindowTitle: true,
+      autoAuth: true,
+    );
+  } else {
+    home = MainScreen(key: mainScreenKey);
+  }
+  runApp(MyApp(home: home));
   FlutterNativeSplash.remove();
 }
 

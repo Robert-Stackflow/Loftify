@@ -234,7 +234,6 @@ class MainScreenState extends State<MainScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       showQQGroupDialog();
       jumpToLogin();
-      jumpToLock(autoAuth: true);
       darkModeWidget = LottieUtil.load(
         LottieUtil.sunLight,
         size: 25,
@@ -332,9 +331,9 @@ class MainScreenState extends State<MainScreen>
       RouteUtil.pushCupertinoRoute(
           context,
           PinVerifyScreen(
-            onSuccess: () {},
             isModal: true,
             autoAuth: autoAuth,
+            showWindowTitle: true,
           ), onThen: (_) {
         _hasJumpedToPinVerify = false;
       });

@@ -390,7 +390,9 @@ class HiveUtil {
       canLock() && HiveUtil.getBool(HiveUtil.autoLockKey);
 
   static bool canLock() =>
-      HiveUtil.getBool(HiveUtil.enableGuesturePasswdKey) &&
+      HiveUtil.getBool(HiveUtil.enableGuesturePasswdKey) && hasGuesturePasswd();
+
+  static bool hasGuesturePasswd() =>
       HiveUtil.getString(HiveUtil.guesturePasswdKey) != null &&
       HiveUtil.getString(HiveUtil.guesturePasswdKey)!.isNotEmpty;
 

@@ -1559,10 +1559,11 @@ class ItemBuilder {
     Function()? onTap,
     ScrollPhysics? physics,
     double topPadding = 50,
+    bool shrinkWrap=true,
   }) {
     return ListView(
       physics: physics,
-      shrinkWrap: true,
+      shrinkWrap: shrinkWrap,
       controller: scrollController,
       children: [
         SizedBox(height: topPadding),
