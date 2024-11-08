@@ -7,13 +7,13 @@ import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
-import '../../generated/l10n.dart';
 import '../../Models/user_response.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
 
 class FollowingFollowerScreen extends StatefulWidget {
   FollowingFollowerScreen({
@@ -181,7 +181,7 @@ class _FollowingFollowerScreenState extends State<FollowingFollowerScreen>
       context: context,
       showBack: true,
       title:
-          "${widget.followingMode == FollowingMode.follower ? "粉丝列表" : "关注列表"}（$total）",
+          "${widget.followingMode == FollowingMode.follower ? S.current.followerList : S.current.followingList}（$total）",
     );
   }
 }

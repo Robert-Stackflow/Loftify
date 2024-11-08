@@ -3,8 +3,8 @@ import 'package:group_button/group_button.dart';
 import 'package:loftify/Api/tag_api.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 
-import '../../Resources/theme.dart';
 import '../../Utils/enums.dart';
+import '../../generated/l10n.dart';
 
 class NewestFilterBottomSheet extends StatefulWidget {
   const NewestFilterBottomSheet({
@@ -76,7 +76,7 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
       padding: const EdgeInsets.symmetric(vertical: 16),
       alignment: Alignment.center,
       child: Text(
-        "筛选",
+        S.current.filter,
         style: Theme.of(context).textTheme.titleLarge,
       ),
     );
@@ -90,7 +90,7 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
         children: [
           ItemBuilder.buildTitle(
             context,
-            title: "内容范围",
+            title: S.current.contentRange,
             left: 0,
             bottomMargin: 12,
             textStyle: Theme.of(context)
@@ -99,7 +99,11 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
                 ?.apply(fontSizeDelta: -2),
           ),
           ItemBuilder.buildGroupButtons(
-            buttons: ["不限", "关注的人", "近7日未看"],
+            buttons: [
+              S.current.noLimit,
+              S.current.followingUser,
+              S.current.haveNotVisitRecentSevenDays
+            ],
             controller: _rangeController,
             onSelected: (value, index, selected) {
               params.tagRangeType = TagRangeType.values[index];
@@ -107,7 +111,7 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
           ),
           ItemBuilder.buildTitle(
             context,
-            title: "内容形式",
+            title: S.current.contentType,
             left: 0,
             topMargin: 20,
             bottomMargin: 12,
@@ -117,7 +121,7 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
                 ?.apply(fontSizeDelta: -2),
           ),
           ItemBuilder.buildGroupButtons(
-            buttons: ["不限", "文字", "图片"],
+            buttons: [S.current.noLimit, S.current.words, S.current.images],
             controller: _postTypeController,
             onSelected: (value, index, selected) {
               params.postTypes = TagPostType.values[index];
@@ -125,7 +129,7 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
           ),
           ItemBuilder.buildTitle(
             context,
-            title: "发布时间",
+            title: S.current.releaseTime,
             left: 0,
             topMargin: 20,
             bottomMargin: 12,
@@ -135,7 +139,12 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
                 ?.apply(fontSizeDelta: -2),
           ),
           ItemBuilder.buildGroupButtons(
-            buttons: ["不限", "一天内", "一周内", "一个月内"],
+            buttons: [
+              S.current.noLimit,
+              S.current.inOneDay,
+              S.current.inOneWeek,
+              S.current.inOneMonth
+            ],
             controller: _recentDayController,
             onSelected: (value, index, selected) {
               params.recentDayType = TagRecentDayType.values[index];
@@ -143,7 +152,7 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
           ),
           ItemBuilder.buildTitle(
             context,
-            title: "标签保护",
+            title: S.current.tagProtection,
             left: 0,
             topMargin: 20,
             bottomMargin: 12,
@@ -153,7 +162,7 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
                 ?.apply(fontSizeDelta: -2),
           ),
           ItemBuilder.buildGroupButtons(
-            buttons: ["标签保护"],
+            buttons: [S.current.tagProtection],
             controller: _tagProtectedController,
             enableDeselect: true,
             onSelected: (value, index, selected) {
@@ -178,7 +187,7 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
               context,
               icon: const Icon(Icons.refresh_rounded, size: 24),
               direction: Axis.vertical,
-              text: "重置",
+              text: S.current.reset,
               fontSizeDelta: -2,
               onTap: reset,
             ),
@@ -187,7 +196,7 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
           Expanded(
             child: ItemBuilder.buildRoundButton(
               context,
-              text: "确认",
+              text: S.current.confirm,
               background: Theme.of(context).primaryColor,
               color: Colors.white,
               onTap: () {

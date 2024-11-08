@@ -1,4 +1,3 @@
-import '../../generated/l10n.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -19,6 +18,7 @@ import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
+import '../../generated/l10n.dart';
 import 'nested_mixin.dart';
 
 class LikeScreen extends StatefulWidgetForNested {
@@ -113,7 +113,7 @@ class _LikeScreenState extends State<LikeScreen>
                   if (item > 0) {
                     int month = e.monthCount.indexOf(item);
                     _archiveDataList.add(ArchiveData(
-                      desc: "${e.year}年${month + 1}月",
+                      desc: S.current.yearAndMonth(e.year, month + 1),
                       count: item,
                       endTime: 0,
                       startTime: 0,
@@ -193,7 +193,7 @@ class _LikeScreenState extends State<LikeScreen>
             return _archiveDataList.isNotEmpty
                 ? _buildNineGridGroup(physics)
                 : ItemBuilder.buildEmptyPlaceholder(
-                    context: context, text: "暂无喜欢", physics: physics);
+                    context: context, text: S.current.noLike, physics: physics);
           },
         );
       default:
@@ -215,7 +215,7 @@ class _LikeScreenState extends State<LikeScreen>
       }
       widgets.add(ItemBuilder.buildTitle(
         context,
-        title: "${e.desc}（${e.count}篇）",
+        title: S.current.descriptionWithPostCount(e.desc, e.count.toString()),
         topMargin: 16,
         bottomMargin: 0,
       ));
@@ -254,7 +254,7 @@ class _LikeScreenState extends State<LikeScreen>
     return ItemBuilder.buildDesktopAppBar(
       context: context,
       showBack: true,
-      title: "我的喜欢",
+      title: S.current.myLikes,
       actions: [
         ItemBuilder.buildIconButton(
             context: context,
@@ -264,8 +264,8 @@ class _LikeScreenState extends State<LikeScreen>
               BottomSheetBuilder.showListBottomSheet(
                 context,
                 (sheetContext) => TileList.fromOptions(
-                  const [
-                    Tuple2("清空无效内容", 1),
+                  [
+                    Tuple2(S.current.clearInvalidContent, 1),
                   ],
                   (idx) async {
                     Navigator.pop(sheetContext);
@@ -280,7 +280,7 @@ class _LikeScreenState extends State<LikeScreen>
                           _likeList.removeWhere(
                               (e) => CommonInfoItemBuilder.isInvalid(e));
                           setState(() {});
-                          IToast.showTop("清空成功");
+                          IToast.showTop(S.current.clearSuccess);
                         }
                       });
                     }

@@ -1,5 +1,4 @@
 import 'dart:math';
-import '../../generated/l10n.dart';
 
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/search_api.dart';
@@ -23,6 +22,7 @@ import '../../Utils/utils.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
+import '../../generated/l10n.dart';
 import 'collection_detail_screen.dart';
 
 class SearchResultScreen extends StatefulWidget {
@@ -64,7 +64,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
   final EasyRefreshController _userResultRefreshController =
       EasyRefreshController();
 
-  final List<String> _tabLabelList = ["综合", "标签", "合集", "粮单", "文章", "用户"];
+  final List<String> _tabLabelList = [S.current.comprehensive, S.current.tag, S.current.collection, S.current.grain, S.current.article, S.current.user];
   int _allResultOffset = 0;
   int _tagResultOffset = 0;
   int _collectionResultOffset = 0;
@@ -592,7 +592,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                             alignment: Alignment.center,
                             child: ItemBuilder.buildEmptyPlaceholder(
                               context: context,
-                              text: "暂无结果",
+                              text: S.current.noSearchResult,
                             ),
                           ),
                         if (_allResult!.tagRank != null)
@@ -608,8 +608,8 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                         if (_allResult!.tags.isNotEmpty)
                           ItemBuilder.buildTitle(
                             context,
-                            title: "相关标签",
-                            suffixText: "查看全部",
+                            title: S.current.relatedTag,
+                            suffixText: S.current.viewAll,
                             topMargin: 16,
                             bottomMargin: 8,
                             onTap: () {
@@ -639,8 +639,8 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                         if (_allResult!.posts.isNotEmpty)
                           ItemBuilder.buildTitle(
                             context,
-                            title: "相关文章",
-                            suffixText: "查看全部",
+                            title: S.current.relatedPost,
+                            suffixText: S.current.viewAll,
                             topMargin: 16,
                             bottomMargin: 8,
                             onTap: () {
@@ -711,7 +711,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                       height: 160,
                       child: ItemBuilder.buildEmptyPlaceholder(
                         context: context,
-                        text: "暂无标签",
+                        text: S.current.noTag,
                       ),
                     ),
                   if (_tagRank != null)
@@ -775,7 +775,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                       height: 160,
                       child: ItemBuilder.buildEmptyPlaceholder(
                         context: context,
-                        text: "暂无合集",
+                        text: S.current.noCollection,
                       ),
                     ),
                 ],
@@ -839,7 +839,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                       height: 160,
                       child: ItemBuilder.buildEmptyPlaceholder(
                         context: context,
-                        text: "暂无文章",
+                        text: S.current.noArticle,
                       ),
                     ),
                 ],
@@ -901,7 +901,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                       height: 160,
                       child: ItemBuilder.buildEmptyPlaceholder(
                         context: context,
-                        text: "暂无粮单",
+                        text: S.current.noGrain,
                       ),
                     ),
                 ],
@@ -965,7 +965,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                       height: 160,
                       child: ItemBuilder.buildEmptyPlaceholder(
                         context: context,
-                        text: "暂无用户",
+                        text: S.current.noUser,
                       ),
                     ),
                 ],
@@ -1019,7 +1019,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
         // focusNode: _focusNode,
         controller: _searchController,
         background: Colors.grey.withAlpha(40),
-        hintText: "搜标签、合集、文章、讨论、粮单、用户",
+        hintText: S.current.searchHint,
         onSubmitted: (text) async {
           _performSearch(text);
         },

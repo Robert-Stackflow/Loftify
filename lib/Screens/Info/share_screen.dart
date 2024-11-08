@@ -108,7 +108,7 @@ class _ShareScreenState extends State<ShareScreen>
                   if (item > 0) {
                     int month = e.monthCount.indexOf(item);
                     _archiveDataList.add(ArchiveData(
-                      desc: "${e.year}年${month + 1}月",
+                      desc:S.current.yearAndMonth(e.year, month + 1),
                       count: item,
                       endTime: 0,
                       startTime: 0,
@@ -188,7 +188,7 @@ class _ShareScreenState extends State<ShareScreen>
             return _archiveDataList.isNotEmpty
                 ? _buildNineGridGroup(physics)
                 : ItemBuilder.buildEmptyPlaceholder(
-                    context: context, text: "暂无推荐", physics: physics);
+                    context: context, text: S.current.noRecommend, physics: physics);
           },
         );
       default:
@@ -210,7 +210,7 @@ class _ShareScreenState extends State<ShareScreen>
       }
       widgets.add(ItemBuilder.buildTitle(
         context,
-        title: "${e.desc}（${e.count}篇）",
+        title: S.current.descriptionWithPostCount(e.desc, e.count.toString()),
         topMargin: 16,
         bottomMargin: 0,
       ));
@@ -249,7 +249,7 @@ class _ShareScreenState extends State<ShareScreen>
     return ItemBuilder.buildDesktopAppBar(
       context: context,
       showBack: true,
-      title: "我的推荐",
+      title: S.current.myRecommends,
       actions: [
         ItemBuilder.buildIconButton(
             context: context,
@@ -259,8 +259,8 @@ class _ShareScreenState extends State<ShareScreen>
               BottomSheetBuilder.showListBottomSheet(
                 context,
                 (sheetContext) => TileList.fromOptions(
-                  const [
-                    Tuple2("清空无效内容", 1),
+                   [
+                    Tuple2(S.current.clearInvalidContent, 1),
                   ],
                   (idx) async {
                     Navigator.pop(sheetContext);
@@ -275,7 +275,7 @@ class _ShareScreenState extends State<ShareScreen>
                           _shareList.removeWhere(
                               (e) => CommonInfoItemBuilder.isInvalid(e));
                           setState(() {});
-                          IToast.showTop("清空成功");
+                          IToast.showTop(S.current.clearSuccess);
                         }
                       });
                     }

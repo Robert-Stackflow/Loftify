@@ -3,7 +3,6 @@ import 'package:loftify/Api/login_api.dart';
 import 'package:loftify/Models/login_response.dart';
 import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
 import 'package:loftify/Screens/Login/login_by_lofterid_screen.dart';
-import 'package:loftify/Screens/Login/login_by_mail_screen.dart';
 import 'package:loftify/Utils/constant.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
@@ -16,6 +15,7 @@ import '../../Utils/request_util.dart';
 import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
 
 class LoginByPasswordScreen extends StatefulWidget {
   const LoginByPasswordScreen({super.key, this.initPhone, this.initPassword});
@@ -47,7 +47,7 @@ class _LoginByPasswordScreenState extends State<LoginByPasswordScreen>
     String mobile = _mobileController.text;
     String password = _passwordController.text;
     if (mobile.isEmpty || password.isEmpty) {
-      IToast.showTop("手机号或密码不能为空");
+      IToast.showTop(S.current.phoneOrPasswordCannotBeEmpty);
       return;
     }
     LoginApi.loginByPassword(mobile, password).then((value) async {
@@ -56,7 +56,7 @@ class _LoginByPasswordScreenState extends State<LoginByPasswordScreen>
         if (loginResponse.result != 0) {
           IToast.showTop(loginResponse.desc);
         } else {
-          IToast.showTop("登录成功");
+          IToast.showTop(S.current.loginSuccess);
           appProvider.token = loginResponse.token ?? "";
           await RequestUtil.clearCookie();
           await HiveUtil.put(HiveUtil.userIdKey, loginResponse.userid);
@@ -79,7 +79,7 @@ class _LoginByPasswordScreenState extends State<LoginByPasswordScreen>
         resizeToAvoidBottomInset: false,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: ItemBuilder.buildSimpleAppBar(
-          title: "密码登录",
+          title: S.current.loginByPassword,
           context: context,
           leading: Icons.close_rounded,
           transparent: true,
@@ -95,7 +95,7 @@ class _LoginByPasswordScreenState extends State<LoginByPasswordScreen>
                     const SizedBox(height: 50),
                     ItemBuilder.buildInputItem(
                       context: context,
-                      hint: "输入手机号",
+                      hint: S.current.inputPhone,
                       textInputAction: TextInputAction.next,
                       controller: _mobileController,
                       tailingType: TailingType.clear,
@@ -104,7 +104,7 @@ class _LoginByPasswordScreenState extends State<LoginByPasswordScreen>
                     ),
                     ItemBuilder.buildInputItem(
                       context: context,
-                      hint: "输入密码",
+                      hint: S.current.inputPassword,
                       textInputAction: TextInputAction.next,
                       leadingIcon: Icons.verified_outlined,
                       controller: _passwordController,
@@ -115,7 +115,7 @@ class _LoginByPasswordScreenState extends State<LoginByPasswordScreen>
                       margin: const EdgeInsets.symmetric(horizontal: 50),
                       child: ItemBuilder.buildRoundButton(
                         context,
-                        text: "登录",
+                        text: S.current.login,
                         background: Theme.of(context).primaryColor,
                         onTap: _login,
                         color: Colors.white,
@@ -134,7 +134,7 @@ class _LoginByPasswordScreenState extends State<LoginByPasswordScreen>
                   children: [
                     ItemBuilder.buildTextDivider(
                       context: context,
-                      text: "其他登录方式",
+                      text: S.current.otherLoginMethods,
                     ),
                     const SizedBox(height: 20),
                     Row(

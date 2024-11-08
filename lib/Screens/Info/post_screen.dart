@@ -118,7 +118,7 @@ class _PostScreenState extends State<PostScreen>
                   if (item > 0) {
                     int month = e.monthCount.indexOf(item);
                     _archiveDataList.add(ArchiveData(
-                      desc: "${e.year}年${month + 1}月",
+                      desc: S.current.yearAndMonth(e.year, month + 1),
                       count: item,
                       endTime: 0,
                       startTime: 0,
@@ -144,7 +144,7 @@ class _PostScreenState extends State<PostScreen>
               _archiveDataList.insert(
                 0,
                 ArchiveData(
-                  desc: "置顶",
+                  desc: S.current.pin,
                   count: 1,
                   endTime: 0,
                   startTime: 0,
@@ -220,7 +220,7 @@ class _PostScreenState extends State<PostScreen>
             return _archiveDataList.isNotEmpty
                 ? _buildNineGridGroup(physics)
                 : ItemBuilder.buildEmptyPlaceholder(
-                    context: context, text: "暂无文章", physics: physics);
+                    context: context, text: S.current.noArticle, physics: physics);
           },
         );
       default:
@@ -242,7 +242,7 @@ class _PostScreenState extends State<PostScreen>
       }
       widgets.add(ItemBuilder.buildTitle(
         context,
-        title: "${e.desc}（${e.count}篇）",
+        title: S.current.descriptionWithPostCount(e.desc, e.count.toString()),
         topMargin: 16,
         bottomMargin: 0,
       ));
@@ -281,7 +281,7 @@ class _PostScreenState extends State<PostScreen>
     return ItemBuilder.buildDesktopAppBar(
       context: context,
       showBack: true,
-      title: "我的作品",
+      title: S.current.myPosts,
       actions: [
         // ItemBuilder.buildIconButton(
         //     context: context,

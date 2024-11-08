@@ -1,5 +1,5 @@
 name: loftify
-version: 2.3.0+2300
+version: 2.4.0+2400
 description: An third-party application for LOFTER
 publish_to: none
 
@@ -77,8 +77,7 @@ dependencies:
   flutter_native_splash: ^2.4.1 # Splash屏
   palette_generator: ^0.3.3+3 # 获取主色调
   vector_math: ^2.1.4
-  show_fps:
-    path: third-party/show_fps
+  screen_protector: ^1.4.2+1
   # 平台适配
   responsive_builder: ^0.7.1 # 响应式布局
   tray_manager: ^0.2.3 # 托盘图标
@@ -137,7 +136,12 @@ flutter_native_splash:
     icon_background_color_dark: "#121212"
 
 flutter_intl:
-  enabled: true
+  enabled: true # Required. Must be set to true to activate the package. Default: false
+  class_name: S # Optional. Sets the name for the generated localization class. Default: S
+  main_locale: zh_CN # Optional. Sets the main locale used for generating localization files. Provided value should consist of language code and optional script and country codes separated with underscore (e.g. 'en', 'en_GB', 'zh_Hans', 'zh_Hans_CN'). Default: en
+  arb_dir: lib/l10n # Optional. Sets the directory of your ARB resource files. Provided value should be a valid path on your system. Default: lib/l10n
+  output_dir: lib/generated # Optional. Sets the directory of generated localization files. Provided value should be a valid path on your system. Default: lib/generated
+  use_deferred_loading: false # Optional. Must be set to true to generate localization code that is loaded with deferred loading. Default: false
 
 flutter:
   uses-material-design: true

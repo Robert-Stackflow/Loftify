@@ -15,6 +15,7 @@ import '../../Utils/constant.dart';
 import '../../Utils/request_util.dart';
 import '../../Utils/route_util.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
 
 class LoginByLofterIDScreen extends StatefulWidget {
   const LoginByLofterIDScreen({super.key, this.initPassword});
@@ -45,7 +46,7 @@ class _LoginByLofterIDScreenState extends State<LoginByLofterIDScreen>
     String lofterID = _lofterIDController.text;
     String password = _passwordController.text;
     if (lofterID.isEmpty || password.isEmpty) {
-      IToast.showTop("LofterID或密码不能为空");
+      IToast.showTop(S.current.lofterIDOrPasswordCannotBeEmpty);
       return;
     }
     LoginApi.loginByLofterID(lofterID, password).then((value) async {
@@ -55,7 +56,7 @@ class _LoginByLofterIDScreenState extends State<LoginByLofterIDScreen>
         if (loginResponse.status != 200) {
           IToast.showTop(loginResponse.desc);
         } else {
-          IToast.showTop("登录成功");
+          IToast.showTop(S.current.loginSuccess);
           appProvider.token = loginResponse.token ?? "";
           await RequestUtil.clearCookie();
           await HiveUtil.put(HiveUtil.userIdKey, loginResponse.userId);
@@ -77,7 +78,7 @@ class _LoginByLofterIDScreenState extends State<LoginByLofterIDScreen>
         resizeToAvoidBottomInset: false,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: ItemBuilder.buildSimpleAppBar(
-          title: "LofterID登录",
+          title: S.current.loginByLofterID,
           context: context,
           leading: Icons.close_rounded,
           transparent: true,
@@ -93,7 +94,7 @@ class _LoginByLofterIDScreenState extends State<LoginByLofterIDScreen>
                     const SizedBox(height: 50),
                     ItemBuilder.buildInputItem(
                       context: context,
-                      hint: "输入LofterID",
+                      hint: S.current.inputLofterID,
                       textInputAction: TextInputAction.next,
                       controller: _lofterIDController,
                       tailingType: TailingType.clear,
@@ -101,7 +102,7 @@ class _LoginByLofterIDScreenState extends State<LoginByLofterIDScreen>
                     ),
                     ItemBuilder.buildInputItem(
                       context: context,
-                      hint: "输入密码",
+                      hint: S.current.inputPassword,
                       textInputAction: TextInputAction.next,
                       leadingIcon: Icons.verified_outlined,
                       controller: _passwordController,
@@ -112,7 +113,7 @@ class _LoginByLofterIDScreenState extends State<LoginByLofterIDScreen>
                       margin: const EdgeInsets.symmetric(horizontal: 50),
                       child: ItemBuilder.buildRoundButton(
                         context,
-                        text: "登录",
+                        text: S.current.login,
                         onTap: _login,
                         background: Theme.of(context).primaryColor,
                         color: Colors.white,
@@ -131,7 +132,7 @@ class _LoginByLofterIDScreenState extends State<LoginByLofterIDScreen>
                   children: [
                     ItemBuilder.buildTextDivider(
                       context: context,
-                      text: "其他登录方式",
+                      text: S.current.otherLoginMethods,
                     ),
                     const SizedBox(height: 20),
                     Row(

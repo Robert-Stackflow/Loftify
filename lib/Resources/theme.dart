@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../Utils/app_provider.dart';
+import '../Utils/responsive_util.dart';
 import '../Utils/utils.dart';
 import 'colors.dart';
 import 'styles.dart';
@@ -213,5 +214,21 @@ class MyTheme {
     return Utils.currentBrightness(context) == Brightness.light
         ? Theme.of(context).scaffoldBackgroundColor
         : Theme.of(context).canvasColor;
+  }
+
+  static Color get background {
+    return Theme.of(rootContext).scaffoldBackgroundColor;
+    // return Utils.currentBrightness(rootContext) == Brightness.light
+    //     ? Theme.of(rootContext).scaffoldBackgroundColor
+    //     : Theme.of(rootContext).canvasColor;
+  }
+
+  static Color get itemBackground {
+    if (ResponsiveUtil.isLandscape()) {
+      return Theme.of(rootContext).canvasColor;
+    }
+    return Utils.currentBrightness(rootContext) == Brightness.light
+        ? Theme.of(rootContext).canvasColor
+        : Theme.of(rootContext).scaffoldBackgroundColor;
   }
 }

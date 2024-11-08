@@ -333,7 +333,7 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
       widgets.add(Container(
         padding: const EdgeInsets.only(top: 12),
         child: Text(
-          "${e.desc}（${e.count}篇）",
+          S.current.descriptionWithPostCount(e.desc, e.count.toString()),
           style: Theme.of(context).textTheme.titleMedium,
         ),
       ));

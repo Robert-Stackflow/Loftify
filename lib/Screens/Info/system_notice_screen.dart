@@ -1,4 +1,3 @@
-import '../../generated/l10n.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -17,6 +16,7 @@ import '../../Utils/itoast.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
 
 class SystemNoticeScreen extends StatefulWidget {
   const SystemNoticeScreen({super.key});
@@ -60,14 +60,14 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
   bool _collectionNoMore = false;
   bool _otherNoMore = false;
   final List<String> _tabLabelList = [
-    "全部",
-    "喜欢",
-    "推荐",
-    "礼物",
-    "@我",
-    "订阅",
-    "收藏",
-    "其他"
+    S.current.all,
+    S.current.like,
+    S.current.recommend,
+    S.current.gift,
+    S.current.atMe,
+    S.current.subscribe,
+    S.current.favorite,
+    S.current.other,
   ];
   late TabController _tabController;
   int _currentTabIndex = 0;
@@ -627,7 +627,7 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
     return ItemBuilder.buildDesktopAppBar(
       context: context,
       showBack: true,
-      title: "通知",
+      title: S.current.notice,
       bottomHeight: 56,
       bottom: ItemBuilder.buildTabBar(
         context,

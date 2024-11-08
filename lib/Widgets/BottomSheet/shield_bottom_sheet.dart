@@ -3,6 +3,7 @@ import 'package:loftify/Widgets/Item/item_builder.dart';
 
 import '../../Resources/theme.dart';
 import '../../Utils/enums.dart';
+import '../../generated/l10n.dart';
 
 class ShieldBottomSheet extends StatefulWidget {
   const ShieldBottomSheet({
@@ -64,7 +65,7 @@ class ShieldBottomSheetState extends State<ShieldBottomSheet> {
       padding: const EdgeInsets.symmetric(vertical: 16),
       alignment: Alignment.center,
       child: Text(
-        "减少标签下内容推荐",
+       S.current.reduceRecommend,
         style: Theme.of(context).textTheme.titleLarge,
       ),
     );
@@ -118,7 +119,7 @@ class ShieldBottomSheetState extends State<ShieldBottomSheet> {
             height: 45,
             child: ItemBuilder.buildRoundButton(
               context,
-              text: "🙈 内容不感兴趣",
+              text: S.current.uninterestedInContent,
               onTap: widget.onShieldContent,
               fontSizeDelta: 2,
             ),
@@ -128,7 +129,7 @@ class ShieldBottomSheetState extends State<ShieldBottomSheet> {
             height: 45,
             child: ItemBuilder.buildRoundButton(
               context,
-              text: "💔 作者不感兴趣",
+              text: S.current.uninterestedInUser,
               onTap: widget.onShieldUser,
               fontSizeDelta: 2,
             ),

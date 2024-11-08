@@ -48,57 +48,57 @@ class EnumsLabelGetter {
   static String getTagPostTypeLabel(TagPostType type) {
     switch (type) {
       case TagPostType.noLimit:
-        return "不限";
+        return S.current.noLimit;
       case TagPostType.image:
-        return "图片";
+        return S.current.images;
       case TagPostType.article:
-        return "文字";
+        return S.current.words;
     }
   }
 
   static String getTagRecentDayTypeLabel(TagRecentDayType type) {
     switch (type) {
       case TagRecentDayType.noLimit:
-        return "不限";
+        return S.current.noLimit;
       case TagRecentDayType.oneDay:
-        return "一天内";
+        return S.current.inOneDay;
       case TagRecentDayType.oneWeek:
-        return "一周内";
+        return S.current.inOneWeek;
       case TagRecentDayType.oneMonth:
-        return "一个月内";
+        return S.current.inOneMonth;
     }
   }
 
   static String getTagRangeTypeLabel(TagRangeType type) {
     switch (type) {
       case TagRangeType.noLimit:
-        return "不限";
+        return S.current.noLimit;
       case TagRangeType.follow:
-        return "关注的人";
+        return S.current.followingUser;
       case TagRangeType.notViewInPastSevenDays:
-        return "近7日未看";
+        return S.current.haveNotVisitRecentSevenDays;
     }
   }
 
   static List<Tuple2<String, ImageQuality>> getImageQualityLabels() {
     return [
-      const Tuple2("低质量", ImageQuality.small),
-      const Tuple2("中等质量", ImageQuality.medium),
-      const Tuple2("高质量", ImageQuality.origin),
-      const Tuple2("原图", ImageQuality.raw),
+      Tuple2(S.current.lowImageQuality, ImageQuality.small),
+      Tuple2(S.current.middleImageQuality, ImageQuality.medium),
+      Tuple2(S.current.rawImageQuality, ImageQuality.origin),
+      Tuple2(S.current.originImageQuality, ImageQuality.raw),
     ];
   }
 
   static String getImageQualityLabel(ImageQuality quality) {
     switch (quality) {
       case ImageQuality.small:
-        return "低质量";
+        return S.current.lowImageQuality;
       case ImageQuality.medium:
-        return "中等质量";
+        return S.current.middleImageQuality;
       case ImageQuality.origin:
-        return "高质量";
+        return S.current.rawImageQuality;
       case ImageQuality.raw:
-        return "原图";
+        return S.current.originImageQuality;
     }
   }
 }
@@ -119,28 +119,54 @@ extension Index on int {
 }
 
 enum DoubleTapAction {
-  none('none', '无操作'),
-  like('like', '喜欢'),
-  recommend('recommend', '推荐'),
-  download('download', '下载当前图片'),
-  downloadAll('downloadAll', '下载所有图片'),
-  copyLink('copyLink', '复制帖子链接');
+  none('none'),
+  like('like'),
+  recommend('recommend'),
+  download('download'),
+  downloadAll('downloadAll'),
+  copyLink('copyLink');
 
-  const DoubleTapAction(this.key, this.label);
+  const DoubleTapAction(this.key);
 
   final String key;
-  final String label;
+
+  String get label {
+    switch (this) {
+      case none:
+        return S.current.noOperation;
+      case like:
+        return S.current.like;
+      case recommend:
+        return S.current.recommend;
+      case download:
+        return S.current.downloadCurrentImage;
+      case downloadAll:
+        return S.current.downloadAllImages;
+      case copyLink:
+        return S.current.copyLink;
+    }
+  }
 }
 
 enum DownloadSuccessAction {
-  none('none', '无操作'),
-  unlike('unlike', '取消喜欢'),
-  unrecommend('unrecommend', '取消推荐');
+  none('none'),
+  unlike('unlike'),
+  unrecommend('unrecommend');
 
-  const DownloadSuccessAction(this.key, this.label);
+  const DownloadSuccessAction(this.key);
 
   final String key;
-  final String label;
+
+  String get label {
+    switch (this) {
+      case none:
+        return S.current.noOperation;
+      case unlike:
+        return S.current.unlike;
+      case unrecommend:
+        return S.current.unrecommend;
+    }
+  }
 }
 
 extension DoubleTapEnumExtension on DoubleTapAction {
@@ -250,17 +276,13 @@ enum InitPhase {
 }
 
 enum Copyright {
-  none('不声明'),
-  by('署名'),
-  byNd('署名-禁止演绎'),
-  byNc('署名-非商业性使用'),
-  bySa("署名-相同方式共享"),
-  byNcNd('署名-非商业性使用-禁止演绎'),
-  byNcSa('署名-非商业性使用-相同方式共享');
-
-  const Copyright(this.label);
-
-  final String label;
+  none,
+  by,
+  byNd,
+  byNc,
+  bySa,
+  byNcNd,
+  byNcSa;
 
   static Copyright fromInt(int index) {
     switch (index) {
@@ -280,6 +302,27 @@ enum Copyright {
         return byNcSa;
       default:
         return none;
+    }
+  }
+
+  String get label {
+    switch (this) {
+      case none:
+        return S.current.noneCopyright;
+      case by:
+        return S.current.byCopyright;
+      case byNd:
+        return S.current.byNdCopyright;
+      case byNc:
+        return S.current.byNcCopyright;
+      case bySa:
+        return S.current.bySaCopyright;
+      case byNcNd:
+        return S.current.byNcNdCopyright;
+      case byNcSa:
+        return S.current.byNcSaCopyright;
+      default:
+        return S.current.noneCopyright;
     }
   }
 }

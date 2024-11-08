@@ -1,4 +1,3 @@
-import '../../generated/l10n.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -20,6 +19,7 @@ import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/input_bottom_sheet.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
 
 class FavoriteFolderListScreen extends StatefulWidget {
   const FavoriteFolderListScreen({super.key});
@@ -186,19 +186,19 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
                           ),
                         ),
                         copyText: item.name ?? "",
-                        toastText: "已复制收藏夹名称",
+                        toastText: S.current.haveCopiedFolderName,
                       ),
                       const SizedBox(height: 10),
                       ItemBuilder.buildCopyItem(context,
                           child: Text(
-                            "ID: ${item.id}",
+                            S.current.folderId(item.id.toString()),
                             style: Theme.of(context).textTheme.titleSmall,
                           ),
                           copyText: item.id.toString(),
-                          toastText: "已复制收藏夹ID"),
+                          toastText: S.current.haveCopiedFolderID),
                       const SizedBox(height: 10),
                       Text(
-                        "${item.postCount}篇",
+                        "${item.postCount}${S.current.chapter}",
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                     ],
@@ -212,16 +212,16 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
                   BottomSheetBuilder.showBottomSheet(
                     context,
                     (sheetContext) => InputBottomSheet(
-                      buttonText: "确认",
-                      title: "编辑收藏夹名称",
-                      hint: "输入收藏夹名称",
+                      buttonText: S.current.confirm,
+                      title: S.current.editFolderTitle,
+                      hint: S.current.inputFolderTitle,
                       text: item.name ?? "",
                       onConfirm: (text) {
                         var tmp = item;
                         tmp.name = text;
                         UserApi.editFolder(folder: tmp).then((value) {
                           if (value['code'] == 0) {
-                            IToast.showTop("编辑成功");
+                            IToast.showTop(S.current.editSuccess);
                             item.name = text;
                             setState(() {});
                           } else {
@@ -243,14 +243,15 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
                   onTap: () {
                     DialogBuilder.showConfirmDialog(
                       context,
-                      title: "删除收藏夹",
-                      message: "确定删除收藏夹 ${item.name} ？删除后，其中的文章也将取消收藏",
+                      title: S.current.deleteFolder,
+                      message:
+                          S.current.deleteFolderMessage(item.name.toString()),
                       messageTextAlign: TextAlign.center,
                       onTapConfirm: () async {
                         UserApi.deleteFolder(folderId: item.id ?? 0)
                             .then((value) {
                           if (value['code'] == 0) {
-                            IToast.showTop("删除成功");
+                            IToast.showTop(S.current.deleteSuccess);
                             _refreshController.callRefresh();
                           } else {
                             IToast.showTop(value['msg']);
@@ -271,14 +272,14 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
     BottomSheetBuilder.showBottomSheet(
       context,
       (sheetContext) => InputBottomSheet(
-        buttonText: "确认",
-        title: "新建收藏夹",
-        hint: "输入收藏夹名称",
+        buttonText: S.current.confirm,
+        title: S.current.newFolder,
+        hint: S.current.inputFolderTitle,
         text: "",
         onConfirm: (text) {
           UserApi.createFolder(name: text).then((value) {
             if (value['code'] == 0) {
-              IToast.showTop("创建成功");
+              IToast.showTop(S.current.createSuccess);
               _refreshController.callRefresh();
             } else {
               IToast.showTop(value['msg']);
@@ -295,7 +296,7 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
     return ItemBuilder.buildDesktopAppBar(
       context: context,
       showBack: true,
-      title: "我的收藏",
+      title: S.current.myFavorites,
       actions: [
         // ItemBuilder.buildIconButton(
         //     context: context,

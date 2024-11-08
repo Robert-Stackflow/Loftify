@@ -1,24 +1,25 @@
-import '../../generated/l10n.dart';
 import 'dart:io';
 
+import 'package:context_menus/context_menus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Api/user_api.dart';
 import 'package:loftify/Models/history_response.dart';
 import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Utils/hive_util.dart';
-import 'package:tuple/tuple.dart';
 
 import '../../Models/post_detail_response.dart';
+import '../../Utils/constant.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
-import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
+import '../../generated/l10n.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -138,21 +139,30 @@ class _HistoryScreenState extends State<HistoryScreen>
           onTap: _onRefresh,
         );
       case InitPhase.successful:
-        return EasyRefresh.builder(
-          refreshOnStart: true,
-          controller: _refreshController,
-          onRefresh: _onRefresh,
-          onLoad: _onLoad,
-          triggerAxis: Axis.vertical,
-          childBuilder: (context, physics) {
-            return _archiveDataList.isNotEmpty
-                ? _buildNineGridGroup(physics)
-                : ItemBuilder.buildEmptyPlaceholder(
-                    context: context,
-                    text: "暂无历史",
-                    physics: physics,
-                  );
-          },
+        return Stack(
+          children: [
+            EasyRefresh.builder(
+              refreshOnStart: true,
+              controller: _refreshController,
+              onRefresh: _onRefresh,
+              onLoad: _onLoad,
+              triggerAxis: Axis.vertical,
+              childBuilder: (context, physics) {
+                return _archiveDataList.isNotEmpty
+                    ? _buildNineGridGroup(physics)
+                    : ItemBuilder.buildEmptyPlaceholder(
+                        context: context,
+                        text: S.current.noHistory,
+                        physics: physics,
+                      );
+              },
+            ),
+            Positioned(
+              right: ResponsiveUtil.isLandscape() ? 16 : 12,
+              bottom: ResponsiveUtil.isLandscape() ? 16 : 76,
+              child: _buildFloatingButtons(),
+            ),
+          ],
         );
       default:
         return Container();
@@ -173,7 +183,7 @@ class _HistoryScreenState extends State<HistoryScreen>
       }
       widgets.add(ItemBuilder.buildTitle(
         context,
-        title: "${e.desc}（${e.count}篇）",
+        title: S.current.descriptionWithPostCount(e.desc, e.count.toString()),
         topMargin: 16,
         bottomMargin: 0,
       ));
@@ -214,78 +224,14 @@ class _HistoryScreenState extends State<HistoryScreen>
     return ItemBuilder.buildDesktopAppBar(
       context: context,
       showBack: true,
-      title: "我的足迹",
+      title: S.current.myHistory,
       actions: [
         ItemBuilder.buildIconButton(
             context: context,
             icon: Icon(Icons.more_vert_rounded,
                 color: Theme.of(context).iconTheme.color),
             onTap: () {
-              BottomSheetBuilder.showListBottomSheet(
-                context,
-                (sheetContext) => TileList.fromOptions(
-                  [
-                    const Tuple2("清空我的足迹", 0),
-                    const Tuple2("清空无效内容", 1),
-                    Tuple2(_recordHistory == 1 ? "关闭我的足迹" : "打开我的足迹", 2),
-                  ],
-                  (idx) async {
-                    Navigator.pop(sheetContext);
-                    if (idx == 0) {
-                      UserApi.clearHistory().then((value) {
-                        if (value['meta']['status'] != 200) {
-                          IToast.showTop(
-                              value['meta']['desc'] ?? value['meta']['msg']);
-                        } else {
-                          _histories.clear();
-                          _archiveDataList.clear();
-                          _total = 0;
-                          setState(() {});
-                          IToast.showTop("清空成功");
-                        }
-                      });
-                    } else if (idx == 1) {
-                      UserApi.deleteInvalidHistory(
-                              blogId: await HiveUtil.getUserId())
-                          .then((value) {
-                        if (value['meta']['status'] != 200) {
-                          IToast.showTop(
-                              value['meta']['desc'] ?? value['meta']['msg']);
-                        } else {
-                          clearInvalidHistory();
-                          setState(() {});
-                          IToast.showTop("清空成功");
-                        }
-                      });
-                    } else if (idx == 2) {
-                      HiveUtil.getUserInfo().then((blogInfo) async {
-                        UserApi.closeHistory(
-                          recordHistory: _recordHistory == 1 ? 0 : 1,
-                          blogName: blogInfo!.blogName,
-                        ).then((value) {
-                          if (value['meta']['status'] != 200) {
-                            IToast.showTop(
-                                value['meta']['desc'] ?? value['meta']['msg']);
-                          } else {
-                            _histories.clear();
-                            _archiveDataList.clear();
-                            _total = 0;
-                            _recordHistory = _recordHistory == 1 ? 0 : 1;
-                            IToast.showTop(
-                                _recordHistory == 1 ? "打开成功" : "关闭成功");
-                            setState(() {});
-                          }
-                        });
-                      });
-                    }
-                  },
-                  showCancel: true,
-                  context: sheetContext,
-                  showTitle: false,
-                  onCloseTap: () => Navigator.pop(sheetContext),
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                ),
-              );
+              BottomSheetBuilder.showContextMenu(context, _buildMoreButtons());
             }),
         const SizedBox(width: 5),
       ],
@@ -310,5 +256,86 @@ class _HistoryScreenState extends State<HistoryScreen>
     }
     _histories.removeWhere((e) => CommonInfoItemBuilder.isInvalid(e));
     setState(() {});
+  }
+
+  _buildMoreButtons() {
+    return GenericContextMenu(
+      buttonConfigs: [
+        ContextMenuButtonConfig(
+          S.current.clearMyHistory,
+          onPressed: () {
+            UserApi.clearHistory().then((value) {
+              if (value['meta']['status'] != 200) {
+                IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+              } else {
+                _histories.clear();
+                _archiveDataList.clear();
+                _total = 0;
+                setState(() {});
+                IToast.showTop(S.current.clearSuccess);
+              }
+            });
+          },
+        ),
+        ContextMenuButtonConfig(
+          S.current.clearInvalidContent,
+          onPressed: () async {
+            UserApi.deleteInvalidHistory(blogId: await HiveUtil.getUserId())
+                .then((value) {
+              if (value['meta']['status'] != 200) {
+                IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+              } else {
+                clearInvalidHistory();
+                setState(() {});
+                IToast.showTop(S.current.clearSuccess);
+              }
+            });
+          },
+        ),
+        ContextMenuButtonConfig(
+          _recordHistory == 1
+              ? S.current.closeMyHistory
+              : S.current.openMyHistory,
+          onPressed: () {
+            HiveUtil.getUserInfo().then((blogInfo) async {
+              UserApi.closeHistory(
+                recordHistory: _recordHistory == 1 ? 0 : 1,
+                blogName: blogInfo!.blogName,
+              ).then((value) {
+                if (value['meta']['status'] != 200) {
+                  IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+                } else {
+                  _histories.clear();
+                  _archiveDataList.clear();
+                  _total = 0;
+                  _recordHistory = _recordHistory == 1 ? 0 : 1;
+                  IToast.showTop(_recordHistory == 1
+                      ? S.current.openSuccess
+                      : S.current.closeSuccess);
+                  setState(() {});
+                }
+              });
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  _buildFloatingButtons() {
+    return ResponsiveUtil.isLandscape()
+        ? Column(
+            children: [
+              ItemBuilder.buildShadowIconButton(
+                context: context,
+                icon: const Icon(Icons.more_vert_rounded),
+                onTap: () {
+                  BottomSheetBuilder.showContextMenu(
+                      context, _buildMoreButtons());
+                },
+              ),
+            ],
+          )
+        : emptyWidget;
   }
 }

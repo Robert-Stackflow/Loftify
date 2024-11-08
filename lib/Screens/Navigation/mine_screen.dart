@@ -607,14 +607,6 @@ class _MineScreenState extends State<MineScreen>
         },
         leading: Icons.bookmark_outline_rounded,
       ),
-      // ItemBuilder.buildEntryItem(
-      //   context: context,
-      //   title: "我的订阅",
-      //   padding: 15,
-      //   showLeading: true,
-      //   onTap: () {},
-      //   leading: Icons.subscriptions_outlined,
-      // ),
       ItemBuilder.buildEntryItem(
         context: context,
         title: S.current.myHistory,

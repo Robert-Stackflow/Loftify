@@ -1,4 +1,3 @@
-import '../../generated/l10n.dart';
 import 'package:context_menus/context_menus.dart';
 import 'package:custom_sliding_segmented_control/custom_sliding_segmented_control.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
@@ -32,6 +31,7 @@ import '../../Widgets/Custom/subordinate_scroll_controller.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
+import '../../generated/l10n.dart';
 
 class TagDetailScreen extends StatefulWidget {
   const TagDetailScreen({super.key, required this.tag});
@@ -59,7 +59,11 @@ class _TagDetailScreenState extends State<TagDetailScreen>
       List.filled(3, null);
 
   int _currentTabIndex = 0;
-  final List<String> _tabLabelList = ["发现", "最新", "最热"];
+  final List<String> _tabLabelList = [
+    S.current.explore,
+    S.current.newest,
+    S.current.hottest
+  ];
 
   late GetTagPostListParams _hottestParams;
   int _currentHottestIndex = 0;
@@ -181,8 +185,8 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                       ItemBuilder.buildFramedDoubleButton(
                         context: context,
                         isFollowed: _tagDetailData!.favorited,
-                        positiveText: "已订阅",
-                        negtiveText: "订阅",
+                        positiveText: S.current.subscribed,
+                        negtiveText: S.current.subscribe,
                         onTap: () {
                           HapticFeedback.mediumImpact();
                           TagApi.subscribeOrUnSubscribe(
@@ -221,7 +225,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                         ),
                       ItemBuilder.buildTagItem(
                         context,
-                        "${Utils.formatCount(_tagDetailData!.tagViewCount)}浏览",
+                        "${Utils.formatCount(_tagDetailData!.tagViewCount)}${S.current.viewCount}",
                         TagType.normal,
                         showTagLabel: false,
                         showIcon: false,
@@ -230,7 +234,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                       ItemBuilder.buildTagItem(
                         context,
                         showTagLabel: false,
-                        "${Utils.formatCount(_tagDetailData!.postAllCount)}参与",
+                        "${Utils.formatCount(_tagDetailData!.postAllCount)}${S.current.participateCount}",
                         TagType.normal,
                         showIcon: false,
                         jumpToTag: false,
@@ -361,8 +365,9 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                   _buildEntryItem(
                       darkBg: AssetUtil.collectionDarkIllust,
                       lightBg: AssetUtil.collectionLightIllust,
-                      title: "合集粮单",
-                      desc: "热门「${_tagDetailData!.collectionRank!.title}」",
+                      title: S.current.collectionGrain,
+                      desc: S.current.collectionGrainDetail(
+                          _tagDetailData!.collectionRank!.title),
                       onTap: () {
                         RouteUtil.pushPanelCupertinoRoute(
                             context, TagCollectionGrainScreen(tag: widget.tag));
@@ -371,7 +376,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                   _buildEntryItem(
                       darkBg: AssetUtil.tagDarkIllust,
                       lightBg: AssetUtil.tagLightIllust,
-                      title: "相关标签",
+                      title: S.current.relatedTag,
                       desc: _tagDetailData!.relatedTags,
                       onTap: () {
                         RouteUtil.pushPanelCupertinoRoute(
@@ -381,8 +386,9 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                   _buildEntryItem(
                     darkBg: AssetUtil.dressDarkIllust,
                     lightBg: AssetUtil.dressLightIllust,
-                    title: "相关装扮",
-                    desc: "已获取${_tagDetailData!.propGiftTagConfig!.slotCount}次",
+                    title: S.current.relatedDressShort,
+                    desc: S.current.relatedDressShortDetail(
+                        _tagDetailData!.propGiftTagConfig!.slotCount),
                     onTap: () {
                       RouteUtil.pushPanelCupertinoRoute(
                           context, DressScreen(tag: widget.tag));
@@ -480,9 +486,9 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                   height: 50,
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
-                  children: const <int, Widget>{
-                    0: Text("最新发布"),
-                    1: Text("最新评论"),
+                  children:  <int, Widget>{
+                    0: Text(S.current.releaseRecently),
+                    1: Text(S.current.commentRecently),
                   },
                   initialValue: _currentNewestIndex,
                   onValueChanged: (index) {
@@ -512,7 +518,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                   Icons.filter_alt_rounded,
                   size: 16,
                 ),
-                text: "筛选",
+                text: S.current.filter,
                 onTap: () {
                   BottomSheetBuilder.showBottomSheet(
                     context,
@@ -561,11 +567,11 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                   ),
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
-                  children: const <int, Widget>{
-                    0: Text("全部"),
-                    1: Text("日榜"),
-                    2: Text("周榜"),
-                    3: Text("月榜"),
+                  children:  <int, Widget>{
+                    0: Text(S.current.all),
+                    1: Text(S.current.dayRank),
+                    2: Text(S.current.weekRank),
+                    3: Text(S.current.monthRank),
                   },
                   initialValue: _currentHottestIndex,
                   onValueChanged: (index) {
@@ -605,7 +611,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                   Icons.filter_alt_rounded,
                   size: 16,
                 ),
-                text: "筛选",
+                text: S.current.filter,
                 onTap: () {
                   BottomSheetBuilder.showBottomSheet(
                     context,
@@ -631,7 +637,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
       context: context,
       showBack: true,
       titleWidget: Text(
-        "标签",
+        S.current.tag,
         style: Theme.of(context).textTheme.titleMedium?.apply(
               fontWeightDelta: 2,
             ),

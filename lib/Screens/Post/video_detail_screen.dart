@@ -1,4 +1,3 @@
-import '../../generated/l10n.dart';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -34,6 +33,7 @@ import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/BottomSheet/comment_bottom_sheet.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
 
 class QuickerScrollPhysics extends BouncingScrollPhysics {
   const QuickerScrollPhysics({super.parent});
@@ -728,7 +728,7 @@ class VideoListButtonColumn extends StatelessWidget {
                 : _IconButton(
                     icon: const Icon(Icons.download_rounded,
                         size: 35, color: Colors.white),
-                    text: '下载',
+                    text: S.current.download,
                     onTap: onDownload,
                   ),
           const SizedBox(height: 20),

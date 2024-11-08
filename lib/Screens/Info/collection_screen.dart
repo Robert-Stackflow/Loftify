@@ -172,7 +172,7 @@ class _CollectionScreenState extends State<CollectionScreen>
             return _collectionList.isNotEmpty
                 ? _buildMainBody(physics)
                 : ItemBuilder.buildEmptyPlaceholder(
-                    context: context, text: "暂无合集", physics: physics);
+                    context: context, text: S.current.noCollection, physics: physics);
           },
         );
       default:
@@ -254,7 +254,7 @@ class _CollectionScreenState extends State<CollectionScreen>
                             overflow: TextOverflow.ellipsis,
                           ),
                           Text(
-                            "${collection.postCount}篇 · 更新于${Utils.formatTimestamp(collection.lastPublishTime)}",
+                            "${collection.postCount}${S.current.chapter} · ${S.current.updateAt}${Utils.formatTimestamp(collection.lastPublishTime)}",
                             style: Theme.of(context).textTheme.labelMedium,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -296,7 +296,7 @@ class _CollectionScreenState extends State<CollectionScreen>
     return ItemBuilder.buildDesktopAppBar(
       context: context,
       showBack: true,
-      title: "我的合集",
+      title: S.current.myCollections,
     );
   }
 }

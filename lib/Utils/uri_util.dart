@@ -43,12 +43,16 @@ class UriUtil {
       );
       if (!await launchUrl(
         emailLaunchUri,
+        mode: LaunchMode.externalApplication,
       )) {
+        if (ResponsiveUtil.isIOS()) {
+          IToast.showTop(S.current.noEmailClient);
+        }
         Clipboard.setData(ClipboardData(text: email));
       }
-    } on PlatformException catch (e, t) {
-      ILogger.error("Failed to load email application", e, t);
-      IToast.showTop("尚未安装邮箱程序，已复制Email地址到剪贴板");
+    } catch (e, t) {
+      ILogger.error("Failed to launch email app", e, t);
+      IToast.showTop(S.current.noEmailClient);
     }
     return true;
   }
@@ -56,11 +60,11 @@ class UriUtil {
   static share(BuildContext context, String str) {
     Share.share(str).then((shareResult) {
       if (shareResult.status == ShareResultStatus.success) {
-        IToast.showTop("分享成功");
+        IToast.showTop(S.current.shareSuccess);
       } else if (shareResult.status == ShareResultStatus.dismissed) {
-        IToast.showTop("取消分享");
+        IToast.showTop(S.current.cancelShare);
       } else {
-        IToast.showTop("分享失败");
+        IToast.showTop(S.current.shareFailed);
       }
     });
   }

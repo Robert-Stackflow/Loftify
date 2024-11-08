@@ -7,6 +7,7 @@ import '../../Resources/theme.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
+import '../../generated/l10n.dart';
 import '../Custom/sliver_appbar_delegate.dart';
 import '../Item/item_builder.dart';
 
@@ -73,7 +74,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
         }
       } catch (e, t) {
         ILogger.error("Failed to load newest comments", e, t);
-        IToast.showTop("最新评论加载失败");
+        IToast.showTop(S.current.loadFailed);
         return IndicatorResult.fail;
       } finally {
         loading = false;
@@ -107,7 +108,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
         }
       } catch (e, t) {
         ILogger.error("Failed to load comment reply", e, t);
-        IToast.showTop("回复加载失败");
+        IToast.showTop( S.current.loadFailed);
         return IndicatorResult.fail;
       } finally {
         currentComment.l2CommentLoading = false;
@@ -190,7 +191,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
                 : Container(
                     margin: const EdgeInsets.symmetric(vertical: 24),
                     child: ItemBuilder.buildEmptyPlaceholder(
-                        context: context, text: "暂无评论"),
+                        context: context, text:  S.current.noComment),
                   ),
           ),
         if (newComments.isNotEmpty)
@@ -203,7 +204,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
                 color: MyTheme.getBackground(context),
                 child: ItemBuilder.buildTitle(
                   context,
-                  title: "最新评论",
+                  title: S.current.latestComment,
                   left: 8,
                   bottomMargin: 0,
                   topMargin: 0,

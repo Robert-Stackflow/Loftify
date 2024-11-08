@@ -14,6 +14,7 @@ import '../../Utils/constant.dart';
 import '../../Utils/request_util.dart';
 import '../../Utils/route_util.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
 import 'login_by_lofterid_screen.dart';
 
 class LoginByMailScreen extends StatefulWidget {
@@ -47,14 +48,14 @@ class _LoginByMailScreenState extends State<LoginByMailScreen>
       String mail = _mailController.text;
       String password = _passwordController.text;
       if (mail.isEmpty || password.isEmpty) {
-        IToast.showTop("邮箱或密码不能为空");
+        IToast.showTop(S.current.emailOrPasswordCannotBeEmpty);
         return;
       }
       var resPower = await LoginApi.getMailPower(mail);
       if (resPower['ret'] == "201") {
         mailPower = resPower['pVInfo'];
       } else {
-        IToast.showTop("邮箱不存在");
+        IToast.showTop(S.current.emailNotExist);
         return;
       }
       var resGt = await LoginApi.loginByMailGt(mail);
@@ -62,7 +63,7 @@ class _LoginByMailScreenState extends State<LoginByMailScreen>
         String tk = resGt['tk'];
         var resL = await LoginApi.loginByMailL(mail, password, tk);
         if (resL['ret'] == "200") {
-          IToast.showTop("登录成功");
+          IToast.showTop(S.current.loginSuccess);
           appProvider.token = resL['token'] ?? "";
           await RequestUtil.clearCookie();
           await HiveUtil.put(HiveUtil.userIdKey, resL['userId']);
@@ -70,20 +71,20 @@ class _LoginByMailScreenState extends State<LoginByMailScreen>
           await HiveUtil.put(HiveUtil.tokenTypeKey, TokenType.lofterID.index);
           ResponsiveUtil.returnToMainScreen(rootContext);
         } else if (resL['ret'] == "413" && resL['dt'] == "01") {
-          IToast.showTop("您登录密码错误次数过多，请稍后再试");
+          IToast.showTop(S.current.retryLoginLater);
         } else if (resL['ret'] == "413" && resL['dt'] == "02") {
-          IToast.showTop("您登录密码错误次数过多，请明天再试");
+          IToast.showTop(S.current.retryLoginTomorrow);
         } else if (resL['ret'] == "413" && resL['dt'] == "02") {
-          IToast.showTop("您的IP登录密码错误次数过多，请稍后再试");
+          IToast.showTop(S.current.retryLoginLaterWithIP);
         } else if (resL['ret'] == "413") {
-          IToast.showTop("账号或密码错误");
+          IToast.showTop(S.current.accountOrPasswordWrong);
         } else if (resL['ret'] == "447") {
-          IToast.showTop("操作频繁，请稍后再试");
+          IToast.showTop(S.current.retryLaterWithFrequency);
         } else {
-          IToast.showTop("密码错误");
+          IToast.showTop(S.current.passwordWrong);
         }
       } else {
-        IToast.showTop("未知错误");
+        IToast.showTop(S.current.loadUnkownError);
       }
     } catch (e, t) {
       ILogger.error("Failed to login by mail", e, t);
@@ -98,7 +99,7 @@ class _LoginByMailScreenState extends State<LoginByMailScreen>
         resizeToAvoidBottomInset: false,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: ItemBuilder.buildSimpleAppBar(
-          title: "邮箱登录",
+          title: S.current.loginByEmail,
           context: context,
           leading: Icons.close_rounded,
           transparent: true,
@@ -114,7 +115,7 @@ class _LoginByMailScreenState extends State<LoginByMailScreen>
                     const SizedBox(height: 50),
                     ItemBuilder.buildInputItem(
                       context: context,
-                      hint: "输入邮箱",
+                      hint: S.current.inputEmail,
                       textInputAction: TextInputAction.next,
                       controller: _mailController,
                       tailingType: TailingType.clear,
@@ -122,7 +123,7 @@ class _LoginByMailScreenState extends State<LoginByMailScreen>
                     ),
                     ItemBuilder.buildInputItem(
                       context: context,
-                      hint: "输入密码",
+                      hint: S.current.inputPassword,
                       textInputAction: TextInputAction.next,
                       leadingIcon: Icons.verified_outlined,
                       controller: _passwordController,
@@ -133,7 +134,7 @@ class _LoginByMailScreenState extends State<LoginByMailScreen>
                       margin: const EdgeInsets.symmetric(horizontal: 50),
                       child: ItemBuilder.buildRoundButton(
                         context,
-                        text: "登录",
+                        text: S.current.login,
                         onTap: _login,
                         background: Theme.of(context).primaryColor,
                         color: Colors.white,
@@ -152,7 +153,7 @@ class _LoginByMailScreenState extends State<LoginByMailScreen>
                   children: [
                     ItemBuilder.buildTextDivider(
                       context: context,
-                      text: "其他登录方式",
+                      text: S.current.otherLoginMethods,
                     ),
                     const SizedBox(height: 20),
                     Row(

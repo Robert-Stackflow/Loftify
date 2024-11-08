@@ -62,7 +62,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
   late TabController _tabController;
   List<Tab> tabList = [];
   List<ShowCaseItem> showCases = [];
-  String _followButtonText = "关注";
+  String _followButtonText = S.current.follow;
   Color? _followButtonColor;
   SubordinateScrollController? controller;
   double _expandedHeight = 270;
@@ -99,16 +99,16 @@ class UserDetailScreenState extends State<UserDetailScreen>
 
   initTab() {
     tabList.clear();
-    tabList.add(const Tab(text: '文章'));
+    tabList.add(Tab(text: S.current.article));
     if (_fullBlogData!.showLike == 1) {
-      tabList.add(const Tab(text: '喜欢'));
+      tabList.add(Tab(text: S.current.like));
     }
     if (_fullBlogData!.showShare == 1) {
-      tabList.add(const Tab(text: '推荐'));
+      tabList.add(Tab(text: S.current.recommend));
     }
-    tabList.add(const Tab(text: '合集'));
+    tabList.add(Tab(text: S.current.collection));
     if (_fullBlogData!.showFoods == 1) {
-      tabList.add(const Tab(text: '粮单'));
+      tabList.add(Tab(text: S.current.grain));
     }
     _tabController = TabController(length: tabList.length, vsync: this);
   }
@@ -119,7 +119,9 @@ class UserDetailScreenState extends State<UserDetailScreen>
       resizeToAvoidBottomInset: false,
       appBar: ResponsiveUtil.isLandscape()
           ? ItemBuilder.buildDesktopAppBar(
-              context: context, showBack: true, title: "个人主页")
+              context: context,
+              showBack: true,
+              title: S.current.personalHomepage)
           : null,
       body: _fullBlogData != null
           ? ExtendedNestedScrollView(
@@ -144,7 +146,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
           actions: _appBarActions(),
           center: true,
           title: Text(
-            "个人主页",
+            S.current.personalHomepage,
             style: Theme.of(context).textTheme.titleMedium?.apply(
                   color: Colors.white,
                   fontWeightDelta: 2,
@@ -217,7 +219,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
     return GenericContextMenu(
       buttonConfigs: [
         ContextMenuButtonConfig(
-          "查看主题背景",
+          S.current.viewThemeBg,
           icon: const Icon(Icons.color_lens_outlined),
           onPressed: () {
             RouteUtil.pushDialogRoute(
@@ -229,14 +231,14 @@ class UserDetailScreenState extends State<UserDetailScreen>
                 tagPrefix: Utils.getRandomString(),
                 imageUrls: [Utils.removeImageParam(backgroudUrl)],
                 useMainColor: false,
-                title: "主题背景",
+                title: S.current.themeBg,
                 captions: ["「${_fullBlogData!.blogInfo.blogNickName}」"],
               ),
             );
           },
         ),
         ContextMenuButtonConfig(
-          "查看TA的商品",
+          S.current.viewShop,
           icon: const Icon(Icons.shopping_bag_outlined),
           onPressed: () {
             RouteUtil.pushPanelCupertinoRoute(context,
@@ -248,8 +250,8 @@ class UserDetailScreenState extends State<UserDetailScreen>
             ContextMenuButtonConfig(
               HiveUtil.getString(HiveUtil.customAvatarBoxKey) ==
                       _fullBlogData!.blogInfo.avatarBoxImage
-                  ? "取消佩戴头像框"
-                  : "佩戴头像框",
+                  ? S.current.undressAvatarBox
+                  : S.current.dressAvatarBox,
               icon: const Icon(Icons.account_box),
               onPressed: () async {
                 String? currentAvatarImg =
@@ -259,25 +261,26 @@ class UserDetailScreenState extends State<UserDetailScreen>
                   await HiveUtil.put(HiveUtil.customAvatarBoxKey, "");
                   currentAvatarImg = "";
                   setState(() {});
-                  IToast.showTop("取消佩戴成功");
+                  IToast.showTop(S.current.unDressSuccess);
                 } else {
                   await HiveUtil.put(HiveUtil.customAvatarBoxKey,
                       _fullBlogData!.blogInfo.avatarBoxImage);
                   currentAvatarImg = _fullBlogData!.blogInfo.avatarBoxImage;
                   setState(() {});
-                  IToast.showTop("佩戴成功");
+                  IToast.showTop(S.current.dressSuccess);
                 }
               },
             ),
           ContextMenuButtonConfig(
-            "设置备注",
+            S.current.setRemark,
             icon: const Icon(Icons.credit_card),
             onPressed: () {
               BottomSheetBuilder.showBottomSheet(
                 context,
                 (sheetContext) => InputBottomSheet(
-                  buttonText: "确认",
-                  title: "设置「${_fullBlogData!.blogInfo.blogNickName}」的备注",
+                  buttonText: S.current.confirm,
+                  title: S.current
+                      .setRemarkMessage(_fullBlogData!.blogInfo.blogNickName),
                   text: _fullBlogData!.blogInfo.remarkName.trim(),
                   onConfirm: (text) {
                     UserApi.setRemark(
@@ -290,7 +293,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                       } else {
                         _fullBlogData!.blogInfo.remarkName = text;
                         setState(() {});
-                        IToast.showTop("设置备注成功");
+                        IToast.showTop(S.current.setRemarkSuccess);
                       }
                     });
                   },
@@ -302,16 +305,18 @@ class UserDetailScreenState extends State<UserDetailScreen>
           ),
           ContextMenuButtonConfig.divider(),
           ContextMenuButtonConfig.warning(
-            _fullBlogData!.isBlackBlog ? "解除黑名单" : "加入黑名单",
+            _fullBlogData!.isBlackBlog
+                ? S.current.unlockBlacklist
+                : S.current.blockBlacklist,
             icon: const Icon(Icons.block_rounded, color: Colors.red),
             onPressed: () {
               _doBlockUser(
                 isBlock: !_fullBlogData!.isBlackBlog,
                 onSuccess: () {
                   if (_fullBlogData!.isBlackBlog) {
-                    IToast.showTop("拉黑成功");
+                    IToast.showTop(S.current.blockBlacklistSuccess);
                   } else {
-                    IToast.showTop("解除拉黑成功");
+                    IToast.showTop(S.current.unblockBlacklistSuccess);
                   }
                   setState(() {});
                   updateFollowStatus();
@@ -322,7 +327,9 @@ class UserDetailScreenState extends State<UserDetailScreen>
           ),
           if (_fullBlogData!.following) ...[
             ContextMenuButtonConfig.warning(
-              _fullBlogData!.isShieldRecom == 1 ? "恢复查看TA推荐的内容" : "不看TA推荐的内容",
+              _fullBlogData!.isShieldRecom == 1
+                  ? S.current.recoverViewRecommend
+                  : S.current.shieldViewRecommend,
               icon: const Icon(Icons.block_rounded, color: Colors.red),
               onPressed: () {
                 UserApi.shieldRecommendOrUnShield(
@@ -342,7 +349,9 @@ class UserDetailScreenState extends State<UserDetailScreen>
               textColor: Colors.red,
             ),
             ContextMenuButtonConfig.warning(
-              _fullBlogData!.shieldUserTimeline ? "恢复查看TA的动态" : "不看TA的动态",
+              _fullBlogData!.shieldUserTimeline
+                  ? S.current.recoverViewDynamic
+                  : S.current.shieldViewDynamic,
               icon: const Icon(Icons.block_rounded, color: Colors.red),
               onPressed: () {
                 UserApi.shieldBlogOrUnShield(
@@ -364,7 +373,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
         ],
         ContextMenuButtonConfig.divider(),
         ContextMenuButtonConfig(
-          "复制主页链接",
+          S.current.copyHomepageLink,
           icon: const Icon(Icons.copy_rounded),
           onPressed: () {
             Utils.copy(context, _fullBlogData!.blogInfo.homePageUrl);
@@ -462,7 +471,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                 imageUrl:
                     Utils.removeImageParam(_fullBlogData!.blogInfo.bigAvaImg),
                 avatarBoxImageUrl: getAvatarBoxImage(),
-                title: "个人头像",
+                title: S.current.personalAvatar,
                 caption: "「${_fullBlogData!.blogInfo.blogNickName}」",
                 tagPrefix: Utils.getRandomString(),
               ),
@@ -481,7 +490,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                           ),
                     ),
                     copyText: _fullBlogData!.blogInfo.blogNickName,
-                    toastText: "已复制昵称",
+                    toastText: S.current.haveCopiedNickName,
                   ),
                   Text.rich(
                     TextSpan(
@@ -500,7 +509,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                               overflow: TextOverflow.ellipsis,
                             ),
                             copyText: _fullBlogData!.blogInfo.blogName,
-                            toastText: "已复制LofterID",
+                            toastText: S.current.haveCopiedLofterID,
                           ),
                         ),
                         if (hasRemarkName)
@@ -509,7 +518,8 @@ class UserDetailScreenState extends State<UserDetailScreen>
                               context,
                               child: Text(
                                 textAlign: TextAlign.center,
-                                ' | 备注: ${_fullBlogData!.blogInfo.remarkName}',
+                                S.current.remarkSuffix(
+                                    _fullBlogData!.blogInfo.remarkName),
                                 style: Theme.of(context)
                                     .textTheme
                                     .labelMedium
@@ -518,7 +528,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                                 overflow: TextOverflow.ellipsis,
                               ),
                               copyText: _fullBlogData!.blogInfo.remarkName,
-                              toastText: "已复制备注",
+                              toastText: S.current.haveCopiedRemark,
                             ),
                           ),
                       ],
@@ -532,7 +542,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                         fit: FlexFit.loose,
                         child: Text(
                           textAlign: TextAlign.center,
-                          '性别: ${_fullBlogData!.blogInfo.gendar == 1 ? "男" : _fullBlogData!.blogInfo.gendar == 2 ? "女" : "保密"}${Utils.isNotEmpty(_fullBlogData!.blogInfo.ipLocation) ? "  |  IP属地: ${_fullBlogData!.blogInfo.ipLocation}" : ""}',
+                          '${S.current.gender}: ${_fullBlogData!.blogInfo.gendar == 1 ? S.current.male : _fullBlogData!.blogInfo.gendar == 2 ? S.current.female : S.current.confidential}${Utils.isNotEmpty(_fullBlogData!.blogInfo.ipLocation) ? "${S.current.ipSuffix}${_fullBlogData!.blogInfo.ipLocation}" : ""}',
                           style: Theme.of(context)
                               .textTheme
                               .labelMedium
@@ -549,9 +559,8 @@ class UserDetailScreenState extends State<UserDetailScreen>
                             onTap: () {
                               DialogBuilder.showInfoDialog(
                                 context,
-                                buttonText: "确认",
-                                title:
-                                    "${_fullBlogData!.blogInfo.blogNickName}的个人介绍",
+                                title: S.current.descriptionTitle(
+                                    _fullBlogData!.blogInfo.blogNickName),
                                 message: _fullBlogData!.blogInfo.selfIntro,
                                 onTapDismiss: () {},
                                 customDialogType: CustomDialogType.normal,
@@ -561,7 +570,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                               TextSpan(
                                 children: [
                                   TextSpan(
-                                    text: "更多信息",
+                                    text: S.current.moreInfo,
                                     style: Theme.of(context)
                                         .textTheme
                                         .labelMedium
@@ -606,7 +615,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
             children: [
               ItemBuilder.buildStatisticItem(
                 context,
-                title: '关注',
+                title: S.current.following,
                 count: _fullBlogData!.blogInfo.blogStat.followingCount,
                 countColor: Colors.white,
                 labelColor: Colors.white.withOpacity(0.9),
@@ -626,13 +635,13 @@ class UserDetailScreenState extends State<UserDetailScreen>
                       ),
                     );
                   } else {
-                    IToast.showTop("无法查看关注列表");
+                    IToast.showTop(S.current.cannotViewFollowingList);
                   }
                 },
               ),
               ItemBuilder.buildStatisticItem(
                 context,
-                title: '粉丝',
+                title: S.current.follower,
                 count: _fullBlogData!.blogInfo.blogStat.followedCount,
                 countColor: Colors.white,
                 labelColor: Colors.white.withOpacity(0.9),
@@ -649,47 +658,48 @@ class UserDetailScreenState extends State<UserDetailScreen>
                       ),
                     );
                   } else {
-                    IToast.showTop("无法查看粉丝列表");
+                    IToast.showTop(S.current.cannotViewFollowerList);
                   }
                 },
               ),
               ItemBuilder.buildStatisticItem(
                 context,
-                title: '热度',
+                title: S.current.hotCount,
                 count: _fullBlogData!.blogInfo.hot.hotCount,
                 countColor: Colors.white,
                 labelColor: Colors.white.withOpacity(0.9),
                 onTap: () {
                   DialogBuilder.showInfoDialog(
                     context,
-                    title: "总热度${_fullBlogData!.blogInfo.hot.hotCount}",
+                    title:
+                        "${S.current.totalHotCount}${_fullBlogData!.blogInfo.hot.hotCount}",
                     messageChild: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         _buildHotItem(
                           icon: Icons.favorite_rounded,
-                          title: "文章获得喜欢",
+                          title: S.current.postLikes,
                           count: _fullBlogData!.blogInfo.hot.favoriteCount,
                         ),
                         _buildHotItem(
                           icon: Icons.thumb_up_rounded,
-                          title: "累计获得推荐",
+                          title: S.current.postRecommends,
                           count: _fullBlogData!.blogInfo.hot.shareCount,
                         ),
                         _buildHotItem(
                           icon: Icons.bookmark_rounded,
-                          title: "累计获得收藏",
+                          title: S.current.postFavorites,
                           count: _fullBlogData!.blogInfo.hot.subscribeCount,
                         ),
                         _buildHotItem(
                           icon: Icons.mode_comment_rounded,
-                          title: "讨论获得喜欢",
+                          title: S.current.commentLikes,
                           count:
                               _fullBlogData!.blogInfo.hot.tagChatFavoriteCount,
                         ),
                       ],
                     ),
-                    buttonText: "加油哦",
+                    buttonText: S.current.comeOn,
                     onTapDismiss: () {},
                     customDialogType: CustomDialogType.custom,
                   );
@@ -697,7 +707,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
               ),
               ItemBuilder.buildStatisticItem(
                 context,
-                title: '支持者',
+                title: S.current.supporter,
                 count: _fullBlogData!.blogInfo.blogStat.supporterCount,
                 countColor: Colors.white,
                 labelColor: Colors.white.withOpacity(0.9),
@@ -712,7 +722,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                       ),
                     );
                   } else {
-                    IToast.showTop("无法查看支持者列表");
+                    IToast.showTop(S.current.cannotViewSupporterList);
                   }
                 },
               ),
@@ -728,7 +738,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                 ItemBuilder.buildRoundButton(
                   context,
                   onTap: () {},
-                  text: "编辑资料",
+                  text: S.current.editProfile,
                   background: Colors.white.withOpacity(0.2),
                   fontSizeDelta: 2,
                 ),
@@ -743,14 +753,16 @@ class UserDetailScreenState extends State<UserDetailScreen>
 
   updateFollowStatus() {
     if (_fullBlogData!.following) {
-      _followButtonText = _fullBlogData!.specialfollowing ? "已特别关注" : "已关注";
+      _followButtonText = _fullBlogData!.specialfollowing
+          ? S.current.specialFollowed
+          : S.current.followed;
       _followButtonColor = Colors.white.withOpacity(0.4);
     } else {
-      _followButtonText = " 关注 ";
+      _followButtonText = " ${S.current.follow} ";
       _followButtonColor = Colors.white.withOpacity(0.2);
     }
     if (_fullBlogData!.isBlackBlog) {
-      _followButtonText = "已拉黑";
+      _followButtonText = S.current.blacklisted;
       _followButtonColor = Colors.red.withOpacity(0.4);
     }
     setState(() {});
@@ -851,8 +863,9 @@ class UserDetailScreenState extends State<UserDetailScreen>
     if (_fullBlogData!.isBlackBlog) {
       DialogBuilder.showConfirmDialog(
         context,
-        title: "解除黑名单",
-        message: "确认解除「${_fullBlogData!.blogInfo.blogNickName}」的黑名单？",
+        title: S.current.unlockBlacklist,
+        message: S.current
+            .unlockBlacklistMessage(_fullBlogData!.blogInfo.blogNickName),
         confirmButtonText: S.current.confirm,
         cancelButtonText: S.current.cancel,
         onTapConfirm: () async {
@@ -879,12 +892,17 @@ class UserDetailScreenState extends State<UserDetailScreen>
   _buildFollowButtons() {
     return GenericContextMenu(buttonConfigs: [
       ContextMenuButtonConfig(
-          _fullBlogData!.specialfollowing ? "取消特别关注" : "特别关注", onPressed: () {
+          _fullBlogData!.specialfollowing
+              ? S.current.unSpecialFollow
+              : S.current.specialFollow, onPressed: () {
         _doSpecialFollow(isSpecialFollow: !_fullBlogData!.specialfollowing);
       }),
-      ContextMenuButtonConfig("取消关注", onPressed: () {
-        _doFollow(isFollow: !_fullBlogData!.following);
-      }),
+      ContextMenuButtonConfig(
+        S.current.unfollow,
+        onPressed: () {
+          _doFollow(isFollow: !_fullBlogData!.following);
+        },
+      ),
     ]);
   }
 
@@ -966,7 +984,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
               const SizedBox(width: 3),
               Expanded(
                 child: Text(
-                  "TA的代表作",
+                  S.current.masterpiece,
                   style: Theme.of(context)
                       .textTheme
                       .titleSmall

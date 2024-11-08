@@ -7,10 +7,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:html/parser.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:launch_at_startup/launch_at_startup.dart';
+import 'package:local_auth/error_codes.dart' as auth_error;
+import 'package:local_auth/local_auth.dart';
 import 'package:loftify/Models/github_response.dart';
 import 'package:loftify/Models/illust.dart';
 import 'package:loftify/Screens/Setting/experiment_setting_screen.dart';
@@ -25,6 +28,7 @@ import 'package:loftify/Utils/uri_util.dart';
 import 'package:loftify/Widgets/BottomSheet/slide_captcha_bottom_sheet.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:palette_generator/palette_generator.dart';
+import 'package:screen_protector/screen_protector.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -43,6 +47,35 @@ import 'ilogger.dart';
 import 'itoast.dart';
 
 class Utils {
+  static Future<void> setSafeMode(bool enabled) async {
+    if (ResponsiveUtil.isMobile()) {
+      if (enabled) {
+        enableSafeMode();
+      } else {
+        disableSafeMode();
+      }
+    }
+  }
+
+  static Future<void> enableSafeMode() async {
+    await ScreenProtector.preventScreenshotOn();
+    await ScreenProtector.protectDataLeakageOn();
+    await ScreenProtector.protectDataLeakageWithColor(
+        Theme.of(rootContext).scaffoldBackgroundColor);
+    if (ResponsiveUtil.isAndroid()) {
+      FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
+    }
+  }
+
+  static Future<void> disableSafeMode() async {
+    await ScreenProtector.preventScreenshotOff();
+    await ScreenProtector.protectDataLeakageOff();
+    await ScreenProtector.protectDataLeakageWithColorOff();
+    if (ResponsiveUtil.isAndroid()) {
+      FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
+    }
+  }
+
   static getDownloadUrl(String version, String name) {
     return "${controlProvider.globalControl.downloadPkgsUrl}/$version/$name";
   }
@@ -304,7 +337,7 @@ class Utils {
     if (count < 10000) {
       return {"count": count.toString()};
     } else {
-      return {"count": (count / 10000).toStringAsFixed(1), "scale": "万"};
+      return {"count": (count / 10000).toStringAsFixed(1), "scale": S.current.tenThousand};
     }
   }
 
@@ -873,6 +906,45 @@ class Utils {
       }
     } else if (menuItem.key == TrayKey.exitApp.key) {
       windowManager.close();
+    }
+  }
+
+  static localAuth({Function()? onAuthed}) async {
+    if (ResponsiveUtil.isDesktop()) return;
+    LocalAuthentication localAuth = LocalAuthentication();
+    try {
+      await localAuth.authenticate(
+        authMessages: [
+          androidAuthMessages,
+          androidAuthMessages,
+          androidAuthMessages
+        ],
+        options: const AuthenticationOptions(
+          useErrorDialogs: false,
+          stickyAuth: true,
+          biometricOnly: true,
+        ),
+        localizedReason: ' ',
+      ).then((value) {
+        if (value) {
+          onAuthed?.call();
+        }
+      });
+    } on PlatformException catch (e, t) {
+      ILogger.error("Failed to local authenticate by PlatformException", e, t);
+      if (e.code == auth_error.notAvailable) {
+        IToast.showTop(S.current.biometricNotAvailable);
+      } else if (e.code == auth_error.notEnrolled) {
+        IToast.showTop(S.current.biometricNotEnrolled);
+      } else if (e.code == auth_error.lockedOut) {
+        IToast.showTop(S.current.biometricLockout);
+      } else if (e.code == auth_error.permanentlyLockedOut) {
+        IToast.showTop(S.current.biometricLockoutPermanent);
+      } else {
+        IToast.showTop(S.current.biometricOtherReason(e));
+      }
+    } catch (e, t) {
+      ILogger.error("Failed to local authenticate", e, t);
     }
   }
 }

@@ -211,7 +211,7 @@ class _SupporterScreenState extends State<SupporterScreen>
     return ItemBuilder.buildDesktopAppBar(
       context: context,
       showBack: true,
-      title: "支持者列表",
+      title: S.current.supporterList,
     );
   }
 }

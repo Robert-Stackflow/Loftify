@@ -1,26 +1,37 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:local_auth/error_codes.dart' as auth_error;
-import 'package:local_auth/local_auth.dart';
-import 'package:local_auth_android/local_auth_android.dart';
 import 'package:loftify/Widgets/General/Unlock/gesture_notifier.dart';
 import 'package:loftify/Widgets/General/Unlock/gesture_unlock_view.dart';
 import 'package:loftify/Widgets/Window/window_caption.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+import 'package:tray_manager/tray_manager.dart';
+import 'package:window_manager/window_manager.dart';
 
+import '../../Resources/theme.dart';
+import '../../Utils/app_provider.dart';
+import '../../Utils/constant.dart';
 import '../../Utils/hive_util.dart';
-import '../../Utils/ilogger.dart';
 import '../../Utils/responsive_util.dart';
+import '../../Utils/route_util.dart';
+import '../../Utils/utils.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
+import '../main_screen.dart';
 
 class PinVerifyScreen extends StatefulWidget {
-  const PinVerifyScreen(
-      {super.key, this.onSuccess, this.isModal = true, this.autoAuth = true});
+  const PinVerifyScreen({
+    super.key,
+    this.onSuccess,
+    this.isModal = true,
+    this.jumpToMain = false,
+    this.showWindowTitle = false,
+    this.autoAuth = true,
+  });
 
   final bool isModal;
   final bool autoAuth;
+  final bool showWindowTitle;
+  final bool jumpToMain;
   final Function()? onSuccess;
   static const String routeName = "/pin/verify";
 
@@ -28,72 +39,117 @@ class PinVerifyScreen extends StatefulWidget {
   PinVerifyScreenState createState() => PinVerifyScreenState();
 }
 
-AndroidAuthMessages andStrings = const AndroidAuthMessages(
-  cancelButton: '取消',
-  goToSettingsButton: '去设置',
-  biometricNotRecognized: '指纹识别失败',
-  goToSettingsDescription: '请设置指纹',
-  biometricHint: '',
-  biometricSuccess: '指纹识别成功',
-  signInTitle: '指纹验证',
-  deviceCredentialsRequiredTitle: '请先录入指纹!',
-);
-
-class PinVerifyScreenState extends State<PinVerifyScreen> {
+class PinVerifyScreenState extends State<PinVerifyScreen>
+    with WindowListener, TrayListener {
   final String? _password = HiveUtil.getString(HiveUtil.guesturePasswdKey);
   late final bool _isUseBiometric =
       HiveUtil.getBool(HiveUtil.enableBiometricKey);
-  late final GestureNotifier _notifier =
-      GestureNotifier(status: GestureStatus.verify, gestureText: "验证密码");
+  late final GestureNotifier _notifier = GestureNotifier(
+      status: GestureStatus.verify, gestureText: S.current.verifyGestureLock);
   final GlobalKey<GestureState> _gestureUnlockView = GlobalKey();
+  bool _isMaximized = false;
+  bool _isStayOnTop = false;
+
+  @override
+  Future<void> onWindowResize() async {
+    super.onWindowResize();
+    windowManager.setMinimumSize(minimumSize);
+    HiveUtil.setWindowSize(await windowManager.getSize());
+  }
+
+  @override
+  Future<void> onWindowResized() async {
+    super.onWindowResized();
+    HiveUtil.setWindowSize(await windowManager.getSize());
+  }
+
+  @override
+  Future<void> onWindowMove() async {
+    super.onWindowMove();
+    HiveUtil.setWindowPosition(await windowManager.getPosition());
+  }
+
+  @override
+  Future<void> onWindowMoved() async {
+    super.onWindowMoved();
+    HiveUtil.setWindowPosition(await windowManager.getPosition());
+  }
+
+  @override
+  void onWindowMaximize() {
+    windowManager.setMinimumSize(minimumSize);
+    setState(() {
+      _isMaximized = true;
+    });
+  }
+
+  @override
+  void onWindowUnmaximize() {
+    windowManager.setMinimumSize(minimumSize);
+    setState(() {
+      _isMaximized = false;
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    trayManager.removeListener(this);
+    windowManager.removeListener(this);
+  }
 
   @override
   void initState() {
+    if (widget.jumpToMain) trayManager.addListener(this);
+    windowManager.addListener(this);
     super.initState();
+    Utils.initSimpleTray();
     if (_isUseBiometric && widget.autoAuth) {
       auth();
     }
   }
 
   void auth() async {
-    LocalAuthentication localAuth = LocalAuthentication();
-    try {
-      String appName = (await PackageInfo.fromPlatform()).appName;
-      await localAuth
-          .authenticate(
-        localizedReason: ResponsiveUtil.isWindows()
-            ? '验证PIN以使用$appName'
-            : '进行指纹验证以使用$appName',
-        authMessages: [andStrings, andStrings, andStrings],
-        options: const AuthenticationOptions(
-          useErrorDialogs: false,
-          stickyAuth: true,
-        ),
-      )
-          .then((value) {
-        if (value) {
-          if (widget.onSuccess != null) widget.onSuccess!();
-          Navigator.pop(context);
-          _gestureUnlockView.currentState?.updateStatus(UnlockStatus.normal);
+    Utils.localAuth(
+      onAuthed: () {
+        if (widget.onSuccess != null) widget.onSuccess!();
+        if (widget.jumpToMain) {
+          Navigator.of(context).pushReplacement(RouteUtil.getFadeRoute(
+              ItemBuilder.buildContextMenuOverlay(
+                  MainScreen(key: mainScreenKey))));
+        } else {
+          Navigator.of(context).pop();
         }
-      });
-    } on PlatformException catch (e, t) {
-      if (e.code == auth_error.notAvailable) {
-        ILogger.error("not avaliable", e, t);
-      } else if (e.code == auth_error.notEnrolled) {
-        ILogger.error("not enrolled", e, t);
-      } else if (e.code == auth_error.lockedOut ||
-          e.code == auth_error.permanentlyLockedOut) {
-        ILogger.error("locked out", e, t);
-      } else {
-        ILogger.error("other reason:$e", e, t);
-      }
-    }
+        _gestureUnlockView.currentState?.updateStatus(UnlockStatus.normal);
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    Utils.setSafeMode(HiveUtil.getBool(HiveUtil.enableSafeModeKey,
+        defaultValue: defaultEnableSafeMode));
     return Scaffold(
+      backgroundColor: MyTheme.background,
+      appBar: ResponsiveUtil.isDesktop() && widget.showWindowTitle
+          ? PreferredSize(
+        preferredSize: const Size(0, 86),
+        child: ItemBuilder.buildWindowTitle(
+          context,
+          forceClose: true,
+          leftWidgets: [const Spacer()],
+          backgroundColor: MyTheme.background,
+          isStayOnTop: _isStayOnTop,
+          isMaximized: _isMaximized,
+          onStayOnTopTap: () {
+            setState(() {
+              _isStayOnTop = !_isStayOnTop;
+              windowManager.setAlwaysOnTop(_isStayOnTop);
+            });
+          },
+        ),
+      )
+          : null,
       body: Stack(
         children: [
           if (ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
@@ -129,16 +185,14 @@ class PinVerifyScreenState extends State<PinVerifyScreen> {
                   ),
                   Visibility(
                     visible: _isUseBiometric,
-                    child: GestureDetector(
+                    child: ItemBuilder.buildRoundButton(
+                      context,
+                      text: ResponsiveUtil.isWindows()
+                          ? S.current.biometricVerifyPin
+                          : S.current.biometric,
                       onTap: () {
                         auth();
                       },
-                      child: ItemBuilder.buildClickItem(
-                        Text(
-                          ResponsiveUtil.isWindows() ? "验证PIN" : "指纹识别",
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
-                      ),
                     ),
                   ),
                   const SizedBox(height: 50),
@@ -164,7 +218,7 @@ class PinVerifyScreenState extends State<PinVerifyScreen> {
           setState(() {
             _notifier.setStatus(
               status: GestureStatus.verifyFailed,
-              gestureText: "密码错误, 请重新绘制",
+              gestureText: S.current.gestureLockWrong,
             );
           });
           _gestureUnlockView.currentState?.updateStatus(UnlockStatus.failed);

@@ -1,19 +1,17 @@
-import '../../generated/l10n.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:loftify/Api/tag_api.dart';
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
-import '../../Api/post_api.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
+import '../../generated/l10n.dart';
 
 class TagInsearchScreen extends StatefulWidget {
   const TagInsearchScreen({super.key, required this.tag});
@@ -71,7 +69,7 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
                   children: [
                     if (_relatedTagList.isNotEmpty && _postList.isEmpty)
                       ItemBuilder.buildTitle(context,
-                          title: "大家都在搜", bottomMargin: 8),
+                          title: S.current.allAreSearching, bottomMargin: 8),
                     if (_relatedTagList.isNotEmpty && _postList.isEmpty)
                       ItemBuilder.buildWrapTagList(
                         context,
@@ -224,7 +222,7 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
             child: ItemBuilder.buildSearchBar(
               focusNode: _focusNode,
               context: context,
-              hintText: "多个搜索词以空格隔开",
+              hintText: S.current.multipleSearchKeySeparatedBySpaces,
               onSubmitted: (value) {
                 _performSearch(value);
               },
@@ -235,7 +233,7 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
           ItemBuilder.buildIconTextButton(
             context,
             showIcon: false,
-            text: "搜索",
+            text: S.current.search,
             onTap: () {
               _performSearch(_searchController.text);
             },
@@ -255,7 +253,7 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
           context,
           widget.tag,
           TagType.normal,
-          shownTag: "在#${widget.tag}#内搜索",
+          shownTag: S.current.searchInTag(widget.tag),
           backgroundColor: Theme.of(context).primaryColor.withAlpha(30),
           color: Theme.of(context).primaryColor,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

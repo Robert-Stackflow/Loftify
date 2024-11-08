@@ -166,7 +166,7 @@ class _GrainScreenState extends State<GrainScreen>
             return _grainList.isNotEmpty
                 ? _buildMainBody(physics)
                 : ItemBuilder.buildEmptyPlaceholder(
-                    context: context, text: "暂无粮单", physics: physics);
+                    context: context, text: S.current.noGrain, physics: physics);
           },
         );
       default:
@@ -245,7 +245,7 @@ class _GrainScreenState extends State<GrainScreen>
                             overflow: TextOverflow.ellipsis,
                           ),
                           Text(
-                            "${grain.postCount}篇 · 更新于${Utils.formatTimestamp(grain.updateTime)}",
+                            "${grain.postCount}${S.current.chapter} · ${S.current.updateAt}${Utils.formatTimestamp(grain.updateTime)}",
                             style: Theme.of(context).textTheme.labelMedium,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -286,7 +286,7 @@ class _GrainScreenState extends State<GrainScreen>
     return ItemBuilder.buildDesktopAppBar(
       context: context,
       showBack: true,
-      title: "我的粮单",
+      title: S.current.myGrains,
       actions: [
         ItemBuilder.buildBlankIconButton(context),
         const SizedBox(width: 5),

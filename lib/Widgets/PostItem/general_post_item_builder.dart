@@ -274,7 +274,7 @@ class WaterfallFlowPostItemWidgetState
               Positioned(
                 left: 4,
                 top: 4,
-                child: ItemBuilder.buildTransparentTag(context, text: "动图"),
+                child: ItemBuilder.buildTransparentTag(context, text: S.current.animatedGif),
               ),
             if ((item.photoCount ?? item.photoLinks.length) > 1)
               Positioned(
@@ -334,7 +334,7 @@ class WaterfallFlowPostItemWidgetState
             Positioned(
               left: 4,
               top: 4,
-              child: ItemBuilder.buildTransparentTag(context, text: "视频"),
+              child: ItemBuilder.buildTransparentTag(context, text: S.current.video),
             ),
             Positioned(
               bottom: 4,
@@ -705,7 +705,7 @@ class GridPostItemWidgetState extends State<GridPostItemWidget> {
             left: 5,
             child: ItemBuilder.buildTransparentTag(
               context,
-              text: '视频',
+              text: S.current.video,
             ),
           ),
           Positioned(
@@ -741,7 +741,7 @@ class GridPostItemWidgetState extends State<GridPostItemWidget> {
             ),
             const SizedBox(height: 5),
             Text(
-              "无效内容",
+              S.current.invalidContent,
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context)
@@ -876,8 +876,8 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
                   Expanded(
                     child: Text(
                       id == item.shareInfo!.blogInfo.blogId
-                          ? "来自我的推荐"
-                          : "来自好友 ${item.shareInfo!.blogInfo.blogNickName} 推荐",
+                          ?S.current.fromMyRecommend
+                          : S.current.fromOtherRecommend(item.shareInfo!.blogInfo.blogNickName),
                       style: Theme.of(context).textTheme.bodySmall,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -988,7 +988,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
             );
           },
         ),
-        ContextMenuButtonConfig("访问原文",
+        ContextMenuButtonConfig(S.current.visitOriginalPost,
             icon: const Icon(Icons.view_carousel_outlined), onPressed: () {
           UriUtil.openInternal(
             context,
@@ -1127,7 +1127,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
                 Positioned(
                   left: 4,
                   top: 4,
-                  child: ItemBuilder.buildTransparentTag(context, text: "动图"),
+                  child: ItemBuilder.buildTransparentTag(context, text: S.current.animatedGif),
                 ),
             ],
           ),
@@ -1215,7 +1215,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
             Positioned(
               left: 4,
               top: 4,
-              child: ItemBuilder.buildTransparentTag(context, text: "视频"),
+              child: ItemBuilder.buildTransparentTag(context, text: S.current.video),
             ),
             Positioned(
               bottom: 4,
@@ -1311,7 +1311,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
             const SizedBox(width: 12),
             ItemBuilder.buildIconTextButton(
               context,
-              text: "评论",
+              text: S.current.comment,
               icon: const Icon(Icons.mode_comment_outlined, size: 18),
               spacing: 4,
               onTap: () {
@@ -1359,10 +1359,8 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
         }
       } else {
         item.liked = !item.liked;
-        if (item.liked == true) {
-          IToast.showTop("点赞成功");
-        } else {
-          IToast.showTop("取消点赞");
+        if (item.liked != true) {
+          IToast.showTop(S.current.unlike);
         }
         item.likeCount += item.liked ? 1 : -1;
         item.likeCount = item.likeCount.clamp(0, 100000000000000000);
@@ -1389,9 +1387,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
       } else {
         item.shared = !item.shared;
         if (item.shared) {
-          IToast.showTop("推荐成功");
-        } else {
-          IToast.showTop("取消推荐");
+          IToast.showTop(S.current.unrecommend);
         }
         item.shareCount += item.shared ? 1 : -1;
         item.shareCount = item.shareCount.clamp(0, 100000000000000000);
@@ -1407,10 +1403,10 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
 class GeneralPostItemBuilder {
   static onTapItem(BuildContext context, GeneralPostItem item) {
     if (item.type == PostType.invalid) {
-      IToast.showTop("无效内容");
+      IToast.showTop(S.current.invalidContent);
     } else if (item.type == PostType.video) {
       if (ResponsiveUtil.isDesktop()) {
-        IToast.showTop("桌面端不支持播放视频");
+        IToast.showTop(S.current.unSupportVideoInDesktop);
       } else {
         RouteUtil.pushPanelCupertinoRoute(
           context,

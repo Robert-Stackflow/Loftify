@@ -112,16 +112,16 @@ class DynamicScreenState extends State<DynamicScreen>
   ScrollController getCurrentController() {
     late ScrollController controller;
     switch (_currentTabIndex) {
-      case 0:
+      case 1:
         controller = _tagScrollController;
         break;
-      case 1:
+      case 2:
         controller = _collectionScrollController;
         break;
-      case 2:
+      case 3:
         controller = _grainScrollController;
         break;
-      case 3:
+      case 0:
         controller = _followScrollController;
         break;
     }
@@ -131,20 +131,20 @@ class DynamicScreenState extends State<DynamicScreen>
   Function getCurrentCallRefresh() {
     late Function callRefresh;
     switch (_currentTabIndex) {
-      case 0:
+      case 1:
         callRefresh =
             (_tagTabKey.currentState as SubscribeTagTabState).callRefresh;
         break;
-      case 1:
+      case 2:
         callRefresh =
             (_collectionTabKey.currentState as SubscribeCollectionTabState)
                 .callRefresh;
         break;
-      case 2:
+      case 3:
         callRefresh =
             (_grainTabKey.currentState as SubscribeGrainTabState).callRefresh;
         break;
-      case 3:
+      case 0:
         callRefresh =
             (_followTabKey.currentState as FollowTabState).callRefresh;
         break;

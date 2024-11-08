@@ -1451,6 +1451,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.27.7"
+  screen_protector:
+    dependency: "direct main"
+    description:
+      name: screen_protector
+      sha256: "305fd157f6f0b210afe216e790022bfe469c3b1d1f2e0d3dcc5906cc9c49c3e9"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.4.2+1"
   screen_retriever:
     dependency: transitive
     description:
@@ -1499,13 +1507,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.1.2"
-  show_fps:
-    dependency: "direct main"
-    description:
-      path: "third-party/show_fps"
-      relative: true
-    source: path
-    version: "1.0.6"
   sky_engine:
     dependency: transitive
     description: flutter

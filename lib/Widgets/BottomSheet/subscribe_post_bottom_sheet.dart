@@ -142,7 +142,7 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
         children: [
           Container(),
           Text(
-            "选择收藏夹",
+            S.current.selectFolder,
             style: Theme.of(context).textTheme.titleLarge,
           ),
           ItemBuilder.buildClickItem(
@@ -151,14 +151,14 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
                 BottomSheetBuilder.showBottomSheet(
                   context,
                   (sheetContext) => InputBottomSheet(
-                    buttonText: "确认",
-                    title: "新建收藏夹",
-                    hint: "输入收藏夹名称",
+                    buttonText: S.current.confirm,
+                    title: S.current.newFolder,
+                    hint: S.current.inputFolderTitle,
                     text: "",
                     onConfirm: (text) {
                       UserApi.createFolder(name: text).then((value) {
                         if (value['code'] == 0) {
-                          IToast.showTop("创建成功");
+                          IToast.showTop(S.current.createSuccess);
                           _fetchFavoriteFolderList();
                         } else {
                           IToast.showTop(value['msg']);
@@ -171,7 +171,7 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
                 );
               },
               child: Text(
-                "新建",
+                S.current.newOp,
                 style: Theme.of(context).textTheme.titleLarge?.apply(
                       fontSizeDelta: -2,
                       color: Theme.of(context).primaryColor,
@@ -204,7 +204,7 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
                 },
               ),
             )
-          : ItemBuilder.buildEmptyPlaceholder(context: context, text: "暂无收藏夹"),
+          : ItemBuilder.buildEmptyPlaceholder(context: context, text: S.current.noFavoriteFolder),
     );
   }
 
@@ -263,7 +263,7 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        "${item.postCount}篇",
+                        "${item.postCount}${S.current.chapter}",
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                     ],
@@ -301,7 +301,7 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
           Expanded(
             child: ItemBuilder.buildRoundButton(
               context,
-              text: "取消",
+              text: S.current.cancel,
               onTap: () {
                 Navigator.pop(context);
               },
@@ -311,7 +311,7 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
           Expanded(
             child: ItemBuilder.buildRoundButton(
               context,
-              text: "确认",
+              text: S.current.confirm,
               background: Theme.of(context).primaryColor,
               color: Colors.white,
               onTap: () {

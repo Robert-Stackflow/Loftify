@@ -1,4 +1,3 @@
-import '../../generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/tag_api.dart';
 import 'package:loftify/Models/recommend_response.dart';
@@ -11,6 +10,7 @@ import '../../Utils/ilogger.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
+import '../../generated/l10n.dart';
 
 class TagRelatedScreen extends StatefulWidget {
   const TagRelatedScreen({super.key, required this.tag});
@@ -32,11 +32,6 @@ class _TagRelatedScreenState extends State<TagRelatedScreen>
 
   int _pageCount = 0;
   bool _loading = false;
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -142,7 +137,7 @@ class _TagRelatedScreenState extends State<TagRelatedScreen>
           context,
           widget.tag,
           TagType.normal,
-          shownTag: "#${widget.tag}#的相关标签",
+          shownTag: S.current.tagRelatedTags(widget.tag),
           backgroundColor: Theme.of(context).primaryColor.withAlpha(30),
           color: Theme.of(context).primaryColor,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

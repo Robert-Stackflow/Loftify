@@ -21,7 +21,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart';
 import 'package:protocol_handler/protocol_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:show_fps/show_fps.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'Screens/main_screen.dart';
@@ -29,7 +28,6 @@ import 'Utils/constant.dart';
 import 'Utils/ilogger.dart';
 import 'Utils/notification_util.dart';
 import 'Utils/responsive_util.dart';
-import 'Utils/utils.dart';
 import 'Widgets/Item/item_builder.dart';
 import 'generated/l10n.dart';
 

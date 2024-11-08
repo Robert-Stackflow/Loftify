@@ -60,7 +60,7 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
         }
       } catch (e, t) {
         ILogger.error("Failed to load captcha", e, t);
-        IToast.showTop("滑块验证码获取失败");
+        IToast.showTop(S.current.getSlideCaptchaFailed);
       } finally {
         if (mounted) setState(() {});
       }
@@ -120,7 +120,7 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
         children: [
           Expanded(
             child: Text(
-              "请完成滑块验证：",
+              S.current.pleaseFinishSlideCaptcha,
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
@@ -143,7 +143,7 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
   updateState(bool success) {
     if (success) {
       statusBackground = Colors.green;
-      status = "验证成功";
+      status = S.current.validSuccess;
       showStatus = true;
       setState(() {});
       Future.delayed(const Duration(milliseconds: 500), () {
@@ -151,7 +151,7 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
       });
     } else {
       statusBackground = Colors.redAccent;
-      status = "验证失败";
+      status = S.current.validFailed;
       showStatus = true;
       setState(() {});
       Future.delayed(const Duration(milliseconds: 1000), () {
@@ -242,7 +242,7 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
             ),
             alignment: Alignment.center,
             child: Text(
-              "向右拖动滑块填充拼图",
+              S.current.slideToComplete,
               style: Theme.of(context).textTheme.labelLarge,
             ),
           ),
@@ -277,7 +277,7 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
                   rawIv: rawIv,
                 ).then((value) {
                   if (value == null) {
-                    IToast.showTop("发送验证失败");
+                    IToast.showTop(S.current.sendValidationFailed);
                   } else {
                     var res = CryptUtil.decryptDataByAES(value, rawKey, rawIv);
                     res = json.decode(res);

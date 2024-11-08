@@ -1308,7 +1308,8 @@ class ItemBuilder {
                   color: Theme.of(context).textTheme.titleSmall?.color,
                 ),
                 const SizedBox(height: 6),
-                Text("新建主题", style: Theme.of(context).textTheme.titleSmall),
+                Text(S.current.newTheme,
+                    style: Theme.of(context).textTheme.titleSmall),
               ],
             ),
           ),
@@ -1687,7 +1688,7 @@ class ItemBuilder {
     EdgeInsetsGeometry? likeCountPadding,
     TextStyle? countStyle,
     AnimationController? animationController,
-    String zeroPlaceHolder = "点赞",
+    String? zeroPlaceHolder,
   }) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -1730,7 +1731,7 @@ class ItemBuilder {
         countBuilder: (int? count, bool isLiked, String text) {
           return showCount
               ? Text(
-                  count == 0 ? zeroPlaceHolder : text,
+                  count == 0 ? zeroPlaceHolder ?? S.current.like : text,
                   style: countStyle ?? Theme.of(context).textTheme.labelSmall,
                 )
               : emptyWidget;
@@ -1777,7 +1778,7 @@ class ItemBuilder {
                 right: 0,
                 left: 0,
                 child: Text(
-                  likeCount == 0 ? "点赞" : "$likeCount",
+                  likeCount == 0 ? S.current.like : "$likeCount",
                   style: countStyle ?? Theme.of(context).textTheme.labelMedium,
                   textAlign: TextAlign.center,
                 ),
@@ -1822,7 +1823,7 @@ class ItemBuilder {
                 right: 0,
                 left: 0,
                 child: Text(
-                  shareCount == 0 ? "推荐" : "$shareCount",
+                  shareCount == 0 ? S.current.recommend : "$shareCount",
                   style: countStyle ?? Theme.of(context).textTheme.labelMedium,
                   textAlign: TextAlign.center,
                 ),
@@ -1876,7 +1877,7 @@ class ItemBuilder {
               ? Container(
                   margin: const EdgeInsets.only(top: 5),
                   child: Text(
-                    count == 0 ? "推荐" : text,
+                    count == 0 ? S.current.recommend : text,
                     style: countStyle ?? Theme.of(context).textTheme.labelSmall,
                   ),
                 )
@@ -1911,7 +1912,7 @@ class ItemBuilder {
             ),
             if (showText) const SizedBox(height: 10),
             if (showText)
-              Text(text ?? "正在加载...",
+              Text(text ?? S.current.loading,
                   style: Theme.of(context).textTheme.labelLarge),
           ],
         ),
@@ -1939,7 +1940,7 @@ class ItemBuilder {
           ),
           const SizedBox(height: 10),
           ItemBuilder.buildRoundButton(context,
-              text: buttonText ?? "重试", onTap: onTap),
+              text: buttonText ?? S.current.retry, onTap: onTap),
         ],
       ),
     );
@@ -2281,7 +2282,7 @@ class ItemBuilder {
                 ItemBuilder.buildRoundButton(
                   context,
                   width: 230,
-                  text: "登录以获得个性化服务",
+                  text: S.current.loginToGetPersonalizedService,
                   background: Theme.of(context).primaryColor,
                   fontSizeDelta: 2,
                   onTap: () {
@@ -2333,7 +2334,9 @@ class ItemBuilder {
             child: Row(
               children: [
                 Text(
-                  isFollowed ? positiveText ?? "已关注" : negtiveText ?? "关注",
+                  isFollowed
+                      ? positiveText ?? S.current.followed
+                      : negtiveText ?? S.current.follow,
                   style: TextStyle(
                     color: isFollowed
                         ? Theme.of(context).textTheme.labelSmall?.color
@@ -2658,7 +2661,7 @@ class ItemBuilder {
                         if (tag.subscribed)
                           ItemBuilder.buildRoundButton(
                             context,
-                            text: "已订阅",
+                            text: S.current.subscribed,
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 3, vertical: 2),
                             radius: 3,
@@ -2669,7 +2672,7 @@ class ItemBuilder {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      "${tag.joinCount}人参与",
+                      S.current.joinCount(tag.joinCount.toString()),
                       style: Theme.of(context)
                           .textTheme
                           .bodySmall
@@ -2682,7 +2685,7 @@ class ItemBuilder {
               ),
               ItemBuilder.buildRoundButton(
                 context,
-                text: "进入",
+                text: S.current.enter,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 color: Theme.of(context).primaryColor,
@@ -2723,7 +2726,7 @@ class ItemBuilder {
             ),
             if (tag.joinCount != -1)
               Text(
-                "${tag.joinCount}人参与",
+                S.current.joinCount(tag.joinCount.toString()),
                 style: Theme.of(context).textTheme.labelMedium,
               ),
           ],
@@ -2778,7 +2781,7 @@ class ItemBuilder {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          "${collection.postCount}篇 · 更新于${Utils.formatTimestamp(collection.lastPublishTime)}",
+                          "${collection.postCount}${S.current.chapter} · ${S.current.updateAt}${Utils.formatTimestamp(collection.lastPublishTime)}",
                           style: Theme.of(context).textTheme.labelMedium,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -2860,7 +2863,7 @@ class ItemBuilder {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          "${grain.postCount}篇 · 更新于${Utils.formatTimestamp(grain.updateTime)}",
+                          "${grain.postCount}${S.current.chapter} · ${S.current.updateAt}${Utils.formatTimestamp(grain.updateTime)}",
                           style: Theme.of(context).textTheme.labelMedium,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -2922,7 +2925,7 @@ class ItemBuilder {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   Text(
-                    "ID: ${blog.blogInfo.blogName}${blog.blogCount != null && blog.blogCount!.publicPostCount > 0 ? "   文章：${blog.blogCount!.publicPostCount}" : ""}${blog.blogCount != null && blog.blogCount!.followerCount > 0 ? "   粉丝：${blog.blogCount!.followerCount}" : ""}",
+                    "ID: ${blog.blogInfo.blogName}${blog.blogCount != null && blog.blogCount!.publicPostCount > 0 ? "   ${S.current.article}: ${blog.blogCount!.publicPostCount}" : ""}${blog.blogCount != null && blog.blogCount!.followerCount > 0 ? "   ${S.current.follower}: ${blog.blogCount!.followerCount}" : ""}",
                     style: Theme.of(context).textTheme.bodySmall,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -3265,16 +3268,16 @@ class ItemBuilder {
     return MySelectionArea(
       contextMenuBuilder: (contextMenuContext, details) {
         Map<ContextMenuButtonType, String> typeToString = {
-          ContextMenuButtonType.copy: "复制",
-          ContextMenuButtonType.cut: "剪切",
-          ContextMenuButtonType.paste: "粘贴",
-          ContextMenuButtonType.selectAll: "全选",
-          ContextMenuButtonType.searchWeb: "选择",
-          ContextMenuButtonType.share: "分享",
-          ContextMenuButtonType.lookUp: "搜索",
-          ContextMenuButtonType.delete: "删除",
-          ContextMenuButtonType.liveTextInput: "输入",
-          ContextMenuButtonType.custom: "自定义",
+          ContextMenuButtonType.copy: S.current.copy,
+          ContextMenuButtonType.cut: S.current.cut,
+          ContextMenuButtonType.paste: S.current.paste,
+          ContextMenuButtonType.selectAll: S.current.selectAll,
+          ContextMenuButtonType.searchWeb: S.current.search,
+          ContextMenuButtonType.share: S.current.share,
+          ContextMenuButtonType.lookUp: S.current.search,
+          ContextMenuButtonType.delete: S.current.delete,
+          ContextMenuButtonType.liveTextInput: S.current.input,
+          ContextMenuButtonType.custom: S.current.custom,
         };
         List<MyContextMenuItem> items = [];
         for (var e in details.contextMenuButtonItems) {
@@ -3286,7 +3289,7 @@ class ItemBuilder {
                 onPressed: () {
                   e.onPressed?.call();
                   if (e.type == ContextMenuButtonType.copy) {
-                    IToast.showTop("已复制到剪贴板");
+                    IToast.showTop(S.current.copySuccess);
                   }
                 },
               ),
@@ -3296,7 +3299,7 @@ class ItemBuilder {
         if (Utils.isNotEmpty(details.selectedText)) {
           items.add(
             MyContextMenuItem(
-              label: "应用内搜索",
+              label: S.current.searchInApp,
               type: ContextMenuButtonType.custom,
               onPressed: () {
                 if (Utils.isNotEmpty(details.selectedText)) {
@@ -3346,16 +3349,16 @@ class ItemBuilder {
     required BuildContext context,
   }) {
     Map<ContextMenuButtonType, String> typeToString = {
-      ContextMenuButtonType.copy: "复制",
-      ContextMenuButtonType.cut: "剪切",
-      ContextMenuButtonType.paste: "粘贴",
-      ContextMenuButtonType.selectAll: "全选",
-      ContextMenuButtonType.searchWeb: "选择",
-      ContextMenuButtonType.share: "分享",
-      ContextMenuButtonType.lookUp: "搜索",
-      ContextMenuButtonType.delete: "删除",
-      ContextMenuButtonType.liveTextInput: "输入",
-      ContextMenuButtonType.custom: "自定义",
+      ContextMenuButtonType.copy: S.current.copy,
+      ContextMenuButtonType.cut: S.current.cut,
+      ContextMenuButtonType.paste: S.current.paste,
+      ContextMenuButtonType.selectAll: S.current.selectAll,
+      ContextMenuButtonType.searchWeb: S.current.search,
+      ContextMenuButtonType.share: S.current.share,
+      ContextMenuButtonType.lookUp: S.current.search,
+      ContextMenuButtonType.delete: S.current.delete,
+      ContextMenuButtonType.liveTextInput: S.current.input,
+      ContextMenuButtonType.custom: S.current.custom,
     };
     List<MyContextMenuItem> items = [];
     int start = details.textEditingValue.selection.start <= -1
@@ -3373,7 +3376,7 @@ class ItemBuilder {
             onPressed: () {
               e.onPressed?.call();
               if (e.type == ContextMenuButtonType.copy) {
-                IToast.showTop("已复制到剪贴板");
+                IToast.showTop(S.current.copySuccess);
               }
             },
           ),
@@ -3383,7 +3386,7 @@ class ItemBuilder {
     if (Utils.isNotEmpty(selectedText)) {
       items.add(
         MyContextMenuItem(
-          label: "应用内搜索",
+          label: S.current.searchInApp,
           type: ContextMenuButtonType.custom,
           onPressed: () {
             if (Utils.isNotEmpty(selectedText)) {
@@ -3528,7 +3531,7 @@ class ItemBuilder {
                 borderRadius: BorderRadius.circular(10),
                 child: ItemBuilder.buildLoadingDialog(
                   context,
-                  text: "文章加载中...",
+                  text: S.current.loadingArticle,
                   size: 40,
                   bottomPadding: 30,
                   topPadding: 30,
@@ -3624,7 +3627,7 @@ class ItemBuilder {
                                         comment.publisherBlogInfo.blogId)
                                       ItemBuilder.buildRoundButton(
                                         context,
-                                        text: "作者",
+                                        text: S.current.author,
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 3, vertical: 2),
                                         radius: 3,
@@ -3636,7 +3639,7 @@ class ItemBuilder {
                                     if (comment.top == 1)
                                       ItemBuilder.buildRoundButton(
                                         context,
-                                        text: "置顶",
+                                        text: S.current.pin,
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 3, vertical: 2),
                                         radius: 3,
@@ -3651,8 +3654,8 @@ class ItemBuilder {
                             ItemBuilder.buildCopyItem(
                               context,
                               copyText: comment.content,
-                              toastText:
-                                  "已复制${comment.publisherBlogInfo.blogNickName}的评论",
+                              toastText: S.current.haveCopiedComment(
+                                  comment.publisherBlogInfo.blogNickName),
                               child: ItemBuilder.buildHtmlWidget(
                                 context,
                                 richContent,
@@ -3767,8 +3770,8 @@ class ItemBuilder {
                             style: Theme.of(context).textTheme.labelMedium,
                             children: [
                               TextSpan(
-                                text:
-                                    "—— 更多${comment.l2Count - comment.l2Comments.length}条回复",
+                                text: S.current.moreComments(comment.l2Count -
+                                    comment.l2Comments.length),
                                 style: Theme.of(context).textTheme.labelMedium,
                               ),
                               WidgetSpan(
@@ -3878,7 +3881,7 @@ class ItemBuilder {
                           if (writerId == comment.publisherBlogInfo.blogId)
                             ItemBuilder.buildRoundButton(
                               context,
-                              text: "作者",
+                              text: S.current.author,
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 3, vertical: 2),
                               radius: 3,
@@ -3889,7 +3892,7 @@ class ItemBuilder {
                           if (comment.top == 1)
                             ItemBuilder.buildRoundButton(
                               context,
-                              text: "置顶",
+                              text: S.current.pin,
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 3, vertical: 2),
                               radius: 3,
@@ -3904,8 +3907,8 @@ class ItemBuilder {
                   ItemBuilder.buildCopyItem(
                     context,
                     copyText: comment.content,
-                    toastText:
-                        "已复制${comment.publisherBlogInfo.blogNickName}的评论",
+                    toastText: S.current.haveCopiedComment(
+                        comment.publisherBlogInfo.blogNickName),
                     child: ItemBuilder.buildHtmlWidget(
                       context,
                       richContent,
@@ -4031,7 +4034,8 @@ class ItemBuilder {
               ItemBuilder.buildFramedDoubleButton(
                 context: context,
                 isFollowed: item.following,
-                positiveText: item.follower ? "相互关注" : "已关注",
+                positiveText:
+                    item.follower ? S.current.followEach : S.current.followed,
                 onTap: () {
                   UserApi.followOrUnfollow(
                     isFollow: !item.following,
@@ -4043,7 +4047,9 @@ class ItemBuilder {
                           value['meta']['desc'] ?? value['meta']['msg']);
                     } else {
                       item.following = !item.following;
-                      IToast.showTop(item.following ? "已关注" : "已取消关注");
+                      IToast.showTop(item.following
+                          ? S.current.followed
+                          : S.current.followEach);
                       onFollowOrUnFollow?.call();
                     }
                   });

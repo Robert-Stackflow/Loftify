@@ -18,6 +18,7 @@ import '../../Utils/asset_util.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/responsive_util.dart';
 import '../../Utils/utils.dart';
+import '../../generated/l10n.dart';
 import '../General/PhotoView/photo_view.dart';
 import '../General/PhotoView/photo_view_gallery.dart';
 import '../Item/item_builder.dart';
@@ -472,7 +473,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
                     currentUrl,
                     HiveUtil.getImageQuality(
                         HiveUtil.tapLinkButtonImageQualityKey)),
-                toastText: "已复制图片链接",
+                toastText: S.current.haveCopiedImageLink,
               );
             },
             onLongPress: () {
@@ -482,7 +483,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
                     currentUrl,
                     HiveUtil.getImageQuality(
                         HiveUtil.longPressLinkButtonImageQualityKey)),
-                toastText: "已复制图片链接",
+                toastText: S.current.haveCopiedImageLink,
               );
             },
           ),

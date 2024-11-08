@@ -1,4 +1,3 @@
-import '../../generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Models/favorites_response.dart';
 import 'package:loftify/Models/recommend_response.dart';
@@ -17,6 +16,7 @@ import '../../Utils/utils.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/favorite_folder_post_item_builder.dart';
+import '../../generated/l10n.dart';
 import '../Post/post_detail_screen.dart';
 
 class FavoriteFolderDetailScreen extends StatefulWidget {
@@ -41,7 +41,7 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
   SimpleBlogInfo? _creatorInfo;
   final List<FavoritePostDetailData> _posts = [];
   final List<ArchiveData> _archiveDataList = [];
-  FavoriteFolderDetailLayoutMode _layoutMode =
+  final FavoriteFolderDetailLayoutMode _layoutMode =
       FavoriteFolderDetailLayoutMode.nineGrid;
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
@@ -165,7 +165,7 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
       }
       widgets.add(ItemBuilder.buildTitle(
         context,
-        title: "${e.desc}（${e.count}篇）",
+        title: S.current.descriptionWithPostCount(e.desc, e.count.toString()),
         topMargin: 16,
         bottomMargin: 0,
       ));
@@ -195,7 +195,7 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
                 wh: 160),
             onTap: () {
               if (FavoriteFolderPostItemBuilder.isInvalid(_posts[trueIndex])) {
-                IToast.showTop("无效内容");
+                IToast.showTop(S.current.invalidContent);
               } else {
                 RouteUtil.pushPanelCupertinoRoute(
                   context,
@@ -240,7 +240,7 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
     return ItemBuilder.buildDesktopAppBar(
       context: context,
       showBack: true,
-      title: _favoriteFolder?.name ?? "收藏夹详情",
+      title: _favoriteFolder?.name ?? S.current.favoriteFolderDetail,
       actions: [
         // ItemBuilder.buildIconButton(
         //     context: context,

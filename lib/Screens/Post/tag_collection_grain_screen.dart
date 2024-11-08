@@ -1,4 +1,3 @@
-import '../../generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/tag_api.dart';
 import 'package:loftify/Models/tag_response.dart';
@@ -15,6 +14,7 @@ import '../../Utils/responsive_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
 import 'grain_detail_screen.dart';
 
 class TagCollectionGrainScreen extends StatefulWidget {
@@ -57,7 +57,7 @@ class _TagCollectionGrainScreenState extends State<TagCollectionGrainScreen>
   }
 
   initTab() {
-    _tabLabelList = ['合集', '粮单'];
+    _tabLabelList = [S.current.collection, S.current.grain];
     _tabController = TabController(length: _tabLabelList.length, vsync: this);
   }
 
@@ -244,13 +244,13 @@ class CollectionTabState extends State<CollectionTab>
                       height: 160,
                       child: ItemBuilder.buildEmptyPlaceholder(
                         context: context,
-                        text: "暂无合集",
+                        text: S.current.noCollection,
                       ),
                     ),
                   if (_hotCollectionList.isNotEmpty)
                     ItemBuilder.buildTitle(
                       context,
-                      title: "热门合集榜",
+                      title: S.current.hotCollectionRank,
                       bottomMargin: 12,
                       topMargin: 0,
                     ),
@@ -259,7 +259,7 @@ class CollectionTabState extends State<CollectionTab>
                   if (_recommendCollectionList.isNotEmpty)
                     ItemBuilder.buildTitle(
                       context,
-                      title: "热门推荐",
+                      title: S.current.hotRecommend,
                       bottomMargin: 12,
                       topMargin: _hotCollectionList.isNotEmpty ? 24 : 0,
                     ),
@@ -493,7 +493,7 @@ class CollectionTabState extends State<CollectionTab>
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      "${Utils.formatCount(info.subscribedCount)}订阅 · ${Utils.formatCount(info.viewCount)}浏览",
+                      "${Utils.formatCount(info.subscribedCount)}${S.current.subscribe} · ${Utils.formatCount(info.viewCount)}${S.current.viewCount}",
                       style: Theme.of(context).textTheme.labelMedium,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -621,13 +621,13 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
                       height: 160,
                       child: ItemBuilder.buildEmptyPlaceholder(
                         context: context,
-                        text: "暂无粮单",
+                        text: S.current.noGrain,
                       ),
                     ),
                   if (_hotGrainList.isNotEmpty)
                     ItemBuilder.buildTitle(
                       context,
-                      title: "热门粮单榜",
+                      title: S.current.hotGrainRank,
                       bottomMargin: 12,
                       topMargin: 0,
                     ),
@@ -635,7 +635,7 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
                   if (_recommendGrainList.isNotEmpty)
                     ItemBuilder.buildTitle(
                       context,
-                      title: "热门推荐",
+                      title: S.current.hotRecommend,
                       bottomMargin: 12,
                       topMargin: _hotGrainList.isNotEmpty ? 24 : 0,
                     ),
@@ -875,7 +875,7 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      "${Utils.formatCount(info.subscribedCount)}订阅 · ${Utils.formatCount(info.viewCount)}浏览",
+                      "${Utils.formatCount(info.subscribedCount)}${S.current.subscribe} · ${Utils.formatCount(info.viewCount)}${S.current.viewCount}",
                       style: Theme.of(context).textTheme.labelMedium,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

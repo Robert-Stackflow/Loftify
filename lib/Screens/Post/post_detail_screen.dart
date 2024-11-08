@@ -51,9 +51,9 @@ import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/general_post_item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
+import '../../generated/l10n.dart';
 import '../Info/user_detail_screen.dart';
 import 'grain_detail_screen.dart';
-import '../../generated/l10n.dart';
 
 class PostDetailScreen extends StatefulWidget {
   const PostDetailScreen({
@@ -359,7 +359,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   void _refreshGiftDescription() {
     ReturnGift? gift = _getReturnGift();
     if (gift == null) return;
-    String typeString = gift.planType?.name ?? "彩蛋";
+    String typeString = gift.planType?.name ?? S.current.easterEgg;
     var defaultGifts = gift.defaultSelectedGifts ?? [];
     List<String> unlockCost = [];
     Map<int, int> idToCoinMap = {};
@@ -367,7 +367,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       for (var gift in defaultGifts) {
         idToCoinMap[gift.id ?? LIANGPIAO_GIFTID] = gift.coin ?? 0;
         if ((gift.coin ?? 0) > 0) {
-          unlockCost.add("${gift.name}(${gift.coin}个乐乎币)");
+          unlockCost.add("${gift.name}(${gift.coin}${S.current.coinCount})");
         } else {
           unlockCost.add("${gift.name}");
         }
@@ -377,17 +377,17 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         idToCoinMap.entries.reduce((a, b) => a.value < b.value ? a : b).key;
     String previewDescription = "";
     if ((gift.wordCount ?? 0) > 0) {
-      previewDescription = "${gift.wordCount}字";
+      previewDescription = "${gift.wordCount}${S.current.wordCount}";
     }
     if ((gift.imgCount ?? 0) > 0) {
-      previewDescription += "${gift.imgCount}图";
+      previewDescription += "${gift.imgCount}${S.current.imageCount}";
     }
     if (previewDescription.isNotEmpty) {
       previewDescription = "($previewDescription)";
     }
     _giftTypeString = typeString;
     _giftPreviewDescription = previewDescription;
-    _giftCost = " ${unlockCost.join("或")} ";
+    _giftCost = " ${unlockCost.join(S.current.or)} ";
   }
 
   _fetchHotComments() async {
@@ -416,7 +416,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           return IndicatorResult.success;
         }
       } catch (e, t) {
-        IToast.showTop("评论加载失败");
+        IToast.showTop(S.current.loadFailed);
         ILogger.error("Failed to load hot comment", e, t);
         return IndicatorResult.fail;
       } finally {
@@ -448,7 +448,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           return IndicatorResult.success;
         }
       } catch (e, t) {
-        IToast.showTop("评论加载失败");
+        IToast.showTop(S.current.loadFailed);
         ILogger.error("Failed to load l2 comment", e, t);
         return IndicatorResult.fail;
       } finally {
@@ -905,7 +905,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
 
   _handleDownload() {
     if (isArticle) {
-      IToast.showTop("文章不支持下载当前图片");
+      IToast.showTop(S.current.unsupportDownloadCurrentImageinArticle);
       return;
     }
     if (downloadState == DownloadState.none) {
@@ -926,7 +926,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
 
   _handleDownloadAll() {
     if (!_hasImage() && !_hasArticleImage()) {
-      IToast.showTop("没有图片可以下载");
+      IToast.showTop(S.current.noImageToDownload);
       return;
     }
     if (downloadState == DownloadState.none) {
@@ -985,7 +985,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         key: commentKey,
         child: ItemBuilder.buildTitle(
           context,
-          title: hotComments.isNotEmpty ? "热门评论" : "最新评论",
+          title: hotComments.isNotEmpty ? S.current.hotComment : S.current.latestComment,
           bottomMargin: 12,
           topMargin: 24,
         ),
@@ -1000,7 +1000,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           alignment: Alignment.center,
           margin: const EdgeInsets.symmetric(vertical: 24),
           child: ItemBuilder.buildEmptyPlaceholder(
-              context: context, text: "暂无评论", topPadding: 0),
+              context: context, text: S.current.noComment, topPadding: 0),
         ),
       if (totalHotOrNewComments > 0)
         Center(
@@ -1015,7 +1015,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             child: ItemBuilder.buildRoundButton(
               context,
               padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-              text: "查看全部评论",
+              text: S.current.viewAllComments,
               onTap: () {
                 BottomSheetBuilder.showBottomSheet(
                   context,
@@ -1037,7 +1037,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       if (!isTablet)
         ItemBuilder.buildTitle(
           context,
-          title: "更多推荐",
+          title: S.current.moreRecommend,
           bottomMargin: 12,
           topMargin: 24,
         ),
@@ -1141,13 +1141,13 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         child: ItemBuilder.buildTextDivider(
             context: context,
             text:
-                "$_giftTypeString${(gift.unlockCount ?? 0) > 0 ? "(${gift.unlockCount!}次解锁)" : ""}"),
+                "$_giftTypeString${(gift.unlockCount ?? 0) > 0 ? "(${S.current.unlockCount(gift.unlockCount!)})" : ""}"),
       ),
       const SizedBox(height: 20),
       _buildEggTitle(
           returnContent == null
-              ? "$_giftTypeString预览$_giftPreviewDescription"
-              : "已解锁$_giftTypeString$_giftPreviewDescription",
+              ? "$_giftTypeString${S.current.preview}$_giftPreviewDescription"
+              : "${S.current.unlocked}$_giftTypeString$_giftPreviewDescription",
           gift.title ?? ""),
       promotionWidget,
     ];
@@ -1168,7 +1168,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           Center(
             child: ItemBuilder.buildRoundButton(
               context,
-              text: "$_giftCost解锁回礼",
+              text: "$_giftCost${S.current.unlockGift}",
               background: Theme.of(context).primaryColor,
               onTap: () async {
                 presentAndGetGift() async {
@@ -1192,7 +1192,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                         returnGiftData['ok'] != true) {
                       IToast.showTop(returnGiftData['msg']);
                     } else {
-                      IToast.showTop("解锁成功");
+                      IToast.showTop(S.current.unlockSuccess);
                       var returnGift =
                           ReturnGift.fromJson(returnGiftData['data']['plan']);
                       returnGift.digest = gift.digest;
@@ -1235,20 +1235,22 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                   if (liangpiaoCount > 0) {
                     DialogBuilder.showConfirmDialog(
                       context,
-                      title: "支付粮票解锁回礼",
-                      message: "你当前拥有$liangpiaoCount张粮票，是否确认支付以解锁回礼？",
+                      title: S.current.presentToUnlock(S.current.liangpiao),
+                      message: S.current.presentToUnlockMessage(
+                          "$liangpiaoCount${S.current.liangpiaoCount}"),
                       onTapConfirm: () async {
                         await presentAndGetGift();
                       },
                     );
                   } else {
-                    IToast.showTop("粮票不足");
+                    IToast.showTop(S.current.notEnoughLiangpiao);
                   }
                 } else {
                   DialogBuilder.showConfirmDialog(
                     context,
-                    title: "支付$_giftCost解锁回礼",
-                    message: "你当前拥有$coinCount个乐乎币，是否确认支付以解锁回礼？",
+                    title: S.current.presentToUnlock(_giftCost),
+                    message: S.current.presentToUnlockMessage(
+                        "$coinCount${S.current.coinCount}"),
                     onTapConfirm: () async {
                       await presentAndGetGift();
                     },
@@ -1320,7 +1322,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                 children: [
                   ItemBuilder.buildCopyItem(
                     context,
-                    toastText: "已复制昵称",
+                    toastText: S.current.haveCopiedNickName,
                     copyText: _postDetailData!.post?.blogInfo!.blogNickName,
                     child: Text(
                       _postDetailData!.post?.blogInfo!.blogNickName ?? "",
@@ -1333,7 +1335,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                   ),
                   if (hasAvatarBox) const SizedBox(height: 3),
                   Text(
-                    "${Utils.formatTimestamp(_postDetailData!.post?.publishTime ?? 0)} · ${Utils.isNotEmpty(_postDetailData!.post?.ipLocation) ? _postDetailData!.post?.ipLocation : ""} · ${_postDetailData!.post?.postCount?.postHot ?? 0}热度",
+                    "${Utils.formatTimestamp(_postDetailData!.post?.publishTime ?? 0)} · ${Utils.isNotEmpty(_postDetailData!.post?.ipLocation) ? _postDetailData!.post?.ipLocation : ""} · ${_postDetailData!.post?.postCount?.postHot ?? 0}${S.current.hotCount}",
                     style: Theme.of(context).textTheme.bodySmall,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1501,7 +1503,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                         left: 6,
                         child: ItemBuilder.buildTransparentTag(
                           context,
-                          text: _isCatutu ? "擦图图" : _giftTypeString,
+                          text: _isCatutu ? S.current.eraseBlur : _giftTypeString,
                           opacity: 0.5,
                         ),
                       ),
@@ -1746,7 +1748,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                   ),
                   const SizedBox(width: 3),
                   Text(
-                    "收录至",
+                    S.current.includedIn,
                     style: Theme.of(context).textTheme.titleSmall?.apply(
                         fontSizeDelta: -1,
                         fontWeightDelta: 2,
@@ -1825,8 +1827,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                 child: ItemBuilder.buildClickItem(
                   Text(
                     _postDetailData!.post!.postCollection!.subscribed
-                        ? "已订阅"
-                        : "订阅合集",
+                        ? S.current.subscribed
+                        : S.current.subscribeCollection,
                     style: Theme.of(context).textTheme.titleSmall?.apply(
                           fontSizeDelta: -2,
                           fontWeightDelta: 2,
@@ -1846,14 +1848,16 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             children: [
               Expanded(
                 child: _buildButton(
-                  text: _postDetailData!.post!.pos > 1 ? "上一篇" : "已在首篇",
+                  text: _postDetailData!.post!.pos > 1
+                      ? S.current.prePost
+                      : S.current.atFirstPost,
                   disabled: _postDetailData!.post!.pos <= 1,
                   onTap: () {
                     if (_postDetailData!.post!.pos > 1) {
                       setState(() {});
                       _fetchPreOrNextPost(isPre: true);
                     } else {
-                      IToast.showTop("已经是第一篇了");
+                      IToast.showTop(S.current.haveAtFirstPost);
                     }
                   },
                 ),
@@ -1861,7 +1865,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               const SizedBox(width: 8),
               Expanded(
                 child: _buildButton(
-                  text: "目录",
+                  text: S.current.catelog,
                   onTap: showCollectionBottomSheet,
                 ),
               ),
@@ -1870,8 +1874,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                 child: _buildButton(
                   text: _postDetailData!.post!.pos <
                           _postDetailData!.post!.postCollection!.postCount
-                      ? "下一篇"
-                      : "已在末篇",
+                      ? S.current.nextPost
+                      : S.current.atLastPost,
                   disabled: _postDetailData!.post!.pos >=
                       _postDetailData!.post!.postCollection!.postCount,
                   onTap: () {
@@ -1880,7 +1884,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                       setState(() {});
                       _fetchPreOrNextPost(isPre: false);
                     } else {
-                      IToast.showTop("已经是最后一篇了");
+                      IToast.showTop(S.current.haveAtLastPost);
                     }
                   },
                 ),
@@ -1919,7 +1923,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     Map<String, TagType> tags = {};
     if (_previewImages.isNotEmpty) {
       if (_isCatutu) {
-        tags.addAll({"擦图图": TagType.catutu});
+        tags.addAll({S.current.eraseBlur: TagType.catutu});
       } else {
         tags.addAll({_giftTypeString: TagType.egg});
       }
@@ -1999,8 +2003,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                   if (showReBlog)
                     ItemBuilder.buildIconTextButton(
                       context,
-                      text:
-                          "授权转载自${_postDetailData!.post!.reblogAuthorFromEmbed}",
+                      text: S.current.reblogFrom(
+                          _postDetailData!.post!.reblogAuthorFromEmbed),
                       spacing: 6,
                       start: true,
                       color: color,
@@ -2064,7 +2068,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             right: 0,
             child: ItemBuilder.buildIconTextButton(
               context,
-              text: _postDetailData!.subscribedNotNull ? "已收藏" : "收藏",
+              text: _postDetailData!.subscribedNotNull
+                  ? S.current.favorited
+                  : S.current.favorite,
               icon: _postDetailData!.subscribedNotNull
                   ? const Icon(Icons.star_rounded,
                       size: 28, color: Colors.yellow)
@@ -2162,7 +2168,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               SliverToBoxAdapter(
                 child: ItemBuilder.buildTitle(
                   context,
-                  title: "更多推荐",
+                  title: S.current.moreRecommend,
                   bottomMargin: 16,
                   topMargin: 16,
                   left: 8,
@@ -2241,7 +2247,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       context: context,
       showBack: true,
       titleWidget: Text(
-        "帖子详情",
+        S.current.postDetail,
         style: Theme.of(context).textTheme.titleLarge?.apply(
               fontWeightDelta: 2,
             ),
@@ -2268,7 +2274,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                     ),
                     const SizedBox(width: 3),
                     Text(
-                      "合集 ${_postDetailData!.post!.pos}/${_postDetailData!.post!.postCollection!.postCount}",
+                      "${S.current.collection} ${_postDetailData!.post!.pos}/${_postDetailData!.post!.postCollection!.postCount}",
                       style: Theme.of(context)
                           .textTheme
                           .titleMedium
@@ -2330,18 +2336,21 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             );
           },
         ),
-        ContextMenuButtonConfig("访问原文",
-            icon: const Icon(Icons.view_carousel_outlined), onPressed: () {
-          UriUtil.openInternal(
-            context,
-            UriUtil.getPostUrlById(
-              blogName,
-              postId,
-              blogId,
-            ),
-            processUri: false,
-          );
-        }),
+        ContextMenuButtonConfig(
+          S.current.visitOriginalPost,
+          icon: const Icon(Icons.view_carousel_outlined),
+          onPressed: () {
+            UriUtil.openInternal(
+              context,
+              UriUtil.getPostUrlById(
+                blogName,
+                postId,
+                blogId,
+              ),
+              processUri: false,
+            );
+          },
+        ),
         ContextMenuButtonConfig(S.current.openWithBrowser,
             icon: const Icon(Icons.open_in_browser_rounded), onPressed: () {
           UriUtil.openExternal(
@@ -2351,16 +2360,19 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             ),
           );
         }),
-        ContextMenuButtonConfig(S.current.shareToOtherApps,
-            icon: const Icon(Icons.share_rounded), onPressed: () {
-          UriUtil.share(
-            context,
-            UriUtil.getPostUrlByPermalink(
-              _postDetailData!.post!.blogInfo!.blogName,
-              _postDetailData!.post!.permalink,
-            ),
-          );
-        }),
+        ContextMenuButtonConfig(
+          S.current.shareToOtherApps,
+          icon: const Icon(Icons.share_rounded),
+          onPressed: () {
+            UriUtil.share(
+              context,
+              UriUtil.getPostUrlByPermalink(
+                _postDetailData!.post!.blogInfo!.blogName,
+                _postDetailData!.post!.permalink,
+              ),
+            );
+          },
+        ),
       ],
     );
   }

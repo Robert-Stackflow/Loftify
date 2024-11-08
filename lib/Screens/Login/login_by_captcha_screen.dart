@@ -8,7 +8,6 @@ import 'package:loftify/Screens/Login/login_by_password_screen.dart';
 import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
-import 'package:loftify/Utils/iprint.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Widgets/Custom/no_shadow_scroll_behavior.dart';
 import 'package:window_manager/window_manager.dart';
@@ -19,7 +18,7 @@ import '../../Utils/request_util.dart';
 import '../../Utils/responsive_util.dart';
 import '../../Utils/route_util.dart';
 import '../../Widgets/Item/item_builder.dart';
-import 'login_by_mail_screen.dart';
+import '../../generated/l10n.dart';
 
 class LoginByCaptchaScreen extends StatefulWidget {
   const LoginByCaptchaScreen({super.key, this.initPhone});
@@ -39,7 +38,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
   late TextEditingController _captchaCodeController;
   dynamic _photoCaptcha;
   bool _isFetchingCaptchaCode = false;
-  String _captchaText = "获取验证码";
+  String _captchaText = S.current.getCaptcha;
 
   @override
   void initState() {
@@ -64,11 +63,11 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
     String mobile = _mobileController.text;
     String captcha = _captchaController.text;
     if (mobile.isEmpty) {
-      IToast.showTop("手机号不能为空");
+      IToast.showTop(S.current.phoneCannotBeEmpty);
       return;
     }
     if (captcha.isEmpty) {
-      IToast.showTop("图片验证码不能为空");
+      IToast.showTop(S.current.imageCaptchaCannotBeEmpty);
       return;
     }
     LoginApi.getCaptchaCode(mobile, captcha).then((value) {
@@ -79,7 +78,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
       } else {
         _isFetchingCaptchaCode = true;
         setState(() {
-          _captchaText = "60s后重新发送";
+          _captchaText = S.current.resendAfterSeconds(60);
         });
         Timer.periodic(const Duration(seconds: 1), (timer) {
           if (timer.tick == 60) {
@@ -87,7 +86,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
             if (mounted) {
               setState(() {
                 _isFetchingCaptchaCode = false;
-                _captchaText = "获取验证码";
+                _captchaText = S.current.getCaptcha;
                 _refreshPhotoCaptcha();
                 _captchaController.text = "";
               });
@@ -95,12 +94,12 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
           } else {
             if (mounted) {
               setState(() {
-                _captchaText = "${60 - timer.tick}s后重新发送";
+                _captchaText = S.current.resendAfterSeconds(60 - timer.tick);
               });
             }
           }
         });
-        IToast.showTop("验证码发送成功");
+        IToast.showTop(S.current.sendCaptchaSuccess);
       }
     });
   }
@@ -109,7 +108,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
     String mobile = _mobileController.text;
     String password = _captchaCodeController.text;
     if (mobile.isEmpty || password.isEmpty) {
-      IToast.showTop("手机号或短信验证码不能为空");
+      IToast.showTop(S.current.phoneOrCodeCaptchaCannotBeEmpty);
       return;
     }
     LoginApi.loginByCaptchaCode(mobile, password).then((value) async {
@@ -118,7 +117,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
         IToast.showTop(loginResponse.desc);
         _refreshPhotoCaptcha();
       } else {
-        IToast.showTop("登录成功");
+        IToast.showTop(S.current.loginSuccess);
         appProvider.token = loginResponse.token ?? "";
         await RequestUtil.clearCookie();
         await HiveUtil.put(HiveUtil.userIdKey, loginResponse.userid);
@@ -140,7 +139,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
         resizeToAvoidBottomInset: false,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: ItemBuilder.buildSimpleAppBar(
-          title: "验证码登录",
+          title: S.current.loginByCaptcha,
           context: context,
           leading: Icons.close_rounded,
           transparent: true,
@@ -156,7 +155,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
                     const SizedBox(height: 50),
                     ItemBuilder.buildInputItem(
                       context: context,
-                      hint: "输入手机号",
+                      hint: S.current.inputPhone,
                       textInputAction: TextInputAction.next,
                       controller: _mobileController,
                       tailingType: TailingType.clear,
@@ -165,7 +164,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
                     ),
                     ItemBuilder.buildInputItem(
                       context: context,
-                      hint: "输入图片验证码",
+                      hint: S.current.inputImageCaptcha,
                       textInputAction: TextInputAction.next,
                       leadingIcon: Icons.verified_outlined,
                       controller: _captchaController,
@@ -187,7 +186,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
                     ),
                     ItemBuilder.buildInputItem(
                       context: context,
-                      hint: "输入短信验证码",
+                      hint: S.current.inputCodeCaptcha,
                       textInputAction: TextInputAction.next,
                       controller: _captchaCodeController,
                       tailingType: TailingType.text,
@@ -202,7 +201,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
                       margin: const EdgeInsets.symmetric(horizontal: 50),
                       child: ItemBuilder.buildRoundButton(
                         context,
-                        text: "登录",
+                        text: S.current.login,
                         onTap: _login,
                         background: Theme.of(context).primaryColor,
                         color: Colors.white,
@@ -221,7 +220,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
                   children: [
                     ItemBuilder.buildTextDivider(
                       context: context,
-                      text: "其他登录方式",
+                      text: S.current.otherLoginMethods,
                     ),
                     const SizedBox(height: 20),
                     Row(
