@@ -31,7 +31,7 @@ class _SelectFontScreenState extends State<SelectFontScreen>
     return Container(
       color: Colors.transparent,
       child: Scaffold(
-        appBar: ItemBuilder.buildDesktopAppBar(
+        appBar: ItemBuilder.buildResponsiveAppBar(
           showBack: true,
           transparent: true,
           title: S.current.chooseFontFamily,

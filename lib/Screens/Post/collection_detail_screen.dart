@@ -175,7 +175,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
     return Scaffold(
       backgroundColor: MyTheme.getBackground(context),
       appBar: ResponsiveUtil.isLandscape()
-          ? ItemBuilder.buildDesktopAppBar(
+          ? ItemBuilder.buildResponsiveAppBar(
               context: context,
               showBack: true,
               title: S.current.collectionDetail)
@@ -186,7 +186,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
           ? NestedScrollView(
               headerSliverBuilder: (_, __) => _buildHeaderSlivers(),
               body: _buildNineGridGroup())
-          : ItemBuilder.buildLoadingDialog(
+          : ItemBuilder.buildLoadingWidget(
               context,
               background: Colors.transparent,
             ),
@@ -441,7 +441,7 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
                       ),
                 ),
                 const SizedBox(height: 6),
-                ItemBuilder.buildClickItem(
+                ItemBuilder.buildClickable(
                   GestureDetector(
                     onTap: () {
                       RouteUtil.pushPanelCupertinoRoute(

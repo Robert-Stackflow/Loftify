@@ -76,7 +76,7 @@ class _MyCachedNetworkImageState extends State<MyCachedNetworkImage> {
           height: widget.height,
           filterQuality: FilterQuality.high,
           placeholder: widget.showLoading
-              ? (context, url) => ItemBuilder.buildLoadingDialog(
+              ? (context, url) => ItemBuilder.buildLoadingWidget(
                     context,
                     topPadding: widget.placeholderHeight != null
                         ? (widget.placeholderHeight! - 20) / 2

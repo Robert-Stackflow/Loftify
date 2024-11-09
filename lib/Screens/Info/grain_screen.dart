@@ -8,7 +8,6 @@ import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Screens/Post/grain_detail_screen.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
-import '../../generated/l10n.dart';
 
 import '../../Utils/enums.dart';
 import '../../Utils/ilogger.dart';
@@ -17,6 +16,7 @@ import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
 import 'nested_mixin.dart';
 
 class GrainScreen extends StatefulWidgetForNested {
@@ -148,10 +148,10 @@ class _GrainScreenState extends State<GrainScreen>
   _buildBody() {
     switch (_initPhase) {
       case InitPhase.connecting:
-        return ItemBuilder.buildLoadingDialog(context,
+        return ItemBuilder.buildLoadingWidget(context,
             background: Colors.transparent);
       case InitPhase.failed:
-        return ItemBuilder.buildError(
+        return ItemBuilder.buildErrorWidget(
           context: context,
           onTap: _onRefresh,
         );
@@ -166,7 +166,9 @@ class _GrainScreenState extends State<GrainScreen>
             return _grainList.isNotEmpty
                 ? _buildMainBody(physics)
                 : ItemBuilder.buildEmptyPlaceholder(
-                    context: context, text: S.current.noGrain, physics: physics);
+                    context: context,
+                    text: S.current.noGrain,
+                    physics: physics);
           },
         );
       default:
@@ -207,7 +209,7 @@ class _GrainScreenState extends State<GrainScreen>
     Function()? onTap,
     double verticalPadding = 12,
   }) {
-    return ItemBuilder.buildClickItem(
+    return ItemBuilder.buildClickable(
       GestureDetector(
         onTap: onTap,
         child: Container(
@@ -283,7 +285,7 @@ class _GrainScreenState extends State<GrainScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildDesktopAppBar(
+    return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
       title: S.current.myGrains,

@@ -176,10 +176,10 @@ class _LikeScreenState extends State<LikeScreen>
   _buildBody() {
     switch (_initPhase) {
       case InitPhase.connecting:
-        return ItemBuilder.buildLoadingDialog(context,
+        return ItemBuilder.buildLoadingWidget(context,
             background: Colors.transparent);
       case InitPhase.failed:
-        return ItemBuilder.buildError(
+        return ItemBuilder.buildErrorWidget(
           context: context,
           onTap: _onRefresh,
         );
@@ -265,7 +265,7 @@ class _LikeScreenState extends State<LikeScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildDesktopAppBar(
+    return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
       title: S.current.myLikes,

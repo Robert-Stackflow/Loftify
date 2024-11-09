@@ -130,7 +130,7 @@ class GeneralSettingScreenState extends State<GeneralSettingScreen>
       color: Colors.transparent,
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: ItemBuilder.buildDesktopAppBar(
+        appBar: ItemBuilder.buildResponsiveAppBar(
           showBack: true,
           title: S.current.generalSetting,
           transparent: true,
@@ -148,8 +148,8 @@ class GeneralSettingScreenState extends State<GeneralSettingScreen>
                   context: context,
                   title: S.current.language,
                   tip: LocaleUtil.getLabel(locale)!,
-                  topRadius: true,
-                  bottomRadius: true,
+                  roundTop: true,
+                  roundBottom: true,
                   onTap: () {
                     filterLocale();
                     BottomSheetBuilder.showListBottomSheet(
@@ -202,7 +202,7 @@ class GeneralSettingScreenState extends State<GeneralSettingScreen>
                 context: context,
                 title: S.current.afterDownloadSuccess,
                 description: S.current.afterDownloadSuccessDescription,
-                bottomRadius: true,
+                roundBottom: true,
                 tip: DownloadSuccessAction.values[downloadSuccessAction].label,
                 onTap: () {
                   BottomSheetBuilder.showListBottomSheet(
@@ -232,7 +232,7 @@ class GeneralSettingScreenState extends State<GeneralSettingScreen>
               const SizedBox(height: 10),
               ItemBuilder.buildRadioItem(
                 value: autoCheckUpdate,
-                topRadius: true,
+                roundTop: true,
                 context: context,
                 title: S.current.autoCheckUpdates,
                 onTap: () {
@@ -245,7 +245,7 @@ class GeneralSettingScreenState extends State<GeneralSettingScreen>
               ItemBuilder.buildEntryItem(
                 context: context,
                 title: S.current.checkUpdates,
-                bottomRadius: true,
+                roundBottom: true,
                 description:
                     Utils.compareVersion(latestVersion, currentVersion) > 0
                         ? S.current.newVersion(latestVersion)
@@ -275,7 +275,7 @@ class GeneralSettingScreenState extends State<GeneralSettingScreen>
         value: inAppBrowser,
         context: context,
         title: S.current.inAppBrowser,
-        topRadius: true,
+        roundTop: true,
         onTap: () {
           setState(() {
             inAppBrowser = !inAppBrowser;
@@ -286,7 +286,7 @@ class GeneralSettingScreenState extends State<GeneralSettingScreen>
       ItemBuilder.buildEntryItem(
         context: context,
         title: S.current.clearCache,
-        bottomRadius: true,
+        roundBottom: true,
         tip: _cacheSize,
         onTap: () {
           CustomLoadingDialog.showLoading(title: S.current.clearingCache);
@@ -313,7 +313,7 @@ class GeneralSettingScreenState extends State<GeneralSettingScreen>
         context: context,
         title: S.current.exportLog,
         description: S.current.exportLogHint,
-        topRadius: true,
+        roundTop: true,
         onTap: () {
           FileUtil.exportLogs();
         },
@@ -321,7 +321,7 @@ class GeneralSettingScreenState extends State<GeneralSettingScreen>
       ItemBuilder.buildEntryItem(
         context: context,
         title: S.current.clearLog,
-        bottomRadius: true,
+        roundBottom: true,
         tip: _logSize,
         onTap: () async {
           DialogBuilder.showConfirmDialog(
@@ -433,7 +433,7 @@ class GeneralSettingScreenState extends State<GeneralSettingScreen>
         title: S.current.autoMemoryWindowPositionAndSize,
         value: recordWindowState,
         description: S.current.autoMemoryWindowPositionAndSizeTip,
-        bottomRadius: true,
+        roundBottom: true,
         onTap: () async {
           setState(() {
             recordWindowState = !recordWindowState;

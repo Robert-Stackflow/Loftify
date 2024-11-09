@@ -7,26 +7,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:group_button/group_button.dart';
-import 'package:like_button/like_button.dart';
-import 'package:loftify/Models/recommend_response.dart';
-import 'package:loftify/Models/search_response.dart';
 import 'package:loftify/Resources/theme_color_data.dart';
 import 'package:loftify/Utils/lottie_util.dart';
 import 'package:loftify/Widgets/Selectable/my_context_menu_item.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../Api/post_api.dart';
-import '../../Api/user_api.dart';
-import '../../Models/collection_response.dart';
 import '../../Models/illust.dart';
-import '../../Models/post_detail_response.dart';
-import '../../Models/user_response.dart';
 import '../../Resources/colors.dart';
 import '../../Resources/fonts.dart';
 import '../../Resources/theme.dart';
-import '../../Screens/Info/user_detail_screen.dart';
-import '../../Screens/Login/login_by_captcha_screen.dart';
 import '../../Screens/Post/search_result_screen.dart';
 import '../../Screens/Post/tag_detail_screen.dart';
 import '../../Utils/app_provider.dart';
@@ -42,7 +32,6 @@ import '../../Utils/utils.dart';
 import '../../generated/l10n.dart';
 import '../Custom/custom_tab_indicator.dart';
 import '../Custom/hero_photo_view_screen.dart';
-import '../Dialog/dialog_builder.dart';
 import '../Scaffold/my_appbar.dart';
 import '../Selectable/my_selection_area.dart';
 import '../Selectable/my_selection_toolbar.dart';
@@ -54,111 +43,86 @@ import 'my_cached_network_image.dart';
 enum TailingType { none, clear, password, icon, text, widget }
 
 class ItemBuilder {
-  static PreferredSize buildDesktopAppBar({
+  static PreferredSize buildPreferredSize(
+      {double height = kToolbarHeight, required Widget child}) {
+    return PreferredSize(
+      preferredSize: Size.fromHeight(height),
+      child: child,
+    );
+  }
+
+  static PreferredSize buildResponsiveAppBar({
     required BuildContext context,
     String title = "",
     Widget? titleWidget,
     bool showBack = false,
+    Function()? onTapBack,
     double spacing = 10,
-    bool centerInMobile = false,
-    Function()? onBackTap,
-    List<Widget> actions = const [],
-    double rightPadding = 0,
     bool? showBorder,
-    Widget? bottom,
+    Widget? bottomWidget,
     double? bottomHeight,
     bool transparent = true,
     Color? background,
     double? titleSpacing,
+    bool centerInMobile = false,
+    List<Widget> actions = const [],
   }) {
     late PreferredSize topWidget;
     if (ResponsiveUtil.isLandscape()) {
       var finalTitle = titleWidget ??
           Text(title, style: Theme.of(context).textTheme.titleLarge);
-      topWidget = PreferredSize(
-        preferredSize: const Size.fromHeight(56),
+      topWidget = buildPreferredSize(
         child: Container(
           height: 56,
           decoration: BoxDecoration(
-            color: Theme.of(context).canvasColor,
-            border: showBorder ?? true
-                ? Border(
-                    bottom: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                      width: 1,
-                    ),
-                  )
-                : null,
+            color: MyTheme.canvasColor,
+            border: showBorder ?? true ? MyTheme.bottomBorder : null,
           ),
-          child: SafeArea(
-            child: Stack(
-              children: [
-                if (ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
-                Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      if (showBack)
-                        ResponsiveUtil.isLandscape()
-                            ? Container(
-                                margin: const EdgeInsets.only(left: 10),
-                                child: ToolButton(
-                                  context: context,
-                                  onTap: onBackTap ??
-                                      () => panelScreenState?.popPage(),
-                                  iconBuilder: (_) =>
-                                      const Icon(Icons.arrow_back_rounded),
-                                ),
-                              )
-                            : Container(
-                                margin: const EdgeInsets.only(left: 10),
-                                child: ItemBuilder.buildIconButton(
-                                  context: context,
-                                  icon: const Icon(Icons.arrow_back_rounded),
-                                  onTap: () => panelScreenState?.popPage(),
-                                ),
-                              ),
-                      if ((!(titleWidget != null &&
-                                  ResponsiveUtil.isLandscape()) &&
-                              !showBack) ||
-                          showBack)
-                        SizedBox(width: spacing),
-                      ResponsiveUtil.isLandscape()
-                          ? finalTitle
-                          : Expanded(child: finalTitle),
-                      if (ResponsiveUtil.isDesktop()) Container(width: 173),
-                    ],
-                  ),
+          child: Stack(
+            children: [
+              ResponsiveUtil.buildDesktopWidget(
+                  desktop: const WindowMoveHandle()),
+              Center(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    if (showBack)
+                      Container(
+                        margin: const EdgeInsets.only(left: 10),
+                        child: ToolButton(
+                          context: context,
+                          onTap: onTapBack ?? () => panelScreenState?.popPage(),
+                          iconBuilder: (_) =>
+                              const Icon(Icons.arrow_back_rounded),
+                        ),
+                      ),
+                    if (showBack || titleWidget == null)
+                      SizedBox(width: spacing),
+                    finalTitle,
+                    ResponsiveUtil.buildDesktopWidget(
+                        desktop: const SizedBox(width: 173)),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       );
     } else {
-      topWidget = PreferredSize(
-        preferredSize: const Size.fromHeight(56),
+      topWidget = buildPreferredSize(
         child: Container(
           decoration: BoxDecoration(
-            border: showBorder ?? false
-                ? Border(
-                    bottom: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                      width: 1,
-                    ),
-                  )
-                : null,
+            border: showBorder ?? false ? MyTheme.bottomBorder : null,
           ),
           child: ItemBuilder.buildAppBar(
             context: context,
-            // transparent: transparent,
             center: centerInMobile,
             leading: showBack ? Icons.arrow_back_rounded : null,
-            onLeadingTap: onBackTap ?? () => panelScreenState?.popPage(),
+            onLeadingTap: onTapBack ?? () => panelScreenState?.popPage(),
             backgroundColor: background ??
                 (transparent
                     ? MyTheme.getBackground(context)
-                    : Theme.of(context).canvasColor),
+                    : MyTheme.canvasColor),
             leftSpacing: showBack ? 8 : 0,
             leadingTitleSpacing: showBack ? 5 : 0,
             actions: actions,
@@ -178,17 +142,21 @@ class ItemBuilder {
         ),
       );
     }
-    return bottom != null && bottomHeight != null
-        ? PreferredSize(
-            preferredSize: Size.fromHeight(56 + bottomHeight),
-            child: Column(
-              children: [
-                topWidget,
-                bottom,
-              ],
+    return bottomWidget != null && bottomHeight != null
+        ? buildPreferredSize(
+            height: 56 + bottomHeight,
+            child: SafeArea(
+              child: Column(
+                children: [
+                  topWidget,
+                  bottomWidget,
+                ],
+              ),
             ),
           )
-        : topWidget;
+        : buildPreferredSize(
+            child: SafeArea(child: topWidget),
+          );
   }
 
   static buildTabBar(
@@ -217,8 +185,8 @@ class ItemBuilder {
       }
     }
     scrollable = forceUnscrollable ? false : scrollable;
-    return PreferredSize(
-      preferredSize: Size.fromHeight(height ?? 56),
+    return buildPreferredSize(
+      height: height ?? 56,
       child: Container(
         height: 56,
         width: width,
@@ -324,52 +292,49 @@ class ItemBuilder {
     bool showLeading =
         leading != null && (!ResponsiveUtil.isLandscape() || forceShowClose);
     // center = ResponsiveUtil.isDesktop() ? false : center;
-    return PreferredSize(
-      preferredSize: const Size(0, kToolbarHeight),
-      child: MyAppBar(
-        key: key,
-        primary: !ResponsiveUtil.isWideLandscape(),
-        backgroundColor: transparent
-            ? Colors.transparent
-            : backgroundColor ?? Theme.of(context).appBarTheme.backgroundColor!,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        automaticallyImplyLeading: false,
-        leadingWidth: showLeading ? 56.0 : 0.0,
-        leading: showLeading
-            ? Container(
-                margin: EdgeInsets.only(left: leftSpacing),
-                child: leadingWidget ??
-                    ItemBuilder.buildIconButton(
-                      context: context,
-                      icon: Icon(leading,
-                          color: leadingColor ??
-                              Theme.of(context).iconTheme.color),
-                      onTap: onLeadingTap,
-                    ),
-              )
-            : null,
-        title: center
-            ? Center(
-                child: Container(
-                    margin: EdgeInsets.only(
-                        left: center
-                            ? 0
-                            : (showLeading
-                                ? leadingTitleSpacing
-                                : titleSpacing ?? 20)),
-                    child: title))
-            : Container(
-                margin: EdgeInsets.only(
-                    left: center
-                        ? 0
-                        : (showLeading
-                            ? leadingTitleSpacing
-                            : titleSpacing ?? 20)),
-                child: title,
-              ),
-        actions: actions,
-      ),
+    return MyAppBar(
+      key: key,
+      primary: !ResponsiveUtil.isWideLandscape(),
+      backgroundColor: transparent
+          ? Colors.transparent
+          : backgroundColor ?? Theme.of(context).appBarTheme.backgroundColor!,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      automaticallyImplyLeading: false,
+      leadingWidth: showLeading ? 56.0 : 0.0,
+      leading: showLeading
+          ? Container(
+              margin: EdgeInsets.only(left: leftSpacing),
+              child: leadingWidget ??
+                  ItemBuilder.buildIconButton(
+                    context: context,
+                    icon: Icon(leading,
+                        color:
+                            leadingColor ?? Theme.of(context).iconTheme.color),
+                    onTap: onLeadingTap,
+                  ),
+            )
+          : null,
+      title: center
+          ? Center(
+              child: Container(
+                  margin: EdgeInsets.only(
+                      left: center
+                          ? 0
+                          : (showLeading
+                              ? leadingTitleSpacing
+                              : titleSpacing ?? 20)),
+                  child: title))
+          : Container(
+              margin: EdgeInsets.only(
+                  left: center
+                      ? 0
+                      : (showLeading
+                          ? leadingTitleSpacing
+                          : titleSpacing ?? 20)),
+              child: title,
+            ),
+      actions: actions,
     );
   }
 
@@ -435,6 +400,29 @@ class ItemBuilder {
     );
   }
 
+  static buildInk({
+    required Widget child,
+    Function()? onTap,
+    Function()? onLongPress,
+    BorderRadius? borderRadius,
+    Clip clipBehavior = Clip.none,
+    ShapeBorder? shape,
+    Color? color,
+  }) {
+    borderRadius ??= BorderRadius.circular(10);
+    return Material(
+      color: color,
+      clipBehavior: clipBehavior,
+      shape: shape,
+      borderRadius: shape != null ? null : borderRadius,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: borderRadius,
+        child: child,
+      ),
+    );
+  }
+
   static buildContextMenuOverlay(Widget child) {
     return ContextMenuOverlay(
       cardBuilder: (context, widgets) => Container(
@@ -462,35 +450,29 @@ class ItemBuilder {
             SizedBox(width: showCheck ? 8 : 4),
           ],
         );
-        return Material(
-          color: Theme.of(context).canvasColor,
-          borderRadius: BorderRadius.circular(10),
-          child: InkWell(
-            onTap: config.onPressed,
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              padding: EdgeInsets.only(
-                  left: showCheck ? 8 : 12, right: 12, top: 8, bottom: 8),
-              decoration:
-                  BoxDecoration(borderRadius: BorderRadius.circular(10)),
-              child: Row(
-                children: [
-                  if (isCheckbox) checkIcon,
-                  if (config.icon != null)
-                    Transform.scale(
-                      scale: 0.83,
-                      child: config.icon!,
-                    ),
-                  if (config.icon != null) const SizedBox(width: 10),
-                  Text(
-                    config.label,
-                    style: Theme.of(context).textTheme.bodyMedium?.apply(
-                          fontSizeDelta: ResponsiveUtil.isMobile() ? 2 : 0,
-                          color: config.textColor,
-                        ),
+        return buildInk(
+          onTap: config.onPressed,
+          child: Container(
+            padding: EdgeInsets.only(
+                left: showCheck ? 8 : 12, right: 12, top: 8, bottom: 8),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(10)),
+            child: Row(
+              children: [
+                if (isCheckbox) checkIcon,
+                if (config.icon != null)
+                  Transform.scale(
+                    scale: 0.83,
+                    child: config.icon!,
                   ),
-                ],
-              ),
+                if (config.icon != null) const SizedBox(width: 10),
+                Text(
+                  config.label,
+                  style: Theme.of(context).textTheme.bodyMedium?.apply(
+                        fontSizeDelta: ResponsiveUtil.isMobile() ? 2 : 0,
+                        color: config.textColor,
+                      ),
+                ),
+              ],
             ),
           ),
         );
@@ -548,18 +530,13 @@ class ItemBuilder {
         borderRadius: BorderRadius.circular(radius + 1),
         boxShadow: MyTheme.defaultBoxShadow,
       ),
-      child: Material(
-        color: Theme.of(context).canvasColor,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),
-        child: InkWell(
-          onTap: onTap,
-          onLongPress: onLongPress,
-          borderRadius: BorderRadius.circular(radius),
-          child: Container(
-            padding: padding ?? const EdgeInsets.all(10),
-            child: icon ?? emptyWidget,
-          ),
+      child: buildInk(
+        borderRadius: BorderRadius.circular(radius),
+        onTap: onTap,
+        onLongPress: onLongPress,
+        child: Container(
+          padding: padding ?? const EdgeInsets.all(10),
+          child: icon ?? emptyWidget,
         ),
       ),
     );
@@ -572,17 +549,15 @@ class ItemBuilder {
     Function()? onLongPress,
     EdgeInsets? padding,
   }) {
-    return Material(
+    return buildInk(
       color: Colors.transparent,
       shape: const CircleBorder(),
       clipBehavior: Clip.hardEdge,
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        child: Container(
-          padding: padding ?? const EdgeInsets.all(8),
-          child: icon ?? emptyWidget,
-        ),
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: Container(
+        padding: padding ?? const EdgeInsets.all(8),
+        child: icon ?? emptyWidget,
       ),
     );
   }
@@ -597,20 +572,17 @@ class ItemBuilder {
     EdgeInsets? padding,
     bool disabled = false,
   }) {
-    return Material(
+    return buildInk(
       color: disabled
           ? Colors.transparent
           : normalBackground ?? Colors.transparent,
-      shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),
+      borderRadius: BorderRadius.circular(radius),
       clipBehavior: Clip.hardEdge,
-      child: InkWell(
-        onTap: onTap,
-        onLongPress: onLongPress,
-        child: Container(
-          padding: padding ?? const EdgeInsets.all(10),
-          child: icon ?? emptyWidget,
-        ),
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: Container(
+        padding: padding ?? const EdgeInsets.all(10),
+        child: icon ?? emptyWidget,
       ),
     );
   }
@@ -621,17 +593,12 @@ class ItemBuilder {
     required Function()? onTap,
     Function(BuildContext context, dynamic value, Widget? child)? onChangemode,
   }) {
-    return Material(
-      color: Colors.transparent,
-      shape: const CircleBorder(),
-      clipBehavior: Clip.hardEdge,
-      child: Selector<AppProvider, ActiveThemeMode>(
-        selector: (context, globalProvider) => globalProvider.themeMode,
-        builder: (context, themeMode, child) {
-          onChangemode?.call(context, themeMode, child);
-          return buildIconButton(context: context, icon: icon, onTap: onTap);
-        },
-      ),
+    return Selector<AppProvider, ActiveThemeMode>(
+      selector: (context, globalProvider) => globalProvider.themeMode,
+      builder: (context, themeMode, child) {
+        onChangemode?.call(context, themeMode, child);
+        return buildIconButton(context: context, icon: icon, onTap: onTap);
+      },
     );
   }
 
@@ -657,8 +624,8 @@ class ItemBuilder {
 
   static Widget buildRadioItem({
     double radius = 10,
-    bool topRadius = false,
-    bool bottomRadius = false,
+    bool roundTop = false,
+    bool roundBottom = false,
     required bool value,
     Color? titleColor,
     bool showLeading = false,
@@ -672,127 +639,71 @@ class ItemBuilder {
     bool disabled = false,
   }) {
     assert(padding > 5);
-    return Material(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: topRadius ? Radius.circular(radius) : const Radius.circular(0),
+    return buildInk(
+      borderRadius: BorderRadius.vertical(
+          top: roundTop ? Radius.circular(radius) : const Radius.circular(0),
           bottom:
-              bottomRadius ? Radius.circular(radius) : const Radius.circular(0),
-        ),
-      ),
-      child: Ink(
-        decoration: BoxDecoration(
-          color: Theme.of(context).canvasColor,
-          shape: BoxShape.rectangle,
-          borderRadius: BorderRadius.vertical(
-            top: topRadius ? Radius.circular(radius) : const Radius.circular(0),
-            bottom: bottomRadius
-                ? Radius.circular(radius)
-                : const Radius.circular(0),
+              roundBottom ? Radius.circular(radius) : const Radius.circular(0)),
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.symmetric(
+              vertical: description.isNotEmpty ? padding : padding - 5,
+              horizontal: 10,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Visibility(
+                  visible: showLeading,
+                  child: Icon(leading, size: 20),
+                ),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      description.isNotEmpty
+                          ? Text(description,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.apply(fontSizeDelta: 1))
+                          : emptyWidget,
+                    ],
+                  ),
+                ),
+                SizedBox(width: trailingLeftMargin),
+                Opacity(
+                  opacity: disabled ? 0.2 : 1,
+                  child: Transform.scale(
+                    scale: 0.9,
+                    child: Switch(
+                      value: value,
+                      onChanged: disabled
+                          ? null
+                          : (_) {
+                              HapticFeedback.lightImpact();
+                              if (onTap != null) onTap();
+                            },
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          border: ThemeColorData.isImmersive(context)
-              ? Border.merge(
-                  Border.symmetric(
-                    vertical: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                      width: 0.5,
-                    ),
-                  ),
-                  Border(
-                    top: topRadius
-                        ? BorderSide(
-                            color: Theme.of(context).dividerColor,
-                            width: 0.5,
-                          )
-                        : BorderSide.none,
-                    bottom: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                      width: 0.5,
-                    ),
-                  ),
-                )
-              : const Border(),
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.vertical(
-              top: topRadius
-                  ? Radius.circular(radius)
-                  : const Radius.circular(0),
-              bottom: bottomRadius
-                  ? Radius.circular(radius)
-                  : const Radius.circular(0)),
-          child: Column(
-            children: [
-              Container(
-                padding: EdgeInsets.symmetric(
-                  vertical: description.isNotEmpty ? padding : padding - 5,
-                  horizontal: 10,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Visibility(
-                      visible: showLeading,
-                      child: Icon(leading, size: 20),
-                    ),
-                    const SizedBox(width: 5),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          description.isNotEmpty
-                              ? Text(description,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelSmall
-                                      ?.apply(fontSizeDelta: 1))
-                              : emptyWidget,
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: trailingLeftMargin),
-                    Opacity(
-                      opacity: disabled ? 0.2 : 1,
-                      child: Transform.scale(
-                        scale: 0.9,
-                        child: Switch(
-                          value: value,
-                          onChanged: disabled
-                              ? null
-                              : (_) {
-                                  HapticFeedback.lightImpact();
-                                  if (onTap != null) onTap();
-                                },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+          if (!ThemeColorData.isImmersive(context))
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                border: roundBottom ? null : MyTheme.bottomBorder,
               ),
-              ThemeColorData.isImmersive(context)
-                  ? Container()
-                  : Container(
-                      height: 0,
-                      margin: const EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Theme.of(context).dividerColor,
-                            width: 0.5,
-                            style: bottomRadius
-                                ? BorderStyle.none
-                                : BorderStyle.solid,
-                          ),
-                        ),
-                      ),
-                    ),
-            ],
-          ),
-        ),
+            ),
+        ],
       ),
     );
   }
@@ -800,8 +711,8 @@ class ItemBuilder {
   static Widget buildEntryItem({
     required BuildContext context,
     double radius = 10,
-    bool topRadius = false,
-    bool bottomRadius = false,
+    bool roundTop = false,
+    bool roundBottom = false,
     bool showLeading = false,
     bool showTrailing = true,
     bool isCaption = false,
@@ -819,147 +730,85 @@ class ItemBuilder {
     bool dividerPadding = true,
     IconData trailing = Icons.keyboard_arrow_right_rounded,
   }) {
-    return Material(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: topRadius ? Radius.circular(radius) : const Radius.circular(0),
-          bottom:
-              bottomRadius ? Radius.circular(radius) : const Radius.circular(0),
-        ),
+    return buildInk(
+      borderRadius: BorderRadius.vertical(
+        top: roundTop ? Radius.circular(radius) : const Radius.circular(0),
+        bottom:
+            roundBottom ? Radius.circular(radius) : const Radius.circular(0),
       ),
-      child: Ink(
-        decoration: BoxDecoration(
-          color: backgroundColor ?? Theme.of(context).canvasColor,
-          shape: BoxShape.rectangle,
-          borderRadius: BorderRadius.vertical(
-            top: topRadius ? Radius.circular(radius) : const Radius.circular(0),
-            bottom: bottomRadius
-                ? Radius.circular(radius)
-                : const Radius.circular(0),
-          ),
-          border: ThemeColorData.isImmersive(context)
-              ? Border.merge(
-                  Border.symmetric(
-                    vertical: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                      width: 0.5,
-                    ),
-                  ),
-                  Border(
-                    top: topRadius
-                        ? BorderSide(
-                            color: Theme.of(context).dividerColor,
-                            width: 0.5,
-                          )
-                        : BorderSide.none,
-                    bottom: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                      width: 0.5,
-                    ),
-                  ),
-                )
-              : const Border(),
-        ),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.vertical(
-            top: topRadius ? Radius.circular(radius) : const Radius.circular(0),
-            bottom: bottomRadius
-                ? Radius.circular(radius)
-                : const Radius.circular(0),
-          ),
-          child: Column(
-            children: [
-              Container(
-                padding:
-                    EdgeInsets.symmetric(vertical: padding, horizontal: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Visibility(
-                      visible: showLeading,
-                      child: Icon(leading, size: 20),
-                    ),
-                    showLeading
-                        ? const SizedBox(width: 10)
-                        : const SizedBox(width: 5),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: crossAxisAlignment,
-                        children: [
-                          Text(
-                            title,
-                            style: isCaption
-                                ? Theme.of(context)
-                                    .textTheme
-                                    .labelSmall
-                                    ?.apply(fontSizeDelta: 1)
-                                : Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.apply(
-                                      color: titleColor,
-                                    ),
-                          ),
-                          description.isNotEmpty
-                              ? Text(
-                                  description,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelSmall
-                                      ?.apply(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.symmetric(vertical: padding, horizontal: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Visibility(
+                  visible: showLeading,
+                  child: Icon(leading, size: 20),
+                ),
+                showLeading
+                    ? const SizedBox(width: 10)
+                    : const SizedBox(width: 5),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: crossAxisAlignment,
+                    children: [
+                      Text(
+                        title,
+                        style: isCaption
+                            ? Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.apply(fontSizeDelta: 1)
+                            : Theme.of(context).textTheme.titleMedium?.apply(
+                                  color: titleColor,
+                                ),
+                      ),
+                      description.isNotEmpty
+                          ? Text(
+                              description,
+                              style:
+                                  Theme.of(context).textTheme.labelSmall?.apply(
                                         fontSizeDelta: 1,
                                         color: descriptionColor,
                                       ),
-                                )
-                              : emptyWidget,
-                        ],
-                      ),
-                    ),
-                    isCaption || tip.isEmpty
-                        ? Container()
-                        : const SizedBox(width: 50),
-                    Text(
-                      tip,
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelSmall
-                          ?.apply(fontSizeDelta: 1),
-                    ),
-                    SizedBox(width: showTrailing ? trailingLeftMargin : 0),
-                    Visibility(
-                      visible: showTrailing,
-                      child: Icon(
-                        trailing,
-                        size: 20,
-                        color:
-                            Theme.of(context).iconTheme.color?.withAlpha(127),
-                      ),
-                    ),
-                  ],
+                            )
+                          : emptyWidget,
+                    ],
+                  ),
                 ),
-              ),
-              ThemeColorData.isImmersive(context)
-                  ? Container()
-                  : Container(
-                      height: 0,
-                      margin: EdgeInsets.symmetric(
-                          horizontal: dividerPadding ? 10 : 0),
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Theme.of(context).dividerColor,
-                            width: 0.5,
-                            style: bottomRadius
-                                ? BorderStyle.none
-                                : BorderStyle.solid,
-                          ),
-                        ),
-                      ),
-                    ),
-            ],
+                isCaption || tip.isEmpty
+                    ? Container()
+                    : const SizedBox(width: 50),
+                Text(
+                  tip,
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelSmall
+                      ?.apply(fontSizeDelta: 1),
+                ),
+                SizedBox(width: showTrailing ? trailingLeftMargin : 0),
+                Visibility(
+                  visible: showTrailing,
+                  child: Icon(
+                    trailing,
+                    size: 20,
+                    color: Theme.of(context).iconTheme.color?.withAlpha(127),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+          if (!ThemeColorData.isImmersive(context))
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                border: roundBottom ? null : MyTheme.bottomBorder,
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -979,8 +828,8 @@ class ItemBuilder {
       context: context,
       title: title,
       radius: radius,
-      topRadius: topRadius,
-      bottomRadius: bottomRadius,
+      roundTop: topRadius,
+      roundBottom: bottomRadius,
       showTrailing: false,
       showLeading: showLeading,
       onTap: null,
@@ -1009,22 +858,7 @@ class ItemBuilder {
           bottom:
               bottomRadius ? Radius.circular(radius) : const Radius.circular(0),
         ),
-        border: ThemeColorData.isImmersive(context)
-            ? Border.merge(
-                Border.symmetric(
-                  vertical: BorderSide(
-                    color: Theme.of(context).dividerColor,
-                    width: 0.5,
-                  ),
-                ),
-                Border(
-                  bottom: BorderSide(
-                    color: Theme.of(context).dividerColor,
-                    width: 0.5,
-                  ),
-                ),
-              )
-            : border,
+        border: border,
       ),
       child: Container(
         decoration: BoxDecoration(
@@ -1189,7 +1023,7 @@ class ItemBuilder {
       width: width,
       child: Column(
         children: [
-          ItemBuilder.buildClickItem(
+          ItemBuilder.buildClickable(
             GestureDetector(
               onTap: onTap,
               child: Container(
@@ -1239,11 +1073,7 @@ class ItemBuilder {
             decoration: BoxDecoration(
               color: themeColorData.background,
               borderRadius: const BorderRadius.all(Radius.circular(10)),
-              border: Border.all(
-                color: themeColorData.dividerColor,
-                style: BorderStyle.solid,
-                width: 0.6,
-              ),
+              border: MyTheme.border,
             ),
             child: Column(
               children: [
@@ -1293,11 +1123,7 @@ class ItemBuilder {
             padding: const EdgeInsets.only(left: 8, right: 8),
             decoration: BoxDecoration(
               borderRadius: const BorderRadius.all(Radius.circular(10)),
-              border: Border.all(
-                color: Theme.of(context).dividerColor,
-                style: BorderStyle.solid,
-                width: 0.6,
-              ),
+              border: MyTheme.border,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1489,23 +1315,12 @@ class ItemBuilder {
     Function()? onTap,
     Color? backgroundColor,
   }) {
-    return Material(
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(12))),
-      child: Ink(
-        decoration: BoxDecoration(
-          color: backgroundColor ?? Theme.of(context).canvasColor,
-          shape: BoxShape.rectangle,
-          borderRadius: const BorderRadius.all(Radius.circular(12)),
-        ),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: const BorderRadius.all(Radius.circular(12)),
-          child: Container(
-            padding: const EdgeInsets.all(10.0),
-            child: Icon(icon),
-          ),
-        ),
+    return buildInk(
+      onTap: onTap,
+      borderRadius: const BorderRadius.all(Radius.circular(12)),
+      child: Container(
+        padding: const EdgeInsets.all(10.0),
+        child: Icon(icon),
       ),
     );
   }
@@ -1513,7 +1328,7 @@ class ItemBuilder {
   static Widget buildTextDivider({
     required BuildContext context,
     required String text,
-    double margin = 15,
+    double horizontalMargin = 15,
     double width = 300,
   }) {
     return SizedBox(
@@ -1522,7 +1337,7 @@ class ItemBuilder {
         children: [
           Expanded(
             child: Container(
-              margin: EdgeInsets.only(right: margin),
+              margin: EdgeInsets.only(right: horizontalMargin),
               height: 1,
               decoration: BoxDecoration(
                 color: Theme.of(context).dividerColor,
@@ -1536,7 +1351,7 @@ class ItemBuilder {
           ),
           Expanded(
             child: Container(
-              margin: EdgeInsets.only(left: margin),
+              margin: EdgeInsets.only(left: horizontalMargin),
               height: 1,
               decoration: BoxDecoration(
                 color: Theme.of(context).dividerColor,
@@ -1559,7 +1374,7 @@ class ItemBuilder {
     Function()? onTap,
     ScrollPhysics? physics,
     double topPadding = 50,
-    bool shrinkWrap=true,
+    bool shrinkWrap = true,
   }) {
     return ListView(
       physics: physics,
@@ -1605,7 +1420,7 @@ class ItemBuilder {
     );
   }
 
-  static Widget buildTransparentTag(
+  static Widget buildTranslucentTag(
     BuildContext context, {
     required String text,
     bool isCircle = false,
@@ -1645,250 +1460,24 @@ class ItemBuilder {
     );
   }
 
-  static Widget buildCopyItem(
+  static Widget buildCopyable(
     BuildContext context, {
     required Widget child,
     Function()? onTap,
-    required String? copyText,
+    required String? text,
     String? toastText,
-    bool condition = true,
+    bool copyable = true,
   }) {
-    return GestureDetector(
+    return ItemBuilder.buildClickableGestureDetector(
       onTap: onTap,
-      onLongPress: () {
-        if (condition) {
-          Utils.copy(context, copyText, toastText: toastText);
-        }
-      },
+      onLongPress: copyable
+          ? () => Utils.copy(context, text, toastText: toastText)
+          : null,
       child: child,
     );
   }
 
-  static Widget buildDot(
-    BuildContext context, {
-    TextStyle? style,
-  }) {
-    return Text(
-      " · ",
-      style: style ??
-          Theme.of(context).textTheme.titleSmall?.apply(fontWeightDelta: 2),
-    );
-  }
-
-  static Widget buildLikedButton(
-    BuildContext context, {
-    Future<bool?> Function(bool)? onTap,
-    double size = 25,
-    double iconSize = 25,
-    required bool? isLiked,
-    bool filled = false,
-    Color? defaultColor,
-    bool showCount = false,
-    int likeCount = 0,
-    CountPostion position = CountPostion.bottom,
-    EdgeInsetsGeometry? likeCountPadding,
-    TextStyle? countStyle,
-    AnimationController? animationController,
-    String? zeroPlaceHolder,
-  }) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: LikeButton(
-        onTap: onTap,
-        size: size,
-        isLiked: isLiked,
-        likeBuilder: (bool isLiked) {
-          return Icon(
-            isLiked || filled
-                ? Icons.favorite_rounded
-                : Icons.favorite_border_rounded,
-            color: isLiked
-                ? MyColors.likeButtonColor
-                : defaultColor ?? Theme.of(context).iconTheme.color,
-            size: iconSize,
-          );
-          // return LottieUtil.load(
-          //   Utils.isDark(context)
-          //       ? LottieUtil.likeBigNormalDark
-          //       : LottieUtil.likeBigNormalLight,
-          //   size: iconSize,
-          //   controller: animationController,
-          // );
-          // return AssetUtil.loadDouble(
-          //   context,
-          //   isLiked || filled
-          //       ? AssetUtil.likeFilledIcon
-          //       : AssetUtil.likeLightIcon,
-          //   isLiked || filled
-          //       ? AssetUtil.likeFilledIcon
-          //       : AssetUtil.likeLightIcon,
-          //   size: iconSize,
-          // );
-        },
-        likeCount: likeCount,
-        countPostion: position,
-        likeCountAnimationType: LikeCountAnimationType.none,
-        likeCountPadding: likeCountPadding,
-        countBuilder: (int? count, bool isLiked, String text) {
-          return showCount
-              ? Text(
-                  count == 0 ? zeroPlaceHolder ?? S.current.like : text,
-                  style: countStyle ?? Theme.of(context).textTheme.labelSmall,
-                )
-              : emptyWidget;
-        },
-      ),
-    );
-  }
-
-  static Widget buildLikedLottieButton(
-    BuildContext context, {
-    Function()? onTap,
-    double iconSize = 50,
-    required bool? isLiked,
-    bool filled = false,
-    Color? defaultColor,
-    bool showCount = false,
-    int likeCount = 0,
-    CountPostion position = CountPostion.bottom,
-    EdgeInsetsGeometry? likeCountPadding,
-    TextStyle? countStyle,
-    AnimationController? animationController,
-  }) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            LottieUtil.load(
-              Utils.isDark(context)
-                  ? LottieUtil.likeMediumDark
-                  : LottieUtil.likeMediumLight,
-              size: iconSize,
-              fit: BoxFit.cover,
-              controller: animationController,
-              onLoaded: () {
-                animationController?.value = isLiked! ? 1 : 0;
-              },
-            ),
-            if (showCount)
-              Positioned(
-                bottom: -4,
-                right: 0,
-                left: 0,
-                child: Text(
-                  likeCount == 0 ? S.current.like : "$likeCount",
-                  style: countStyle ?? Theme.of(context).textTheme.labelMedium,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static Widget buildLottieSharedButton(
-    BuildContext context, {
-    Function()? onTap,
-    double iconSize = 25,
-    required bool? isShared,
-    bool filled = false,
-    Color? defaultColor,
-    bool showCount = false,
-    int shareCount = 0,
-    EdgeInsetsGeometry? shareCountPadding,
-    TextStyle? countStyle,
-    AnimationController? animationController,
-  }) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            LottieUtil.load(
-              Utils.isDark(context)
-                  ? LottieUtil.recommendMediumFocusDark
-                  : LottieUtil.recommendMediumFocusLight,
-              size: iconSize,
-              fit: BoxFit.fill,
-              controller: animationController,
-            ),
-            if (showCount)
-              Positioned(
-                bottom: -4,
-                right: 0,
-                left: 0,
-                child: Text(
-                  shareCount == 0 ? S.current.recommend : "$shareCount",
-                  style: countStyle ?? Theme.of(context).textTheme.labelMedium,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static Widget buildSharedButton(
-    BuildContext context, {
-    Future<bool?> Function(bool)? onTap,
-    double size = 25,
-    double iconSize = 25,
-    required bool? isShared,
-    bool filled = false,
-    Color? defaultColor,
-    bool showCount = false,
-    int likeCount = 0,
-    CountPostion position = CountPostion.bottom,
-    EdgeInsetsGeometry? likeCountPadding,
-    TextStyle? countStyle,
-  }) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: LikeButton(
-        onTap: onTap,
-        size: size,
-        isLiked: isShared,
-        circleColor: MyColors.shareButtonCircleColor,
-        bubblesColor: MyColors.shareButtonBubblesColor,
-        likeBuilder: (bool isShared) {
-          return Icon(
-            isShared || filled
-                ? Icons.thumb_up_rounded
-                : Icons.thumb_up_outlined,
-            color: isShared
-                ? MyColors.shareButtonColor
-                : defaultColor ?? Theme.of(context).iconTheme.color,
-            size: iconSize,
-          );
-        },
-        likeCount: likeCount,
-        countPostion: position,
-        likeCountPadding:
-            likeCountPadding ?? const EdgeInsets.only(right: 3, bottom: 5),
-        likeCountAnimationType: LikeCountAnimationType.none,
-        countBuilder: (int? count, bool isLiked, String text) {
-          return showCount
-              ? Container(
-                  margin: const EdgeInsets.only(top: 5),
-                  child: Text(
-                    count == 0 ? S.current.recommend : text,
-                    style: countStyle ?? Theme.of(context).textTheme.labelSmall,
-                  ),
-                )
-              : emptyWidget;
-        },
-      ),
-    );
-  }
-
-  static Widget buildLoadingDialog(
+  static Widget buildLoadingWidget(
     BuildContext context, {
     double size = 50,
     bool showText = true,
@@ -1921,7 +1510,7 @@ class ItemBuilder {
     );
   }
 
-  static buildError({
+  static buildErrorWidget({
     required BuildContext context,
     String? text,
     String? buttonText,
@@ -2025,7 +1614,7 @@ class ItemBuilder {
                 height: size,
               ),
             )
-          : ItemBuilder.buildClickItem(
+          : ItemBuilder.buildClickable(
               clickable: clickable,
               GestureDetector(
                 onTap: showDetailMode != ShowDetailMode.not
@@ -2112,7 +1701,7 @@ class ItemBuilder {
     String? tagPrefix,
     String? tagSuffix,
   }) {
-    return ItemBuilder.buildClickItem(
+    return ItemBuilder.buildClickable(
       GestureDetector(
         onTap: () {
           RouteUtil.pushDialogRoute(
@@ -2168,7 +1757,7 @@ class ItemBuilder {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(radius),
-        child: ItemBuilder.buildClickItem(
+        child: ItemBuilder.buildClickable(
           clickable: onTap != null,
           Container(
             width: width,
@@ -2225,7 +1814,7 @@ class ItemBuilder {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(radius),
-        child: ItemBuilder.buildClickItem(
+        child: ItemBuilder.buildClickable(
           clickable: onTap != null,
           Container(
             width: width,
@@ -2250,100 +1839,6 @@ class ItemBuilder {
                             fontWeightDelta: 2,
                             fontSizeDelta: fontSizeDelta,
                           ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  static buildUnLoginMainBody(BuildContext context) {
-    return Align(
-      alignment: Alignment.topCenter,
-      child: Stack(
-        alignment: Alignment.topCenter,
-        children: [
-          if (ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 10),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 100),
-                ItemBuilder.buildAvatar(
-                  showLoading: false,
-                  context: context,
-                  useDefaultAvatar: true,
-                  size: 72,
-                  imageUrl: '',
-                ),
-                const SizedBox(height: 24),
-                ItemBuilder.buildRoundButton(
-                  context,
-                  width: 230,
-                  text: S.current.loginToGetPersonalizedService,
-                  background: Theme.of(context).primaryColor,
-                  fontSizeDelta: 2,
-                  onTap: () {
-                    if (ResponsiveUtil.isLandscape()) {
-                      DialogBuilder.showPageDialog(
-                        context,
-                        child: const LoginByCaptchaScreen(),
-                      );
-                    } else {
-                      panelScreenState?.pushPage(const LoginByCaptchaScreen());
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static Widget buildFramedDoubleButton({
-    required BuildContext context,
-    required bool isFollowed,
-    required Function() onTap,
-    String? positiveText,
-    String? negtiveText,
-    double radius = 50,
-    Color? outline,
-  }) {
-    return Material(
-      color: isFollowed ? Theme.of(context).cardColor : Colors.transparent,
-      borderRadius: BorderRadius.circular(radius),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(radius),
-        child: ItemBuilder.buildClickItem(
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(radius),
-              border: Border.all(
-                color: isFollowed
-                    ? Theme.of(context).dividerColor
-                    : outline ?? Theme.of(context).primaryColor.withAlpha(127),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Text(
-                  isFollowed
-                      ? positiveText ?? S.current.followed
-                      : negtiveText ?? S.current.follow,
-                  style: TextStyle(
-                    color: isFollowed
-                        ? Theme.of(context).textTheme.labelSmall?.color
-                        : Theme.of(context).primaryColor,
-                    fontSize: 12,
-                  ),
                 ),
               ],
             ),
@@ -2378,7 +1873,7 @@ class ItemBuilder {
         }
         onTap?.call();
       },
-      child: ItemBuilder.buildClickItem(
+      child: ItemBuilder.buildClickable(
         clickable: (!tagType.preventJump && jumpToTag) || onTap != null,
         Container(
           padding: padding,
@@ -2468,57 +1963,6 @@ class ItemBuilder {
   static Widget buildSearchBar({
     required BuildContext context,
     required hintText,
-    required Null Function(dynamic value) onSubmitted,
-    TextEditingController? controller,
-    FocusNode? focusNode,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(50),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          AssetUtil.load(
-            AssetUtil.searchDarkIcon,
-            size: 20,
-          ),
-          Expanded(
-            child: Center(
-              child: Material(
-                color: Colors.transparent,
-                child: TextField(
-                  focusNode: focusNode,
-                  controller: controller,
-                  textInputAction: TextInputAction.search,
-                  contextMenuBuilder: (contextMenuContext, details) =>
-                      ItemBuilder.editTextContextMenuBuilder(
-                          contextMenuContext, details,
-                          context: context),
-                  onSubmitted: onSubmitted,
-                  style: Theme.of(context).textTheme.titleSmall,
-                  decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.only(left: 8),
-                    border:
-                        const OutlineInputBorder(borderSide: BorderSide.none),
-                    hintText: hintText,
-                    hintStyle: Theme.of(context).textTheme.titleSmall?.apply(
-                        color: Theme.of(context).textTheme.labelSmall?.color),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static Widget buildDesktopSearchBar({
-    required BuildContext context,
-    required hintText,
     required Function(dynamic value) onSubmitted,
     TextEditingController? controller,
     FocusNode? focusNode,
@@ -2580,362 +2024,6 @@ class ItemBuilder {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  static buildRankTagRow(
-    BuildContext context,
-    TagInfo tag, {
-    Function()? onTap,
-    bool useBackground = false,
-  }) {
-    return ItemBuilder.buildClickItem(
-      GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          decoration: BoxDecoration(
-            color: Colors.transparent,
-            image: useBackground
-                ? DecorationImage(
-                    image: AssetImage(Utils.isDark(context)
-                        ? AssetUtil.tagRowBgDarkMess
-                        : AssetUtil.tagRowBgMess),
-                    fit: BoxFit.cover,
-                  )
-                : null,
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.all(Radius.circular(12)),
-                  image: DecorationImage(
-                    image: AssetImage(AssetUtil.tagIconBgMess),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                child: Text(
-                  textAlign: TextAlign.center,
-                  tag.tagName,
-                  style: Theme.of(context).textTheme.titleSmall?.apply(
-                        color: Colors.white,
-                      ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            "#${tag.tagName}",
-                            style: Theme.of(context).textTheme.titleMedium,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        if (Utils.isNotEmpty(tag.rankName))
-                          ItemBuilder.buildRoundButton(
-                            context,
-                            text: tag.rankName!,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 3,
-                              vertical: 2,
-                            ),
-                            radius: 3,
-                            color: MyColors.likeButtonColor,
-                            fontSizeDelta: -2,
-                          ),
-                        if (tag.subscribed) const SizedBox(width: 5),
-                        if (tag.subscribed)
-                          ItemBuilder.buildRoundButton(
-                            context,
-                            text: S.current.subscribed,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 3, vertical: 2),
-                            radius: 3,
-                            color: Theme.of(context).primaryColor,
-                            fontSizeDelta: -2,
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      S.current.joinCount(tag.joinCount.toString()),
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.apply(fontWeightDelta: 1),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              ItemBuilder.buildRoundButton(
-                context,
-                text: S.current.enter,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                color: Theme.of(context).primaryColor,
-                onTap: onTap,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  static buildTagRow(
-    BuildContext context,
-    TagInfo tag, {
-    Function()? onTap,
-    double verticalPadding = 12,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        color: Colors.transparent,
-        padding:
-            EdgeInsets.symmetric(vertical: verticalPadding, horizontal: 16),
-        child: Row(
-          children: [
-            Icon(
-              tag.joinCount == -1 ? Icons.search_rounded : Icons.tag_rounded,
-              size: 20,
-              color: Theme.of(context).textTheme.labelMedium?.color,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                tag.tagName,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            if (tag.joinCount != -1)
-              Text(
-                S.current.joinCount(tag.joinCount.toString()),
-                style: Theme.of(context).textTheme.labelMedium,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static buildCollectionRow(
-    BuildContext context,
-    Collection collection, {
-    Function()? onTap,
-    double verticalPadding = 12,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        color: Colors.transparent,
-        padding:
-            EdgeInsets.symmetric(vertical: verticalPadding, horizontal: 16),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: ItemBuilder.buildCachedImage(
-                    context: context,
-                    imageUrl: collection.coverUrl,
-                    width: 80,
-                    height: 80,
-                    fit: BoxFit.cover,
-                    showLoading: false,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: SizedBox(
-                    height: 80,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          collection.name,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.apply(fontWeightDelta: 2),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          "${collection.postCount}${S.current.chapter} · ${S.current.updateAt}${Utils.formatTimestamp(collection.lastPublishTime)}",
-                          style: Theme.of(context).textTheme.labelMedium,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        SizedBox(
-                          height: 20,
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            children: [
-                              ...List.generate(
-                                collection.tags.length,
-                                (index) => Container(
-                                  margin: const EdgeInsets.only(right: 5),
-                                  child: ItemBuilder.buildSmallTagItem(
-                                    context,
-                                    collection.tags[index],
-                                    showIcon: false,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            )
-          ],
-        ),
-      ),
-    );
-  }
-
-  static buildGrainRow(
-    BuildContext context,
-    GrainInfo grain, {
-    Function()? onTap,
-    double verticalPadding = 12,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        color: Colors.transparent,
-        padding:
-            EdgeInsets.symmetric(vertical: verticalPadding, horizontal: 16),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: ItemBuilder.buildCachedImage(
-                    context: context,
-                    imageUrl: grain.coverUrl,
-                    width: 80,
-                    height: 80,
-                    fit: BoxFit.cover,
-                    showLoading: false,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: SizedBox(
-                    height: 80,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          grain.name,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.apply(fontWeightDelta: 2),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          "${grain.postCount}${S.current.chapter} · ${S.current.updateAt}${Utils.formatTimestamp(grain.updateTime)}",
-                          style: Theme.of(context).textTheme.labelMedium,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 1),
-                        SizedBox(
-                          height: 20,
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            children: [
-                              ...List.generate(
-                                grain.tags.length,
-                                (index) => Container(
-                                  margin: const EdgeInsets.only(right: 5),
-                                  child: ItemBuilder.buildSmallTagItem(
-                                    context,
-                                    grain.tags[index],
-                                    showIcon: false,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            )
-          ],
-        ),
-      ),
-    );
-  }
-
-  static buildUserRow(BuildContext context, SearchBlogData blog,
-      {Function()? onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        color: Colors.transparent,
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        child: Row(
-          children: [
-            ItemBuilder.buildAvatar(
-              context: context,
-              imageUrl: blog.blogInfo.bigAvaImg,
-              showLoading: false,
-              size: 40,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    blog.blogInfo.blogNickName,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  Text(
-                    "ID: ${blog.blogInfo.blogName}${blog.blogCount != null && blog.blogCount!.publicPostCount > 0 ? "   ${S.current.article}: ${blog.blogCount!.publicPostCount}" : ""}${blog.blogCount != null && blog.blogCount!.followerCount > 0 ? "   ${S.current.follower}: ${blog.blogCount!.followerCount}" : ""}",
-                    style: Theme.of(context).textTheme.bodySmall,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -3103,7 +2191,7 @@ class ItemBuilder {
     bool start = false,
     TextStyle? style,
   }) {
-    return ItemBuilder.buildClickItem(
+    return ItemBuilder.buildClickable(
       clickable: onTap != null,
       GestureDetector(
         onTap: onTap,
@@ -3474,7 +2562,7 @@ class ItemBuilder {
               element.attributes['src'] ?? "",
               HiveUtil.getImageQuality(HiveUtil.postDetailImageQualityKey));
           return enableImageDetail
-              ? ItemBuilder.buildClickItem(
+              ? ItemBuilder.buildClickable(
                   GestureDetector(
                     onTap: () {
                       if (imageUrl.isNotEmpty) {
@@ -3530,7 +2618,7 @@ class ItemBuilder {
           ? (context, _, __) {
               return ClipRRect(
                 borderRadius: BorderRadius.circular(10),
-                child: ItemBuilder.buildLoadingDialog(
+                child: ItemBuilder.buildLoadingWidget(
                   context,
                   text: S.current.loadingArticle,
                   size: 40,
@@ -3549,270 +2637,11 @@ class ItemBuilder {
     }
   }
 
-  static Widget buildCommentRow(
-    BuildContext context,
-    Comment comment, {
-    Function()? onTap,
-    Function(Comment)? onL2CommentTap,
-    EdgeInsets? padding,
-    EdgeInsets? l2Padding,
-    required int writerId,
-  }) {
-    String richContent = comment.content;
-    for (var e in comment.emotes) {
-      String img =
-          '<img src="${e.url}" style="height:50px;width:50px;" alt=""/>';
-      richContent = richContent.replaceAll(e.name, img);
-    }
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding:
-            padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ItemBuilder.buildClickItem(
-              GestureDetector(
-                onTap: () {
-                  panelScreenState?.pushPage(
-                    UserDetailScreen(
-                        blogId: comment.publisherBlogInfo.blogId,
-                        blogName: comment.publisherBlogInfo.blogName),
-                  );
-                },
-                child: ItemBuilder.buildAvatar(
-                  context: context,
-                  imageUrl: comment.publisherBlogInfo.bigAvaImg,
-                  showBorder: true,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ItemBuilder.buildClickItem(
-                              GestureDetector(
-                                onTap: () {
-                                  panelScreenState?.pushPage(
-                                    UserDetailScreen(
-                                        blogId:
-                                            comment.publisherBlogInfo.blogId,
-                                        blogName:
-                                            comment.publisherBlogInfo.blogName),
-                                  );
-                                },
-                                child: Row(
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        comment.publisherBlogInfo.blogNickName,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall,
-                                      ),
-                                    ),
-                                    if (writerId ==
-                                        comment.publisherBlogInfo.blogId)
-                                      const SizedBox(width: 3),
-                                    if (writerId ==
-                                        comment.publisherBlogInfo.blogId)
-                                      ItemBuilder.buildRoundButton(
-                                        context,
-                                        text: S.current.author,
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 3, vertical: 2),
-                                        radius: 3,
-                                        color: Theme.of(context).primaryColor,
-                                        fontSizeDelta: -2,
-                                      ),
-                                    if (comment.top == 1)
-                                      const SizedBox(width: 3),
-                                    if (comment.top == 1)
-                                      ItemBuilder.buildRoundButton(
-                                        context,
-                                        text: S.current.pin,
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 3, vertical: 2),
-                                        radius: 3,
-                                        color: MyColors.likeButtonColor,
-                                        fontSizeDelta: -2,
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            ItemBuilder.buildCopyItem(
-                              context,
-                              copyText: comment.content,
-                              toastText: S.current.haveCopiedComment(
-                                  comment.publisherBlogInfo.blogNickName),
-                              child: ItemBuilder.buildHtmlWidget(
-                                context,
-                                richContent,
-                                parseImage: false,
-                                showLoading: false,
-                                textStyle:
-                                    Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            Row(
-                              children: [
-                                Text(
-                                  Utils.formatTimestamp(comment.publishTime),
-                                  style:
-                                      Theme.of(context).textTheme.labelMedium,
-                                ),
-                                if (Utils.isNotEmpty(comment.ipLocation))
-                                  ItemBuilder.buildDot(
-                                    context,
-                                    style:
-                                        Theme.of(context).textTheme.labelMedium,
-                                  ),
-                                if (Utils.isNotEmpty(comment.ipLocation))
-                                  Text(
-                                    comment.ipLocation,
-                                    style:
-                                        Theme.of(context).textTheme.labelMedium,
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      ItemBuilder.buildLikedButton(
-                        context,
-                        isLiked: comment.liked,
-                        size: 20,
-                        iconSize: 16,
-                        defaultColor:
-                            Theme.of(context).textTheme.labelMedium?.color,
-                        countStyle: Theme.of(context).textTheme.labelSmall,
-                        position: CountPostion.bottom,
-                        showCount: true,
-                        likeCount: comment.likeCount,
-                        zeroPlaceHolder: "",
-                        onTap: (_) async {
-                          HapticFeedback.mediumImpact();
-                          await PostApi.likeOrUnlikeComment(
-                            isLike: !comment.liked,
-                            postId: comment.postId,
-                            blogId: comment.blogId,
-                            commentId: comment.id,
-                          ).then((value) {
-                            if (value['meta']['status'] != 200) {
-                              IToast.showTop(value['meta']['desc'] ??
-                                  value['meta']['msg']);
-                            } else {
-                              comment.liked = !comment.liked;
-                              comment.likeCount += comment.liked ? 1 : -1;
-                            }
-                          });
-                          return Future.sync(() => comment.liked);
-                        },
-                      ),
-                    ],
-                  ),
-                  if (comment.l2Comments.isNotEmpty)
-                    ...List.generate(
-                      comment.l2Comments.length,
-                      (l2Index) => buildL2CommentRow(
-                        context,
-                        padding: l2Padding,
-                        comment.l2Comments[l2Index],
-                        writerId: writerId,
-                      ),
-                    ),
-                  if (comment.l2Count - comment.l2Comments.length > 0)
-                    const SizedBox(height: 5),
-                  if (comment.l2Count - comment.l2Comments.length > 0 &&
-                      comment.l2CommentLoading)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Container(
-                          alignment: Alignment.center,
-                          width: 12,
-                          height: 12,
-                          child: CircularProgressIndicator(
-                            color:
-                                Theme.of(context).textTheme.labelMedium?.color,
-                            strokeWidth: 1.2,
-                          ),
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          S.current.loading,
-                          style: Theme.of(context).textTheme.labelMedium,
-                        ),
-                      ],
-                    ),
-                  if (comment.l2Count - comment.l2Comments.length > 0 &&
-                      !comment.l2CommentLoading)
-                    GestureDetector(
-                      onTap: () => onL2CommentTap?.call(comment),
-                      child: ItemBuilder.buildClickItem(
-                        Text.rich(
-                          style: Theme.of(context).textTheme.labelMedium,
-                          TextSpan(
-                            style: Theme.of(context).textTheme.labelMedium,
-                            children: [
-                              TextSpan(
-                                text: S.current.moreComments(comment.l2Count -
-                                    comment.l2Comments.length),
-                                style: Theme.of(context).textTheme.labelMedium,
-                              ),
-                              WidgetSpan(
-                                child: Icon(
-                                  Icons.keyboard_arrow_down_rounded,
-                                  size: 16,
-                                  color: Theme.of(context)
-                                      .textTheme
-                                      .labelMedium
-                                      ?.color,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   static Widget buildToolTip(
     BuildContext context,
     String message,
     Widget child,
   ) {
-    // return SuperTooltip(
-    //   showBarrier: false,
-    //   borderWidth: 2,
-    //   toggleOnTap: true,
-    //   popupDirection: TooltipDirection.right,
-    //   borderColor: Theme.of(context).dividerColor,
-    //   content: Text(message),
-    //   child: child,
-    // );
     return Tooltip(
       message: message,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -3831,245 +2660,29 @@ class ItemBuilder {
     );
   }
 
-  static Widget buildL2CommentRow(
-    BuildContext context,
-    Comment comment, {
-    Function()? onTap,
-    EdgeInsets? padding,
-    required int writerId,
-  }) {
-    String richContent = comment.content;
-    for (var e in comment.emotes) {
-      String img =
-          '<img src="${e.url}" style="height:50px;width:50px;" alt=""/>';
-      richContent = richContent.replaceAll(e.name, img);
-    }
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: padding ?? const EdgeInsets.only(top: 12, right: 4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ItemBuilder.buildClickItem(
-                    GestureDetector(
-                      onTap: () {
-                        panelScreenState?.pushPage(
-                          UserDetailScreen(
-                              blogId: comment.publisherBlogInfo.blogId,
-                              blogName: comment.publisherBlogInfo.blogName),
-                        );
-                      },
-                      child: Row(
-                        children: [
-                          ItemBuilder.buildAvatar(
-                            context: context,
-                            imageUrl: comment.publisherBlogInfo.bigAvaImg,
-                            showBorder: true,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            comment.publisherBlogInfo.blogNickName,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          if (writerId == comment.publisherBlogInfo.blogId)
-                            const SizedBox(width: 3),
-                          if (writerId == comment.publisherBlogInfo.blogId)
-                            ItemBuilder.buildRoundButton(
-                              context,
-                              text: S.current.author,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 3, vertical: 2),
-                              radius: 3,
-                              color: Theme.of(context).primaryColor,
-                              fontSizeDelta: -2,
-                            ),
-                          if (comment.top == 1) const SizedBox(width: 3),
-                          if (comment.top == 1)
-                            ItemBuilder.buildRoundButton(
-                              context,
-                              text: S.current.pin,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 3, vertical: 2),
-                              radius: 3,
-                              color: MyColors.likeButtonColor,
-                              fontSizeDelta: -2,
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  ItemBuilder.buildCopyItem(
-                    context,
-                    copyText: comment.content,
-                    toastText: S.current.haveCopiedComment(
-                        comment.publisherBlogInfo.blogNickName),
-                    child: ItemBuilder.buildHtmlWidget(
-                      context,
-                      richContent,
-                      showLoading: false,
-                      parseImage: false,
-                      textStyle: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Row(
-                    children: [
-                      Text(
-                        Utils.formatTimestamp(comment.publishTime),
-                        style: Theme.of(context).textTheme.labelMedium,
-                      ),
-                      if (Utils.isNotEmpty(comment.ipLocation))
-                        ItemBuilder.buildDot(
-                          context,
-                          style: Theme.of(context).textTheme.labelMedium,
-                        ),
-                      if (Utils.isNotEmpty(comment.ipLocation))
-                        Text(
-                          comment.ipLocation,
-                          style: Theme.of(context).textTheme.labelMedium,
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
-            ItemBuilder.buildLikedButton(
-              context,
-              isLiked: comment.liked,
-              size: 20,
-              iconSize: 16,
-              defaultColor: Theme.of(context).textTheme.labelMedium?.color,
-              countStyle: Theme.of(context).textTheme.labelSmall,
-              position: CountPostion.bottom,
-              showCount: true,
-              likeCount: comment.likeCount,
-              zeroPlaceHolder: "",
-              onTap: (_) async {
-                HapticFeedback.mediumImpact();
-                await PostApi.likeOrUnlikeComment(
-                  isLike: !comment.liked,
-                  postId: comment.postId,
-                  blogId: comment.blogId,
-                  commentId: comment.id,
-                ).then((value) {
-                  if (value['meta']['status'] != 200) {
-                    IToast.showTop(
-                        value['meta']['desc'] ?? value['meta']['msg']);
-                  } else {
-                    comment.liked = !comment.liked;
-                    comment.likeCount += comment.liked ? 1 : -1;
-                  }
-                });
-                return Future.sync(() => comment.liked);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static Widget buildFollowerOrFollowingItem(
-      BuildContext context, int index, FollowingUserItem item,
-      {Function()? onFollowOrUnFollow}) {
-    return ItemBuilder.buildClickItem(
-      GestureDetector(
-        onTap: () {
-          panelScreenState?.pushPage(
-            UserDetailScreen(
-              blogId: item.blogInfo.blogId,
-              blogName: item.blogInfo.blogName,
-            ),
-          );
-        },
-        child: Container(
-          color: Colors.transparent,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-          child: Row(
-            children: [
-              ItemBuilder.buildAvatar(
-                context: context,
-                size: 40,
-                imageUrl: item.blogInfo.bigAvaImg,
-                tagPrefix: "$index",
-                showDetailMode: ShowDetailMode.not,
-              ),
-              const SizedBox(width: 15),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.blogInfo.blogNickName,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    if (item.blogInfo.selfIntro.isNotEmpty)
-                      const SizedBox(height: 5),
-                    if (item.blogInfo.selfIntro.isNotEmpty)
-                      Text(
-                        item.blogInfo.selfIntro,
-                        style: Theme.of(context).textTheme.labelMedium,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                  ],
-                ),
-              ),
-              if (item.follower)
-                Container(
-                  margin: const EdgeInsets.only(right: 10),
-                  child: Icon(
-                    Icons.star_rate_rounded,
-                    size: 22,
-                    color: MyColors.getHotTagTextColor(context),
-                  ),
-                ),
-              ItemBuilder.buildFramedDoubleButton(
-                context: context,
-                isFollowed: item.following,
-                positiveText:
-                    item.follower ? S.current.followEach : S.current.followed,
-                onTap: () {
-                  UserApi.followOrUnfollow(
-                    isFollow: !item.following,
-                    blogId: item.blogInfo.blogId,
-                    blogName: item.blogInfo.blogName,
-                  ).then((value) {
-                    if (value['meta']['status'] != 200) {
-                      IToast.showTop(
-                          value['meta']['desc'] ?? value['meta']['msg']);
-                    } else {
-                      item.following = !item.following;
-                      IToast.showTop(item.following
-                          ? S.current.followed
-                          : S.current.followEach);
-                      onFollowOrUnFollow?.call();
-                    }
-                  });
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  static buildClickItem(
+  static buildClickable(
     Widget child, {
     bool clickable = true,
   }) {
     return MouseRegion(
       cursor: clickable ? SystemMouseCursors.click : SystemMouseCursors.basic,
       child: child,
+    );
+  }
+
+  static buildClickableGestureDetector({
+    required Widget child,
+    Function()? onTap,
+    Function()? onLongPress,
+    bool clickable = true,
+  }) {
+    return MouseRegion(
+      cursor: clickable ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: GestureDetector(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        child: child,
+      ),
     );
   }
 
@@ -4094,7 +2707,7 @@ class ItemBuilder {
         // ),
       ),
       child: WindowTitleBar(
-        useMoveHandle: ResponsiveUtil.isDesktop(),
+        hasMoveHandle: ResponsiveUtil.isDesktop(),
         titleBarHeightDelta: 26,
         margin: const EdgeInsets.symmetric(vertical: 10),
         child: Row(

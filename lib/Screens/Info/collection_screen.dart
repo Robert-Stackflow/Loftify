@@ -154,10 +154,10 @@ class _CollectionScreenState extends State<CollectionScreen>
   _buildBody() {
     switch (_initPhase) {
       case InitPhase.connecting:
-        return ItemBuilder.buildLoadingDialog(context,
+        return ItemBuilder.buildLoadingWidget(context,
             background: Colors.transparent);
       case InitPhase.failed:
-        return ItemBuilder.buildError(
+        return ItemBuilder.buildErrorWidget(
           context: context,
           onTap: _onRefresh,
         );
@@ -172,7 +172,9 @@ class _CollectionScreenState extends State<CollectionScreen>
             return _collectionList.isNotEmpty
                 ? _buildMainBody(physics)
                 : ItemBuilder.buildEmptyPlaceholder(
-                    context: context, text: S.current.noCollection, physics: physics);
+                    context: context,
+                    text: S.current.noCollection,
+                    physics: physics);
           },
         );
       default:
@@ -216,7 +218,7 @@ class _CollectionScreenState extends State<CollectionScreen>
     double verticalPadding = 12,
   }) {
     List<String> tags = collection.tags.split(",");
-    return ItemBuilder.buildClickItem(
+    return ItemBuilder.buildClickable(
       GestureDetector(
         onTap: onTap,
         child: Container(
@@ -293,7 +295,7 @@ class _CollectionScreenState extends State<CollectionScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildDesktopAppBar(
+    return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
       title: S.current.myCollections,

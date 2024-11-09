@@ -135,7 +135,7 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
   }
 
   Widget _buildFolderItem(BuildContext context, FavoriteFolder item) {
-    return ItemBuilder.buildClickItem(
+    return ItemBuilder.buildClickable(
       GestureDetector(
         onTap: () {
           RouteUtil.pushPanelCupertinoRoute(
@@ -176,7 +176,7 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     mainAxisSize: MainAxisSize.max,
                     children: <Widget>[
-                      ItemBuilder.buildCopyItem(
+                      ItemBuilder.buildCopyable(
                         context,
                         child: Text(
                           item.name ?? "",
@@ -185,16 +185,16 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        copyText: item.name ?? "",
+                        text: item.name ?? "",
                         toastText: S.current.haveCopiedFolderName,
                       ),
                       const SizedBox(height: 10),
-                      ItemBuilder.buildCopyItem(context,
+                      ItemBuilder.buildCopyable(context,
                           child: Text(
                             S.current.folderId(item.id.toString()),
                             style: Theme.of(context).textTheme.titleSmall,
                           ),
-                          copyText: item.id.toString(),
+                          text: item.id.toString(),
                           toastText: S.current.haveCopiedFolderID),
                       const SizedBox(height: 10),
                       Text(
@@ -293,7 +293,7 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildDesktopAppBar(
+    return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
       title: S.current.myFavorites,

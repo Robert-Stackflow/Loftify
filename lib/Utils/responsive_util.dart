@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
+import 'package:loftify/Utils/constant.dart';
 import 'package:loftify/Utils/route_util.dart';
 import 'package:restart_app/restart_app.dart';
 import 'package:window_manager/window_manager.dart';
@@ -96,12 +96,11 @@ class ResponsiveUtil {
         (route) => false,
       );
     } else {
-      restartApp();
-      // Navigator.pushAndRemoveUntil(
-      //   context,
-      //   CupertinoPageRoute(builder: (context) => const MainScreen()),
-      //   (route) => false,
-      // );
+      // restartApp();
+      globalNavigatorState?.popUntil((route) => false);
+      globalNavigatorState?.push(RouteUtil.getFadeRoute(
+          ItemBuilder.buildContextMenuOverlay(MainScreen(key: mainScreenKey)),
+          duration: Duration.zero));
     }
   }
 
@@ -153,12 +152,12 @@ class ResponsiveUtil {
     double shortestSide = MediaQuery.sizeOf(rootContext).shortestSide;
     bool sizeCondition =
         longestSide >= longestThreshold && shortestSide >= shortestThreshold;
-    if (!sizeCondition) {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp,
-        DeviceOrientation.portraitDown,
-      ]);
-    }
+    // if (!sizeCondition) {
+    //   SystemChrome.setPreferredOrientations([
+    //     DeviceOrientation.portraitUp,
+    //     DeviceOrientation.portraitDown,
+    //   ]);
+    // }
   }
 
   static bool isLandscapeTablet() {
@@ -173,7 +172,8 @@ class ResponsiveUtil {
     double shortestSide = MediaQuery.sizeOf(rootContext).shortestSide;
     bool sizeCondition =
         longestSide >= longestThreshold && shortestSide >= shortestThreshold;
-    return !kIsWeb && (Platform.isIOS || Platform.isAndroid) && sizeCondition;
+    // return !kIsWeb && (Platform.isIOS || Platform.isAndroid) && sizeCondition;
+    return true;
   }
 
   static bool isPortaitTablet() {
@@ -187,6 +187,72 @@ class ResponsiveUtil {
         (useAppProvider &&
             appProvider.enableLandscapeInTablet &&
             isLandscapeTablet());
+  }
+
+  static Widget buildLandscapeWidget({
+    required Widget landscape,
+    required Widget portrait,
+    bool useAppProvider = true,
+    bool andCondition = true,
+    bool orCondition = false,
+  }) {
+    return (isLandscape(useAppProvider) || orCondition) && andCondition
+        ? landscape
+        : portrait;
+  }
+
+  static Widget buildGeneralWidget({
+    required Widget desktop,
+    required Widget landscape,
+    required Widget portrait,
+  }) {
+    if (!ResponsiveUtil.isLandscape()) {
+      return portrait;
+    } else if (ResponsiveUtil.isMobile()) {
+      return landscape;
+    } else {
+      return desktop;
+    }
+  }
+
+  static Widget? buildLandscapeWidgetNullable({
+    required Widget? landscape,
+    required Widget? portrait,
+    bool useAppProvider = true,
+    bool andCondition = true,
+    bool orCondition = false,
+  }) {
+    return (isLandscape(useAppProvider) || orCondition) && andCondition
+        ? landscape
+        : portrait;
+  }
+
+  static Widget buildDesktopWidget({
+    Widget? desktop,
+    Widget? mobile,
+    bool useAppProvider = true,
+    bool andCondition = true,
+    bool orCondition = false,
+  }) {
+    return (isDesktop() || orCondition) && andCondition
+        ? desktop ?? emptyWidget
+        : mobile ?? emptyWidget;
+  }
+
+  static void doInDesktop({Function()? desktop, Function()? mobile}) {
+    if (isDesktop()) {
+      desktop?.call();
+    } else {
+      mobile?.call();
+    }
+  }
+
+  static void doInLandscape({Function()? landscape, Function()? portrait}) {
+    if (isLandscape()) {
+      landscape?.call();
+    } else {
+      portrait?.call();
+    }
   }
 
   static bool isWideLandscape([bool useAppProvider = true]) {

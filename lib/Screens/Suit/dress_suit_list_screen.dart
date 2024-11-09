@@ -1,4 +1,3 @@
-import '../../generated/l10n.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -11,6 +10,7 @@ import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
 
 class DressSuitListScreen extends StatefulWidget {
   const DressSuitListScreen({super.key});
@@ -129,7 +129,7 @@ class DressSuitListScreenState extends State<DressSuitListScreen>
   }
 
   _buildDressItem(DressingItem item) {
-    return ItemBuilder.buildClickItem(
+    return ItemBuilder.buildClickable(
       GestureDetector(
         onTap: () {},
         child: Stack(

@@ -11,7 +11,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:loftify/Models/github_response.dart';
-import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/cloud_control_provider.dart';
 import 'package:loftify/Utils/constant.dart';
 import 'package:loftify/Utils/enums.dart';
@@ -707,7 +706,7 @@ class FileUtil {
           }
         }
       }
-    } catch(e,t){
+    } catch (e, t) {
       ILogger.error("Failed to get android info with abis", e, t);
     }
     resAsset ??= universalAsset;

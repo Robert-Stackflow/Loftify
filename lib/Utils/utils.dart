@@ -337,7 +337,10 @@ class Utils {
     if (count < 10000) {
       return {"count": count.toString()};
     } else {
-      return {"count": (count / 10000).toStringAsFixed(1), "scale": S.current.tenThousand};
+      return {
+        "count": (count / 10000).toStringAsFixed(1),
+        "scale": S.current.tenThousand
+      };
     }
   }
 
@@ -586,7 +589,7 @@ class Utils {
       }
       onGetLatestRelease?.call(latestVersion, latestReleaseItem!);
       Utils.initTray();
-      ILogger.info("Loftify",
+      ILogger.info(
           "Current version: $currentVersion, Latest version: $latestVersion");
       if (compareVersion(latestVersion, currentVersion) > 0) {
         onUpdate?.call(latestVersion, latestReleaseItem!);
@@ -844,7 +847,7 @@ class Utils {
     MenuItem menuItem, [
     bool isSimple = false,
   ]) async {
-    ILogger.info( "Tray menu item clicked: ${menuItem.key}: ${menuItem.label}");
+    ILogger.info("Tray menu item clicked: ${menuItem.key}: ${menuItem.label}");
     if (menuItem.key == TrayKey.displayApp.key) {
       Utils.displayApp();
     } else if (menuItem.key == TrayKey.shortcutHelp.key) {

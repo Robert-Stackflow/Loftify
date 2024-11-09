@@ -10,6 +10,7 @@ import '../../Utils/route_util.dart';
 import '../../Widgets/Dialog/dialog_builder.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../generated/l10n.dart';
 import '../Info/user_detail_screen.dart';
 
@@ -62,7 +63,7 @@ class _UserDynamicShieldSettingScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: MyTheme.getBackground(context),
-      appBar: ItemBuilder.buildDesktopAppBar(
+      appBar: ItemBuilder.buildResponsiveAppBar(
         showBack: true,
         showBorder: true,
         title: S.current.userDynamicShieldSetting,
@@ -117,7 +118,7 @@ class _UserDynamicShieldSettingScreenState
             Expanded(
               child: Text(blogInfo.blogNickName),
             ),
-            ItemBuilder.buildFramedDoubleButton(
+            LoftifyItemBuilder.buildFramedDoubleButton(
               context: context,
               isFollowed: false,
               positiveText: S.current.resumeView,

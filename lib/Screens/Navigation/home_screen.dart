@@ -128,7 +128,7 @@ class HomeScreenState extends State<HomeScreen>
     super.build(context);
     return Scaffold(
       backgroundColor: MyTheme.getBackground(context),
-      appBar: ItemBuilder.buildDesktopAppBar(
+      appBar: ItemBuilder.buildResponsiveAppBar(
         context: context,
         title: S.current.home,
         spacing: ResponsiveUtil.isLandscape() ? 15 : 10,

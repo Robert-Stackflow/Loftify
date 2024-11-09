@@ -37,7 +37,7 @@ class _SettingScreenState extends State<SettingScreen>
     return Container(
       color: Colors.transparent,
       child: Scaffold(
-        appBar: ItemBuilder.buildDesktopAppBar(
+        appBar: ItemBuilder.buildResponsiveAppBar(
           showBack: true,
           transparent: true,
           title: S.current.setting,
@@ -95,7 +95,7 @@ class _SettingScreenState extends State<SettingScreen>
                 context: context,
                 title: S.current.experimentSetting,
                 showLeading: true,
-                bottomRadius: true,
+                roundBottom: true,
                 onTap: () {
                   RouteUtil.pushPanelCupertinoRoute(
                       context, const ExperimentSettingScreen());
@@ -117,8 +117,8 @@ class _SettingScreenState extends State<SettingScreen>
     return ItemBuilder.buildEntryItem(
       context: context,
       title: S.current.about,
-      bottomRadius: true,
-      topRadius: true,
+      roundBottom: true,
+      roundTop: true,
       showLeading: true,
       padding: 15,
       onTap: () {
@@ -166,7 +166,7 @@ class _SettingScreenState extends State<SettingScreen>
       ItemBuilder.buildEntryItem(
         context: context,
         showLeading: true,
-        bottomRadius: true,
+        roundBottom: true,
         title: S.current.userDynamicShieldSetting,
         onTap: () {
           RouteUtil.pushPanelCupertinoRoute(

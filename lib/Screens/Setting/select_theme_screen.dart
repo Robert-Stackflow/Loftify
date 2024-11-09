@@ -27,7 +27,7 @@ class _SelectThemeScreenState extends State<SelectThemeScreen>
     return Container(
       color: Colors.transparent,
       child: Scaffold(
-        appBar: ItemBuilder.buildDesktopAppBar(
+        appBar: ItemBuilder.buildResponsiveAppBar(
           showBack: true,
           title: S.current.selectTheme,
           transparent: true,

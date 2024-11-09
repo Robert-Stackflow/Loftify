@@ -90,7 +90,7 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
             ItemBuilder.buildDivider(context, horizontal: 12, vertical: 0),
             Stack(
               children: [
-                ItemBuilder.buildLoadingDialog(
+                ItemBuilder.buildLoadingWidget(
                   context,
                   text: S.current.loading,
                   background: Colors.transparent,
@@ -295,7 +295,7 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
                   }
                 });
               },
-              child: ItemBuilder.buildClickItem(
+              child: ItemBuilder.buildClickable(
                 Container(
                   width: 40,
                   height: 40,

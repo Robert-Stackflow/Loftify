@@ -9,40 +9,7 @@ import 'styles.dart';
 class MyTheme {
   MyTheme._();
 
-  static List<BoxShadow> get defaultBoxShadow {
-    return [
-      BoxShadow(
-        color: Theme.of(rootContext).shadowColor,
-        offset: const Offset(0, 4),
-        blurRadius: 10,
-        spreadRadius: 1,
-      ).scale(2),
-    ];
-  }
-
-  static BoxDecoration get defaultDecoration {
-    return BoxDecoration(
-      color: Theme.of(rootContext).canvasColor,
-      border: Border.all(color: Theme.of(rootContext).dividerColor, width: 1),
-      boxShadow: defaultBoxShadow,
-      borderRadius: BorderRadius.circular(10),
-    );
-  }
-
-  static BoxDecoration getDefaultDecoration(
-      [double radius = 10, double borderWidth = 1]) {
-    return BoxDecoration(
-      color: Theme.of(rootContext).canvasColor,
-      border: Border.all(
-          color: Theme.of(rootContext).dividerColor, width: borderWidth),
-      boxShadow: defaultBoxShadow,
-      borderRadius: BorderRadius.circular(radius),
-    );
-  }
-
-  bool isDarkMode(BuildContext context) {
-    return Theme.of(context).brightness == Brightness.dark;
-  }
+  bool get isDarkMode => Theme.of(rootContext).brightness == Brightness.dark;
 
   static ThemeData getTheme({required bool isDarkMode}) {
     return ThemeData(
@@ -204,20 +171,63 @@ class MyTheme {
     letterSpacing: 0.2,
   );
 
+  static List<BoxShadow> get defaultBoxShadow {
+    return [
+      BoxShadow(
+        color: Theme.of(rootContext).shadowColor,
+        offset: const Offset(0, 4),
+        blurRadius: 10,
+        spreadRadius: 1,
+      ).scale(2),
+    ];
+  }
+
+  static BoxDecoration get defaultDecoration {
+    return BoxDecoration(
+      color: Theme.of(rootContext).canvasColor,
+      border: Border.all(color: Theme.of(rootContext).dividerColor, width: 1),
+      boxShadow: defaultBoxShadow,
+      borderRadius: BorderRadius.circular(10),
+    );
+  }
+
+  static BoxDecoration getDefaultDecoration(
+      [double radius = 10, double borderWidth = 1]) {
+    return BoxDecoration(
+      color: Theme.of(rootContext).canvasColor,
+      border: Border.all(
+          color: Theme.of(rootContext).dividerColor, width: borderWidth),
+      boxShadow: defaultBoxShadow,
+      borderRadius: BorderRadius.circular(radius),
+    );
+  }
+
+  static Border get bottomBorder {
+    return Border(bottom: borderSide);
+  }
+
+  static Border get border {
+    return Border.all(color: Theme.of(rootContext).dividerColor, width: 0.5);
+  }
+
+  static BorderSide get borderSide {
+    return BorderSide(color: Theme.of(rootContext).dividerColor, width: 0.5);
+  }
+
   static getBackground(BuildContext context) {
     return Utils.currentBrightness(context) == Brightness.light
-        ? Theme.of(context).canvasColor
-        : Theme.of(context).scaffoldBackgroundColor;
+        ? canvasColor
+        : scaffoldBackgroundColor;
   }
 
   static getCardBackground(BuildContext context) {
     return Utils.currentBrightness(context) == Brightness.light
-        ? Theme.of(context).scaffoldBackgroundColor
-        : Theme.of(context).canvasColor;
+        ? scaffoldBackgroundColor
+        : canvasColor;
   }
 
   static Color get background {
-    return Theme.of(rootContext).scaffoldBackgroundColor;
+    return scaffoldBackgroundColor;
     // return Utils.currentBrightness(rootContext) == Brightness.light
     //     ? Theme.of(rootContext).scaffoldBackgroundColor
     //     : Theme.of(rootContext).canvasColor;
@@ -225,10 +235,17 @@ class MyTheme {
 
   static Color get itemBackground {
     if (ResponsiveUtil.isLandscape()) {
-      return Theme.of(rootContext).canvasColor;
+      return canvasColor;
     }
     return Utils.currentBrightness(rootContext) == Brightness.light
-        ? Theme.of(rootContext).canvasColor
-        : Theme.of(rootContext).scaffoldBackgroundColor;
+        ? canvasColor
+        : scaffoldBackgroundColor;
   }
+
+  static Color get primaryColor => Theme.of(rootContext).primaryColor;
+
+  static Color get canvasColor => Theme.of(rootContext).canvasColor;
+
+  static Color get scaffoldBackgroundColor =>
+      Theme.of(rootContext).scaffoldBackgroundColor;
 }

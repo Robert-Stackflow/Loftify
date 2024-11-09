@@ -21,6 +21,7 @@ import 'package:loftify/Screens/refresh_interface.dart';
 import 'package:loftify/Utils/ilogger.dart';
 import 'package:provider/provider.dart';
 
+import '../Resources/theme.dart';
 import '../Utils/app_provider.dart';
 import '../Utils/constant.dart';
 import '../Utils/enums.dart';
@@ -36,7 +37,6 @@ import '../Widgets/Window/window_caption.dart';
 import '../generated/l10n.dart';
 import 'Navigation/home_screen.dart';
 import 'Navigation/search_screen.dart';
-import 'main_screen.dart';
 
 class PanelScreen extends StatefulWidget {
   const PanelScreen({
@@ -59,7 +59,6 @@ class PanelScreenState extends State<PanelScreen>
   List<GlobalKey> _keyList = [];
   bool unlogin = false;
   int _currentIndex = 0;
-  GlobalKey<MyScaffoldState> scaffoldKey = GlobalKey();
   late AnimationController darkModeController;
   Widget? darkModeWidget;
   final ScrollToHideController _scrollToHideController =
@@ -87,43 +86,51 @@ class PanelScreenState extends State<PanelScreen>
   }
 
   popAll([bool initPage = true]) {
-    while (panelNavigatorState?.canPop() ?? false) {
-      panelNavigatorState?.pop();
-    }
-    canPop = !(panelNavigatorState?.canPop() ?? false);
-    appProvider.showPanelNavigator = false;
-    if (initPage) {
-      _pageController =
-          PageController(initialPage: appProvider.sidebarChoice.index);
-    }
+    ResponsiveUtil.doInLandscape(landscape: () {
+      while (panelNavigatorState?.canPop() ?? false) {
+        panelNavigatorState?.pop();
+      }
+      canPop = !(panelNavigatorState?.canPop() ?? false);
+      appProvider.showPanelNavigator = false;
+      if (initPage) {
+        _pageController =
+            PageController(initialPage: appProvider.sidebarChoice.index);
+      }
+    });
   }
 
   pushPage(Widget page) {
-    if (ResponsiveUtil.isLandscape()) {
-      appProvider.showPanelNavigator = true;
-      panelNavigatorState?.push(RouteUtil.getFadeRoute(page));
-    } else {
-      RouteUtil.pushCupertinoRoute(rootContext, page);
-    }
-    canPop = !(panelNavigatorState?.canPop() ?? false);
+    ResponsiveUtil.doInLandscape(
+      landscape: () {
+        appProvider.showPanelNavigator = true;
+        panelNavigatorState?.push(RouteUtil.getFadeRoute(page));
+        canPop = !(panelNavigatorState?.canPop() ?? false);
+      },
+      portrait: () {
+        RouteUtil.pushCupertinoRoute(rootContext, page);
+      },
+    );
   }
 
   popPage() {
-    if (ResponsiveUtil.isLandscape()) {
-      if (panelNavigatorState?.canPop() ?? false) {
-        panelNavigatorState?.pop();
-        if (!(panelNavigatorState?.canPop() ?? false)) {
+    ResponsiveUtil.doInLandscape(
+      landscape: () {
+        if (panelNavigatorState?.canPop() ?? false) {
+          panelNavigatorState?.pop();
+          if (!(panelNavigatorState?.canPop() ?? false)) {
+            appProvider.showPanelNavigator = false;
+          }
+        } else {
           appProvider.showPanelNavigator = false;
         }
-      } else {
-        appProvider.showPanelNavigator = false;
-      }
-      _pageController =
-          PageController(initialPage: appProvider.sidebarChoice.index);
-    } else {
-      Navigator.pop(rootContext);
-    }
-    canPop = !(panelNavigatorState?.canPop() ?? false);
+        _pageController =
+            PageController(initialPage: appProvider.sidebarChoice.index);
+        canPop = !(panelNavigatorState?.canPop() ?? false);
+      },
+      portrait: () {
+        Navigator.pop(rootContext);
+      },
+    );
   }
 
   Future<void> initPage() async {
@@ -176,54 +183,59 @@ class PanelScreenState extends State<PanelScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return PopScope(
-      canPop: canPop,
-      onPopInvokedWithResult: (_, __) => popPage(),
-      child: MyScaffold(
-        key: scaffoldKey,
-        body: Stack(
-          children: [
-            if (!unlogin)
-              PageView(
-                physics: const NeverScrollableScrollPhysics(),
-                controller: _pageController,
-                children: _pageList,
+    var scaffold = MyScaffold(
+      body: Stack(
+        children: [
+          if (unlogin)
+            Center(
+              child: ItemBuilder.buildRoundButton(
+                context,
+                text: S.current.goToLogin,
+                background: MyTheme.primaryColor,
+                onTap: () {
+                  RouteUtil.pushDialogRoute(
+                    rootContext,
+                    const LoginByCaptchaScreen(),
+                    popAll: true,
+                  );
+                },
               ),
-            if (unlogin && ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
-            if (unlogin)
-              Center(
-                child: ItemBuilder.buildRoundButton(
-                  context,
-                  text: S.current.goToLogin,
-                  background: Theme.of(context).primaryColor,
-                  onTap: () {
-                    RouteUtil.pushDialogRoute(
-                      rootContext,
-                      const LoginByCaptchaScreen(),
-                      popAll: true,
-                    );
-                  },
-                ),
-              ),
-            Selector<AppProvider, bool>(
-              selector: (context, provider) => provider.showPanelNavigator,
-              builder: (context, value, child) => Offstage(
-                offstage: !value,
-                child: Navigator(
-                  key: panelNavigatorKey,
-                  onGenerateRoute: (settings) {
-                    return MaterialPageRoute(builder: (context) => emptyWidget);
-                  },
-                ),
+            )
+          else
+            PageView(
+              physics: const NeverScrollableScrollPhysics(),
+              controller: _pageController,
+              children: _pageList,
+            ),
+          ResponsiveUtil.buildDesktopWidget(
+              andCondition: unlogin, desktop: const WindowMoveHandle()),
+          Selector<AppProvider, bool>(
+            selector: (context, provider) => provider.showPanelNavigator,
+            builder: (context, value, child) => Offstage(
+              offstage: !value,
+              child: Navigator(
+                key: panelNavigatorKey,
+                onGenerateRoute: (settings) {
+                  return MaterialPageRoute(builder: (context) => emptyWidget);
+                },
               ),
             ),
-          ],
-        ),
-        extendBody: true,
-        bottomNavigationBar: !ResponsiveUtil.isLandscape() && !unlogin
-            ? _buildBottomNavigationBar()
-            : null,
+          ),
+        ],
       ),
+      extendBody: true,
+      bottomNavigationBar: ResponsiveUtil.buildLandscapeWidgetNullable(
+        orCondition: unlogin,
+        landscape: null,
+        portrait: _buildBottomNavigationBar(),
+      ),
+    );
+    return ResponsiveUtil.buildLandscapeWidget(
+      landscape: PopScope(
+          canPop: canPop,
+          onPopInvokedWithResult: (_, __) => popPage(),
+          child: scaffold),
+      portrait: scaffold,
     );
   }
 

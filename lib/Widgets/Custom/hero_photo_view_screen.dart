@@ -132,19 +132,19 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      appBar: ResponsiveUtil.isDesktop()
-          ? PreferredSize(
-              preferredSize: const Size.fromHeight(56),
-              child: SafeArea(
-                child: Stack(
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(56),
+        child: SafeArea(
+          child: ResponsiveUtil.isDesktop()
+              ? Stack(
                   children: [
                     _buildAppBar(),
                     if (ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
                   ],
-                ),
-              ),
-            )
-          : _buildAppBar(),
+                )
+              : _buildAppBar(),
+        ),
+      ),
       extendBody: true,
       extendBodyBehindAppBar: true,
       backgroundColor: Colors.black,
@@ -156,7 +156,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
             Positioned(
               bottom: 60,
               child: Center(
-                child: ItemBuilder.buildTransparentTag(
+                child: ItemBuilder.buildTranslucentTag(
                   context,
                   text: getCaption(currentIndex),
                   borderRadius: 8,
@@ -603,7 +603,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
     ImageChunkEvent? event, {
     int index = 0,
   }) {
-    return ItemBuilder.buildLoadingDialog(
+    return ItemBuilder.buildLoadingWidget(
       context,
       bottomPadding: 0,
       showText: false,

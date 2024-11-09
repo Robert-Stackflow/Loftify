@@ -64,7 +64,7 @@ class PinChangeScreenState extends State<PinChangeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: ItemBuilder.buildDesktopAppBar(
+      appBar: ItemBuilder.buildResponsiveAppBar(
         showBack: true,
         context: context,
       ),

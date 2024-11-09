@@ -132,7 +132,7 @@ class _TagRelatedScreenState extends State<TagRelatedScreen>
       onLeadingTap: () {
         Navigator.pop(context);
       },
-      title: ItemBuilder.buildClickItem(
+      title: ItemBuilder.buildClickable(
         ItemBuilder.buildTagItem(
           context,
           widget.tag,

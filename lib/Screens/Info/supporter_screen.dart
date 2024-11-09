@@ -145,7 +145,7 @@ class _SupporterScreenState extends State<SupporterScreen>
   }
 
   _buildItem(int index, SupporterItem item) {
-    return ItemBuilder.buildClickItem(
+    return ItemBuilder.buildClickable(
       GestureDetector(
         onTap: () {
           RouteUtil.pushPanelCupertinoRoute(
@@ -208,7 +208,7 @@ class _SupporterScreenState extends State<SupporterScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildDesktopAppBar(
+    return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
       title: S.current.supporterList,

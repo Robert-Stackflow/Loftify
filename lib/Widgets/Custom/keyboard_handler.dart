@@ -13,11 +13,11 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:loftify/Screens/Setting/setting_screen.dart';
 import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/utils.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../Utils/hive_util.dart';

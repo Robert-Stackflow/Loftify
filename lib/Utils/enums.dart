@@ -343,3 +343,44 @@ enum TrayKey {
 
   const TrayKey(this.key);
 }
+
+enum SideBarChoice {
+  Home("home"),
+  Search("search"),
+  Dynamic("dynamic"),
+  Mine("mine");
+
+  final String key;
+
+  const SideBarChoice(this.key);
+
+  static fromString(String string) {
+    switch (string) {
+      case "home":
+        return SideBarChoice.Home;
+      case "search":
+        return SideBarChoice.Search;
+      case "dynamic":
+        return SideBarChoice.Dynamic;
+      case "mine":
+        return SideBarChoice.Mine;
+      default:
+        return SideBarChoice.Home;
+    }
+  }
+
+  static fromInt(int index) {
+    switch (index) {
+      case 0:
+        return SideBarChoice.Home;
+      case 1:
+        return SideBarChoice.Search;
+      case 2:
+        return SideBarChoice.Dynamic;
+      case 3:
+        return SideBarChoice.Mine;
+      default:
+        return SideBarChoice.Home;
+    }
+  }
+}

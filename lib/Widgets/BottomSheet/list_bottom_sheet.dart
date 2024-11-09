@@ -30,7 +30,7 @@ class TileList extends StatelessWidget {
   }) : children = options
             .map(
               (t) => ItemBuilder.buildEntryItem(
-                topRadius: !showTitle && t == options.first,
+                roundTop: !showTitle && t == options.first,
                 title: t.item1,
                 trailing: Icons.done_rounded,
                 showTrailing: t.item2 == selected,

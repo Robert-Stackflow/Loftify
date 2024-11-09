@@ -214,41 +214,28 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
     return Container(
       height: 35,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: ItemBuilder.buildSearchBar(
-              focusNode: _focusNode,
-              context: context,
-              hintText: S.current.multipleSearchKeySeparatedBySpaces,
-              onSubmitted: (value) {
-                _performSearch(value);
-              },
-              controller: _searchController,
-            ),
-          ),
-          const SizedBox(width: 12),
-          ItemBuilder.buildIconTextButton(
-            context,
-            showIcon: false,
-            text: S.current.search,
-            onTap: () {
-              _performSearch(_searchController.text);
-            },
-          ),
-        ],
+      child: ItemBuilder.buildSearchBar(
+        focusNode: _focusNode,
+        borderRadius: 8,
+        bottomMargin: 18,
+        hintFontSizeDelta: 1,
+        context: context,
+        background: Colors.grey.withAlpha(40),
+        hintText: S.current.multipleSearchKeySeparatedBySpaces,
+        onSubmitted: (value) {
+          _performSearch(value);
+        },
+        controller: _searchController,
       ),
     );
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildDesktopAppBar(
+    return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
       centerInMobile: true,
-      titleWidget: ItemBuilder.buildClickItem(
+      titleWidget: ItemBuilder.buildClickable(
         ItemBuilder.buildTagItem(
           context,
           widget.tag,

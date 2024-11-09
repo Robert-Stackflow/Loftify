@@ -1,4 +1,3 @@
-import '../../generated/l10n.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -16,6 +15,7 @@ import '../../Utils/itoast.dart';
 import '../../Widgets/Dialog/custom_dialog.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../generated/l10n.dart';
 
 class EmoteDetailScreen extends StatefulWidgetForNested {
   const EmoteDetailScreen({
@@ -171,7 +171,7 @@ class _EmoteDetailScreenState extends State<EmoteDetailScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildDesktopAppBar(
+    return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
       title: S.current.emotePackageDetail,

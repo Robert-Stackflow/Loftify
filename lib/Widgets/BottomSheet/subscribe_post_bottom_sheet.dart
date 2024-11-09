@@ -145,7 +145,7 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
             S.current.selectFolder,
             style: Theme.of(context).textTheme.titleLarge,
           ),
-          ItemBuilder.buildClickItem(
+          ItemBuilder.buildClickable(
             GestureDetector(
               onTap: () {
                 BottomSheetBuilder.showBottomSheet(
@@ -204,7 +204,8 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
                 },
               ),
             )
-          : ItemBuilder.buildEmptyPlaceholder(context: context, text: S.current.noFavoriteFolder),
+          : ItemBuilder.buildEmptyPlaceholder(
+              context: context, text: S.current.noFavoriteFolder),
     );
   }
 

@@ -659,7 +659,7 @@ class VideoListButtonColumn extends StatelessWidget {
                   left: 0,
                   right: 0,
                   child: Center(
-                    child: ItemBuilder.buildClickItem(
+                    child: ItemBuilder.buildClickable(
                       GestureDetector(
                         onTap: onFollow,
                         child: Container(
@@ -770,7 +770,7 @@ class _IconButton extends StatelessWidget {
         ),
       ],
     );
-    return ItemBuilder.buildClickItem(
+    return ItemBuilder.buildClickable(
       Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: body,

@@ -30,6 +30,7 @@ import '../../Widgets/Custom/sliver_appbar_delegate.dart';
 import '../../Widgets/Custom/subordinate_scroll_controller.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
 import '../../generated/l10n.dart';
 
@@ -99,7 +100,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
       backgroundColor: MyTheme.getBackground(context),
       body: _tagDetailData != null
           ? _buildMainBody()
-          : ItemBuilder.buildLoadingDialog(context,
+          : ItemBuilder.buildLoadingWidget(context,
               background: MyTheme.getBackground(context)),
     );
   }
@@ -182,7 +183,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                         ),
                       ),
                       const SizedBox(width: 12),
-                      ItemBuilder.buildFramedDoubleButton(
+                      LoftifyItemBuilder.buildFramedDoubleButton(
                         context: context,
                         isFollowed: _tagDetailData!.favorited,
                         positiveText: S.current.subscribed,
@@ -407,7 +408,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
     required String desc,
     Function()? onTap,
   }) {
-    return ItemBuilder.buildClickItem(
+    return ItemBuilder.buildClickable(
       GestureDetector(
         onTap: onTap,
         child: Container(
@@ -486,7 +487,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                   height: 50,
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
-                  children:  <int, Widget>{
+                  children: <int, Widget>{
                     0: Text(S.current.releaseRecently),
                     1: Text(S.current.commentRecently),
                   },
@@ -567,7 +568,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
                   ),
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
-                  children:  <int, Widget>{
+                  children: <int, Widget>{
                     0: Text(S.current.all),
                     1: Text(S.current.dayRank),
                     2: Text(S.current.weekRank),
@@ -633,7 +634,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildDesktopAppBar(
+    return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
       titleWidget: Text(

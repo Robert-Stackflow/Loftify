@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/user_api.dart';
 import 'package:loftify/Models/account_response.dart';
+import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Screens/Info/collection_screen.dart';
 import 'package:loftify/Screens/Info/favorite_folder_list_screen.dart';
 import 'package:loftify/Screens/Info/grain_screen.dart';
@@ -28,6 +29,7 @@ import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../generated/l10n.dart';
 import '../Info/following_follower_screen.dart';
 import '../Info/system_notice_screen.dart';
@@ -138,16 +140,20 @@ class _MineScreenState extends State<MineScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: appProvider.token.isNotEmpty
+          ? Theme.of(context).scaffoldBackgroundColor
+          : MyTheme.getBackground(context),
       appBar: ResponsiveUtil.isLandscape()
           ? appProvider.token.isNotEmpty
-              ? ItemBuilder.buildDesktopAppBar(
+              ? ItemBuilder.buildResponsiveAppBar(
                   context: context,
                   title: S.current.mine,
                   spacing: ResponsiveUtil.isLandscape() ? 15 : 10,
                 )
               : null
-          : _buildAppBar(),
+          : PreferredSize(
+              preferredSize: const Size.fromHeight(56),
+              child: SafeArea(child: _buildAppBar())),
       body: _buildMainBody(),
     );
   }
@@ -163,7 +169,7 @@ class _MineScreenState extends State<MineScreen>
             mobile: (context) => _buildMobileMainBody(),
             tablet: (context) => _buildTabletMainBody(),
           )
-        : ItemBuilder.buildUnLoginMainBody(context);
+        : LoftifyItemBuilder.buildUnLoginMainBody(context);
   }
 
   _buildMobileMainBody() {
@@ -339,7 +345,7 @@ class _MineScreenState extends State<MineScreen>
             padding: EdgeInsets.zero,
             physics: const NeverScrollableScrollPhysics(),
             children: List.generate(_followingList.length, (index) {
-              return ItemBuilder.buildFollowerOrFollowingItem(
+              return LoftifyItemBuilder.buildFollowerOrFollowingItem(
                   context, index, _followingList[index],
                   onFollowOrUnFollow: () {
                 setState(() {
@@ -386,7 +392,7 @@ class _MineScreenState extends State<MineScreen>
             physics: const NeverScrollableScrollPhysics(),
             padding: EdgeInsets.zero,
             children: List.generate(_followerList.length, (index) {
-              return ItemBuilder.buildFollowerOrFollowingItem(
+              return LoftifyItemBuilder.buildFollowerOrFollowingItem(
                 context,
                 index,
                 _followerList[index],
@@ -407,7 +413,7 @@ class _MineScreenState extends State<MineScreen>
   }
 
   Widget _buildUserCard() {
-    return ItemBuilder.buildClickItem(
+    return ItemBuilder.buildClickable(
       GestureDetector(
         onTap: () {
           if (blogInfo == null) {
@@ -440,11 +446,11 @@ class _MineScreenState extends State<MineScreen>
                 mainAxisAlignment: MainAxisAlignment.start,
                 mainAxisSize: MainAxisSize.max,
                 children: [
-                  ItemBuilder.buildCopyItem(
+                  ItemBuilder.buildCopyable(
                     context,
                     toastText: S.current.haveCopiedNickName,
-                    copyText: blogInfo != null ? blogInfo!.blogNickName : "",
-                    condition: blogInfo != null,
+                    text: blogInfo != null ? blogInfo!.blogNickName : "",
+                    copyable: blogInfo != null,
                     child: Text(
                       blogInfo != null
                           ? blogInfo!.blogNickName
@@ -455,11 +461,11 @@ class _MineScreenState extends State<MineScreen>
                     ),
                   ),
                   const SizedBox(height: 5),
-                  ItemBuilder.buildCopyItem(
+                  ItemBuilder.buildCopyable(
                     context,
                     toastText: S.current.haveCopiedLofterID,
-                    copyText: blogInfo != null ? blogInfo!.blogName : "",
-                    condition: blogInfo != null,
+                    text: blogInfo != null ? blogInfo!.blogName : "",
+                    copyable: blogInfo != null,
                     child: Text(
                       blogInfo != null
                           ? S.current.lofterId(blogInfo!.blogName)
@@ -618,7 +624,7 @@ class _MineScreenState extends State<MineScreen>
             const HistoryScreen(),
           );
         },
-        bottomRadius: true,
+        roundBottom: true,
         leading: Icons.history_rounded,
       ),
     ];
@@ -660,7 +666,7 @@ class _MineScreenState extends State<MineScreen>
         title: S.current.myGrains,
         padding: 15,
         showLeading: true,
-        bottomRadius: true,
+        roundBottom: true,
         onTap: () {
           RouteUtil.pushPanelCupertinoRoute(
             context,

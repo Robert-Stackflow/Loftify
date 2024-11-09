@@ -1,4 +1,3 @@
-import '../../generated/l10n.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -19,6 +18,7 @@ import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
+import '../../generated/l10n.dart';
 
 class ShareScreen extends StatefulWidgetForNested {
   ShareScreen({
@@ -108,7 +108,7 @@ class _ShareScreenState extends State<ShareScreen>
                   if (item > 0) {
                     int month = e.monthCount.indexOf(item);
                     _archiveDataList.add(ArchiveData(
-                      desc:S.current.yearAndMonth(e.year, month + 1),
+                      desc: S.current.yearAndMonth(e.year, month + 1),
                       count: item,
                       endTime: 0,
                       startTime: 0,
@@ -170,10 +170,10 @@ class _ShareScreenState extends State<ShareScreen>
   _buildBody() {
     switch (_initPhase) {
       case InitPhase.connecting:
-        return ItemBuilder.buildLoadingDialog(context,
+        return ItemBuilder.buildLoadingWidget(context,
             background: Colors.transparent);
       case InitPhase.failed:
-        return ItemBuilder.buildError(
+        return ItemBuilder.buildErrorWidget(
           context: context,
           onTap: _onRefresh,
         );
@@ -188,7 +188,9 @@ class _ShareScreenState extends State<ShareScreen>
             return _archiveDataList.isNotEmpty
                 ? _buildNineGridGroup(physics)
                 : ItemBuilder.buildEmptyPlaceholder(
-                    context: context, text: S.current.noRecommend, physics: physics);
+                    context: context,
+                    text: S.current.noRecommend,
+                    physics: physics);
           },
         );
       default:
@@ -246,7 +248,7 @@ class _ShareScreenState extends State<ShareScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildDesktopAppBar(
+    return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
       title: S.current.myRecommends,
@@ -259,7 +261,7 @@ class _ShareScreenState extends State<ShareScreen>
               BottomSheetBuilder.showListBottomSheet(
                 context,
                 (sheetContext) => TileList.fromOptions(
-                   [
+                  [
                     Tuple2(S.current.clearInvalidContent, 1),
                   ],
                   (idx) async {

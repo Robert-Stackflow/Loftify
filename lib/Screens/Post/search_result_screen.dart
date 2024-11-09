@@ -21,6 +21,7 @@ import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
 import '../../generated/l10n.dart';
 import 'collection_detail_screen.dart';
@@ -64,7 +65,14 @@ class _SearchResultScreenState extends State<SearchResultScreen>
   final EasyRefreshController _userResultRefreshController =
       EasyRefreshController();
 
-  final List<String> _tabLabelList = [S.current.comprehensive, S.current.tag, S.current.collection, S.current.grain, S.current.article, S.current.user];
+  final List<String> _tabLabelList = [
+    S.current.comprehensive,
+    S.current.tag,
+    S.current.collection,
+    S.current.grain,
+    S.current.article,
+    S.current.user
+  ];
   int _allResultOffset = 0;
   int _tagResultOffset = 0;
   int _collectionResultOffset = 0;
@@ -96,13 +104,13 @@ class _SearchResultScreenState extends State<SearchResultScreen>
     super.build(context);
     return Scaffold(
       backgroundColor: MyTheme.getBackground(context),
-      appBar: ItemBuilder.buildDesktopAppBar(
+      appBar: ItemBuilder.buildResponsiveAppBar(
         context: context,
         showBack: true,
         spacing: 0,
         titleWidget: _buildSearchBar(),
         bottomHeight: 56,
-        bottom: ItemBuilder.buildTabBar(
+        bottomWidget: ItemBuilder.buildTabBar(
           context,
           _tabController,
           _tabLabelList
@@ -513,23 +521,27 @@ class _SearchResultScreenState extends State<SearchResultScreen>
     switch (item.type) {
       case 0:
         if (index == 0) {
-          return ItemBuilder.buildRankTagRow(context, item.tagInfo!, onTap: () {
+          return LoftifyItemBuilder.buildRankTagRow(context, item.tagInfo!,
+              onTap: () {
             Utils.addSearchHistory(_searchController!.text);
             _jumpToTag(item.tagInfo!.tagName);
           });
         } else {
-          return ItemBuilder.buildTagRow(context, item.tagInfo!, onTap: () {
+          return LoftifyItemBuilder.buildTagRow(context, item.tagInfo!,
+              onTap: () {
             Utils.addSearchHistory(_searchController!.text);
             _jumpToTag(item.tagInfo!.tagName);
           });
         }
       case 1:
-        return ItemBuilder.buildTagRow(context, item.tagInfo!, onTap: () {
+        return LoftifyItemBuilder.buildTagRow(context, item.tagInfo!,
+            onTap: () {
           Utils.addSearchHistory(_searchController!.text);
           _performSearch(item.tagInfo!.tagName);
         });
       case 2:
-        return ItemBuilder.buildUserRow(context, item.blogData!, onTap: () {
+        return LoftifyItemBuilder.buildUserRow(context, item.blogData!,
+            onTap: () {
           Utils.addSearchHistory(_searchController!.text);
           RouteUtil.pushPanelCupertinoRoute(
             context,
@@ -596,7 +608,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                             ),
                           ),
                         if (_allResult!.tagRank != null)
-                          ItemBuilder.buildRankTagRow(
+                          LoftifyItemBuilder.buildRankTagRow(
                             context,
                             _allResult!.tagRank!,
                             useBackground: false,
@@ -619,7 +631,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                         if (_allResult!.tags.isNotEmpty)
                           ...List<Widget>.generate(
                               min(_allResult!.tags.length, 2), (index) {
-                            return ItemBuilder.buildTagRow(
+                            return LoftifyItemBuilder.buildTagRow(
                               context,
                               _allResult!.tags[index],
                               verticalPadding: 8,
@@ -678,7 +690,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                 ],
               ),
             )
-          : ItemBuilder.buildLoadingDialog(
+          : ItemBuilder.buildLoadingWidget(
               context,
               background: MyTheme.getBackground(context),
             ),
@@ -715,7 +727,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                       ),
                     ),
                   if (_tagRank != null)
-                    ItemBuilder.buildRankTagRow(
+                    LoftifyItemBuilder.buildRankTagRow(
                       context,
                       _tagRank!,
                       useBackground: false,
@@ -726,7 +738,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
                   if (_tagRank != null && _tagList.isNotEmpty) _buildDivider(),
                   if (_tagList.isNotEmpty)
                     ...List<Widget>.generate(_tagList.length, (index) {
-                      return ItemBuilder.buildTagRow(
+                      return LoftifyItemBuilder.buildTagRow(
                         context,
                         _tagList[index],
                         verticalPadding: 8,
@@ -790,7 +802,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
               ),
               delegate: SliverChildBuilderDelegate(
                 (BuildContext context, int index) {
-                  return ItemBuilder.buildCollectionRow(
+                  return LoftifyItemBuilder.buildCollectionRow(
                       context, _collectionList[index], verticalPadding: 8,
                       onTap: () {
                     RouteUtil.pushPanelCupertinoRoute(
@@ -916,7 +928,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
               ),
               delegate: SliverChildBuilderDelegate(
                 (BuildContext context, int index) {
-                  return ItemBuilder.buildGrainRow(
+                  return LoftifyItemBuilder.buildGrainRow(
                     context,
                     _grainList[index],
                     verticalPadding: 8,
@@ -980,7 +992,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
               ),
               delegate: SliverChildBuilderDelegate(
                 (BuildContext context, int index) {
-                  return ItemBuilder.buildUserRow(
+                  return LoftifyItemBuilder.buildUserRow(
                     context,
                     _userList[index],
                     onTap: () {
@@ -1011,7 +1023,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
       margin: const EdgeInsets.all(10),
       constraints:
           BoxConstraints(maxWidth: width, minWidth: width, maxHeight: 56),
-      child: ItemBuilder.buildDesktopSearchBar(
+      child: ItemBuilder.buildSearchBar(
         context: context,
         borderRadius: 8,
         bottomMargin: 18,

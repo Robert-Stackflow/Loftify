@@ -131,7 +131,7 @@ class _SuitScreenState extends State<SuitScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildDesktopAppBar(
+    return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
       centerInMobile: true,
@@ -141,7 +141,7 @@ class _SuitScreenState extends State<SuitScreen>
         const SizedBox(width: 5),
       ],
       bottomHeight: 56,
-      bottom: _currentTabIndex == 0
+      bottomWidget: _currentTabIndex == 0
           ? _buildOfficialBottomBar()
           : _buildCustomBottomBar(),
     );

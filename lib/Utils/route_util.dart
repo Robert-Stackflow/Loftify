@@ -24,30 +24,25 @@ class RouteUtil {
     Function(dynamic)? onThen,
     bool popAll = false,
   }) {
-    if (ResponsiveUtil.isLandscape()) {
-      return pushFadeRoute(context, page, onThen: onThen);
-    } else {
-      if (popAll) {
-        return Navigator.pushAndRemoveUntil(
-            context,
-            CustomCupertinoPageRoute(builder: (context) => page),
-            (_) => false).then(onThen ?? (_) => {});
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (ResponsiveUtil.isLandscape()) {
+        pushFadeRoute(context, page, onThen: onThen);
       } else {
-        return Navigator.push(
-                context, CustomCupertinoPageRoute(builder: (context) => page))
-            .then(onThen ?? (_) => {});
+        if (popAll) {
+          Navigator.pushAndRemoveUntil(
+              context,
+              CustomCupertinoPageRoute(builder: (context) => page),
+              (_) => false).then(onThen ?? (_) => {});
+        } else {
+          Navigator.push(
+                  context, CustomCupertinoPageRoute(builder: (context) => page))
+              .then(onThen ?? (_) => {});
+        }
       }
-    }
+    });
   }
 
-  static pushPanelCupertinoRoute(
-    BuildContext context,
-    Widget page, {
-    bool popAll = false,
-  }) {
-    if (popAll) {
-      panelScreenState?.popAll();
-    }
+  static pushPanelCupertinoRoute(BuildContext context, Widget page) {
     panelScreenState?.pushPage(page);
   }
 

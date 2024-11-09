@@ -102,7 +102,7 @@ class StarBottomSheetState extends State<StarBottomSheet> {
             children: List.generate(
               5,
               (index) {
-                return ItemBuilder.buildClickItem(
+                return ItemBuilder.buildClickable(
                   GestureDetector(
                     child: Icon(
                       index < currentStar

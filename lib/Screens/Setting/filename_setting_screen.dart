@@ -57,7 +57,7 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: ItemBuilder.buildDesktopAppBar(
+      appBar: ItemBuilder.buildResponsiveAppBar(
         showBack: true,
         transparent: true,
         title: S.current.filenameFormat,

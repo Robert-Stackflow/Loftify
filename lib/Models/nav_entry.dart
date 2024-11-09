@@ -1,10 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:loftify/Screens/Navigation/dynamic_screen.dart';
-import 'package:loftify/Screens/Navigation/home_screen.dart';
-import 'package:loftify/Screens/Navigation/mine_screen.dart';
 
-import '../Utils/asset_util.dart';
-import '../generated/l10n.dart';
 
 class SortableItem {
   String id;

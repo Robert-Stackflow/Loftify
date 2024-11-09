@@ -1,7 +1,7 @@
 import 'dart:math';
 
-import 'package:loftify/Utils/responsive_util.dart';
 import 'package:flutter/material.dart';
+import 'package:loftify/Utils/responsive_util.dart';
 
 class FloatingModal extends StatelessWidget {
   final Widget child;

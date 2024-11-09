@@ -63,7 +63,7 @@ class _EggScreenState extends State<EggScreen> with TickerProviderStateMixin {
     return Stack(
       children: [
         Scaffold(
-          appBar: ItemBuilder.buildDesktopAppBar(
+          appBar: ItemBuilder.buildResponsiveAppBar(
             transparent: true,
             context: context,
             showBack: true,
@@ -75,7 +75,7 @@ class _EggScreenState extends State<EggScreen> with TickerProviderStateMixin {
               children: [
                 const SizedBox(height: 20),
                 Center(
-                  child: ItemBuilder.buildClickItem(
+                  child: ItemBuilder.buildClickable(
                     GestureDetector(
                       onTap: diaplayCelebrate,
                       child: Hero(
@@ -145,8 +145,8 @@ class _EggScreenState extends State<EggScreen> with TickerProviderStateMixin {
         context: context,
         title: S.current.overrideCloudControl,
         description: S.current.overrideCloudControlDescription,
-        topRadius: true,
-        bottomRadius: true,
+        roundTop: true,
+        roundBottom: true,
         onTap: () {
           setState(() {
             overrideCloudControl = !overrideCloudControl;

@@ -32,6 +32,7 @@ import '../../Widgets/Custom/custom_tab_indicator.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Hidable/scroll_to_hide.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../Widgets/PostItem/grain_post_item_builder.dart';
 import '../../generated/l10n.dart';
 import 'home_screen.dart';
@@ -219,7 +220,7 @@ class DynamicScreenState extends State<DynamicScreen>
                 ),
               ],
             )
-          : ItemBuilder.buildUnLoginMainBody(context),
+          : LoftifyItemBuilder.buildUnLoginMainBody(context),
     );
   }
 
@@ -264,7 +265,7 @@ class DynamicScreenState extends State<DynamicScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildDesktopAppBar(
+    return ItemBuilder.buildResponsiveAppBar(
       context: context,
       spacing: ResponsiveUtil.isLandscape() ? 20 : 10,
       titleSpacing: 15,
@@ -459,7 +460,7 @@ class FollowTabState extends State<FollowTab>
         scrollDirection: Axis.horizontal,
         itemCount: _timelineBlogList.length,
         itemBuilder: (context, index) {
-          return ItemBuilder.buildClickItem(
+          return ItemBuilder.buildClickable(
               _buildTimelineBlogItem(_timelineBlogList[index]));
         },
       ),
@@ -527,7 +528,7 @@ class FollowTabState extends State<FollowTab>
       children: List.generate(
         _postList.length,
         (int index) {
-          return ItemBuilder.buildClickItem(
+          return ItemBuilder.buildClickable(
             GrainPostItemBuilder.buildTilePostItem(
               context,
               _postList[index],
@@ -704,7 +705,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
         scrollDirection: Axis.horizontal,
         itemCount: _recentVisitList.length,
         itemBuilder: (context, index) {
-          return ItemBuilder.buildClickItem(
+          return ItemBuilder.buildClickable(
               _buildRecentVisitTagItem(_recentVisitList[index]));
         },
       ),
@@ -773,7 +774,7 @@ class SubscribeTagTabState extends State<SubscribeTagTab>
       mainAxisSpacing: 12,
       crossAxisSpacing: 6,
       children: List.generate(_subscribeList.length, (int index) {
-        return ItemBuilder.buildClickItem(
+        return ItemBuilder.buildClickable(
             _buildSubscribeTagItem(_subscribeList[index]));
       }),
     );
@@ -1299,7 +1300,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
     return SliverWaterfallFlow.extent(
       maxCrossAxisExtent: 560,
       children: List.generate(_subscribeList.length, (index) {
-        return ItemBuilder.buildClickItem(
+        return ItemBuilder.buildClickable(
             _buildSubscribeCollectionItem(_subscribeList[index]));
       }),
     );
@@ -1351,7 +1352,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
                   Positioned(
                     top: 4,
                     left: 4,
-                    child: ItemBuilder.buildTransparentTag(
+                    child: ItemBuilder.buildTranslucentTag(
                       context,
                       text: S.current.viewRecently,
                       fontSizeDelta: -2,
@@ -1456,7 +1457,7 @@ class SubscribeCollectionTabState extends State<SubscribeCollectionTab>
     return SliverWaterfallFlow.extent(
       maxCrossAxisExtent: 560,
       children: List.generate(_guessLikeList.length, (index) {
-        return ItemBuilder.buildClickItem(
+        return ItemBuilder.buildClickable(
             _buildGuessLikeCollectionItem(_guessLikeList[index]));
       }),
     );
@@ -1772,7 +1773,7 @@ class SubscribeGrainTabState extends State<SubscribeGrainTab>
     return SliverWaterfallFlow.extent(
       maxCrossAxisExtent: 560,
       children: List.generate(_subscribeList.length, (index) {
-        return ItemBuilder.buildClickItem(
+        return ItemBuilder.buildClickable(
             _buildSubscribeGrainItem(_subscribeList[index]));
       }),
     );

@@ -28,6 +28,7 @@ import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/Custom/sliver_appbar_delegate.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../generated/l10n.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -144,7 +145,7 @@ class SearchScreenState extends State<SearchScreen>
     super.build(context);
     return Scaffold(
       backgroundColor: MyTheme.getBackground(context),
-      appBar: ItemBuilder.buildDesktopAppBar(
+      appBar: ItemBuilder.buildResponsiveAppBar(
         context: context,
         spacing: 0,
         titleWidget: _buildSearchBar(),
@@ -198,7 +199,7 @@ class SearchScreenState extends State<SearchScreen>
       child: ListView.builder(
         itemCount: _sugList.length,
         itemBuilder: (context, index) {
-          return ItemBuilder.buildClickItem(
+          return ItemBuilder.buildClickable(
               _buildSuggestItem(index, _sugList[index]));
         },
       ),
@@ -208,15 +209,18 @@ class SearchScreenState extends State<SearchScreen>
   _buildSuggestItem(int index, SearchSuggestItem item) {
     switch (item.type) {
       case 0:
-        return ItemBuilder.buildRankTagRow(context, item.tagInfo!, onTap: () {
+        return LoftifyItemBuilder.buildRankTagRow(context, item.tagInfo!,
+            onTap: () {
           _jumpToTag(item.tagInfo!.tagName);
         });
       case 1:
-        return ItemBuilder.buildTagRow(context, item.tagInfo!, onTap: () {
+        return LoftifyItemBuilder.buildTagRow(context, item.tagInfo!,
+            onTap: () {
           _performSearch(item.tagInfo!.tagName);
         });
       case 2:
-        return ItemBuilder.buildUserRow(context, item.blogData!, onTap: () {
+        return LoftifyItemBuilder.buildUserRow(context, item.blogData!,
+            onTap: () {
           Utils.addSearchHistory(_searchController.text);
           RouteUtil.pushPanelCupertinoRoute(
             context,
@@ -378,7 +382,7 @@ class SearchScreenState extends State<SearchScreen>
           physics: const NeverScrollableScrollPhysics(),
           itemCount: item.hotLists.length,
           itemBuilder: (context, index) {
-            return ItemBuilder.buildClickItem(
+            return ItemBuilder.buildClickable(
                 _buildRankItem(index, item.rankListType, item.hotLists[index]));
           },
         ),
@@ -643,7 +647,7 @@ class SearchScreenState extends State<SearchScreen>
       margin: const EdgeInsets.all(10),
       constraints:
           BoxConstraints(maxWidth: width, minWidth: width, maxHeight: 56),
-      child: ItemBuilder.buildDesktopSearchBar(
+      child: ItemBuilder.buildSearchBar(
         context: context,
         borderRadius: 8,
         bottomMargin: 18,

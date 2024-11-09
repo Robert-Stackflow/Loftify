@@ -10,6 +10,7 @@ import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/Dialog/dialog_builder.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../generated/l10n.dart';
 
 class TagShieldSettingScreen extends StatefulWidget {
@@ -57,7 +58,7 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: MyTheme.getBackground(context),
-      appBar: ItemBuilder.buildDesktopAppBar(
+      appBar: ItemBuilder.buildResponsiveAppBar(
         showBack: true,
         showBorder: true,
         title: "${S.current.tagShieldSetting}(${tags.length})",
@@ -126,7 +127,7 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
           Expanded(
             child: Text(tag),
           ),
-          ItemBuilder.buildFramedDoubleButton(
+          LoftifyItemBuilder.buildFramedDoubleButton(
             context: context,
             isFollowed: false,
             positiveText: S.current.unblockShieldTag,

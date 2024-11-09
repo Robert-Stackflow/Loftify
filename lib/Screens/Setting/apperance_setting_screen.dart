@@ -63,7 +63,7 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
       color: Colors.transparent,
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: ItemBuilder.buildDesktopAppBar(
+        appBar: ItemBuilder.buildResponsiveAppBar(
           transparent: true,
           showBack: true,
           title: S.current.appearanceSetting,
@@ -126,7 +126,7 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                   context: context,
                   title: S.current.chooseFontFamily,
                   tip: currentFont.intlFontName,
-                  bottomRadius: true,
+                  roundBottom: true,
                   onTap: () {
                     RouteUtil.pushPanelCupertinoRoute(
                         context, const SelectFontScreen());
@@ -140,8 +140,8 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                   context: context,
                   title: S.current.useDesktopLayoutWhenLandscape,
                   description: S.current.haveToRestartWhenChange,
-                  topRadius: true,
-                  bottomRadius: true,
+                  roundTop: true,
+                  roundBottom: true,
                   onTap: () {
                     setState(() {
                       _enableLandscapeInTablet = !_enableLandscapeInTablet;
@@ -169,7 +169,7 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                 value: _showRecommendVideo,
                 context: context,
                 title: S.current.showVideoInRecommendFlow,
-                bottomRadius: true,
+                roundBottom: true,
                 onTap: () {
                   setState(() {
                     _showRecommendVideo = !_showRecommendVideo;
@@ -225,7 +225,7 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                 context: context,
                 title: S.current.hotRank,
                 description: S.current.hotRankDescription,
-                bottomRadius: true,
+                roundBottom: true,
                 onTap: () {
                   setState(() {
                     _showSearchRank = !_showSearchRank;
@@ -254,7 +254,7 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                 context: context,
                 title: S.current.showDownloadButton,
                 description: S.current.showDownloadButtonDescription,
-                bottomRadius: true,
+                roundBottom: true,
                 onTap: () {
                   setState(() {
                     _showDownload = !_showDownload;

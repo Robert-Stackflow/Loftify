@@ -96,7 +96,7 @@ class _AboutSettingScreenState extends State<AboutSettingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: ItemBuilder.buildDesktopAppBar(
+      appBar: ItemBuilder.buildResponsiveAppBar(
         context: context,
         transparent: true,
         showBack: true,
@@ -108,7 +108,7 @@ class _AboutSettingScreenState extends State<AboutSettingScreen>
           children: [
             const SizedBox(height: 20),
             Center(
-              child: ItemBuilder.buildClickItem(
+              child: ItemBuilder.buildClickable(
                 GestureDetector(
                   onLongPressStart: (details) {
                     if (controlProvider.globalControl.enableEasterEggs) {
@@ -186,7 +186,7 @@ class _AboutSettingScreenState extends State<AboutSettingScreen>
                         ItemBuilder.buildEntryItem(
                           context: context,
                           title: S.current.changelog,
-                          topRadius: true,
+                          roundTop: true,
                           showLeading: true,
                           onTap: () {
                             RouteUtil.pushPanelCupertinoRoute(
@@ -212,12 +212,12 @@ class _AboutSettingScreenState extends State<AboutSettingScreen>
                                 cloudControlProvider.globalControl.repoUrl);
                           },
                           showLeading: true,
-                          bottomRadius: true,
+                          roundBottom: true,
                           leading: Icons.commit_outlined,
                         ),
                         const SizedBox(height: 10),
                         ItemBuilder.buildEntryItem(
-                          topRadius: true,
+                          roundTop: true,
                           context: context,
                           title: S.current.rate,
                           showLeading: true,
@@ -259,7 +259,7 @@ class _AboutSettingScreenState extends State<AboutSettingScreen>
                         ItemBuilder.buildEntryItem(
                           context: context,
                           title: S.current.officialWebsite,
-                          bottomRadius: !(cloudControlProvider
+                          roundBottom: !(cloudControlProvider
                                   .globalControl.showTelegramGroup) &&
                               !(cloudControlProvider.globalControl.showQQGroup),
                           onTap: () {
@@ -275,7 +275,7 @@ class _AboutSettingScreenState extends State<AboutSettingScreen>
                           ItemBuilder.buildEntryItem(
                             context: context,
                             title: S.current.qqGroup,
-                            bottomRadius: !cloudControlProvider
+                            roundBottom: !cloudControlProvider
                                 .globalControl.showTelegramGroup,
                             onTap: () {
                               UriUtil.openExternal(cloudControlProvider
@@ -293,7 +293,7 @@ class _AboutSettingScreenState extends State<AboutSettingScreen>
                               UriUtil.openExternal(cloudControlProvider
                                   .globalControl.telegramGroupUrl);
                             },
-                            bottomRadius: true,
+                            roundBottom: true,
                             showLeading: true,
                             leading: Icons.telegram_outlined,
                           ),

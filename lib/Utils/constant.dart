@@ -54,5 +54,5 @@ AndroidAuthMessages androidAuthMessages = AndroidAuthMessages(
   biometricSuccess: S.current.biometricSuccess,
   signInTitle: S.current.biometricSignInTitle,
   deviceCredentialsRequiredTitle:
-  S.current.biometricDeviceCredentialsRequiredTitle,
+      S.current.biometricDeviceCredentialsRequiredTitle,
 );

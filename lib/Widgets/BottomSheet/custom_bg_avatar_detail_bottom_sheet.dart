@@ -234,7 +234,7 @@ class CustomBgAvatarDetailBottomSheetState
                       onTap: () {
                         _swiperController.previous();
                       },
-                      child: ItemBuilder.buildClickItem(
+                      child: ItemBuilder.buildClickable(
                         clickable: _currentIndex != 0,
                         const Icon(
                           Icons.keyboard_arrow_left_rounded,
@@ -262,7 +262,7 @@ class CustomBgAvatarDetailBottomSheetState
                       onTap: () {
                         _swiperController.next();
                       },
-                      child: ItemBuilder.buildClickItem(
+                      child: ItemBuilder.buildClickable(
                         clickable: _currentIndex != count - 1,
                         const Icon(
                           Icons.keyboard_arrow_right_rounded,
@@ -277,7 +277,7 @@ class CustomBgAvatarDetailBottomSheetState
                 Positioned(
                   top: 6,
                   left: 15,
-                  child: ItemBuilder.buildTransparentTag(
+                  child: ItemBuilder.buildTranslucentTag(
                     context,
                     text: '${_currentIndex + 1}/$count',
                     opacity: 0.5,
@@ -287,7 +287,7 @@ class CustomBgAvatarDetailBottomSheetState
                 Positioned(
                   top: 6,
                   right: 15,
-                  child: ItemBuilder.buildClickItem(
+                  child: ItemBuilder.buildClickable(
                     GestureDetector(
                       onTap: () {
                         if (ResponsiveUtil.isLandscape()) {
@@ -319,7 +319,7 @@ class CustomBgAvatarDetailBottomSheetState
                           IToast.showTop(S.current.jumpFailed);
                         }
                       },
-                      child: ItemBuilder.buildTransparentTag(
+                      child: ItemBuilder.buildTranslucentTag(
                         context,
                         text: currentUserNickName,
                         opacity: 0.5,

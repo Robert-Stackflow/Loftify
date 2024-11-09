@@ -16,10 +16,10 @@
 import 'dart:io';
 import 'dart:math';
 
-import 'package:loftify/Utils/shortcuts_util.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:loftify/Utils/shortcuts_util.dart';
 
 import '../../Utils/app_provider.dart';
 import '../../Utils/utils.dart';

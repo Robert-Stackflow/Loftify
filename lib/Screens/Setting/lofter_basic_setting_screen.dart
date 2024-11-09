@@ -149,7 +149,7 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: ItemBuilder.buildDesktopAppBar(
+      appBar: ItemBuilder.buildResponsiveAppBar(
         showBack: true,
         transparent: true,
         context: context,
@@ -179,8 +179,8 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
               value: personalRecommend,
               context: context,
               title: S.current.personalizedService,
-              topRadius: true,
-              bottomRadius: true,
+              roundTop: true,
+              roundBottom: true,
               description: S.current.personalizedServiceDescription,
               onTap: () {
                 SettingApi.updatePersonalRecommendSetting(
@@ -232,7 +232,7 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
             ItemBuilder.buildRadioItem(
               value: videoprotection,
               context: context,
-              bottomRadius: true,
+              roundBottom: true,
               title: S.current.shareVideoProtection,
               description: S.current.shareVideoProtectionDescription,
               onTap: () {
@@ -268,7 +268,7 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
             ),
             ItemBuilder.buildRadioItem(
               value: showReturnGiftPreviewImg,
-              bottomRadius: true,
+              roundBottom: true,
               context: context,
               title: S.current.imageBlurPreview,
               onTap: () {

@@ -219,12 +219,12 @@ class _DressScreenState extends State<DressScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildDesktopAppBar(
+    return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
       centerInMobile: Utils.isNotEmpty(widget.tag),
       titleWidget: Utils.isNotEmpty(widget.tag)
-          ? ItemBuilder.buildClickItem(
+          ? ItemBuilder.buildClickable(
               ItemBuilder.buildTagItem(
                 context,
                 widget.tag!,

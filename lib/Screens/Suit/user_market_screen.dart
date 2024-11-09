@@ -73,7 +73,7 @@ class _UserMarketScreenState extends State<UserMarketScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildDesktopAppBar(
+    return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
       title: S.current.shop,
@@ -82,7 +82,7 @@ class _UserMarketScreenState extends State<UserMarketScreen>
         const SizedBox(width: 5),
       ],
       bottomHeight: 56,
-      bottom: _buildCustomBottomBar(),
+      bottomWidget: _buildCustomBottomBar(),
     );
   }
 

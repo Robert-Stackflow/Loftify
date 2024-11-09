@@ -505,7 +505,7 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
   }
 
   _buildItem(MessageItem item) {
-    return ItemBuilder.buildClickItem(
+    return ItemBuilder.buildClickable(
       GestureDetector(
         onTap: () {
           RouteUtil.pushPanelCupertinoRoute(
@@ -624,12 +624,12 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildDesktopAppBar(
+    return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
       title: S.current.notice,
       bottomHeight: 56,
-      bottom: ItemBuilder.buildTabBar(
+      bottomWidget: ItemBuilder.buildTabBar(
         context,
         _tabController,
         _tabLabelList

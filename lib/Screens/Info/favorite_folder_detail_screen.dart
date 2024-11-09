@@ -237,7 +237,7 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
         icon = Icons.article_outlined;
         break;
     }
-    return ItemBuilder.buildDesktopAppBar(
+    return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
       title: _favoriteFolder?.name ?? S.current.favoriteFolderDetail,

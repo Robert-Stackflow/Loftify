@@ -30,6 +30,7 @@ import '../BottomSheet/bottom_sheet_builder.dart';
 import '../Custom/floating_modal.dart';
 import '../Custom/hero_photo_view_screen.dart';
 import '../Item/item_builder.dart';
+import '../Item/loftify_item_builder.dart';
 import 'image_grid.dart';
 
 class GeneralPostItem {
@@ -187,7 +188,7 @@ class WaterfallFlowPostItemWidgetState
               GeneralPostItemBuilder.showMoreSheet(context, item);
             }
           : null,
-      child: ItemBuilder.buildClickItem(main),
+      child: ItemBuilder.buildClickable(main),
     );
   }
 
@@ -274,13 +275,14 @@ class WaterfallFlowPostItemWidgetState
               Positioned(
                 left: 4,
                 top: 4,
-                child: ItemBuilder.buildTransparentTag(context, text: S.current.animatedGif),
+                child: ItemBuilder.buildTranslucentTag(context,
+                    text: S.current.animatedGif),
               ),
             if ((item.photoCount ?? item.photoLinks.length) > 1)
               Positioned(
                 bottom: 4,
                 right: 4,
-                child: ItemBuilder.buildTransparentTag(
+                child: ItemBuilder.buildTranslucentTag(
                   context,
                   text: '${(item.photoCount ?? item.photoLinks.length)}',
                   isCircle: true,
@@ -334,12 +336,13 @@ class WaterfallFlowPostItemWidgetState
             Positioned(
               left: 4,
               top: 4,
-              child: ItemBuilder.buildTransparentTag(context, text: S.current.video),
+              child: ItemBuilder.buildTranslucentTag(context,
+                  text: S.current.video),
             ),
             Positioned(
               bottom: 4,
               right: 4,
-              child: ItemBuilder.buildTransparentTag(
+              child: ItemBuilder.buildTranslucentTag(
                 context,
                 text: Utils.formatDuration(item.duration),
               ),
@@ -464,7 +467,7 @@ class WaterfallFlowPostItemWidgetState
                 ),
                 const SizedBox(width: 5),
                 if (item.showLikeButton == true)
-                  ItemBuilder.buildLikedButton(
+                  LoftifyItemBuilder.buildLikedButton(
                     context,
                     isLiked: item.liked,
                     showCount: true,
@@ -569,7 +572,7 @@ class GridPostItemWidgetState extends State<GridPostItemWidget> {
       onTap: () {
         GeneralPostItemBuilder.onTapItem(context, item);
       },
-      child: ItemBuilder.buildClickItem(main),
+      child: ItemBuilder.buildClickable(main),
     );
   }
 
@@ -609,7 +612,7 @@ class GridPostItemWidgetState extends State<GridPostItemWidget> {
             Positioned(
               bottom: 1,
               right: 5,
-              child: ItemBuilder.buildTransparentTag(
+              child: ItemBuilder.buildTranslucentTag(
                 context,
                 text: '${(item.photoCount ?? item.photoLinks.length)}',
                 isCircle: true,
@@ -703,7 +706,7 @@ class GridPostItemWidgetState extends State<GridPostItemWidget> {
           Positioned(
             top: 6,
             left: 5,
-            child: ItemBuilder.buildTransparentTag(
+            child: ItemBuilder.buildTranslucentTag(
               context,
               text: S.current.video,
             ),
@@ -711,7 +714,7 @@ class GridPostItemWidgetState extends State<GridPostItemWidget> {
           Positioned(
             bottom: 6,
             right: 5,
-            child: ItemBuilder.buildTransparentTag(
+            child: ItemBuilder.buildTranslucentTag(
               context,
               text: Utils.formatDuration(item.duration),
             ),
@@ -876,8 +879,9 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
                   Expanded(
                     child: Text(
                       id == item.shareInfo!.blogInfo.blogId
-                          ?S.current.fromMyRecommend
-                          : S.current.fromOtherRecommend(item.shareInfo!.blogInfo.blogNickName),
+                          ? S.current.fromMyRecommend
+                          : S.current.fromOtherRecommend(
+                              item.shareInfo!.blogInfo.blogNickName),
                       style: Theme.of(context).textTheme.bodySmall,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -936,7 +940,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
               ),
             ),
             if (item.followed != true)
-              ItemBuilder.buildFramedDoubleButton(
+              LoftifyItemBuilder.buildFramedDoubleButton(
                 context: context,
                 isFollowed: item.followed == true,
                 onTap: () {
@@ -1127,7 +1131,8 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
                 Positioned(
                   left: 4,
                   top: 4,
-                  child: ItemBuilder.buildTransparentTag(context, text: S.current.animatedGif),
+                  child: ItemBuilder.buildTranslucentTag(context,
+                      text: S.current.animatedGif),
                 ),
             ],
           ),
@@ -1215,12 +1220,13 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
             Positioned(
               left: 4,
               top: 4,
-              child: ItemBuilder.buildTransparentTag(context, text: S.current.video),
+              child: ItemBuilder.buildTranslucentTag(context,
+                  text: S.current.video),
             ),
             Positioned(
               bottom: 4,
               right: 4,
-              child: ItemBuilder.buildTransparentTag(
+              child: ItemBuilder.buildTranslucentTag(
                 context,
                 text: Utils.formatDuration(item.duration),
               ),

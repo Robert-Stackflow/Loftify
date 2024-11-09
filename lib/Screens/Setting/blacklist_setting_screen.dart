@@ -12,6 +12,7 @@ import '../../Widgets/Dialog/custom_dialog.dart';
 import '../../Widgets/Dialog/dialog_builder.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../generated/l10n.dart';
 
 class BlacklistSettingScreen extends StatefulWidget {
@@ -68,7 +69,7 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: MyTheme.getBackground(context),
-      appBar: ItemBuilder.buildDesktopAppBar(
+      appBar: ItemBuilder.buildResponsiveAppBar(
         showBack: true,
         showBorder: true,
         title: S.current.blacklistSetting,
@@ -131,7 +132,7 @@ class _BlacklistSettingScreenState extends State<BlacklistSettingScreen>
             Expanded(
               child: Text(blacklistItem.blogInfo.blogNickName),
             ),
-            ItemBuilder.buildFramedDoubleButton(
+            LoftifyItemBuilder.buildFramedDoubleButton(
               context: context,
               isFollowed: false,
               positiveText: S.current.unlockBlacklist,

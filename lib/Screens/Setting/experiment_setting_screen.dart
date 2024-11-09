@@ -65,7 +65,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: ItemBuilder.buildDesktopAppBar(
+      appBar: ItemBuilder.buildResponsiveAppBar(
         transparent: true,
         title: S.current.experimentSetting,
         context: context,
@@ -102,8 +102,8 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
           _preferredMode?.toString() ?? "Unknown",
           _activeMode?.toString() ?? "Unknown",
         ),
-        topRadius: true,
-        bottomRadius: true,
+        roundTop: true,
+        roundBottom: true,
         onTap: () {
           getRefreshRate();
           BottomSheetBuilder.showListBottomSheet(
@@ -225,7 +225,7 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
         value: _enableSafeMode,
         title: S.current.safeMode,
         disabled: ResponsiveUtil.isDesktop(),
-        bottomRadius: true,
+        roundBottom: true,
         description: S.current.safeModeTip,
         onTap: onSafeModeTapped,
       ),

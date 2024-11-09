@@ -118,7 +118,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: ResponsiveUtil.isLandscape()
-          ? ItemBuilder.buildDesktopAppBar(
+          ? ItemBuilder.buildResponsiveAppBar(
               context: context,
               showBack: true,
               title: S.current.personalHomepage)
@@ -127,7 +127,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
           ? ExtendedNestedScrollView(
               headerSliverBuilder: (_, __) => _buildHeaderSlivers(),
               body: _mainContent())
-          : ItemBuilder.buildLoadingDialog(
+          : ItemBuilder.buildLoadingWidget(
               context,
               background: MyTheme.getBackground(context),
             ),
@@ -480,7 +480,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  ItemBuilder.buildCopyItem(
+                  ItemBuilder.buildCopyable(
                     context,
                     child: Text(
                       _fullBlogData!.blogInfo.blogNickName,
@@ -489,14 +489,14 @@ class UserDetailScreenState extends State<UserDetailScreen>
                             color: Colors.white,
                           ),
                     ),
-                    copyText: _fullBlogData!.blogInfo.blogNickName,
+                    text: _fullBlogData!.blogInfo.blogNickName,
                     toastText: S.current.haveCopiedNickName,
                   ),
                   Text.rich(
                     TextSpan(
                       children: [
                         WidgetSpan(
-                          child: ItemBuilder.buildCopyItem(
+                          child: ItemBuilder.buildCopyable(
                             context,
                             child: Text(
                               textAlign: TextAlign.center,
@@ -508,13 +508,13 @@ class UserDetailScreenState extends State<UserDetailScreen>
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            copyText: _fullBlogData!.blogInfo.blogName,
+                            text: _fullBlogData!.blogInfo.blogName,
                             toastText: S.current.haveCopiedLofterID,
                           ),
                         ),
                         if (hasRemarkName)
                           WidgetSpan(
-                            child: ItemBuilder.buildCopyItem(
+                            child: ItemBuilder.buildCopyable(
                               context,
                               child: Text(
                                 textAlign: TextAlign.center,
@@ -527,7 +527,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              copyText: _fullBlogData!.blogInfo.remarkName,
+                              text: _fullBlogData!.blogInfo.remarkName,
                               toastText: S.current.haveCopiedRemark,
                             ),
                           ),
@@ -554,7 +554,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
                       const SizedBox(width: 5),
                       if (Utils.isNotEmpty(
                           Utils.clearBlank(_fullBlogData!.blogInfo.selfIntro)))
-                        ItemBuilder.buildClickItem(
+                        ItemBuilder.buildClickable(
                           GestureDetector(
                             onTap: () {
                               DialogBuilder.showInfoDialog(
@@ -1051,7 +1051,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
     } else {
       ILogger.info("Loftify", item.toJson());
     }
-    return ItemBuilder.buildClickItem(
+    return ItemBuilder.buildClickable(
       GestureDetector(
         onTap: onTap,
         child: Container(

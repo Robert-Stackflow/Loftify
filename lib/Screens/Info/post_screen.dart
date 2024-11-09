@@ -1,4 +1,3 @@
-import '../../generated/l10n.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -7,7 +6,6 @@ import 'package:loftify/Api/user_api.dart';
 import 'package:loftify/Models/history_response.dart';
 import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Screens/Info/nested_mixin.dart';
-import 'package:loftify/Screens/refresh_interface.dart';
 import 'package:loftify/Utils/hive_util.dart';
 
 import '../../Models/post_detail_response.dart';
@@ -17,6 +15,7 @@ import '../../Utils/itoast.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
+import '../../generated/l10n.dart';
 
 class PostScreen extends StatefulWidgetForNested {
   PostScreen({
@@ -202,10 +201,10 @@ class _PostScreenState extends State<PostScreen>
   _buildBody() {
     switch (_initPhase) {
       case InitPhase.connecting:
-        return ItemBuilder.buildLoadingDialog(context,
+        return ItemBuilder.buildLoadingWidget(context,
             background: Colors.transparent);
       case InitPhase.failed:
-        return ItemBuilder.buildError(
+        return ItemBuilder.buildErrorWidget(
           context: context,
           onTap: _onRefresh,
         );
@@ -220,7 +219,9 @@ class _PostScreenState extends State<PostScreen>
             return _archiveDataList.isNotEmpty
                 ? _buildNineGridGroup(physics)
                 : ItemBuilder.buildEmptyPlaceholder(
-                    context: context, text: S.current.noArticle, physics: physics);
+                    context: context,
+                    text: S.current.noArticle,
+                    physics: physics);
           },
         );
       default:
@@ -278,7 +279,7 @@ class _PostScreenState extends State<PostScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildDesktopAppBar(
+    return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
       title: S.current.myPosts,

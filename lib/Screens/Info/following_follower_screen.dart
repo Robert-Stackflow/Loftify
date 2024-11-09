@@ -13,6 +13,7 @@ import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../generated/l10n.dart';
 
 class FollowingFollowerScreen extends StatefulWidget {
@@ -166,7 +167,7 @@ class _FollowingFollowerScreenState extends State<FollowingFollowerScreen>
         maxCrossAxisExtent: 600,
         physics: physics,
         children: List.generate(_followingList.length, (index) {
-          return ItemBuilder.buildFollowerOrFollowingItem(
+          return LoftifyItemBuilder.buildFollowerOrFollowingItem(
               context, index, _followingList[index], onFollowOrUnFollow: () {
             total += _followingList[index].following ? 1 : -1;
             setState(() {});
@@ -177,7 +178,7 @@ class _FollowingFollowerScreenState extends State<FollowingFollowerScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildDesktopAppBar(
+    return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
       title:

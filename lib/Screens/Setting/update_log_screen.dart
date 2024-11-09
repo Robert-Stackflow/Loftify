@@ -67,7 +67,7 @@ class _UpdateLogScreenState extends State<UpdateLogScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: ItemBuilder.buildDesktopAppBar(
+      appBar: ItemBuilder.buildResponsiveAppBar(
         showBack: true,
         transparent: true,
         title: S.current.changelog,

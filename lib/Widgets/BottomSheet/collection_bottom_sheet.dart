@@ -1,4 +1,3 @@
-import '../../generated/l10n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Api/collection_api.dart';
@@ -13,9 +12,11 @@ import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
 import '../../Utils/route_util.dart';
 import '../../Utils/utils.dart';
+import '../../generated/l10n.dart';
 import '../Dialog/custom_dialog.dart';
 import '../General/EasyRefresh/easy_refresh.dart';
 import '../Item/item_builder.dart';
+import '../Item/loftify_item_builder.dart';
 import '../PostItem/common_info_post_item_builder.dart';
 
 class CollectionBottomSheet extends StatefulWidget {
@@ -218,7 +219,7 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
                 ),
               );
             },
-            child: ItemBuilder.buildClickItem(
+            child: ItemBuilder.buildClickable(
               Row(
                 children: [
                   ClipRRect(
@@ -257,11 +258,11 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
                     ),
                   ),
                   SizedBox(width: subscribed ? 8 : 20),
-                  ItemBuilder.buildFramedDoubleButton(
+                  LoftifyItemBuilder.buildFramedDoubleButton(
                       context: context,
                       isFollowed: subscribed,
-                      positiveText: "已订阅",
-                      negtiveText: "订阅",
+                      positiveText: S.current.subscribed,
+                      negtiveText: S.current.subscribe,
                       onTap: () {
                         HapticFeedback.mediumImpact();
                         CollectionApi.subscribeOrUnSubscribe(

@@ -10,6 +10,7 @@ import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../generated/l10n.dart';
 import '../Custom/sliver_appbar_delegate.dart';
 import '../Item/item_builder.dart';
+import '../Item/loftify_item_builder.dart';
 
 class CommentBottomSheet extends StatefulWidget {
   const CommentBottomSheet({
@@ -108,7 +109,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
         }
       } catch (e, t) {
         ILogger.error("Failed to load comment reply", e, t);
-        IToast.showTop( S.current.loadFailed);
+        IToast.showTop(S.current.loadFailed);
         return IndicatorResult.fail;
       } finally {
         currentComment.l2CommentLoading = false;
@@ -180,7 +181,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
             child: !isInited
                 ? Container(
                     alignment: Alignment.center,
-                    child: ItemBuilder.buildLoadingDialog(
+                    child: ItemBuilder.buildLoadingWidget(
                       context,
                       text: "",
                       background: MyTheme.getBackground(context),
@@ -191,7 +192,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
                 : Container(
                     margin: const EdgeInsets.symmetric(vertical: 24),
                     child: ItemBuilder.buildEmptyPlaceholder(
-                        context: context, text:  S.current.noComment),
+                        context: context, text: S.current.noComment),
                   ),
           ),
         if (newComments.isNotEmpty)
@@ -231,7 +232,8 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
               itemCount: comments.length,
               padding: EdgeInsets.zero,
               physics: const NeverScrollableScrollPhysics(),
-              itemBuilder: (context, index) => ItemBuilder.buildCommentRow(
+              itemBuilder: (context, index) =>
+                  LoftifyItemBuilder.buildCommentRow(
                 context,
                 comments[index],
                 padding: const EdgeInsets.only(bottom: 12),

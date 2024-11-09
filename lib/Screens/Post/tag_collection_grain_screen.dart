@@ -72,11 +72,11 @@ class _TagCollectionGrainScreenState extends State<TagCollectionGrainScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildDesktopAppBar(
+    return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
       centerInMobile: true,
-      titleWidget: ItemBuilder.buildClickItem(
+      titleWidget: ItemBuilder.buildClickable(
         ItemBuilder.buildTagItem(
           context,
           widget.tag,
@@ -88,7 +88,7 @@ class _TagCollectionGrainScreenState extends State<TagCollectionGrainScreen>
         ),
       ),
       bottomHeight: 56,
-      bottom: ItemBuilder.buildTabBar(
+      bottomWidget: ItemBuilder.buildTabBar(
         context,
         _tabController,
         _tabLabelList
@@ -291,7 +291,7 @@ class CollectionTabState extends State<CollectionTab>
   }
 
   Widget _buildRecommendCollectionItem(SimpleCollectionInfo info) {
-    return ItemBuilder.buildClickItem(
+    return ItemBuilder.buildClickable(
       GestureDetector(
         onTap: () {
           RouteUtil.pushPanelCupertinoRoute(
@@ -323,7 +323,7 @@ class CollectionTabState extends State<CollectionTab>
                 Positioned(
                   top: 4,
                   right: 4,
-                  child: ItemBuilder.buildTransparentTag(
+                  child: ItemBuilder.buildTranslucentTag(
                     context,
                     text: "${info.postCount}",
                     padding:
@@ -333,7 +333,7 @@ class CollectionTabState extends State<CollectionTab>
                 Positioned(
                   top: 4,
                   left: 4,
-                  child: ItemBuilder.buildTransparentTag(
+                  child: ItemBuilder.buildTranslucentTag(
                     context,
                     text: "",
                     icon: AssetUtil.load(
@@ -346,7 +346,7 @@ class CollectionTabState extends State<CollectionTab>
                 Positioned(
                   bottom: 4,
                   left: 4,
-                  child: ItemBuilder.buildTransparentTag(
+                  child: ItemBuilder.buildTranslucentTag(
                     context,
                     text: Utils.formatCount(info.viewCount),
                     icon: const Icon(
@@ -427,7 +427,7 @@ class CollectionTabState extends State<CollectionTab>
 
   Widget _buildHotCollectionRankItem(int index, SimpleCollectionInfo info) {
     String? icon = getIcon(index);
-    return ItemBuilder.buildClickItem(
+    return ItemBuilder.buildClickable(
       GestureDetector(
         onTap: () {
           RouteUtil.pushPanelCupertinoRoute(
@@ -667,7 +667,7 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
   }
 
   Widget _buildRecommendGrainItem(SimpleGrainInfo info) {
-    return ItemBuilder.buildClickItem(
+    return ItemBuilder.buildClickable(
       GestureDetector(
         onTap: () {
           RouteUtil.pushPanelCupertinoRoute(
@@ -707,7 +707,7 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
                 Positioned(
                   top: 4,
                   right: 4,
-                  child: ItemBuilder.buildTransparentTag(
+                  child: ItemBuilder.buildTranslucentTag(
                     context,
                     text: "${info.postCount}",
                     padding:
@@ -717,7 +717,7 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
                 Positioned(
                   top: 4,
                   left: 4,
-                  child: ItemBuilder.buildTransparentTag(
+                  child: ItemBuilder.buildTranslucentTag(
                     context,
                     text: "",
                     icon: AssetUtil.load(
@@ -730,7 +730,7 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
                 Positioned(
                   bottom: 4,
                   left: 4,
-                  child: ItemBuilder.buildTransparentTag(
+                  child: ItemBuilder.buildTranslucentTag(
                     context,
                     text: Utils.formatCount(info.viewCount),
                     icon: const Icon(
@@ -811,7 +811,7 @@ class GrainTabState extends State<GrainTab> with AutomaticKeepAliveClientMixin {
 
   Widget _buildHotGrainRankItem(int index, SimpleGrainInfo info) {
     String? icon = getIcon(index);
-    return ItemBuilder.buildClickItem(
+    return ItemBuilder.buildClickable(
       GestureDetector(
         onTap: () {
           RouteUtil.pushPanelCupertinoRoute(

@@ -201,7 +201,7 @@ class MyApp extends StatelessWidget {
                 return Localizations.localeOf(context);
               } catch (e, t) {
                 ILogger.error("Failed to load locale", e, t);
-                return const Locale("en", "US");
+                return const Locale("zh", "CN");
               }
             }
           },

@@ -167,7 +167,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
     return Scaffold(
       backgroundColor: MyTheme.getBackground(context),
       appBar: ResponsiveUtil.isLandscape()
-          ? ItemBuilder.buildDesktopAppBar(
+          ? ItemBuilder.buildResponsiveAppBar(
               context: context, showBack: true, title: S.current.grainDetail)
           : null,
       bottomNavigationBar: grainDetailData != null ? _buildFooter() : null,
@@ -175,7 +175,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
           ? NestedScrollView(
               headerSliverBuilder: (_, __) => _buildHeaderSlivers(),
               body: _buildNineGridGroup())
-          : ItemBuilder.buildLoadingDialog(
+          : ItemBuilder.buildLoadingWidget(
               context,
               background: Colors.transparent,
             ),
@@ -451,7 +451,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
                       ),
                 ),
                 const SizedBox(height: 6),
-                ItemBuilder.buildClickItem(
+                ItemBuilder.buildClickable(
                   GestureDetector(
                     onTap: () {
                       RouteUtil.pushPanelCupertinoRoute(

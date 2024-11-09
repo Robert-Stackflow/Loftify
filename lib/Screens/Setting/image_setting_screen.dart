@@ -82,7 +82,7 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
       color: Colors.transparent,
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: ItemBuilder.buildDesktopAppBar(
+        appBar: ItemBuilder.buildResponsiveAppBar(
           showBack: true,
           title: S.current.imageSetting,
           transparent: true,
@@ -125,7 +125,7 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
                 title: S.current.filenameFormat,
                 description: _filenameFormat,
                 tip: S.current.edit,
-                bottomRadius: true,
+                roundBottom: true,
                 onTap: () {
                   var page = FilenameSettingScreen(
                     onSaved: (newFormat) {
@@ -188,7 +188,7 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
         context: context,
         title: S.current.bigImageQuality,
         tip: EnumsLabelGetter.getImageQualityLabel(imageDetailImageQuality),
-        bottomRadius: true,
+        roundBottom: true,
         onTap: () {
           showImageQualitySelect(
             onSelected: (quality) {
@@ -249,7 +249,7 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
         tip: EnumsLabelGetter.getImageQualityLabel(
             longPressLinkButtonImageQuality),
         description: S.current.longPressLinkButtonDescription,
-        bottomRadius: true,
+        roundBottom: true,
         onTap: () {
           showImageQualitySelect(
             onSelected: (quality) {

@@ -279,7 +279,7 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
   }
 
   _buildProductItem(ProductItem item) {
-    return ItemBuilder.buildClickItem(
+    return ItemBuilder.buildClickable(
       GestureDetector(
         onTap: () {
           BottomSheetBuilder.showBottomSheet(
@@ -423,7 +423,7 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
           Positioned(
             left: 4,
             bottom: 4,
-            child: ItemBuilder.buildTransparentTag(
+            child: ItemBuilder.buildTranslucentTag(
               context,
               text: tag,
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -455,7 +455,7 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
       height: height,
     );
     image = isHero
-        ? ItemBuilder.buildClickItem(GestureDetector(
+        ? ItemBuilder.buildClickable(GestureDetector(
             onTap: () {
               RouteUtil.pushDialogRoute(
                 context,
@@ -535,7 +535,7 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
       height: height,
     );
     image = isHero
-        ? ItemBuilder.buildClickItem(GestureDetector(
+        ? ItemBuilder.buildClickable(GestureDetector(
             onTap: () {
               RouteUtil.pushDialogRoute(
                 context,

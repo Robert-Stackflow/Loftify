@@ -49,6 +49,7 @@ import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/Custom/hero_photo_view_screen.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../Widgets/PostItem/general_post_item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
 import '../../generated/l10n.dart';
@@ -149,6 +150,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     super.initState();
     setDownloadState(DownloadState.none, recover: false);
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
+      if (ResponsiveUtil.isDesktop()) {
+        appProvider.windowSize = await windowManager.getSize();
+      }
       Future.delayed(const Duration(milliseconds: 500), initLottie);
       initLottie();
       if (isArticle) {
@@ -602,7 +606,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     switch (_inited) {
       case InitPhase.connecting:
       case InitPhase.haveNotConnected:
-        return ItemBuilder.buildLoadingDialog(
+        return ItemBuilder.buildLoadingWidget(
           context,
           background: MyTheme.getBackground(context),
         );
@@ -610,13 +614,13 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         if (_postDetailData != null) {
           return _buildNormalBody();
         } else {
-          return ItemBuilder.buildError(
+          return ItemBuilder.buildErrorWidget(
             context: context,
             onTap: initData,
           );
         }
       case InitPhase.failed:
-        return ItemBuilder.buildError(
+        return ItemBuilder.buildErrorWidget(
           context: context,
           onTap: initData,
         );
@@ -673,7 +677,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     return Selector<AppProvider, Size>(
       selector: (context, appProvider) => appProvider.windowSize,
       builder: (context, windowSize, child) =>
-          windowSize.width > minimumSize.width + 200
+          windowSize.width > minimumSize.width + 200 ||
+                  ResponsiveUtil.isLandscapeTablet()
               ? ScreenTypeLayout.builder(
                   mobile: (context) => _buildMobileMainBody(physics),
                   tablet: (context) => _buildTabletMainBody(),
@@ -733,7 +738,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           ),
         ),
         ResizableChild(
-          minSize: 2,
+          minSize: 300,
           size: const ResizableSize.expand(),
           child: _buildRecommendFlow(sliver: false),
         ),
@@ -985,7 +990,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         key: commentKey,
         child: ItemBuilder.buildTitle(
           context,
-          title: hotComments.isNotEmpty ? S.current.hotComment : S.current.latestComment,
+          title: hotComments.isNotEmpty
+              ? S.current.hotComment
+              : S.current.latestComment,
           bottomMargin: 12,
           topMargin: 24,
         ),
@@ -1295,7 +1302,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   _buildUserRow() {
     bool hasAvatarBox =
         (_postDetailData!.post?.blogInfo!.bigAvaImg ?? "").isNotEmpty;
-    return ItemBuilder.buildClickItem(
+    return ItemBuilder.buildClickable(
       Container(
         color: Colors.transparent,
         padding: EdgeInsets.only(
@@ -1320,10 +1327,10 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                     ? MainAxisAlignment.spaceEvenly
                     : MainAxisAlignment.start,
                 children: [
-                  ItemBuilder.buildCopyItem(
+                  ItemBuilder.buildCopyable(
                     context,
                     toastText: S.current.haveCopiedNickName,
-                    copyText: _postDetailData!.post?.blogInfo!.blogNickName,
+                    text: _postDetailData!.post?.blogInfo!.blogNickName,
                     child: Text(
                       _postDetailData!.post?.blogInfo!.blogNickName ?? "",
                       style: Theme.of(context).textTheme.titleSmall?.apply(
@@ -1345,7 +1352,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             ),
             const SizedBox(width: 40),
             if (_myBlogId != _postDetailData!.post!.blogId)
-              ItemBuilder.buildFramedDoubleButton(
+              LoftifyItemBuilder.buildFramedDoubleButton(
                 context: context,
                 isFollowed: _postDetailData!.followed == 1 ? true : false,
                 onTap: () {
@@ -1501,9 +1508,10 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                       Positioned(
                         top: 6,
                         left: 6,
-                        child: ItemBuilder.buildTransparentTag(
+                        child: ItemBuilder.buildTranslucentTag(
                           context,
-                          text: _isCatutu ? S.current.eraseBlur : _giftTypeString,
+                          text:
+                              _isCatutu ? S.current.eraseBlur : _giftTypeString,
                           opacity: 0.5,
                         ),
                       ),
@@ -1534,7 +1542,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           Positioned(
             top: 6,
             right: 18,
-            child: ItemBuilder.buildTransparentTag(
+            child: ItemBuilder.buildTranslucentTag(
               context,
               text: '$_currentIndex/${photoLinks.length}',
               opacity: 0.5,
@@ -1557,7 +1565,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                 onTap: () {
                   _swiperController.previous();
                 },
-                child: ItemBuilder.buildClickItem(
+                child: ItemBuilder.buildClickable(
                   clickable: _currentIndex != 1,
                   const Icon(
                     Icons.keyboard_arrow_left_rounded,
@@ -1585,7 +1593,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                 onTap: () {
                   _swiperController.next();
                 },
-                child: ItemBuilder.buildClickItem(
+                child: ItemBuilder.buildClickable(
                   clickable: _currentIndex != photoLinks.length,
                   const Icon(
                     Icons.keyboard_arrow_right_rounded,
@@ -1716,7 +1724,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   _buildGrainItem() {
-    return ItemBuilder.buildClickItem(
+    return ItemBuilder.buildClickable(
       GestureDetector(
         onTap: () {
           RouteUtil.pushPanelCupertinoRoute(
@@ -1824,7 +1832,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                     }
                   });
                 },
-                child: ItemBuilder.buildClickItem(
+                child: ItemBuilder.buildClickable(
                   Text(
                     _postDetailData!.post!.postCollection!.subscribed
                         ? S.current.subscribed
@@ -1897,7 +1905,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   _buildButton({String? text, Function()? onTap, bool disabled = false}) {
-    return ItemBuilder.buildClickItem(
+    return ItemBuilder.buildClickable(
       GestureDetector(
         onTap: onTap,
         child: Container(
@@ -2033,7 +2041,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             children: [
               Stack(
                 children: [
-                  ItemBuilder.buildLikedLottieButton(
+                  LoftifyItemBuilder.buildLikedLottieButton(
                     context,
                     showCount: true,
                     iconSize: 52,
@@ -2046,7 +2054,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                   ),
                   Container(
                     margin: const EdgeInsets.only(left: 42),
-                    child: ItemBuilder.buildLottieSharedButton(
+                    child: LoftifyItemBuilder.buildLottieSharedButton(
                       context,
                       showCount: true,
                       iconSize: 52,
@@ -2103,7 +2111,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       shrinkWrap: true,
       itemCount: comments.length,
       physics: const NeverScrollableScrollPhysics(),
-      itemBuilder: (context, index) => ItemBuilder.buildCommentRow(
+      itemBuilder: (context, index) => LoftifyItemBuilder.buildCommentRow(
         context,
         comments[index],
         writerId: blogId,
@@ -2243,7 +2251,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildDesktopAppBar(
+    return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
       titleWidget: Text(
@@ -2254,7 +2262,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       ),
       actions: [
         if (hasCollection())
-          ItemBuilder.buildClickItem(
+          ItemBuilder.buildClickable(
             GestureDetector(
               onTap: showCollectionBottomSheet,
               child: Container(

@@ -1,11 +1,9 @@
-import '../../generated/l10n.dart';
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:context_menus/context_menus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:loftify/Api/server_api.dart';
 import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
@@ -21,10 +19,12 @@ import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
+import '../../generated/l10n.dart';
 import '../Api/login_api.dart';
 import '../Api/user_api.dart';
 import '../Models/account_response.dart';
 import '../Resources/fonts.dart';
+import '../Resources/theme.dart';
 import '../Utils/app_provider.dart';
 import '../Utils/enums.dart';
 import '../Utils/hive_util.dart';
@@ -37,58 +37,12 @@ import '../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../Widgets/Dialog/dialog_builder.dart';
 import '../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../Widgets/General/LottieCupertinoRefresh/lottie_cupertino_refresh.dart';
-import '../Widgets/Scaffold/my_scaffold.dart';
 import '../Widgets/Window/window_button.dart';
 import 'Info/system_notice_screen.dart';
 import 'Info/user_detail_screen.dart';
 import 'Lock/pin_verify_screen.dart';
 import 'Setting/setting_screen.dart';
 import 'Suit/suit_screen.dart';
-
-const borderColor = Color(0xFF805306);
-const backgroundStartColor = Color(0xFFFFD500);
-const backgroundEndColor = Color(0xFFF6A00C);
-
-enum SideBarChoice {
-  Home("home"),
-  Search("search"),
-  Dynamic("dynamic"),
-  Mine("mine");
-
-  final String key;
-
-  const SideBarChoice(this.key);
-
-  static fromString(String string) {
-    switch (string) {
-      case "home":
-        return SideBarChoice.Home;
-      case "search":
-        return SideBarChoice.Search;
-      case "dynamic":
-        return SideBarChoice.Dynamic;
-      case "mine":
-        return SideBarChoice.Mine;
-      default:
-        return SideBarChoice.Home;
-    }
-  }
-
-  static fromInt(int index) {
-    switch (index) {
-      case 0:
-        return SideBarChoice.Home;
-      case 1:
-        return SideBarChoice.Search;
-      case 2:
-        return SideBarChoice.Dynamic;
-      case 3:
-        return SideBarChoice.Mine;
-      default:
-        return SideBarChoice.Home;
-    }
-  }
-}
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -113,7 +67,7 @@ class MainScreenState extends State<MainScreen>
   bool _isMaximized = false;
   bool _isStayOnTop = false;
   bool _hasJumpedToPinVerify = false;
-  Orientation _oldOrientation = Orientation.portrait;
+  Orientation? _oldOrientation;
 
   @override
   void onWindowMinimize() {
@@ -207,29 +161,11 @@ class MainScreenState extends State<MainScreen>
     });
   }
 
-  Future<void> fetchReleases() async {
-    if (HiveUtil.getBool(HiveUtil.autoCheckUpdateKey)) {
-      Utils.getReleases(
-        context: context,
-        showLoading: false,
-        showUpdateDialog: HiveUtil.getBool(HiveUtil.autoCheckUpdateKey),
-        showFailedToast: false,
-        showLatestToast: false,
-      );
-    }
-  }
-
   @override
   void initState() {
-    windowManager.addListener(this);
     super.initState();
+    windowManager.addListener(this);
     WidgetsBinding.instance.addObserver(this);
-    ServerApi.getCloudControl();
-    initDeepLinks();
-    CustomFont.downloadFont(showToast: false);
-    if (ResponsiveUtil.isLandscape()) _fetchUserInfo();
-    if (ResponsiveUtil.isDesktop()) initHotKey();
-    if (HiveUtil.getBool(HiveUtil.autoCheckUpdateKey)) fetchReleases();
     darkModeController = AnimationController(vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       showQQGroupDialog();
@@ -240,14 +176,87 @@ class MainScreenState extends State<MainScreen>
         autoForward: !Utils.isDark(context),
         controller: darkModeController,
       );
-      if (ResponsiveUtil.isDesktop()) {
+      ResponsiveUtil.doInDesktop(desktop: () async {
         await Utils.initTray();
         trayManager.addListener(this);
         keyboardHandlerState?.focus();
-      }
+      });
     });
-    initGlobalConfig();
+    initConfig();
+    fetchBasicData();
     fetchData();
+  }
+
+  void fetchBasicData() {
+    ServerApi.getCloudControl();
+    CustomFont.downloadFont(showToast: false);
+    ResponsiveUtil.doInLandscape(landscape: _fetchUserInfo);
+    if (HiveUtil.getBool(HiveUtil.autoCheckUpdateKey)) {
+      Utils.getReleases(
+        context: context,
+        showLoading: false,
+        showUpdateDialog: true,
+        showFailedToast: false,
+        showLatestToast: false,
+      );
+    }
+  }
+
+  Future<void> fetchData() async {
+    await LoginApi.uploadNewDevice();
+    await LoginApi.autoLogin();
+    await LoginApi.getConfigs();
+  }
+
+  initConfig() {
+    ResponsiveUtil.checkSizeCondition();
+    ResponsiveUtil.doInDesktop(
+      desktop: () {
+        initHotKey();
+        windowManager
+            .isAlwaysOnTop()
+            .then((value) => setState(() => _isStayOnTop = value));
+        windowManager
+            .isMaximized()
+            .then((value) => setState(() => _isMaximized = value));
+      },
+      mobile: () {
+        Utils.setSafeMode(
+            HiveUtil.getBool(HiveUtil.enableSafeModeKey, defaultValue: false));
+      },
+    );
+    initDeepLinks();
+    initEasyRefresh();
+  }
+
+  initHotKey() async {
+    HotKey hotKey = HotKey(
+      key: PhysicalKeyboardKey.keyC,
+      modifiers: [HotKeyModifier.alt],
+      scope: HotKeyScope.inapp,
+    );
+    await hotKeyManager.register(
+      hotKey,
+      keyDownHandler: (hotKey) {
+        RouteUtil.pushPanelCupertinoRoute(rootContext, const SettingScreen());
+      },
+    );
+  }
+
+  initEasyRefresh() {
+    // EasyRefresh.defaultHeaderBuilder = () => LottieCupertinoHeader(
+    //       backgroundColor: Theme.of(context).canvasColor,
+    //       indicator: LottieUtil.load(LottieUtil.getLoadingPath(context)),
+    //       hapticFeedback: true,
+    //       triggerOffset: 40,
+    //     );
+    EasyRefresh.defaultHeaderBuilder = () => MaterialHeader(
+          backgroundColor: Theme.of(context).canvasColor,
+          color: Theme.of(context).primaryColor,
+        );
+    EasyRefresh.defaultFooterBuilder = () => LottieCupertinoFooter(
+          indicator: LottieUtil.load(LottieUtil.getLoadingPath(context)),
+        );
   }
 
   showQQGroupDialog() {
@@ -268,46 +277,6 @@ class MainScreenState extends State<MainScreen>
         },
       );
     }
-  }
-
-  initGlobalConfig() {
-    if (ResponsiveUtil.isDesktop()) {
-      windowManager
-          .isAlwaysOnTop()
-          .then((value) => setState(() => _isStayOnTop = value));
-      windowManager
-          .isMaximized()
-          .then((value) => setState(() => _isMaximized = value));
-    }
-    ResponsiveUtil.checkSizeCondition();
-    if (mounted) {
-      // EasyRefresh.defaultHeaderBuilder = () => LottieCupertinoHeader(
-      //       backgroundColor: Theme.of(context).canvasColor,
-      //       indicator: LottieUtil.load(LottieUtil.getLoadingPath(context)),
-      //       hapticFeedback: true,
-      //       triggerOffset: 40,
-      //     );
-      EasyRefresh.defaultHeaderBuilder = () => MaterialHeader(
-            backgroundColor: Theme.of(context).canvasColor,
-            color: Theme.of(context).primaryColor,
-          );
-      EasyRefresh.defaultFooterBuilder = () => LottieCupertinoFooter(
-            indicator: LottieUtil.load(LottieUtil.getLoadingPath(context)),
-          );
-    }
-    if (ResponsiveUtil.isMobile()) {
-      if (HiveUtil.getBool(HiveUtil.enableSafeModeKey, defaultValue: false)) {
-        FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
-      } else {
-        FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
-      }
-    }
-  }
-
-  Future<void> fetchData() async {
-    await LoginApi.uploadNewDevice();
-    await LoginApi.autoLogin();
-    await LoginApi.getConfigs();
   }
 
   void jumpToLogin() {
@@ -340,60 +309,34 @@ class MainScreenState extends State<MainScreen>
     }
   }
 
-  initHotKey() async {
-    HotKey hotKey = HotKey(
-      key: PhysicalKeyboardKey.keyC,
-      modifiers: [HotKeyModifier.alt],
-      scope: HotKeyScope.inapp,
-    );
-    await hotKeyManager.register(
-      hotKey,
-      keyDownHandler: (hotKey) {
-        RouteUtil.pushPanelCupertinoRoute(rootContext, const SettingScreen());
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return OrientationBuilder(builder: (ctx, ori) {
-      if (ori != _oldOrientation) {
-        // globalNavigatorState?.popUntil((route) => route.isFirst);
+    return OrientationBuilder(builder: (context, orientation) {
+      if (_oldOrientation != null && orientation != _oldOrientation) {
+        // ResponsiveUtil.returnToMainScreen(context);
       }
-      _oldOrientation = ori;
-      return _buildBodyByPlatform();
+      _oldOrientation = orientation;
+      return ResponsiveUtil.buildGeneralWidget(
+        landscape: Scaffold(
+          resizeToAvoidBottomInset: false,
+          backgroundColor: MyTheme.canvasColor,
+          body: SafeArea(child: _buildDesktopBody()),
+        ),
+        desktop: _buildDesktopBody(),
+        portrait: PanelScreen(key: panelScreenKey),
+      );
     });
   }
 
-  _buildBodyByPlatform() {
-    if (!ResponsiveUtil.isLandscape()) {
-      return _buildMobileBody();
-    } else if (ResponsiveUtil.isMobile()) {
-      return Scaffold(
-        resizeToAvoidBottomInset: false,
-        backgroundColor: Theme.of(context).canvasColor,
-        body: SafeArea(
-          child: _buildDesktopBody(),
-        ),
-      );
-    } else {
-      return _buildDesktopBody();
-    }
-  }
-
-  _buildMobileBody() {
-    return PanelScreen(key: panelScreenKey);
-  }
-
   _buildDesktopBody() {
-    var leftPosWidget = Row(
+    return Row(
       children: [
         _sideBar(leftPadding: 8, rightPadding: 8),
         Expanded(
           child: Stack(
             children: [
-              _desktopMainContent(),
+              PanelScreen(key: panelScreenKey),
               Positioned(
                 right: 0,
                 child: _titleBar(),
@@ -402,10 +345,6 @@ class MainScreenState extends State<MainScreen>
           ),
         ),
       ],
-    );
-    return MyScaffold(
-      resizeToAvoidBottomInset: false,
-      body: leftPosWidget,
     );
   }
 
@@ -433,21 +372,21 @@ class MainScreenState extends State<MainScreen>
   }
 
   _titleBar() {
-    return (ResponsiveUtil.isDesktop())
-        ? ItemBuilder.buildWindowTitle(
-            context,
-            backgroundColor: Colors.transparent,
-            isStayOnTop: _isStayOnTop,
-            isMaximized: _isMaximized,
-            onStayOnTopTap: () {
-              setState(() {
-                _isStayOnTop = !_isStayOnTop;
-                windowManager.setAlwaysOnTop(_isStayOnTop);
-              });
-            },
-            rightButtons: [],
-          )
-        : emptyWidget;
+    return ResponsiveUtil.buildDesktopWidget(
+      desktop: ItemBuilder.buildWindowTitle(
+        context,
+        backgroundColor: Colors.transparent,
+        isStayOnTop: _isStayOnTop,
+        isMaximized: _isMaximized,
+        onStayOnTopTap: () {
+          setState(() {
+            _isStayOnTop = !_isStayOnTop;
+            windowManager.setAlwaysOnTop(_isStayOnTop);
+          });
+        },
+        rightButtons: [],
+      ),
+    );
   }
 
   changeMode() {
@@ -479,7 +418,7 @@ class MainScreenState extends State<MainScreen>
       padding: EdgeInsets.only(left: leftPadding, right: rightPadding),
       child: Stack(
         children: [
-          if (ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
+          ResponsiveUtil.buildDesktopWidget(desktop: const WindowMoveHandle()),
           Consumer<LoftifyControlProvider>(
             builder: (_, cloudControlProvider, __) =>
                 Selector<AppProvider, SideBarChoice>(
@@ -492,8 +431,9 @@ class MainScreenState extends State<MainScreen>
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    if (ResponsiveUtil.isDesktop()) const SizedBox(height: 5),
-                    if (ResponsiveUtil.isDesktop()) _buildLogo(),
+                    ResponsiveUtil.buildDesktopWidget(
+                        desktop: const SizedBox(height: 5)),
+                    ResponsiveUtil.buildDesktopWidget(desktop: _buildLogo()),
                     const SizedBox(height: 8),
                     ToolButton(
                       context: context,
@@ -545,24 +485,22 @@ class MainScreenState extends State<MainScreen>
                     ),
                     const Spacer(),
                     const SizedBox(height: 8),
-                    ItemBuilder.buildClickItem(
-                      GestureDetector(
-                        onTap: () async {
-                          if (blogInfo == null) {
-                            RouteUtil.pushDialogRoute(
-                                context, const LoginByCaptchaScreen());
-                          } else {
-                            BottomSheetBuilder.showContextMenu(
-                                context, _buildAvatarContextMenuButtons());
-                          }
-                        },
-                        child: ItemBuilder.buildAvatar(
-                          showLoading: false,
-                          context: context,
-                          imageUrl: blogInfo?.bigAvaImg ?? "",
-                          useDefaultAvatar: blogInfo == null,
-                          size: 30,
-                        ),
+                    ItemBuilder.buildClickableGestureDetector(
+                      onTap: () async {
+                        if (blogInfo == null) {
+                          RouteUtil.pushDialogRoute(
+                              context, const LoginByCaptchaScreen());
+                        } else {
+                          BottomSheetBuilder.showContextMenu(
+                              context, _buildAvatarContextMenuButtons());
+                        }
+                      },
+                      child: ItemBuilder.buildAvatar(
+                        showLoading: false,
+                        context: context,
+                        imageUrl: blogInfo?.bigAvaImg ?? "",
+                        useDefaultAvatar: blogInfo == null,
+                        size: 30,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -658,16 +596,6 @@ class MainScreenState extends State<MainScreen>
           ),
         ),
       ),
-    );
-  }
-
-  _desktopMainContent({
-    double leftMargin = 0,
-    double rightMargin = 0,
-  }) {
-    return Container(
-      margin: EdgeInsets.only(left: leftMargin, right: rightMargin),
-      child: PanelScreen(key: panelScreenKey),
     );
   }
 
