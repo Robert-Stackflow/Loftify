@@ -1,9 +1,7 @@
-import 'package:loftify/Widgets/Dialog/widgets/loading_dialog_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+import 'package:loftify/Widgets/Dialog/widgets/loading_dialog_widget.dart';
 
 import '../../Utils/app_provider.dart';
-import '../Custom/floating_modal.dart';
 import './animations.dart';
 import './widgets/custom_confirm_dialog_widget.dart';
 import './widgets/custom_info_dialog_widget.dart';

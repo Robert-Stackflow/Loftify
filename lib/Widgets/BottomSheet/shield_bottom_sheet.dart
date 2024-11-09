@@ -65,7 +65,7 @@ class ShieldBottomSheetState extends State<ShieldBottomSheet> {
       padding: const EdgeInsets.symmetric(vertical: 16),
       alignment: Alignment.center,
       child: Text(
-       S.current.reduceRecommend,
+        S.current.reduceRecommend,
         style: Theme.of(context).textTheme.titleLarge,
       ),
     );
