@@ -86,6 +86,8 @@ class SearchScreenState extends State<SearchScreen>
         FocusScope.of(context).requestFocus(_focusNode);
       });
     }
+    WidgetsBinding.instance.addPostFrameCallback(
+        (_) => panelScreenState?.refreshScrollControllers());
   }
 
   initTab() {

@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:loftify/Api/recommend_api.dart';
 import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Screens/refresh_interface.dart';
@@ -11,6 +9,7 @@ import 'package:loftify/Widgets/PostItem/recommend_flow_item_builder.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 import '../../Models/recommend_response.dart';
+import '../../Utils/app_provider.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/responsive_util.dart';
@@ -22,7 +21,12 @@ import '../../generated/l10n.dart';
 int krefreshTimeout = 300;
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    super.key,
+    this.scrollController,
+  });
+
+  final ScrollController? scrollController;
 
   static const String routeName = "/nav/home";
 
@@ -42,7 +46,8 @@ class HomeScreenState extends State<HomeScreen>
   bool _loading = false;
   int lastRefreshTime = 0;
   final EasyRefreshController _refreshController = EasyRefreshController();
-  final ScrollController _scrollController = ScrollController();
+  late final ScrollController _scrollController =
+      widget.scrollController ?? ScrollController();
   int _currentPage = 0;
   int _currentOffset = 0;
   int _currentFeed = 0;
@@ -67,6 +72,7 @@ class HomeScreenState extends State<HomeScreen>
         _onLoad();
       }
     });
+    WidgetsBinding.instance.addPostFrameCallback((_)=>panelScreenState?.refreshScrollControllers());
   }
 
   _fetchData({bool refresh = false}) async {

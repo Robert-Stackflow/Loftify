@@ -81,6 +81,7 @@ class _MineScreenState extends State<MineScreen>
         autoForward: !Utils.isDark(context),
         controller: darkModeController,
       );
+      panelScreenState?.refreshScrollControllers();
     });
     _fetchUserInfo();
     if (appProvider.token.isNotEmpty) {

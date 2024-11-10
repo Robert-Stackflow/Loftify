@@ -38,7 +38,12 @@ import '../../generated/l10n.dart';
 import 'home_screen.dart';
 
 class DynamicScreen extends StatefulWidget {
-  const DynamicScreen({super.key});
+  const DynamicScreen({
+    super.key,
+    this.scrollController,
+  });
+
+  final ScrollController? scrollController;
 
   static const String routeName = "/nav/dynamic";
 
@@ -170,6 +175,7 @@ class DynamicScreenState extends State<DynamicScreen>
     );
     super.initState();
     initTab();
+    WidgetsBinding.instance.addPostFrameCallback((_)=>panelScreenState?.refreshScrollControllers());
   }
 
   @override
