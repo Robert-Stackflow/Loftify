@@ -69,7 +69,7 @@ class _LoginByMailScreenState extends State<LoginByMailScreen>
           await HiveUtil.put(HiveUtil.userIdKey, resL['userId']);
           await HiveUtil.put(HiveUtil.tokenKey, resL['token']);
           await HiveUtil.put(HiveUtil.tokenTypeKey, TokenType.lofterID.index);
-          ResponsiveUtil.returnToMainScreen(rootContext);
+          mainScreenState?.login();
         } else if (resL['ret'] == "413" && resL['dt'] == "01") {
           IToast.showTop(S.current.retryLoginLater);
         } else if (resL['ret'] == "413" && resL['dt'] == "02") {
@@ -101,8 +101,10 @@ class _LoginByMailScreenState extends State<LoginByMailScreen>
         appBar: ItemBuilder.buildSimpleAppBar(
           title: S.current.loginByEmail,
           context: context,
-          leading: Icons.close_rounded,
+          leadingIcon: Icons.close_rounded,
           transparent: true,
+          titleLeftMargin: ResponsiveUtil.isLandscape()?15:5,
+          showLeading: !ResponsiveUtil.isLandscape(),
         ),
         body: Container(
           margin: const EdgeInsets.symmetric(horizontal: 20),

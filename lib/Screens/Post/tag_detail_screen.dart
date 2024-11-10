@@ -643,10 +643,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
               fontWeightDelta: 2,
             ),
       ),
-      actions: [
-        ..._buildButtons(),
-        const SizedBox(width: 5),
-      ],
+      actions: [..._buildButtons()],
     );
   }
 

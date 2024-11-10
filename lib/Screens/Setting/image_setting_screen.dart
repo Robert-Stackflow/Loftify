@@ -85,9 +85,8 @@ class _ImageSettingScreenState extends State<ImageSettingScreen>
         appBar: ItemBuilder.buildResponsiveAppBar(
           showBack: true,
           title: S.current.imageSetting,
-          transparent: true,
-          context: context,
-          background: Theme.of(context).scaffoldBackgroundColor,
+            context: context,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         ),
         body: EasyRefresh(
           child: ListView(

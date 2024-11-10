@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:math';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -37,7 +36,6 @@ class HeroPhotoViewScreen extends StatefulWidget {
     this.useMainColor = true,
     this.captions,
     this.onIndexChanged,
-    this.transparentBar = true,
     this.title,
     this.tagPrefix,
     this.tagSuffix,
@@ -56,7 +54,6 @@ class HeroPhotoViewScreen extends StatefulWidget {
   final int? initIndex;
   final bool useMainColor;
   final List<Color>? mainColors;
-  final bool transparentBar;
   final Function(int)? onIndexChanged;
   final Function()? onDownloadSuccess;
 
@@ -88,12 +85,6 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
 
   @override
   void initState() {
-    if (Platform.isAndroid) {
-      SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.light);
-      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-    }
     super.initState();
     setDownloadState(DownloadState.none, recover: false);
     setAllDownloadState(DownloadState.none, recover: false);
@@ -134,15 +125,11 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(56),
-        child: SafeArea(
-          child: ResponsiveUtil.isDesktop()
-              ? Stack(
-                  children: [
-                    _buildAppBar(),
-                    if (ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
-                  ],
-                )
-              : _buildAppBar(),
+        child: Stack(
+          children: [
+            _buildAppBar(),
+            if (ResponsiveUtil.isDesktop()) const WindowMoveHandle(),
+          ],
         ),
       ),
       extendBody: true,
@@ -438,13 +425,15 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
     bool showCopyLinkButton = controlProvider.globalControl.showCopyLinkButton;
     return ItemBuilder.buildAppBar(
       context: context,
-      backgroundColor: widget.transparentBar
-          ? Colors.transparent
-          : Utils.getDarkColor(mainColors[currentIndex]).withOpacity(0.5),
-      leading: Icons.arrow_back_rounded,
+      systemOverlayStyle: SystemUiOverlayStyle.light,
+      backgroundColor: Colors.transparent,
+      titleLeftMargin: ResponsiveUtil.isLandscape() ? 15 : 5,
+      leadingIcon:
+          ResponsiveUtil.isLandscape() ? null : Icons.arrow_back_rounded,
       leadingColor: Colors.white,
       onLeadingTap: () {
         Navigator.pop(context);
+        panelScreenState?.updateStatusBar();
       },
       title: imageUrls.length > 1
           ? Text(
@@ -502,7 +491,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
           },
         ),
         const SizedBox(width: 5),
-        if (showDownloadButton)
+        if (showDownloadButton) ...[
           ItemBuilder.buildIconButton(
             context: context,
             icon: downloadIcon,
@@ -540,8 +529,10 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
               }
             },
           ),
-        if (showDownloadButton) const SizedBox(width: 5),
-        if (showDownloadButton && imageUrls.length > 1)
+          if (imageUrls.length > 1 || ResponsiveUtil.isLandscape())
+            const SizedBox(width: 5),
+        ],
+        if (showDownloadButton && imageUrls.length > 1) ...[
           ItemBuilder.buildIconButton(
             context: context,
             icon: allDownloadIcon,
@@ -583,8 +574,8 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
               }
             },
           ),
-        if (showDownloadButton && imageUrls.length > 1)
-          const SizedBox(width: 5),
+          if (ResponsiveUtil.isLandscape()) const SizedBox(width: 5),
+        ],
         if (ResponsiveUtil.isLandscape())
           ItemBuilder.buildIconButton(
             context: context,
@@ -594,7 +585,6 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
               dialogNavigatorState?.popPage();
             },
           ),
-        if (ResponsiveUtil.isLandscape()) const SizedBox(width: 5),
       ],
     );
   }

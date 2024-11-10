@@ -61,12 +61,6 @@ class _LikeScreenState extends State<LikeScreen>
 
   @override
   void initState() {
-    if (Platform.isAndroid) {
-      SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark);
-      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-    }
     super.initState();
     if (widget.nested) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -277,7 +271,6 @@ class _LikeScreenState extends State<LikeScreen>
             onTap: () {
               BottomSheetBuilder.showContextMenu(context, _buildMoreButtons());
             }),
-        const SizedBox(width: 5),
       ],
     );
   }
@@ -287,6 +280,7 @@ class _LikeScreenState extends State<LikeScreen>
       buttonConfigs: [
         ContextMenuButtonConfig(
           S.current.clearInvalidContent,
+          icon: const Icon(Icons.delete_outline_rounded),
           onPressed: () async {
             UserApi.deleteInvalidLike(blogId: await HiveUtil.getUserId())
                 .then((value) {

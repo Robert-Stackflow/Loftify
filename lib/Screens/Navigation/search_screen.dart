@@ -147,9 +147,9 @@ class SearchScreenState extends State<SearchScreen>
       backgroundColor: MyTheme.getBackground(context),
       appBar: ItemBuilder.buildResponsiveAppBar(
         context: context,
-        spacing: 0,
         titleWidget: _buildSearchBar(),
-        titleSpacing: 0,
+        titleLeftMargin: 0,
+        rightSpacing: 0,
       ),
       body: Stack(
         children: [

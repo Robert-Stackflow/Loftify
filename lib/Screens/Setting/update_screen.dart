@@ -60,9 +60,8 @@ class _UpdateScreenState extends State<UpdateScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: ItemBuilder.buildSimpleAppBar(
-        transparent: true,
         title: S.current.getNewVersion(latestVersion),
-        leading: Icons.arrow_back_rounded,
+        leadingIcon: Icons.arrow_back_rounded,
         context: context,
       ),
       body: Container(

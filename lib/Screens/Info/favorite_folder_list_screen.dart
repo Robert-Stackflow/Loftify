@@ -43,12 +43,6 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
 
   @override
   void initState() {
-    if (Platform.isAndroid) {
-      SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark);
-      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-    }
     super.initState();
   }
 
@@ -310,7 +304,6 @@ class _FavoriteFolderListScreenState extends State<FavoriteFolderListScreen>
               Icon(Icons.add_rounded, color: Theme.of(context).iconTheme.color),
           onTap: handleAdd,
         ),
-        const SizedBox(width: 5),
       ],
     );
   }

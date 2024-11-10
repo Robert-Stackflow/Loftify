@@ -43,10 +43,6 @@ Future<void> runMyApp(List<String> args) async {
   if (ResponsiveUtil.isAndroid()) {
     await initDisplayMode();
     await RequestHeaderUtil.initAndroidInfo();
-    SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark);
-    SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
   }
   if (ResponsiveUtil.isDesktop()) {
     await initWindow();

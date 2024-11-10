@@ -9,7 +9,7 @@ import 'styles.dart';
 class MyTheme {
   MyTheme._();
 
-  bool get isDarkMode => Theme.of(rootContext).brightness == Brightness.dark;
+  static bool get isDarkMode => Theme.of(rootContext).brightness == Brightness.dark;
 
   static ThemeData getTheme({required bool isDarkMode}) {
     return ThemeData(
@@ -227,10 +227,9 @@ class MyTheme {
   }
 
   static Color get background {
-    return scaffoldBackgroundColor;
-    // return Utils.currentBrightness(rootContext) == Brightness.light
-    //     ? Theme.of(rootContext).scaffoldBackgroundColor
-    //     : Theme.of(rootContext).canvasColor;
+    return Utils.currentBrightness(rootContext) == Brightness.light
+        ? scaffoldBackgroundColor
+        : scaffoldBackgroundColor;
   }
 
   static Color get itemBackground {

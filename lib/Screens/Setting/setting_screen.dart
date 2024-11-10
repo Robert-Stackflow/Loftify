@@ -39,10 +39,9 @@ class _SettingScreenState extends State<SettingScreen>
       child: Scaffold(
         appBar: ItemBuilder.buildResponsiveAppBar(
           showBack: true,
-          transparent: true,
           title: S.current.setting,
           context: context,
-          background: Theme.of(context).scaffoldBackgroundColor,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         ),
         body: EasyRefresh(
           child: ListView(

@@ -57,20 +57,22 @@ class ItemBuilder {
     Widget? titleWidget,
     bool showBack = false,
     Function()? onTapBack,
-    double spacing = 10,
     bool? showBorder,
     Widget? bottomWidget,
     double? bottomHeight,
-    bool transparent = true,
-    Color? background,
-    double? titleSpacing,
-    bool centerInMobile = false,
+    Color? backgroundColor,
+    bool centerTitle = false,
+    double titleLeftMargin = 5,
+    double rightSpacing = 8,
     List<Widget> actions = const [],
   }) {
     late PreferredSize topWidget;
     if (ResponsiveUtil.isLandscape()) {
-      var finalTitle = titleWidget ??
-          Text(title, style: Theme.of(context).textTheme.titleLarge);
+      var finalTitle = Container(
+        margin: EdgeInsets.only(left: titleLeftMargin),
+        child: titleWidget ??
+            Text(title, style: Theme.of(context).textTheme.titleLarge),
+      );
       topWidget = buildPreferredSize(
         child: Container(
           height: 56,
@@ -88,7 +90,7 @@ class ItemBuilder {
                   children: [
                     if (showBack)
                       Container(
-                        margin: const EdgeInsets.only(left: 10),
+                        margin: const EdgeInsets.only(left: 8),
                         child: ToolButton(
                           context: context,
                           onTap: onTapBack ?? () => panelScreenState?.popPage(),
@@ -96,11 +98,7 @@ class ItemBuilder {
                               const Icon(Icons.arrow_back_rounded),
                         ),
                       ),
-                    if (showBack || titleWidget == null)
-                      SizedBox(width: spacing),
                     finalTitle,
-                    ResponsiveUtil.buildDesktopWidget(
-                        desktop: const SizedBox(width: 173)),
                   ],
                 ),
               ),
@@ -112,21 +110,15 @@ class ItemBuilder {
       topWidget = buildPreferredSize(
         child: Container(
           decoration: BoxDecoration(
-            border: showBorder ?? false ? MyTheme.bottomBorder : null,
-          ),
+              border: showBorder ?? false ? MyTheme.bottomBorder : null),
           child: ItemBuilder.buildAppBar(
             context: context,
-            center: centerInMobile,
-            leading: showBack ? Icons.arrow_back_rounded : null,
+            centerTitle: centerTitle,
+            leadingIcon: showBack ? Icons.arrow_back_rounded : null,
             onLeadingTap: onTapBack ?? () => panelScreenState?.popPage(),
-            backgroundColor: background ??
-                (transparent
-                    ? MyTheme.getBackground(context)
-                    : MyTheme.canvasColor),
-            leftSpacing: showBack ? 8 : 0,
-            leadingTitleSpacing: showBack ? 5 : 0,
-            actions: actions,
-            titleSpacing: titleSpacing,
+            backgroundColor: backgroundColor ?? MyTheme.getBackground(context),
+            titleLeftMargin: titleLeftMargin,
+            rightSpacing: rightSpacing,
             title: titleWidget != null
                 ? Container(
                     constraints: const BoxConstraints(maxHeight: 60),
@@ -134,10 +126,12 @@ class ItemBuilder {
                   )
                 : Text(
                     title,
-                    style: Theme.of(context).textTheme.titleMedium?.apply(
-                          fontWeightDelta: 2,
-                        ),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.apply(fontWeightDelta: 2),
                   ),
+            actions: actions,
           ),
         ),
       );
@@ -145,18 +139,14 @@ class ItemBuilder {
     return bottomWidget != null && bottomHeight != null
         ? buildPreferredSize(
             height: 56 + bottomHeight,
-            child: SafeArea(
-              child: Column(
-                children: [
-                  topWidget,
-                  bottomWidget,
-                ],
-              ),
+            child: Column(
+              children: [
+                topWidget,
+                bottomWidget,
+              ],
             ),
           )
-        : buildPreferredSize(
-            child: SafeArea(child: topWidget),
-          );
+        : buildPreferredSize(child: topWidget);
   }
 
   static buildTabBar(
@@ -178,7 +168,7 @@ class ItemBuilder {
     if (ResponsiveUtil.isLandscape()) {
       scrollable = true;
     } else {
-      if (tabs.length <= 1 || tabs.length > 3) {
+      if (tabs.length > 3) {
         scrollable = true;
       } else {
         scrollable = false;
@@ -230,111 +220,89 @@ class ItemBuilder {
   static PreferredSizeWidget buildSimpleAppBar({
     String title = "",
     Key? key,
-    IconData leading = Icons.arrow_back_rounded,
-    List<Widget>? actions,
-    required BuildContext context,
-    bool transparent = false,
-  }) {
-    bool showLeading = !ResponsiveUtil.isLandscape();
-    return MyAppBar(
-      key: key,
-      backgroundColor: transparent
-          ? Theme.of(context).scaffoldBackgroundColor
-          : Theme.of(context).appBarTheme.backgroundColor,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      leadingWidth: showLeading ? 56.0 : 0.0,
-      automaticallyImplyLeading: false,
-      leading: showLeading
-          ? Container(
-              margin: const EdgeInsets.only(left: 5),
-              child: buildIconButton(
-                context: context,
-                icon: Icon(leading, color: Theme.of(context).iconTheme.color),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-            )
-          : null,
-      title: title.isNotEmpty
-          ? Container(
-              margin: EdgeInsets.only(left: showLeading ? 5 : 20),
-              child: Text(
-                title,
-                style: Theme.of(context).textTheme.titleMedium?.apply(
-                      fontWeightDelta: 2,
-                    ),
-              ),
-            )
-          : emptyWidget,
-      actions: actions,
-    );
-  }
-
-  static buildAppBar({
-    Widget? title,
-    Key? key,
-    bool center = false,
-    IconData? leading,
-    Widget? leadingWidget,
-    Color? leadingColor,
-    Function()? onLeadingTap,
-    Color? backgroundColor,
+    IconData leadingIcon = Icons.arrow_back_rounded,
     List<Widget>? actions,
     required BuildContext context,
     bool transparent = false,
     double leftSpacing = 10,
-    double leadingTitleSpacing = 10,
     double? titleSpacing,
-    bool forceShowClose = false,
+    double titleLeftMargin = 10,
+    double titleRightMargin = 0,
+    bool centerTitle = false,
+    bool showLeading = true,
   }) {
-    bool showLeading =
-        leading != null && (!ResponsiveUtil.isLandscape() || forceShowClose);
-    // center = ResponsiveUtil.isDesktop() ? false : center;
+    return buildAppBar(
+      key: key,
+      context: context,
+      title: Text(
+        title,
+        style:
+            Theme.of(context).textTheme.titleMedium?.apply(fontWeightDelta: 2),
+      ),
+      leadingIcon: showLeading ? leadingIcon : null,
+      onLeadingTap: () {
+        Navigator.pop(context);
+      },
+      actions: actions,
+      backgroundColor: transparent ? MyTheme.background : null,
+      leftSpacing: leftSpacing,
+      titleLeftMargin: titleLeftMargin,
+      titleRightMargin: titleRightMargin,
+      centerTitle: centerTitle,
+    );
+  }
+
+  static buildAppBar({
+    Key? key,
+    required BuildContext context,
+    Widget? title,
+    bool centerTitle = false,
+    IconData? leadingIcon,
+    Widget? leadingWidget,
+    Color? leadingColor,
+    Function()? onLeadingTap,
+    Color? backgroundColor,
+    double leftSpacing = 8,
+    double rightSpacing = 8,
+    double titleLeftMargin = 5,
+    double titleRightMargin = 0,
+    List<Widget>? actions,
+    SystemUiOverlayStyle? systemOverlayStyle,
+  }) {
+    bool showLeading = (leadingIcon != null || leadingWidget != null);
+    var finalTitleWidget = Container(
+      margin: EdgeInsets.only(left: titleLeftMargin, right: titleRightMargin),
+      child: title,
+    );
+    var finalLeadingWidget = Container(
+      margin: EdgeInsets.only(left: leftSpacing),
+      child: leadingWidget ??
+          ItemBuilder.buildIconButton(
+            context: context,
+            icon: Icon(leadingIcon,
+                color: leadingColor ?? Theme.of(context).iconTheme.color),
+            onTap: onLeadingTap,
+          ),
+    );
     return MyAppBar(
       key: key,
-      primary: !ResponsiveUtil.isWideLandscape(),
-      backgroundColor: transparent
-          ? Colors.transparent
-          : backgroundColor ?? Theme.of(context).appBarTheme.backgroundColor!,
+      backgroundColor:
+          backgroundColor ?? Theme.of(context).appBarTheme.backgroundColor!,
       elevation: 0,
+      centerTitle: centerTitle,
+      systemOverlayStyle: systemOverlayStyle ??
+          (MyTheme.isDarkMode
+              ? SystemUiOverlayStyle.light
+              : SystemUiOverlayStyle.dark),
       scrolledUnderElevation: 0,
       automaticallyImplyLeading: false,
       leadingWidth: showLeading ? 56.0 : 0.0,
-      leading: showLeading
-          ? Container(
-              margin: EdgeInsets.only(left: leftSpacing),
-              child: leadingWidget ??
-                  ItemBuilder.buildIconButton(
-                    context: context,
-                    icon: Icon(leading,
-                        color:
-                            leadingColor ?? Theme.of(context).iconTheme.color),
-                    onTap: onLeadingTap,
-                  ),
-            )
-          : null,
-      title: center
-          ? Center(
-              child: Container(
-                  margin: EdgeInsets.only(
-                      left: center
-                          ? 0
-                          : (showLeading
-                              ? leadingTitleSpacing
-                              : titleSpacing ?? 20)),
-                  child: title))
-          : Container(
-              margin: EdgeInsets.only(
-                  left: center
-                      ? 0
-                      : (showLeading
-                          ? leadingTitleSpacing
-                          : titleSpacing ?? 20)),
-              child: title,
-            ),
-      actions: actions,
+      leading: showLeading ? finalLeadingWidget : null,
+      title: centerTitle ? Center(child: finalTitleWidget) : finalTitleWidget,
+      actions: [
+        ...?actions,
+        if (rightSpacing > 0) SizedBox(width: rightSpacing),
+      ],
     );
   }
 
@@ -345,13 +313,32 @@ class ItemBuilder {
     Widget? flexibleSpace,
     PreferredSizeWidget? bottom,
     Widget? title,
-    bool center = false,
+    bool centerTitle = false,
     double expandedHeight = 320,
+    double titleLeftMargin = 0,
     double? collapsedHeight,
+    double leftSpacing = 8,
+    double rightSpacing = 8,
     SystemUiOverlayStyle? systemOverlayStyle,
   }) {
     bool showLeading = !ResponsiveUtil.isLandscape();
-    center = ResponsiveUtil.isLandscape() ? false : center;
+    var finalTitleWidget = Container(
+      margin: EdgeInsets.only(left: titleLeftMargin),
+      child: title,
+    );
+    var leading = Container(
+      margin: EdgeInsets.only(left: leftSpacing),
+      child: ItemBuilder.buildIconButton(
+        context: context,
+        icon: const Icon(
+          Icons.arrow_back_rounded,
+          color: Colors.white,
+        ),
+        onTap: () {
+          Navigator.pop(context);
+        },
+      ),
+    );
     return MySliverAppBar(
       systemOverlayStyle: systemOverlayStyle,
       expandedHeight: expandedHeight,
@@ -359,44 +346,19 @@ class ItemBuilder {
           max(100, kToolbarHeight + MediaQuery.of(context).padding.top),
       pinned: true,
       leadingWidth: showLeading ? 56 : 0,
-      leading: showLeading
-          ? Container(
-              margin: const EdgeInsets.only(left: 5),
-              child: ItemBuilder.buildIconButton(
-                context: context,
-                icon: const Icon(
-                  Icons.arrow_back_rounded,
-                  color: Colors.white,
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-            )
-          : null,
+      leading: showLeading ? leading : null,
       automaticallyImplyLeading: false,
       backgroundWidget: backgroundWidget,
-      actions: actions,
-      title: showLeading
-          ? center
-              ? Center(child: title)
-              : title ?? emptyWidget
-          : center
-              ? Center(
-                  child: Container(
-                    margin: const EdgeInsets.only(left: 20),
-                    child: title,
-                  ),
-                )
-              : Container(
-                  margin: const EdgeInsets.only(left: 20),
-                  child: title,
-                ),
+      title: centerTitle ? Center(child: finalTitleWidget) : finalTitleWidget,
       elevation: 0,
       scrolledUnderElevation: 0,
       backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
       flexibleSpace: flexibleSpace,
       bottom: bottom,
+      actions: [
+        if (actions != null) ...actions,
+        SizedBox(width: rightSpacing),
+      ],
     );
   }
 
@@ -698,6 +660,7 @@ class ItemBuilder {
           ),
           if (!ThemeColorData.isImmersive(context))
             Container(
+              height: 0,
               margin: const EdgeInsets.symmetric(horizontal: 10),
               decoration: BoxDecoration(
                 border: roundBottom ? null : MyTheme.bottomBorder,
@@ -803,6 +766,7 @@ class ItemBuilder {
           ),
           if (!ThemeColorData.isImmersive(context))
             Container(
+              height: 0,
               margin: const EdgeInsets.symmetric(horizontal: 10),
               decoration: BoxDecoration(
                 border: roundBottom ? null : MyTheme.bottomBorder,
@@ -2698,13 +2662,7 @@ class ItemBuilder {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: backgroundColor ?? Theme.of(context).scaffoldBackgroundColor,
-        // border: Border(
-        //   left: BorderSide(
-        //     color: Theme.of(context).dividerColor,
-        //     width: 0.5
-        //   ),
-        // ),
+        color: backgroundColor ?? MyTheme.scaffoldBackgroundColor,
       ),
       child: WindowTitleBar(
         hasMoveHandle: ResponsiveUtil.isDesktop(),
@@ -2713,7 +2671,6 @@ class ItemBuilder {
         child: Row(
           children: [
             ...leftWidgets,
-            // const Spacer(),
             Row(
               children: [
                 const SizedBox(width: 10),

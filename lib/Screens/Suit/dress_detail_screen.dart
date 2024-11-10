@@ -47,12 +47,6 @@ class _DressDetailScreenState extends State<DressDetailScreen>
 
   @override
   void initState() {
-    if (Platform.isAndroid) {
-      SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark);
-      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-    }
     super.initState();
     currentAvatarImg =
         HiveUtil.getString(HiveUtil.customAvatarBoxKey, defaultValue: null);

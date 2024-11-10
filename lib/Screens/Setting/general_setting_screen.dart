@@ -133,9 +133,8 @@ class GeneralSettingScreenState extends State<GeneralSettingScreen>
         appBar: ItemBuilder.buildResponsiveAppBar(
           showBack: true,
           title: S.current.generalSetting,
-          transparent: true,
-          context: context,
-          background: Theme.of(context).scaffoldBackgroundColor,
+            context: context,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         ),
         body: EasyRefresh(
           child: ListView(

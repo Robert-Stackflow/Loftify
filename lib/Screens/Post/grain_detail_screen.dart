@@ -201,7 +201,6 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
                 color: Colors.white,
               ),
             ),
-            const SizedBox(width: 5),
           ],
           title: Text(
             S.current.grain,
@@ -210,7 +209,7 @@ class GrainDetailScreenState extends State<GrainDetailScreen>
                   fontWeightDelta: 2,
                 ),
           ),
-          center: true,
+          centerTitle: !ResponsiveUtil.isLandscape(),
           flexibleSpace: FlexibleSpaceBar(
             background: Stack(
               children: [

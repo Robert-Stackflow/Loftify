@@ -48,17 +48,6 @@ class CustomBgAvatarListScreenState extends State<CustomBgAvatarListScreen>
   bool _noMore = false;
   String? tag;
 
-  @override
-  void initState() {
-    if (Platform.isAndroid) {
-      SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark);
-      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-    }
-    super.initState();
-  }
-
   static buildTagBar(BuildContext context, List<String> tags, String? selected,
       Function(String? tag) onSelectedTag) {
     if (ResponsiveUtil.isDesktop()) {

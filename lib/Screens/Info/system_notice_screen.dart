@@ -74,12 +74,6 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
 
   @override
   void initState() {
-    if (Platform.isAndroid) {
-      SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark);
-      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-    }
     super.initState();
     initTab();
   }
@@ -232,19 +226,23 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
         );
       },
       triggerAxis: Axis.vertical,
-      child: ItemBuilder.buildLoadMoreNotification(
-        noMore: _allNoMore,
-        onLoad: () {
-          _fetchSystemNotices(MessageType.all, _allMessages,
-              resetNoMore: () => _allNoMore = false,
-              onNoMore: () => _allNoMore = true);
-        },
-        child: ListView.builder(
-          padding: const EdgeInsets.only(top: 10),
-          itemBuilder: (context, index) => _buildItem(_allMessages[index]),
-          itemCount: _allMessages.length,
-        ),
-      ),
+      child: _allMessages.isEmpty
+          ? ItemBuilder.buildEmptyPlaceholder(
+              context: context, text: S.current.noNotice)
+          : ItemBuilder.buildLoadMoreNotification(
+              noMore: _allNoMore,
+              onLoad: () {
+                _fetchSystemNotices(MessageType.all, _allMessages,
+                    resetNoMore: () => _allNoMore = false,
+                    onNoMore: () => _allNoMore = true);
+              },
+              child: ListView.builder(
+                padding: const EdgeInsets.only(top: 10),
+                itemBuilder: (context, index) =>
+                    _buildItem(_allMessages[index]),
+                itemCount: _allMessages.length,
+              ),
+            ),
     );
   }
 
@@ -259,17 +257,21 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
         return await _fetchLikeMessages();
       },
       triggerAxis: Axis.vertical,
-      child: ItemBuilder.buildLoadMoreNotification(
-        noMore: _likeNoMore,
-        onLoad: () {
-          _fetchLikeMessages();
-        },
-        child: ListView.builder(
-          padding: const EdgeInsets.only(top: 10),
-          itemBuilder: (context, index) => _buildItem(_likeMessages[index]),
-          itemCount: _likeMessages.length,
-        ),
-      ),
+      child: _likeMessages.isEmpty
+          ? ItemBuilder.buildEmptyPlaceholder(
+              context: context, text: S.current.noNotice)
+          : ItemBuilder.buildLoadMoreNotification(
+              noMore: _likeNoMore,
+              onLoad: () {
+                _fetchLikeMessages();
+              },
+              child: ListView.builder(
+                padding: const EdgeInsets.only(top: 10),
+                itemBuilder: (context, index) =>
+                    _buildItem(_likeMessages[index]),
+                itemCount: _likeMessages.length,
+              ),
+            ),
     );
   }
 
@@ -295,20 +297,23 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
         );
       },
       triggerAxis: Axis.vertical,
-      child: ItemBuilder.buildLoadMoreNotification(
-        noMore: _recommendNoMore,
-        onLoad: () {
-          _fetchSystemNotices(MessageType.recommend, _recommendMessages,
-              resetNoMore: () => _recommendNoMore = false,
-              onNoMore: () => _recommendNoMore = true);
-        },
-        child: ListView.builder(
-          padding: const EdgeInsets.only(top: 10),
-          itemBuilder: (context, index) =>
-              _buildItem(_recommendMessages[index]),
-          itemCount: _recommendMessages.length,
-        ),
-      ),
+      child: _recommendMessages.isEmpty
+          ? ItemBuilder.buildEmptyPlaceholder(
+              context: context, text: S.current.noNotice)
+          : ItemBuilder.buildLoadMoreNotification(
+              noMore: _recommendNoMore,
+              onLoad: () {
+                _fetchSystemNotices(MessageType.recommend, _recommendMessages,
+                    resetNoMore: () => _recommendNoMore = false,
+                    onNoMore: () => _recommendNoMore = true);
+              },
+              child: ListView.builder(
+                padding: const EdgeInsets.only(top: 10),
+                itemBuilder: (context, index) =>
+                    _buildItem(_recommendMessages[index]),
+                itemCount: _recommendMessages.length,
+              ),
+            ),
     );
   }
 
@@ -334,19 +339,23 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
         );
       },
       triggerAxis: Axis.vertical,
-      child: ItemBuilder.buildLoadMoreNotification(
-        noMore: _giftNoMore,
-        onLoad: () {
-          _fetchSystemNotices(MessageType.gift, _giftMessages,
-              resetNoMore: () => _giftNoMore = false,
-              onNoMore: () => _giftNoMore = true);
-        },
-        child: ListView.builder(
-          padding: const EdgeInsets.only(top: 10),
-          itemBuilder: (context, index) => _buildItem(_giftMessages[index]),
-          itemCount: _giftMessages.length,
-        ),
-      ),
+      child: _giftMessages.isEmpty
+          ? ItemBuilder.buildEmptyPlaceholder(
+              context: context, text: S.current.noNotice)
+          : ItemBuilder.buildLoadMoreNotification(
+              noMore: _giftNoMore,
+              onLoad: () {
+                _fetchSystemNotices(MessageType.gift, _giftMessages,
+                    resetNoMore: () => _giftNoMore = false,
+                    onNoMore: () => _giftNoMore = true);
+              },
+              child: ListView.builder(
+                padding: const EdgeInsets.only(top: 10),
+                itemBuilder: (context, index) =>
+                    _buildItem(_giftMessages[index]),
+                itemCount: _giftMessages.length,
+              ),
+            ),
     );
   }
 
@@ -372,19 +381,22 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
         );
       },
       triggerAxis: Axis.vertical,
-      child: ItemBuilder.buildLoadMoreNotification(
-        noMore: _atNoMore,
-        onLoad: () {
-          _fetchSystemNotices(MessageType.at, _atMessages,
-              resetNoMore: () => _atNoMore = false,
-              onNoMore: () => _atNoMore = true);
-        },
-        child: ListView.builder(
-          padding: const EdgeInsets.only(top: 10),
-          itemBuilder: (context, index) => _buildItem(_atMessages[index]),
-          itemCount: _atMessages.length,
-        ),
-      ),
+      child: _atMessages.isEmpty
+          ? ItemBuilder.buildEmptyPlaceholder(
+              context: context, text: S.current.noNotice)
+          : ItemBuilder.buildLoadMoreNotification(
+              noMore: _atNoMore,
+              onLoad: () {
+                _fetchSystemNotices(MessageType.at, _atMessages,
+                    resetNoMore: () => _atNoMore = false,
+                    onNoMore: () => _atNoMore = true);
+              },
+              child: ListView.builder(
+                padding: const EdgeInsets.only(top: 10),
+                itemBuilder: (context, index) => _buildItem(_atMessages[index]),
+                itemCount: _atMessages.length,
+              ),
+            ),
     );
   }
 
@@ -410,20 +422,23 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
         );
       },
       triggerAxis: Axis.vertical,
-      child: ItemBuilder.buildLoadMoreNotification(
-        noMore: _subscribeNoMore,
-        onLoad: () {
-          _fetchSystemNotices(MessageType.subscribe, _subscribeMessages,
-              resetNoMore: () => _subscribeNoMore = false,
-              onNoMore: () => _subscribeNoMore = true);
-        },
-        child: ListView.builder(
-          padding: const EdgeInsets.only(top: 10),
-          itemBuilder: (context, index) =>
-              _buildItem(_subscribeMessages[index]),
-          itemCount: _subscribeMessages.length,
-        ),
-      ),
+      child: _subscribeMessages.isEmpty
+          ? ItemBuilder.buildEmptyPlaceholder(
+              context: context, text: S.current.noNotice)
+          : ItemBuilder.buildLoadMoreNotification(
+              noMore: _subscribeNoMore,
+              onLoad: () {
+                _fetchSystemNotices(MessageType.subscribe, _subscribeMessages,
+                    resetNoMore: () => _subscribeNoMore = false,
+                    onNoMore: () => _subscribeNoMore = true);
+              },
+              child: ListView.builder(
+                padding: const EdgeInsets.only(top: 10),
+                itemBuilder: (context, index) =>
+                    _buildItem(_subscribeMessages[index]),
+                itemCount: _subscribeMessages.length,
+              ),
+            ),
     );
   }
 
@@ -449,20 +464,23 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
         );
       },
       triggerAxis: Axis.vertical,
-      child: ItemBuilder.buildLoadMoreNotification(
-        noMore: _collectionNoMore,
-        onLoad: () {
-          _fetchSystemNotices(MessageType.collection, _collectionMessages,
-              resetNoMore: () => _collectionNoMore = false,
-              onNoMore: () => _collectionNoMore = true);
-        },
-        child: ListView.builder(
-          padding: const EdgeInsets.only(top: 10),
-          itemBuilder: (context, index) =>
-              _buildItem(_collectionMessages[index]),
-          itemCount: _collectionMessages.length,
-        ),
-      ),
+      child: _collectionMessages.isEmpty
+          ? ItemBuilder.buildEmptyPlaceholder(
+              context: context, text: S.current.noNotice)
+          : ItemBuilder.buildLoadMoreNotification(
+              noMore: _collectionNoMore,
+              onLoad: () {
+                _fetchSystemNotices(MessageType.collection, _collectionMessages,
+                    resetNoMore: () => _collectionNoMore = false,
+                    onNoMore: () => _collectionNoMore = true);
+              },
+              child: ListView.builder(
+                padding: const EdgeInsets.only(top: 10),
+                itemBuilder: (context, index) =>
+                    _buildItem(_collectionMessages[index]),
+                itemCount: _collectionMessages.length,
+              ),
+            ),
     );
   }
 
@@ -488,19 +506,23 @@ class _SystemNoticeScreenState extends State<SystemNoticeScreen>
         );
       },
       triggerAxis: Axis.vertical,
-      child: ItemBuilder.buildLoadMoreNotification(
-        noMore: _otherNoMore,
-        onLoad: () {
-          _fetchSystemNotices(MessageType.other, _otherMessages,
-              resetNoMore: () => _otherNoMore = false,
-              onNoMore: () => _otherNoMore = true);
-        },
-        child: ListView.builder(
-          padding: const EdgeInsets.only(top: 10),
-          itemBuilder: (context, index) => _buildItem(_otherMessages[index]),
-          itemCount: _otherMessages.length,
-        ),
-      ),
+      child: _otherMessages.isEmpty
+          ? ItemBuilder.buildEmptyPlaceholder(
+              context: context, text: S.current.noNotice)
+          : ItemBuilder.buildLoadMoreNotification(
+              noMore: _otherNoMore,
+              onLoad: () {
+                _fetchSystemNotices(MessageType.other, _otherMessages,
+                    resetNoMore: () => _otherNoMore = false,
+                    onNoMore: () => _otherNoMore = true);
+              },
+              child: ListView.builder(
+                padding: const EdgeInsets.only(top: 10),
+                itemBuilder: (context, index) =>
+                    _buildItem(_otherMessages[index]),
+                itemCount: _otherMessages.length,
+              ),
+            ),
     );
   }
 

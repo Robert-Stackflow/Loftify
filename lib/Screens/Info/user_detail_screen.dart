@@ -144,7 +144,7 @@ class UserDetailScreenState extends State<UserDetailScreen>
           collapsedHeight: 56,
           backgroundWidget: _buildBackground(height: _expandedHeight + 60),
           actions: _appBarActions(),
-          center: true,
+          centerTitle: !ResponsiveUtil.isLandscape(),
           title: Text(
             S.current.personalHomepage,
             style: Theme.of(context).textTheme.titleMedium?.apply(
@@ -406,7 +406,6 @@ class UserDetailScreenState extends State<UserDetailScreen>
           color: Colors.white,
         ),
       ),
-      const SizedBox(width: 5),
     ];
   }
 

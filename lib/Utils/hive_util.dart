@@ -6,7 +6,6 @@ import 'package:loftify/Models/account_response.dart';
 import 'package:loftify/Resources/theme_color_data.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/request_util.dart';
-import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Utils/utils.dart';
 
 import '../Models/nav_entry.dart';
@@ -122,7 +121,7 @@ class HiveUtil {
         await RequestUtil.clearCookie();
         HiveUtil.delete(HiveUtil.tokenTypeKey).then((value) {
           IToast.showTop("退出成功");
-          ResponsiveUtil.returnToMainScreen(rootContext);
+          mainScreenState?.logout();
         });
       },
       onTapCancel: () {},

@@ -30,9 +30,8 @@ class _SelectThemeScreenState extends State<SelectThemeScreen>
         appBar: ItemBuilder.buildResponsiveAppBar(
           showBack: true,
           title: S.current.selectTheme,
-          transparent: true,
           context: context,
-          background: Theme.of(context).scaffoldBackgroundColor,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         ),
         body: EasyRefresh(
           child: ListView(

@@ -75,7 +75,7 @@ class _TagCollectionGrainScreenState extends State<TagCollectionGrainScreen>
     return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
-      centerInMobile: true,
+      centerTitle: true,
       titleWidget: ItemBuilder.buildClickable(
         ItemBuilder.buildTagItem(
           context,
@@ -123,7 +123,6 @@ class _TagCollectionGrainScreenState extends State<TagCollectionGrainScreen>
                   color: Theme.of(context).iconTheme.color),
               onTap: () {}),
         ),
-        const SizedBox(width: 5),
       ],
     );
   }

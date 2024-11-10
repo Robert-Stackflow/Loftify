@@ -107,7 +107,7 @@ class _SearchResultScreenState extends State<SearchResultScreen>
       appBar: ItemBuilder.buildResponsiveAppBar(
         context: context,
         showBack: true,
-        spacing: 0,
+        titleLeftMargin: 0,
         titleWidget: _buildSearchBar(),
         bottomHeight: 56,
         bottomWidget: ItemBuilder.buildTabBar(

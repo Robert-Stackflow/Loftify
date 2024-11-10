@@ -147,6 +147,7 @@ class MainScreenState extends State<MainScreen>
         } finally {}
       });
     }
+    if (mounted) setState(() {});
     return IndicatorResult.success;
   }
 
@@ -159,6 +160,18 @@ class MainScreenState extends State<MainScreen>
     }, onError: (Object err) {
       ILogger.error('Failed to get URI: $err');
     });
+  }
+
+  login() {
+    dialogNavigatorState?.popAll();
+    panelScreenState?.login();
+    _fetchUserInfo();
+  }
+
+  logout() {
+    panelScreenState?.logout();
+    blogInfo = null;
+    if (mounted) setState(() {});
   }
 
   @override
@@ -190,7 +203,7 @@ class MainScreenState extends State<MainScreen>
   void fetchBasicData() {
     ServerApi.getCloudControl();
     CustomFont.downloadFont(showToast: false);
-    ResponsiveUtil.doInLandscape(landscape: _fetchUserInfo);
+    _fetchUserInfo();
     if (HiveUtil.getBool(HiveUtil.autoCheckUpdateKey)) {
       Utils.getReleases(
         context: context,
@@ -353,6 +366,7 @@ class MainScreenState extends State<MainScreen>
       buttonConfigs: [
         ContextMenuButtonConfig(
           S.current.viewPersonalHomepage,
+          iconData: Icons.person_outline_rounded,
           onPressed: () async {
             panelScreenState?.pushPage(UserDetailScreen(
               blogId: blogInfo!.blogId,
@@ -363,6 +377,7 @@ class MainScreenState extends State<MainScreen>
         ContextMenuButtonConfig.divider(),
         ContextMenuButtonConfig.warning(
           S.current.logout,
+          iconData: Icons.logout_rounded,
           onPressed: () async {
             HiveUtil.confirmLogout(context);
           },

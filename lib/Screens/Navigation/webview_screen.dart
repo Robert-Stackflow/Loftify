@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+import 'package:context_menus/context_menus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
@@ -7,12 +8,10 @@ import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/uri_util.dart';
-import 'package:tuple/tuple.dart';
 
 import '../../Utils/constant.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
-import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../generated/l10n.dart';
 
@@ -50,7 +49,6 @@ class _WebviewScreenState extends State<WebviewScreen>
   bool showError = false;
   WebResourceError? currentError;
   double progress = 0;
-  bool showAppBar = true;
 
   @override
   void initState() {
@@ -86,79 +84,73 @@ class _WebviewScreenState extends State<WebviewScreen>
     );
   }
 
+  _buildMoreButtons() {
+    return GenericContextMenu(
+      buttonConfigs: [
+        ContextMenuButtonConfig(
+          S.current.refresh,
+          icon: const Icon(Icons.refresh_rounded),
+          onPressed: () async {
+            webViewController?.reload();
+          },
+        ),
+        ContextMenuButtonConfig(
+          S.current.copyLink,
+          icon: const Icon(Icons.copy_rounded),
+          onPressed: () {
+            Utils.copy(context, widget.url);
+          },
+        ),
+        ContextMenuButtonConfig(
+          S.current.openWithBrowser,
+          icon: const Icon(Icons.open_in_browser_rounded),
+          onPressed: () {
+            UriUtil.openExternal(widget.url);
+          },
+        ),
+        ContextMenuButtonConfig(
+          S.current.shareToOtherApps,
+          icon: const Icon(Icons.share_rounded),
+          onPressed: () {
+            UriUtil.share(context, widget.url);
+          },
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: canPop,
-      onPopInvoked: (b) {
+      onPopInvokedWithResult: (_, __) {
         showError = false;
         webViewController?.canGoBack().then((canGoBack) {
           webViewController?.goBack();
         });
       },
       child: Scaffold(
-        backgroundColor: showAppBar
-            ? MyTheme.getBackground(context)
-            : Utils.isDark(context)
-                ? const Color(0xFF151515)
-                : const Color(0xFFF5F5F5),
-        appBar: showAppBar
-            ? ItemBuilder.buildAppBar(
-                forceShowClose: true,
-                context: context,
-                leading: Icons.close_rounded,
-                backgroundColor: MyTheme.getBackground(context),
-                onLeadingTap: () {
-                  Navigator.pop(context);
-                },
-                center: true,
-                title: Text(
-                  title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.apply(fontWeightDelta: 2),
-                ),
-                actions: [
-                  ItemBuilder.buildIconButton(
-                      context: context,
-                      icon: Icon(Icons.more_vert_rounded,
-                          color: Theme.of(context).iconTheme.color),
-                      onTap: () {
-                        List<Tuple2<String, dynamic>> options = [
-                          Tuple2(S.current.refresh, -1),
-                          Tuple2(S.current.copyLink, 0),
-                          Tuple2(S.current.openWithBrowser, 1),
-                          Tuple2(S.current.shareToOtherApps, 2),
-                        ];
-                        BottomSheetBuilder.showListBottomSheet(
-                          context,
-                          (sheetContext) => TileList.fromOptions(
-                            options,
-                            (idx) {
-                              Navigator.pop(sheetContext);
-                              if (idx == -1) {
-                                webViewController?.reload();
-                              } else if (idx == 0) {
-                                Utils.copy(context, widget.url);
-                              } else if (idx == 1) {
-                                UriUtil.openExternal(widget.url);
-                              } else if (idx == 2) {
-                                UriUtil.share(context, widget.url);
-                              }
-                            },
-                            showCancel: true,
-                            context: context,
-                            showTitle: false,
-                            onCloseTap: () => Navigator.pop(sheetContext),
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                          ),
-                        );
-                      }),
-                  const SizedBox(width: 5),
-                ],
-              )
-            : null,
+        backgroundColor: MyTheme.getBackground(context),
+        appBar: ItemBuilder.buildSimpleAppBar(
+          context: context,
+          leadingIcon: Icons.close_rounded,
+          titleLeftMargin: 10,
+          titleRightMargin: 10,
+          centerTitle: true,
+          title: title,
+          actions: [
+            ItemBuilder.buildIconButton(
+              context: context,
+              icon: Icon(Icons.more_vert_rounded,
+                  color: Theme.of(context).iconTheme.color),
+              onTap: () {
+                BottomSheetBuilder.showContextMenu(
+                    context, _buildMoreButtons());
+              },
+            ),
+            const SizedBox(width: 5),
+          ],
+        ),
         body: Stack(
           children: [
             InAppWebView(

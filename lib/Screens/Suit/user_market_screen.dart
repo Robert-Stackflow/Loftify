@@ -32,12 +32,6 @@ class _UserMarketScreenState extends State<UserMarketScreen>
 
   @override
   void initState() {
-    if (Platform.isAndroid) {
-      SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark);
-      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-    }
     super.initState();
     initPage();
   }
@@ -78,8 +72,7 @@ class _UserMarketScreenState extends State<UserMarketScreen>
       showBack: true,
       title: S.current.shop,
       actions: [
-        ItemBuilder.buildBlankIconButton(context),
-        const SizedBox(width: 5),
+        ItemBuilder.buildBlankIconButton(context)
       ],
       bottomHeight: 56,
       bottomWidget: _buildCustomBottomBar(),
@@ -100,11 +93,15 @@ class _UserMarketScreenState extends State<UserMarketScreen>
             child: CustomSlidingSegmentedControl(
               isStretch: true,
               decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
+                color: Theme
+                    .of(context)
+                    .cardColor,
                 borderRadius: BorderRadius.circular(50),
               ),
               thumbDecoration: BoxDecoration(
-                color: Theme.of(context).canvasColor,
+                color: Theme
+                    .of(context)
+                    .canvasColor,
                 borderRadius: BorderRadius.circular(50),
               ),
               height: height,

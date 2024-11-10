@@ -31,17 +31,6 @@ class DressSuitListScreenState extends State<DressSuitListScreen>
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
 
-  @override
-  void initState() {
-    if (Platform.isAndroid) {
-      SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark);
-      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-    }
-    super.initState();
-  }
-
   _fetchList({bool refresh = false}) async {
     if (_loading) return;
     if (refresh) {

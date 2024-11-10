@@ -60,12 +60,6 @@ class HomeScreenState extends State<HomeScreen>
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    if (Platform.isAndroid) {
-      SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark);
-      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-    }
     super.initState();
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >
@@ -131,7 +125,7 @@ class HomeScreenState extends State<HomeScreen>
       appBar: ItemBuilder.buildResponsiveAppBar(
         context: context,
         title: S.current.home,
-        spacing: ResponsiveUtil.isLandscape() ? 15 : 10,
+        titleLeftMargin: 15,
       ),
       body: Stack(
         children: [

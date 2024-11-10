@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:loftify/Screens/Setting/general_setting_screen.dart';
-import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Widgets/Dialog/widgets/dialog_wrapper_widget.dart';
 import 'package:tuple/tuple.dart';
 
@@ -101,9 +100,7 @@ class AppProvider with ChangeNotifier {
 
   set enableLandscapeInTablet(bool value) {
     _enableLandscapeInTablet = value;
-    HiveUtil.put(HiveUtil.enableLandscapeInTabletKey, value).then((value) {
-      ResponsiveUtil.restartApp(rootContext);
-    });
+    HiveUtil.put(HiveUtil.enableLandscapeInTabletKey, value);
     notifyListeners();
   }
 

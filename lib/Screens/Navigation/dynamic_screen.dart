@@ -168,12 +168,6 @@ class DynamicScreenState extends State<DynamicScreen>
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    if (Platform.isAndroid) {
-      SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark);
-      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-    }
     super.initState();
     initTab();
   }
@@ -267,8 +261,7 @@ class DynamicScreenState extends State<DynamicScreen>
   PreferredSizeWidget _buildAppBar() {
     return ItemBuilder.buildResponsiveAppBar(
       context: context,
-      spacing: ResponsiveUtil.isLandscape() ? 20 : 10,
-      titleSpacing: 15,
+      titleLeftMargin: 15,
       titleWidget: TabBar(
         padding: const EdgeInsets.symmetric(horizontal: 10),
         controller: _tabController,

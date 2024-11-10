@@ -139,12 +139,6 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   @override
   void initState() {
     isArticle = widget.isArticle;
-    if (Platform.isAndroid) {
-      SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark);
-      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-    }
     _scrollController = ScrollController();
     windowManager.addListener(this);
     super.initState();
@@ -677,7 +671,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     return Selector<AppProvider, Size>(
       selector: (context, appProvider) => appProvider.windowSize,
       builder: (context, windowSize, child) =>
-          windowSize.width > minimumSize.width + 200 ||
+          windowSize.width > minimumSize.width ||
                   ResponsiveUtil.isLandscapeTablet()
               ? ScreenTypeLayout.builder(
                   mobile: (context) => _buildMobileMainBody(physics),
@@ -2294,7 +2288,6 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             ),
           ),
         ..._buildButtons(),
-        const SizedBox(width: 5),
       ],
     );
   }

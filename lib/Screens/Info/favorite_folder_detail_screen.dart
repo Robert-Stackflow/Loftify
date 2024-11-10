@@ -6,7 +6,6 @@ import '../../Api/user_api.dart';
 import '../../Models/history_response.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Resources/theme.dart';
-import '../../Utils/constant.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/ilogger.dart';
@@ -41,8 +40,6 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
   SimpleBlogInfo? _creatorInfo;
   final List<FavoritePostDetailData> _posts = [];
   final List<ArchiveData> _archiveDataList = [];
-  final FavoriteFolderDetailLayoutMode _layoutMode =
-      FavoriteFolderDetailLayoutMode.nineGrid;
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
@@ -129,29 +126,26 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
     return Scaffold(
       backgroundColor: MyTheme.getBackground(context),
       appBar: _buildAppBar(),
-      body: EasyRefresh(
+      body: EasyRefresh.builder(
         refreshOnStart: true,
         controller: _refreshController,
         onRefresh: _onRefresh,
         onLoad: _onLoad,
         triggerAxis: Axis.vertical,
-        child: _buildBody(),
+        childBuilder: (context, physics) =>
+            _archiveDataList.isNotEmpty && _posts.isNotEmpty
+                ? _buildNineGridGroup(physics)
+                : ItemBuilder.buildEmptyPlaceholder(
+                    context: context,
+                    text: S.current.noFavorite,
+                    physics: physics,
+                    shrinkWrap: false,
+                  ),
       ),
     );
   }
 
-  Widget _buildBody() {
-    switch (_layoutMode) {
-      case FavoriteFolderDetailLayoutMode.list:
-        return _buildList();
-      case FavoriteFolderDetailLayoutMode.nineGrid:
-        return _buildNineGridGroup();
-      case FavoriteFolderDetailLayoutMode.flow:
-        return _buildFlow();
-    }
-  }
-
-  Widget _buildNineGridGroup() {
+  Widget _buildNineGridGroup(ScrollPhysics physics) {
     List<Widget> widgets = [];
     int startIndex = 0;
     for (var e in _archiveDataList) {
@@ -174,6 +168,7 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
     }
     return ListView(
       cacheExtent: 9999,
+      physics: physics,
       children: widgets,
     );
   }
@@ -216,49 +211,11 @@ class _FavoriteFolderDetailScreenState extends State<FavoriteFolderDetailScreen>
     );
   }
 
-  Widget _buildFlow() {
-    return emptyWidget;
-  }
-
-  Widget _buildList() {
-    return emptyWidget;
-  }
-
   PreferredSizeWidget _buildAppBar() {
-    IconData icon = Icons.transform_rounded;
-    switch (_layoutMode) {
-      case FavoriteFolderDetailLayoutMode.list:
-        icon = Icons.list_rounded;
-        break;
-      case FavoriteFolderDetailLayoutMode.nineGrid:
-        icon = Icons.grid_on_rounded;
-        break;
-      case FavoriteFolderDetailLayoutMode.flow:
-        icon = Icons.article_outlined;
-        break;
-    }
     return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
       title: _favoriteFolder?.name ?? S.current.favoriteFolderDetail,
-      actions: [
-        // ItemBuilder.buildIconButton(
-        //     context: context,
-        //     icon: Icon(icon, color: Theme.of(context).iconTheme.color),
-        //     onTap: () {
-        //       _layoutMode = FavoriteFolderDetailLayoutMode.values[
-        //           (_layoutMode.index + 1) %
-        //               FavoriteFolderDetailLayoutMode.values.length];
-        //       setState(() {});
-        //     }),
-        // const SizedBox(width: 5),
-        // ItemBuilder.buildIconButton(
-        //     context: context,
-        //     icon: Icon(Icons.more_vert_rounded,
-        //         color: Theme.of(context).iconTheme.color),
-        //     onTap: () {}),
-        const SizedBox(width: 5),
-      ],
     );
   }
 }

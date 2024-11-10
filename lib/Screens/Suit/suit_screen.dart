@@ -42,12 +42,6 @@ class _SuitScreenState extends State<SuitScreen>
 
   @override
   void initState() {
-    if (Platform.isAndroid) {
-      SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark);
-      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-    }
     super.initState();
     initTab();
     fetchTag();
@@ -134,12 +128,9 @@ class _SuitScreenState extends State<SuitScreen>
     return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
-      centerInMobile: true,
+      centerTitle: true,
       titleWidget: _buildTabBar(),
-      actions: [
-        ItemBuilder.buildBlankIconButton(context),
-        const SizedBox(width: 5),
-      ],
+      actions: [ItemBuilder.buildBlankIconButton(context)],
       bottomHeight: 56,
       bottomWidget: _currentTabIndex == 0
           ? _buildOfficialBottomBar()

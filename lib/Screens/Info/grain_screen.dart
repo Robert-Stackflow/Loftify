@@ -58,12 +58,6 @@ class _GrainScreenState extends State<GrainScreen>
 
   @override
   void initState() {
-    if (Platform.isAndroid) {
-      SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark);
-      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-    }
     super.initState();
     if (widget.nested) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -289,16 +283,7 @@ class _GrainScreenState extends State<GrainScreen>
       context: context,
       showBack: true,
       title: S.current.myGrains,
-      actions: [
-        ItemBuilder.buildBlankIconButton(context),
-        const SizedBox(width: 5),
-        // ItemBuilder.buildIconButton(
-        //     context: context,
-        //     icon: Icon(Icons.more_vert_rounded,
-        //         color: Theme.of(context).iconTheme.color),
-        //     onTap: () {}),
-        // const SizedBox(width: 5),
-      ],
+      actions: [ItemBuilder.buildBlankIconButton(context)],
     );
   }
 }

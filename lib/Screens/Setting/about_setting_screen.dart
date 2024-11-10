@@ -98,10 +98,9 @@ class _AboutSettingScreenState extends State<AboutSettingScreen>
     return Scaffold(
       appBar: ItemBuilder.buildResponsiveAppBar(
         context: context,
-        transparent: true,
         showBack: true,
         title: S.current.about,
-        background: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       ),
       body: EasyRefresh(
         child: ListView(

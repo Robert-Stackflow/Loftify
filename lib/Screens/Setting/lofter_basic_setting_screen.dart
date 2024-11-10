@@ -151,10 +151,9 @@ class _LofterBasicSettingScreenState extends State<LofterBasicSettingScreen>
     return Scaffold(
       appBar: ItemBuilder.buildResponsiveAppBar(
         showBack: true,
-        transparent: true,
         context: context,
         title: S.current.lofterBasicSetting,
-        background: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       ),
       body: EasyRefresh.builder(
         controller: _refreshController,

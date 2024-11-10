@@ -44,17 +44,6 @@ class _HistoryScreenState extends State<HistoryScreen>
   bool _noMore = false;
   InitPhase _initPhase = InitPhase.successful;
 
-  @override
-  void initState() {
-    if (Platform.isAndroid) {
-      SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark);
-      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-    }
-    super.initState();
-  }
-
   _fetchHistory({bool refresh = false}) async {
     if (_loading) return;
     if (refresh) _noMore = false;
@@ -234,7 +223,6 @@ class _HistoryScreenState extends State<HistoryScreen>
             onTap: () {
               BottomSheetBuilder.showContextMenu(context, _buildMoreButtons());
             }),
-        const SizedBox(width: 5),
       ],
     );
   }
@@ -264,6 +252,7 @@ class _HistoryScreenState extends State<HistoryScreen>
       buttonConfigs: [
         ContextMenuButtonConfig(
           S.current.clearMyHistory,
+          icon: const Icon(Icons.clear_rounded),
           onPressed: () {
             DialogBuilder.showConfirmDialog(
               context,
@@ -288,6 +277,7 @@ class _HistoryScreenState extends State<HistoryScreen>
         ),
         ContextMenuButtonConfig(
           S.current.clearInvalidContent,
+          icon: const Icon(Icons.delete_outline_rounded),
           onPressed: () async {
             UserApi.deleteInvalidHistory(blogId: await HiveUtil.getUserId())
                 .then((value) {
@@ -305,6 +295,9 @@ class _HistoryScreenState extends State<HistoryScreen>
           _recordHistory == 1
               ? S.current.closeMyHistory
               : S.current.openMyHistory,
+          icon: Icon(_recordHistory == 1
+              ? Icons.history_toggle_off_rounded
+              : Icons.history_toggle_off_rounded),
           onPressed: () {
             HiveUtil.getUserInfo().then((blogInfo) async {
               close() {

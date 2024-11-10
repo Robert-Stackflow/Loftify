@@ -212,9 +212,8 @@ class CollectionDetailScreenState extends State<CollectionDetailScreen>
                 color: Colors.white,
               ),
             ),
-            const SizedBox(width: 5),
           ],
-          center: true,
+          centerTitle: !ResponsiveUtil.isLandscape(),
           title: Text(
             S.current.collection,
             style: Theme.of(context).textTheme.titleMedium?.apply(

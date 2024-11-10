@@ -3,13 +3,11 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:loftify/Utils/constant.dart';
-import 'package:loftify/Utils/route_util.dart';
 import 'package:restart_app/restart_app.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../Screens/main_screen.dart';
-import '../Widgets/Item/item_builder.dart';
 import 'app_provider.dart';
 import 'ilogger.dart';
 
@@ -87,23 +85,6 @@ class ResponsiveUtil {
     }
   }
 
-  static Future<void> returnToMainScreen(BuildContext context) async {
-    if (ResponsiveUtil.isDesktop()) {
-      globalNavigatorState?.pushAndRemoveUntil(
-        RouteUtil.getFadeRoute(
-            ItemBuilder.buildContextMenuOverlay(MainScreen(key: mainScreenKey)),
-            duration: Duration.zero),
-        (route) => false,
-      );
-    } else {
-      // restartApp();
-      globalNavigatorState?.popUntil((route) => false);
-      globalNavigatorState?.push(RouteUtil.getFadeRoute(
-          ItemBuilder.buildContextMenuOverlay(MainScreen(key: mainScreenKey)),
-          duration: Duration.zero));
-    }
-  }
-
   static Future<void> maximizeOrRestore() async {
     if (await windowManager.isMaximized()) {
       windowManager.restore();
@@ -152,12 +133,12 @@ class ResponsiveUtil {
     double shortestSide = MediaQuery.sizeOf(rootContext).shortestSide;
     bool sizeCondition =
         longestSide >= longestThreshold && shortestSide >= shortestThreshold;
-    // if (!sizeCondition) {
-    //   SystemChrome.setPreferredOrientations([
-    //     DeviceOrientation.portraitUp,
-    //     DeviceOrientation.portraitDown,
-    //   ]);
-    // }
+    if (!sizeCondition) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+    }
   }
 
   static bool isLandscapeTablet() {
@@ -172,8 +153,7 @@ class ResponsiveUtil {
     double shortestSide = MediaQuery.sizeOf(rootContext).shortestSide;
     bool sizeCondition =
         longestSide >= longestThreshold && shortestSide >= shortestThreshold;
-    // return !kIsWeb && (Platform.isIOS || Platform.isAndroid) && sizeCondition;
-    return true;
+    return !kIsWeb && (Platform.isIOS || Platform.isAndroid) && sizeCondition;
   }
 
   static bool isPortaitTablet() {

@@ -148,7 +148,7 @@ class _MineScreenState extends State<MineScreen>
               ? ItemBuilder.buildResponsiveAppBar(
                   context: context,
                   title: S.current.mine,
-                  spacing: ResponsiveUtil.isLandscape() ? 15 : 10,
+                  titleLeftMargin: ResponsiveUtil.isLandscape() ? 15 : 10,
                 )
               : null
           : PreferredSize(
@@ -691,7 +691,7 @@ class _MineScreenState extends State<MineScreen>
   PreferredSizeWidget _buildAppBar() {
     return ItemBuilder.buildAppBar(
       context: context,
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.transparent,
       actions: [
         if (appProvider.token.isNotEmpty)
           ItemBuilder.buildIconButton(
@@ -774,7 +774,6 @@ class _MineScreenState extends State<MineScreen>
             onTap: () {
               RouteUtil.pushPanelCupertinoRoute(context, const SettingScreen());
             }),
-        const SizedBox(width: 5),
       ],
     );
   }

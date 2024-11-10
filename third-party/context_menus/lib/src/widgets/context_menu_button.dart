@@ -169,10 +169,13 @@ class ContextMenuButtonConfig {
     this.textColor,
     this.shortcutLabel,
     this.icon,
+    this.iconData,
+    this.isWarning = false,
     this.checked = false,
     this.iconHover,
     this.type = ContextMenuButtonConfigType.normal,
-  });
+  }) : assert(!(icon != null && iconData != null),
+            'icon and iconData are mutually exclusive');
 
   ContextMenuButtonConfig.divider()
       : label = "",
@@ -181,37 +184,47 @@ class ContextMenuButtonConfig {
         type = ContextMenuButtonConfigType.divider,
         shortcutLabel = "",
         icon = null,
+        iconData = null,
+        isWarning = false,
         iconHover = null,
         onPressed = null;
 
   ContextMenuButtonConfig.warning(
     this.label, {
-    required this.onPressed,
-    this.textColor,
     this.checked = false,
+    this.iconData,
+    this.isWarning = true,
+    this.textColor = Colors.redAccent,
+    required this.onPressed,
     this.shortcutLabel,
     this.icon,
     this.iconHover,
     this.type = ContextMenuButtonConfigType.warning,
-  });
+  }) : assert(!(icon != null && iconData != null),
+            'icon and iconData are mutually exclusive');
 
   ContextMenuButtonConfig.checkbox(
     this.label, {
     this.checked = false,
+    this.isWarning = false,
+    this.iconData,
     this.textColor,
     required this.onPressed,
     this.shortcutLabel,
     this.icon,
     this.iconHover,
     this.type = ContextMenuButtonConfigType.checkbox,
-  });
+  }) : assert(!(icon != null && iconData != null),
+            'icon and iconData are mutually exclusive');
 
   final String label;
   final String? shortcutLabel;
   final VoidCallback? onPressed;
   final Widget? icon;
+  final IconData? iconData;
   final Widget? iconHover;
   final bool checked;
+  final bool isWarning;
   final ContextMenuButtonConfigType type;
   final Color? textColor;
 }

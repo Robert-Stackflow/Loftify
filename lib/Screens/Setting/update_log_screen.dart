@@ -69,10 +69,9 @@ class _UpdateLogScreenState extends State<UpdateLogScreen>
     return Scaffold(
       appBar: ItemBuilder.buildResponsiveAppBar(
         showBack: true,
-        transparent: true,
         title: S.current.changelog,
         context: context,
-        background: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       ),
       body: EasyRefresh(
         controller: _refreshController,

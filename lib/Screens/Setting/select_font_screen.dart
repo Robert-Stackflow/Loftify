@@ -33,10 +33,9 @@ class _SelectFontScreenState extends State<SelectFontScreen>
       child: Scaffold(
         appBar: ItemBuilder.buildResponsiveAppBar(
           showBack: true,
-          transparent: true,
-          title: S.current.chooseFontFamily,
+            title: S.current.chooseFontFamily,
           context: context,
-          background: Theme.of(context).scaffoldBackgroundColor,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         ),
         body: EasyRefresh(
           child: ListView(

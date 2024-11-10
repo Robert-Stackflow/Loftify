@@ -67,6 +67,8 @@ class GenericContextMenuState extends State<GenericContextMenu>
                 textColor: config.textColor,
                 type: config.type,
                 checked: config.checked,
+                iconData: config.iconData,
+                isWarning: config.isWarning,
               ),
               widget.buttonStyle);
         },

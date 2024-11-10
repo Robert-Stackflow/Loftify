@@ -32,6 +32,7 @@ class _TagRelatedScreenState extends State<TagRelatedScreen>
 
   int _pageCount = 0;
   bool _loading = false;
+  bool _noMore = false;
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +48,7 @@ class _TagRelatedScreenState extends State<TagRelatedScreen>
     if (_loading) return;
     _loading = true;
     if (refresh) {
+      _noMore = false;
       _pageCount = 0;
     } else {
       _pageCount++;
@@ -74,6 +76,7 @@ class _TagRelatedScreenState extends State<TagRelatedScreen>
           }
           if (mounted) setState(() {});
           if (tmp.isEmpty) {
+            _noMore = true;
             return IndicatorResult.noMore;
           } else {
             return IndicatorResult.success;
@@ -101,38 +104,41 @@ class _TagRelatedScreenState extends State<TagRelatedScreen>
         return await _fetchResult();
       },
       triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => WaterfallFlow.builder(
-        cacheExtent: 9999,
-        physics: physics,
-        padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-        gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-          mainAxisSpacing: 6,
-          crossAxisSpacing: 6,
-          maxCrossAxisExtent: 300,
-        ),
-        itemBuilder: (BuildContext context, int index) {
-          return GestureDetector(
-            child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
-              context,
-              _postList[index],
-              excludeTag: widget.tag,
-            ),
-          );
+      childBuilder: (context, physics) => ItemBuilder.buildLoadMoreNotification(
+        noMore: _noMore,
+        onLoad: () async {
+          return await _fetchResult();
         },
-        itemCount: _postList.length,
+        child: WaterfallFlow.builder(
+          cacheExtent: 9999,
+          physics: physics,
+          padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+          gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+            mainAxisSpacing: 6,
+            crossAxisSpacing: 6,
+            maxCrossAxisExtent: 300,
+          ),
+          itemBuilder: (BuildContext context, int index) {
+            return GestureDetector(
+              child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
+                context,
+                _postList[index],
+                excludeTag: widget.tag,
+              ),
+            );
+          },
+          itemCount: _postList.length,
+        ),
       ),
     );
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return ItemBuilder.buildAppBar(
+    return ItemBuilder.buildResponsiveAppBar(
       context: context,
       backgroundColor: MyTheme.getBackground(context),
-      leading: Icons.arrow_back_rounded,
-      onLeadingTap: () {
-        Navigator.pop(context);
-      },
-      title: ItemBuilder.buildClickable(
+      showBack: true,
+      titleWidget: ItemBuilder.buildClickable(
         ItemBuilder.buildTagItem(
           context,
           widget.tag,
@@ -145,11 +151,8 @@ class _TagRelatedScreenState extends State<TagRelatedScreen>
           showTagLabel: false,
         ),
       ),
-      center: true,
-      actions: [
-        ItemBuilder.buildBlankIconButton(context),
-        const SizedBox(width: 5),
-      ],
+      centerTitle: true,
+      actions: [ItemBuilder.buildBlankIconButton(context)],
     );
   }
 }

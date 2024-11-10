@@ -59,10 +59,9 @@ class _FilenameSettingScreenState extends State<FilenameSettingScreen>
     return Scaffold(
       appBar: ItemBuilder.buildResponsiveAppBar(
         showBack: true,
-        transparent: true,
         title: S.current.filenameFormat,
         context: context,
-        background: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       ),
       body: EasyRefresh(
         child: ScrollConfiguration(

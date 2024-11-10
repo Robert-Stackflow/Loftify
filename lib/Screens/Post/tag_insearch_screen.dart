@@ -234,7 +234,7 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
     return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
-      centerInMobile: true,
+      centerTitle: true,
       titleWidget: ItemBuilder.buildClickable(
         ItemBuilder.buildTagItem(
           context,
@@ -248,10 +248,7 @@ class _TagInsearchScreenState extends State<TagInsearchScreen>
           showTagLabel: false,
         ),
       ),
-      actions: [
-        ItemBuilder.buildBlankIconButton(context),
-        const SizedBox(width: 5),
-      ],
+      actions: [ItemBuilder.buildBlankIconButton(context)],
     );
   }
 }

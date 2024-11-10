@@ -64,11 +64,10 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: ItemBuilder.buildResponsiveAppBar(
-          transparent: true,
-          showBack: true,
+            showBack: true,
           title: S.current.appearanceSetting,
           context: context,
-          background: Theme.of(context).scaffoldBackgroundColor,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         ),
         body: EasyRefresh(
           child: ListView(
@@ -139,7 +138,6 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                   value: _enableLandscapeInTablet,
                   context: context,
                   title: S.current.useDesktopLayoutWhenLandscape,
-                  description: S.current.haveToRestartWhenChange,
                   roundTop: true,
                   roundBottom: true,
                   onTap: () {

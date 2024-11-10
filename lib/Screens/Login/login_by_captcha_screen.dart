@@ -124,7 +124,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
         await HiveUtil.put(HiveUtil.tokenKey, loginResponse.token);
         await HiveUtil.put(HiveUtil.deviceIdKey, loginResponse.deviceid);
         await HiveUtil.put(HiveUtil.tokenTypeKey, TokenType.captchCode.index);
-        ResponsiveUtil.returnToMainScreen(context);
+        mainScreenState?.login();
       }
     });
   }
@@ -141,8 +141,10 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
         appBar: ItemBuilder.buildSimpleAppBar(
           title: S.current.loginByCaptcha,
           context: context,
-          leading: Icons.close_rounded,
+          leadingIcon: Icons.close_rounded,
           transparent: true,
+          titleLeftMargin: ResponsiveUtil.isLandscape()?15:5,
+          showLeading: !ResponsiveUtil.isLandscape(),
         ),
         body: Container(
           margin: const EdgeInsets.symmetric(horizontal: 20),

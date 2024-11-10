@@ -58,12 +58,6 @@ class _CollectionScreenState extends State<CollectionScreen>
 
   @override
   void initState() {
-    if (Platform.isAndroid) {
-      SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark);
-      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-    }
     super.initState();
     if (widget.nested) {
       WidgetsBinding.instance.addPostFrameCallback((_) {

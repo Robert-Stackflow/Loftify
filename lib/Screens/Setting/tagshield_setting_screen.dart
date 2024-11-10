@@ -92,7 +92,6 @@ class _TagShieldSettingScreenState extends State<TagShieldSettingScreen>
               );
             },
           ),
-          const SizedBox(width: 5),
         ],
       ),
       body: EasyRefresh(

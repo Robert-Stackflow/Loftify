@@ -43,17 +43,6 @@ class _DressScreenState extends State<DressScreen>
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
 
-  @override
-  void initState() {
-    if (Platform.isAndroid) {
-      SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark);
-      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-    }
-    super.initState();
-  }
-
   _fetchList({bool refresh = false}) async {
     if (_loading) return;
     if (refresh) _noMore = false;
@@ -222,7 +211,7 @@ class _DressScreenState extends State<DressScreen>
     return ItemBuilder.buildResponsiveAppBar(
       context: context,
       showBack: true,
-      centerInMobile: Utils.isNotEmpty(widget.tag),
+      centerTitle: Utils.isNotEmpty(widget.tag),
       titleWidget: Utils.isNotEmpty(widget.tag)
           ? ItemBuilder.buildClickable(
               ItemBuilder.buildTagItem(
@@ -242,10 +231,7 @@ class _DressScreenState extends State<DressScreen>
               S.current.dressList,
               style: Theme.of(context).textTheme.titleLarge,
             ),
-      actions: [
-        ItemBuilder.buildBlankIconButton(context),
-        const SizedBox(width: 5),
-      ],
+      actions: [ItemBuilder.buildBlankIconButton(context)],
     );
   }
 }

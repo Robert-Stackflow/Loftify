@@ -56,12 +56,6 @@ class _PostScreenState extends State<PostScreen>
 
   @override
   void initState() {
-    if (Platform.isAndroid) {
-      SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark);
-      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-    }
     super.initState();
     if (widget.nested) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -283,14 +277,6 @@ class _PostScreenState extends State<PostScreen>
       context: context,
       showBack: true,
       title: S.current.myPosts,
-      actions: [
-        // ItemBuilder.buildIconButton(
-        //     context: context,
-        //     icon: Icon(Icons.more_vert_rounded,
-        //         color: Theme.of(context).iconTheme.color),
-        //     onTap: () {}),
-        // const SizedBox(width: 5),
-      ],
     );
   }
 }

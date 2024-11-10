@@ -66,11 +66,10 @@ class _ExperimentSettingScreenState extends State<ExperimentSettingScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: ItemBuilder.buildResponsiveAppBar(
-        transparent: true,
         title: S.current.experimentSetting,
         context: context,
         showBack: true,
-        background: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       ),
       body: EasyRefresh(
         child: Selector<AppProvider, bool>(

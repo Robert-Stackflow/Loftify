@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:context_menus/context_menus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Api/user_api.dart';
@@ -7,14 +8,14 @@ import 'package:loftify/Models/history_response.dart';
 import 'package:loftify/Resources/theme.dart';
 import 'package:loftify/Screens/Info/nested_mixin.dart';
 import 'package:loftify/Utils/hive_util.dart';
-import 'package:tuple/tuple.dart';
 
 import '../../Models/post_detail_response.dart';
+import '../../Utils/constant.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/ilogger.dart';
 import '../../Utils/itoast.dart';
+import '../../Utils/responsive_util.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
-import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
@@ -58,12 +59,6 @@ class _ShareScreenState extends State<ShareScreen>
 
   @override
   void initState() {
-    if (Platform.isAndroid) {
-      SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark);
-      SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-    }
     super.initState();
     if (widget.nested) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -178,20 +173,29 @@ class _ShareScreenState extends State<ShareScreen>
           onTap: _onRefresh,
         );
       case InitPhase.successful:
-        return EasyRefresh.builder(
-          refreshOnStart: true,
-          controller: _refreshController,
-          onRefresh: _onRefresh,
-          onLoad: _onLoad,
-          triggerAxis: Axis.vertical,
-          childBuilder: (context, physics) {
-            return _archiveDataList.isNotEmpty
-                ? _buildNineGridGroup(physics)
-                : ItemBuilder.buildEmptyPlaceholder(
-                    context: context,
-                    text: S.current.noRecommend,
-                    physics: physics);
-          },
+        return Stack(
+          children: [
+            EasyRefresh.builder(
+              refreshOnStart: true,
+              controller: _refreshController,
+              onRefresh: _onRefresh,
+              onLoad: _onLoad,
+              triggerAxis: Axis.vertical,
+              childBuilder: (context, physics) {
+                return _archiveDataList.isNotEmpty
+                    ? _buildNineGridGroup(physics)
+                    : ItemBuilder.buildEmptyPlaceholder(
+                        context: context,
+                        text: S.current.noRecommend,
+                        physics: physics);
+              },
+            ),
+            Positioned(
+              right: ResponsiveUtil.isLandscape() ? 16 : 12,
+              bottom: ResponsiveUtil.isLandscape() ? 16 : 76,
+              child: _buildFloatingButtons(),
+            ),
+          ],
         );
       default:
         return Container();
@@ -258,40 +262,50 @@ class _ShareScreenState extends State<ShareScreen>
             icon: Icon(Icons.more_vert_rounded,
                 color: Theme.of(context).iconTheme.color),
             onTap: () {
-              BottomSheetBuilder.showListBottomSheet(
-                context,
-                (sheetContext) => TileList.fromOptions(
-                  [
-                    Tuple2(S.current.clearInvalidContent, 1),
-                  ],
-                  (idx) async {
-                    Navigator.pop(sheetContext);
-                    if (idx == 0) {
-                      UserApi.deleteInvalidLike(
-                              blogId: await HiveUtil.getUserId())
-                          .then((value) {
-                        if (value['meta']['status'] != 200) {
-                          IToast.showTop(
-                              value['meta']['desc'] ?? value['meta']['msg']);
-                        } else {
-                          _shareList.removeWhere(
-                              (e) => CommonInfoItemBuilder.isInvalid(e));
-                          setState(() {});
-                          IToast.showTop(S.current.clearSuccess);
-                        }
-                      });
-                    }
-                  },
-                  showCancel: true,
-                  context: sheetContext,
-                  showTitle: false,
-                  onCloseTap: () => Navigator.pop(sheetContext),
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                ),
-              );
+              BottomSheetBuilder.showContextMenu(context, _buildMoreButtons());
             }),
-        const SizedBox(width: 5),
       ],
     );
+  }
+
+  _buildMoreButtons() {
+    return GenericContextMenu(
+      buttonConfigs: [
+        ContextMenuButtonConfig(
+          S.current.clearInvalidContent,
+          icon: const Icon(Icons.delete_outline_rounded),
+          onPressed: () async {
+            UserApi.deleteInvalidShare(blogId: await HiveUtil.getUserId())
+                .then((value) {
+              if (value['meta']['status'] != 200) {
+                IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+              } else {
+                _shareList
+                    .removeWhere((e) => CommonInfoItemBuilder.isInvalid(e));
+                setState(() {});
+                IToast.showTop(S.current.clearSuccess);
+              }
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  _buildFloatingButtons() {
+    return ResponsiveUtil.isLandscape()
+        ? Column(
+            children: [
+              ItemBuilder.buildShadowIconButton(
+                context: context,
+                icon: const Icon(Icons.more_vert_rounded),
+                onTap: () {
+                  BottomSheetBuilder.showContextMenu(
+                      context, _buildMoreButtons());
+                },
+              ),
+            ],
+          )
+        : emptyWidget;
   }
 }

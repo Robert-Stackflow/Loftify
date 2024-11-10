@@ -63,7 +63,7 @@ class _LoginByPasswordScreenState extends State<LoginByPasswordScreen>
           await HiveUtil.put(HiveUtil.tokenKey, loginResponse.token);
           await HiveUtil.put(HiveUtil.deviceIdKey, loginResponse.deviceid);
           await HiveUtil.put(HiveUtil.tokenTypeKey, TokenType.password.index);
-          ResponsiveUtil.returnToMainScreen(rootContext);
+          mainScreenState?.login();
         }
       } catch (e, t) {
         ILogger.error("Failed to login by LofterID", e, t);
@@ -81,8 +81,10 @@ class _LoginByPasswordScreenState extends State<LoginByPasswordScreen>
         appBar: ItemBuilder.buildSimpleAppBar(
           title: S.current.loginByPassword,
           context: context,
-          leading: Icons.close_rounded,
+          leadingIcon: Icons.close_rounded,
           transparent: true,
+          titleLeftMargin: ResponsiveUtil.isLandscape() ? 15 : 5,
+          showLeading: !ResponsiveUtil.isLandscape(),
         ),
         body: Container(
           margin: const EdgeInsets.symmetric(horizontal: 20),
