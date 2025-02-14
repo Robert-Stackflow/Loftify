@@ -4,6 +4,8 @@ import '../Utils/ilogger.dart';
 import '../Utils/utils.dart';
 import 'account_response.dart';
 
+enum PostLayoutType { waterfallflow, grid, detail }
+
 ///PostDetailData
 class PostDetailData {
   int? followed;

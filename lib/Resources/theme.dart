@@ -206,6 +206,10 @@ class MyTheme {
     return Border(bottom: borderSide);
   }
 
+  static Border get topBorder {
+    return Border(top: borderSide);
+  }
+
   static Border get border {
     return Border.all(color: Theme.of(rootContext).dividerColor, width: 0.5);
   }

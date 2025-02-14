@@ -46,6 +46,10 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
       HiveUtil.getBool(HiveUtil.showCollectionPreNextKey, defaultValue: true);
   bool _showDownload =
       HiveUtil.getBool(HiveUtil.showDownloadKey, defaultValue: true);
+  bool _showPostDetailFloatingOperationBar =
+      HiveUtil.getBool(HiveUtil.showPostDetailFloatingOperationBarKey);
+  bool _showPostDetailFloatingOperationBarOnlyInArticle = HiveUtil.getBool(
+      HiveUtil.showPostDetailFloatingOperationBarOnlyInArticleKey,defaultValue: false);
 
   @override
   void initState() {
@@ -64,7 +68,7 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: ItemBuilder.buildResponsiveAppBar(
-            showBack: true,
+          showBack: true,
           title: S.current.appearanceSetting,
           context: context,
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -252,7 +256,6 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                 context: context,
                 title: S.current.showDownloadButton,
                 description: S.current.showDownloadButtonDescription,
-                roundBottom: true,
                 onTap: () {
                   setState(() {
                     _showDownload = !_showDownload;
@@ -260,6 +263,39 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                   });
                 },
               ),
+              ItemBuilder.buildRadioItem(
+                value: _showPostDetailFloatingOperationBar,
+                context: context,
+                title: S.current.showPostDetailFloatingOperationBar,
+                description:
+                    S.current.showPostDetailFloatingOperationBarDescription,
+                roundBottom: !_showPostDetailFloatingOperationBar,
+                onTap: () {
+                  setState(() {
+                    _showPostDetailFloatingOperationBar =
+                        !_showPostDetailFloatingOperationBar;
+                    HiveUtil.put(HiveUtil.showPostDetailFloatingOperationBarKey,
+                        _showPostDetailFloatingOperationBar);
+                  });
+                },
+              ),
+              if (_showPostDetailFloatingOperationBar)
+                ItemBuilder.buildRadioItem(
+                  value: _showPostDetailFloatingOperationBarOnlyInArticle,
+                  context: context,
+                  title: S.current.showPostDetailFloatingOperationBarOnlyInArticle,
+                  roundBottom: true,
+                  onTap: () {
+                    setState(() {
+                      _showPostDetailFloatingOperationBarOnlyInArticle =
+                          !_showPostDetailFloatingOperationBarOnlyInArticle;
+                      HiveUtil.put(
+                          HiveUtil
+                              .showPostDetailFloatingOperationBarOnlyInArticleKey,
+                          _showPostDetailFloatingOperationBarOnlyInArticle);
+                    });
+                  },
+                ),
               const SizedBox(height: 30),
             ],
           ),

@@ -2,11 +2,9 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
-import 'package:hive/hive.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:launch_at_startup/launch_at_startup.dart';
 import 'package:local_notifier/local_notifier.dart';
@@ -86,7 +84,8 @@ Future<void> initApp() async {
   PaintingBinding.instance.imageCache.maximumSizeBytes = 1024 * 1024 * 1024 * 2;
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   await DatabaseManager.getDataBase();
-  Hive.defaultDirectory = await FileUtil.getApplicationDir();
+  // Hive.defaultDirectory = await FileUtil.getApplicationDir();
+  await HiveUtil.initBox();
   NotificationUtil.init();
   await ResponsiveUtil.init();
   await RequestUtil.init();
@@ -188,17 +187,17 @@ class MyApp extends StatelessWidget {
           locale: globalProvider.locale,
           supportedLocales: S.delegate.supportedLocales,
           localeResolutionCallback: (locale, supportedLocales) {
-            if (globalProvider.locale != null) {
-              return globalProvider.locale;
-            } else if (locale != null && supportedLocales.contains(locale)) {
-              return locale;
-            } else {
-              try {
+            try {
+              if (globalProvider.locale != null) {
+                return globalProvider.locale;
+              } else if (locale != null && supportedLocales.contains(locale)) {
+                return locale;
+              } else {
                 return Localizations.localeOf(context);
-              } catch (e, t) {
-                ILogger.error("Failed to load locale", e, t);
-                return const Locale("zh", "CN");
               }
+            } catch (e, t) {
+              ILogger.error("Failed to load locale", e, t);
+              return const Locale("zh", "CN");
             }
           },
           home: ItemBuilder.buildContextMenuOverlay(home),

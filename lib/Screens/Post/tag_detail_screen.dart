@@ -13,12 +13,14 @@ import 'package:loftify/Screens/Post/tag_related_screen.dart';
 import 'package:loftify/Screens/Suit/dress_screen.dart';
 import 'package:loftify/Utils/asset_util.dart';
 import 'package:loftify/Utils/enums.dart';
+import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/ilogger.dart';
 import 'package:loftify/Utils/itoast.dart';
 import 'package:loftify/Utils/responsive_util.dart';
 import 'package:loftify/Utils/route_util.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
+import '../../Models/post_detail_response.dart';
 import '../../Utils/cloud_control_provider.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/uri_util.dart';
@@ -58,6 +60,10 @@ class _TagDetailScreenState extends State<TagDetailScreen>
   final GlobalKey<HottestTabState> _hottestKey = GlobalKey();
   final List<SubordinateScrollController?> scrollControllers =
       List.filled(3, null);
+
+  PostLayoutType _postLayoutType = PostLayoutType.values[Utils.patchEnum(
+      HiveUtil.getInt(HiveUtil.tagDetailPostLayoutTypeKey, defaultValue: 0),
+      PostLayoutType.values.length)];
 
   int _currentTabIndex = 0;
   final List<String> _tabLabelList = [
@@ -317,7 +323,11 @@ class _TagDetailScreenState extends State<TagDetailScreen>
 
   Widget _buildTabView() {
     List<Widget> children = [];
-    children.add(RecommendTab(key: _recommendKey, tag: widget.tag));
+    children.add(RecommendTab(
+      key: _recommendKey,
+      tag: widget.tag,
+      postLayoutType: _postLayoutType,
+    ));
     children.add(Builder(builder: (BuildContext context) {
       final parentController = PrimaryScrollController.of(context);
       if (scrollControllers[0]?.parent != parentController) {
@@ -328,6 +338,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
         key: _newestKey,
         tag: widget.tag,
         scrollController: scrollControllers[0],
+        postLayoutType: _postLayoutType,
       );
     }));
     children.add(Builder(builder: (BuildContext context) {
@@ -340,6 +351,7 @@ class _TagDetailScreenState extends State<TagDetailScreen>
         key: _hottestKey,
         tag: widget.tag,
         scrollController: scrollControllers[1],
+        postLayoutType: _postLayoutType,
       );
     }));
     return TabBarView(
@@ -668,6 +680,28 @@ class _TagDetailScreenState extends State<TagDetailScreen>
       ItemBuilder.buildIconButton(
         context: context,
         icon: Icon(
+          _postLayoutType == PostLayoutType.waterfallflow
+              ? Icons.view_agenda_outlined
+              : Icons.view_module_outlined,
+          color: Theme.of(context).iconTheme.color,
+          size: small ? 20 : 24,
+        ),
+        padding: small ? const EdgeInsets.all(4) : null,
+        onTap: () {
+          if (_postLayoutType == PostLayoutType.waterfallflow) {
+            _postLayoutType = PostLayoutType.grid;
+          } else {
+            _postLayoutType = PostLayoutType.waterfallflow;
+          }
+          HiveUtil.put(
+              HiveUtil.tagDetailPostLayoutTypeKey, _postLayoutType.index);
+          setState(() {});
+        },
+      ),
+      const SizedBox(width: 5),
+      ItemBuilder.buildIconButton(
+        context: context,
+        icon: Icon(
           Icons.more_vert_rounded,
           color: Theme.of(context).iconTheme.color,
           size: small ? 20 : 24,
@@ -708,9 +742,11 @@ class RecommendTab extends StatefulWidget {
   const RecommendTab({
     super.key,
     required this.tag,
+    required this.postLayoutType,
   });
 
   final String tag;
+  final PostLayoutType postLayoutType;
 
   @override
   State<StatefulWidget> createState() => RecommendTabState();
@@ -726,6 +762,9 @@ class RecommendTabState extends State<RecommendTab>
   int _recommendResultOffset = 0;
   bool _recommendResultLoading = false;
   bool _recommendNoMore = false;
+
+  bool get isWaterfallFlow =>
+      widget.postLayoutType == PostLayoutType.waterfallflow;
 
   @override
   void initState() {
@@ -751,18 +790,21 @@ class RecommendTabState extends State<RecommendTab>
           IToast.showTop(value['msg']);
           return IndicatorResult.fail;
         } else {
-          List t = [];
+          List<PostListItem> newPosts = [];
           if (value['data'] != null) {
             _recommendResultOffset = value['data']['offset'];
             if (refresh) _recommendList.clear();
-            t = value['data']['list'] as List;
-            _recommendList
-                .addAll(t.map((e) => PostListItem.fromJson(e)).toList());
+            newPosts = (value['data']['list'] as List)
+                .map((e) => PostListItem.fromJson(e))
+                .toList();
+            newPosts.removeWhere((e) =>
+                _recommendList.any((element) => element.itemId == e.itemId));
+            _recommendList.addAll(newPosts);
             _recommendList
                 .removeWhere((e) => RecommendFlowItemBuilder.isInvalid(e));
           }
           if (mounted) setState(() {});
-          if (t.isEmpty) {
+          if (newPosts.isEmpty) {
             _recommendNoMore = true;
             return IndicatorResult.noMore;
           } else {
@@ -795,35 +837,56 @@ class RecommendTabState extends State<RecommendTab>
       childBuilder: (context, physics) => ItemBuilder.buildLoadMoreNotification(
         onLoad: _fetchRecommendResult,
         noMore: _recommendNoMore,
-        child: WaterfallFlow.builder(
-          cacheExtent: 9999,
-          physics: physics,
-          padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-          gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-            mainAxisSpacing: 6,
-            crossAxisSpacing: 6,
-            maxCrossAxisExtent: 300,
-          ),
-          itemBuilder: (BuildContext context, int index) {
-            return GestureDetector(
-              child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
-                context,
-                _recommendList[index],
-                excludeTag: widget.tag,
+        child: isWaterfallFlow
+            ? WaterfallFlow.builder(
+                cacheExtent: 9999,
+                physics: physics,
+                padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+                gridDelegate:
+                    const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                  mainAxisSpacing: 6,
+                  crossAxisSpacing: 6,
+                  maxCrossAxisExtent: 300,
+                ),
+                itemBuilder: (BuildContext context, int index) {
+                  return RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
+                    context,
+                    _recommendList[index],
+                    excludeTag: widget.tag,
+                  );
+                },
+                itemCount: _recommendList.length,
+              )
+            : GridView.extent(
+                shrinkWrap: true,
+                padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+                maxCrossAxisExtent: 160,
+                mainAxisSpacing: 6,
+                crossAxisSpacing: 6,
+                physics: physics,
+                children: List.generate(_recommendList.length, (index) {
+                  return RecommendFlowItemBuilder.buildNineGridPostItem(
+                    context,
+                    _recommendList[index],
+                    wh: 160,
+                  );
+                }),
               ),
-            );
-          },
-          itemCount: _recommendList.length,
-        ),
       ),
     );
   }
 }
 
 class HottestTab extends StatefulWidget {
-  const HottestTab({super.key, required this.tag, this.scrollController});
+  const HottestTab({
+    super.key,
+    required this.tag,
+    this.scrollController,
+    required this.postLayoutType,
+  });
 
   final String tag;
+  final PostLayoutType postLayoutType;
   final ScrollController? scrollController;
 
   @override
@@ -842,6 +905,9 @@ class HottestTabState extends State<HottestTab>
   int _hottestResultOffset = 0;
   bool _hottestNoMore = false;
   bool _hottestResultLoading = false;
+
+  bool get isWaterfallFlow =>
+      widget.postLayoutType == PostLayoutType.waterfallflow;
 
   @override
   void initState() {
@@ -870,18 +936,21 @@ class HottestTabState extends State<HottestTab>
           IToast.showTop(value['msg']);
           return IndicatorResult.fail;
         } else {
-          List t = [];
+          List<PostListItem> newPosts = [];
           if (value['data'] != null) {
             _hottestResultOffset = value['data']['offset'];
             if (refresh) _hottestList.clear();
-            t = value['data']['list'] as List;
-            _hottestList
-                .addAll(t.map((e) => PostListItem.fromJson(e)).toList());
+            newPosts = (value['data']['list'] as List)
+                .map((e) => PostListItem.fromJson(e))
+                .toList();
+            newPosts.removeWhere((e) =>
+                _hottestList.any((element) => element.itemId == e.itemId));
+            _hottestList.addAll(newPosts);
             _hottestList
                 .removeWhere((e) => RecommendFlowItemBuilder.isInvalid(e));
           }
           if (mounted) setState(() {});
-          if (t.isEmpty) {
+          if (newPosts.isEmpty) {
             _hottestNoMore = false;
             return IndicatorResult.noMore;
           } else {
@@ -914,36 +983,56 @@ class HottestTabState extends State<HottestTab>
       childBuilder: (context, physics) => ItemBuilder.buildLoadMoreNotification(
         onLoad: _fetchHottestResult,
         noMore: _hottestNoMore,
-        child: WaterfallFlow.builder(
-          cacheExtent: 9999,
-          physics: physics,
-          padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-          gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-            mainAxisSpacing: 6,
-            crossAxisSpacing: 6,
-            maxCrossAxisExtent: 300,
-          ),
-          itemBuilder: (BuildContext context, int index) {
-            return GestureDetector(
-              child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
-                context,
-                _hottestList[index],
-                excludeTag: widget.tag,
+        child: isWaterfallFlow
+            ? WaterfallFlow.builder(
+                cacheExtent: 9999,
+                physics: physics,
+                padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+                gridDelegate:
+                    const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                  mainAxisSpacing: 6,
+                  crossAxisSpacing: 6,
+                  maxCrossAxisExtent: 300,
+                ),
+                itemBuilder: (BuildContext context, int index) {
+                  return RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
+                    context,
+                    _hottestList[index],
+                    excludeTag: widget.tag,
+                  );
+                },
+                itemCount: _hottestList.length,
+              )
+            : GridView.extent(
+                shrinkWrap: true,
+                padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+                maxCrossAxisExtent: 160,
+                mainAxisSpacing: 6,
+                crossAxisSpacing: 6,
+                physics: physics,
+                children: List.generate(_hottestList.length, (index) {
+                  return RecommendFlowItemBuilder.buildNineGridPostItem(
+                    context,
+                    _hottestList[index],
+                    wh: 160,
+                  );
+                }),
               ),
-            );
-          },
-          itemCount: _hottestList.length,
-        ),
       ),
     );
   }
 }
 
 class NewestTab extends StatefulWidget {
-  const NewestTab({super.key, required this.tag, this.scrollController});
+  const NewestTab({
+    super.key,
+    required this.tag,
+    this.scrollController,
+    required this.postLayoutType,
+  });
 
   final String tag;
-
+  final PostLayoutType postLayoutType;
   final ScrollController? scrollController;
 
   @override
@@ -961,6 +1050,9 @@ class NewestTabState extends State<NewestTab>
   int _newestResultOffset = 0;
   bool _newestResultLoading = false;
   bool _newestNoMore = false;
+
+  bool get isWaterfallFlow =>
+      widget.postLayoutType == PostLayoutType.waterfallflow;
 
   @override
   void initState() {
@@ -989,17 +1081,22 @@ class NewestTabState extends State<NewestTab>
           IToast.showTop(value['msg']);
           return IndicatorResult.fail;
         } else {
-          List t = [];
+          List<PostListItem> newPosts = [];
+
           if (value['data'] != null) {
             _newestResultOffset = value['data']['offset'];
             if (refresh) _newestList.clear();
-            t = value['data']['list'] as List;
-            _newestList.addAll(t.map((e) => PostListItem.fromJson(e)).toList());
+            newPosts = (value['data']['list'] as List)
+                .map((e) => PostListItem.fromJson(e))
+                .toList();
+            newPosts.removeWhere((e) =>
+                _newestList.any((element) => element.itemId == e.itemId));
+            _newestList.addAll(newPosts);
             _newestList
                 .removeWhere((e) => RecommendFlowItemBuilder.isInvalid(e));
           }
           if (mounted) setState(() {});
-          if (t.isEmpty) {
+          if (newPosts.isEmpty) {
             _newestNoMore = false;
             return IndicatorResult.noMore;
           } else {
@@ -1033,26 +1130,41 @@ class NewestTabState extends State<NewestTab>
       childBuilder: (context, physics) => ItemBuilder.buildLoadMoreNotification(
         onLoad: _fetchNewestResult,
         noMore: _newestNoMore,
-        child: WaterfallFlow.builder(
-          cacheExtent: 9999,
-          physics: physics,
-          padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-          gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-            mainAxisSpacing: 6,
-            crossAxisSpacing: 6,
-            maxCrossAxisExtent: 300,
-          ),
-          itemBuilder: (BuildContext context, int index) {
-            return GestureDetector(
-              child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
-                context,
-                _newestList[index],
-                excludeTag: widget.tag,
+        child: isWaterfallFlow
+            ? WaterfallFlow.builder(
+                cacheExtent: 9999,
+                physics: physics,
+                padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+                gridDelegate:
+                    const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                  mainAxisSpacing: 6,
+                  crossAxisSpacing: 6,
+                  maxCrossAxisExtent: 300,
+                ),
+                itemBuilder: (BuildContext context, int index) {
+                  return RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
+                    context,
+                    _newestList[index],
+                    excludeTag: widget.tag,
+                  );
+                },
+                itemCount: _newestList.length,
+              )
+            : GridView.extent(
+                padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+                shrinkWrap: true,
+                maxCrossAxisExtent: 160,
+                mainAxisSpacing: 6,
+                crossAxisSpacing: 6,
+                physics: physics,
+                children: List.generate(_newestList.length, (index) {
+                  return RecommendFlowItemBuilder.buildNineGridPostItem(
+                    context,
+                    _newestList[index],
+                    wh: 160,
+                  );
+                }),
               ),
-            );
-          },
-          itemCount: _newestList.length,
-        ),
       ),
     );
   }

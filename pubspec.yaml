@@ -1,5 +1,5 @@
 name: loftify
-version: 2.4.0+2400
+version: 2.5.0+2500
 description: An third-party application for LOFTER
 publish_to: none
 
@@ -17,7 +17,7 @@ dependencies:
   fluttertoast: ^8.2.6 # 吐司
   waterfall_flow: ^3.0.3 # 瀑布流
   auto_size_text: ^3.0.0 # 自适应文本
-  flutter_widget_from_html: ^0.15.0 # 将HTML渲染成组件
+  flutter_widget_from_html: ^0.15.3 # 将HTML渲染成组件
   card_swiper: ^3.0.1 # 卡片滑动
   modal_bottom_sheet: ^3.0.0 # 底部弹窗
   video_player: ^2.9.1 # 视频播放
@@ -41,7 +41,7 @@ dependencies:
   package_info_plus: ^8.0.0 # 应用信息
   device_info_plus: ^10.1.0 # 设备信息
   flutter_windowmanager: ^0.2.0 # 窗口管理
-  share_plus: ^9.0.0 # 分享
+  share_plus: ^10.1.4 # 分享
   url_launcher: ^6.3.0 # URL跳转
   app_links: ^6.1.4 # 应用URI
   flutter_displaymode: ^0.6.0 # 设置刷新率
@@ -55,11 +55,10 @@ dependencies:
   http: ^1.2.1
   logger: ^2.4.0 # 日志
   dio: ^5.4.3+1 # 网络请求
-  hive: ^4.0.0-dev.2 # 轻量存储
-  isar_flutter_libs: ^4.0.0-dev.13
+  hive: ^2.2.3 # 轻量存储
   path_provider: ^2.0.12
   sqflite: ^2.3.3+1 # SQLite数据库
-  file_picker: ^8.0.6 # 文件选择
+  file_picker: ^8.3.1 # 文件选择
   pointycastle: 3.9.1
   dio_cache_interceptor: ^3.5.0 # dio缓存
   dio_cookie_manager: ^3.1.1 # dio cookie管理
@@ -68,7 +67,7 @@ dependencies:
   process_run: ^1.0.0+1 # 运行
   # 工具
   intl:
-  intl_utils: ^2.8.7
+  intl_utils: ^2.8.9
   html: ^0.15.0
   tuple: ^2.0.0 # 元组
   crypto: ^3.0.3 # 加密

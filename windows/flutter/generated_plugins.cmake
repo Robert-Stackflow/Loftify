@@ -5,7 +5,6 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   hotkey_manager_windows
-  isar_flutter_libs
   local_auth_windows
   local_notifier
   permission_handler_windows

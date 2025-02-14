@@ -18,7 +18,8 @@ class RecommendFlowItemBuilder {
     bool showMoreButton = false,
   }) {
     List<PhotoLink> photoLinks = [];
-    switch (getPostType(item)) {
+    PostType type = getPostType(item);
+    switch (type) {
       case PostType.video:
         String cover = "";
         if (Utils.isNotEmpty(item.postData!.postView.previewUrl)) {
@@ -57,7 +58,7 @@ class RecommendFlowItemBuilder {
         photoLinks = [];
     }
     return GeneralPostItem(
-      type: getPostType(item),
+      type: type,
       photoLinks: photoLinks,
       blogId: item.postData!.postView.blogId,
       postId: item.postData!.postView.id,
@@ -104,6 +105,23 @@ class RecommendFlowItemBuilder {
         // onShieldContent: onShieldContent,
         // onShieldUser: onShieldUser,
         showMoreButton: showMoreButton,
+      ),
+    );
+  }
+
+  static Widget buildNineGridPostItem(
+    BuildContext context,
+    PostListItem item, {
+    double wh = 100,
+    int? activePostId,
+  }) {
+    if (item.postData == null) return emptyWidget;
+    return GridPostItemWidget(
+      key: ValueKey(item.postData!.postView.id),
+      wh: wh,
+      activePostId: activePostId,
+      item: getGeneralPostItem(
+        item,
       ),
     );
   }

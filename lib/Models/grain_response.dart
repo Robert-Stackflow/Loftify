@@ -59,8 +59,8 @@ class ShareInfo {
   factory ShareInfo.fromJson(Map<String, dynamic> json) {
     return ShareInfo(
       blogInfo: SimpleBlogInfo.fromJson(json['blogInfo']),
-      shareCount: json['shareCount'],
-      userId: json['userId'],
+      shareCount: json['shareCount'] ?? 0,
+      userId: json['userId'] ?? 0,
     );
   }
 

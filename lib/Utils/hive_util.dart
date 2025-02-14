@@ -14,6 +14,7 @@ import '../Widgets/Dialog/dialog_builder.dart';
 import '../generated/l10n.dart';
 import 'app_provider.dart';
 import 'constant.dart';
+import 'file_util.dart';
 import 'ilogger.dart';
 import 'itoast.dart';
 
@@ -68,6 +69,9 @@ class HiveUtil {
   static const String customDarkThemeListKey = "customDarkThemeListKey";
   static const String themeModeKey = "themeMode";
   static const String navItemsKey = "navItems";
+  static const String tagDetailPostLayoutTypeKey = "tagDetailPostLayoutType";
+  static const String showPostDetailFloatingOperationBarKey = "showPostDetailFloatingOperationBar";
+  static const String showPostDetailFloatingOperationBarOnlyInArticleKey = "showPostDetailFloatingOperationBarOnlyInArticle";
 
   //Layout
   static const String showRecommendVideoKey = "hideRecommendVideo";
@@ -146,6 +150,11 @@ class HiveUtil {
         HiveUtil.longPressLinkButtonImageQualityKey, ImageQuality.raw.index);
     HiveUtil.put(HiveUtil.followMainColorKey, true);
     HiveUtil.put(HiveUtil.inappWebviewKey, true);
+  }
+
+  static initBox() async {
+    await Hive.openBox(HiveUtil.settingsBox,
+        path: await FileUtil.getApplicationDir());
   }
 
   static void setWindowSize(Size size) {
@@ -432,7 +441,7 @@ class HiveUtil {
     String boxName = HiveUtil.settingsBox,
     int defaultValue = 0,
   }) {
-    final Box box = Hive.box(name: boxName);
+    final Box box = Hive.box(boxName);
     if (!box.containsKey(key)) {
       put(key, defaultValue, boxName: boxName);
     }
@@ -444,7 +453,7 @@ class HiveUtil {
     String boxName = HiveUtil.settingsBox,
     int defaultValue = 0,
   }) {
-    final Box box = Hive.box(name: boxName);
+    final Box box = Hive.box(boxName);
     if (!box.containsKey(key)) {
       put(key, defaultValue, boxName: boxName);
     }
@@ -456,7 +465,7 @@ class HiveUtil {
     String boxName = HiveUtil.settingsBox,
     bool defaultValue = true,
   }) {
-    final Box box = Hive.box(name: boxName);
+    final Box box = Hive.box(boxName);
     if (!box.containsKey(key)) {
       put(key, defaultValue, boxName: boxName);
     }
@@ -469,7 +478,7 @@ class HiveUtil {
     bool autoCreate = true,
     String? defaultValue,
   }) {
-    final Box box = Hive.box(name: boxName);
+    final Box box = Hive.box(boxName);
     if (!box.containsKey(key)) {
       if (!autoCreate) {
         return null;
@@ -483,7 +492,7 @@ class HiveUtil {
     String key, {
     String boxName = HiveUtil.settingsBox,
   }) {
-    final Box box = Hive.box(name: boxName);
+    final Box box = Hive.box(boxName);
     Map<String, dynamic> res = {};
     if (box.get(key) != null) {
       res = Map<String, dynamic>.from(box.get(key));
@@ -497,7 +506,7 @@ class HiveUtil {
     bool autoCreate = true,
     List<dynamic> defaultValue = const [],
   }) {
-    final Box box = Hive.box(name: boxName);
+    final Box box = Hive.box(boxName);
     if (!box.containsKey(key)) {
       if (!autoCreate) {
         return null;
@@ -528,7 +537,7 @@ class HiveUtil {
     dynamic value, {
     String boxName = HiveUtil.settingsBox,
   }) async {
-    final Box box = Hive.box(name: boxName);
+    final Box box = Hive.box(boxName);
     return box.put(key, value);
   }
 
@@ -536,7 +545,7 @@ class HiveUtil {
     String key, {
     String boxName = HiveUtil.settingsBox,
   }) async {
-    final Box box = Hive.box(name: boxName);
+    final Box box = Hive.box(boxName);
     box.delete(key);
   }
 
@@ -544,7 +553,7 @@ class HiveUtil {
     String key, {
     String boxName = HiveUtil.settingsBox,
   }) {
-    final Box box = Hive.box(name: boxName);
+    final Box box = Hive.box(boxName);
     return box.containsKey(key);
   }
 }

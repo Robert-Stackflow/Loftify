@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
 
 import 'package:card_swiper/card_swiper.dart';
@@ -48,6 +47,7 @@ import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
 import '../../Widgets/Custom/hero_photo_view_screen.dart';
 import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
+import '../../Widgets/Hidable/scroll_to_hide.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../Widgets/PostItem/general_post_item_builder.dart';
@@ -135,6 +135,18 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   DownloadState downloadState = DownloadState.none;
   bool isArticle = false;
   InitPhase _inited = InitPhase.haveNotConnected;
+  final ScrollToHideController _scrollToHideController =
+      ScrollToHideController();
+  final bool _showPostDetailFloatingOperationBar =
+      HiveUtil.getBool(HiveUtil.showPostDetailFloatingOperationBarKey);
+  final bool _showPostDetailFloatingOperationBarOnlyInArticle =
+      HiveUtil.getBool(
+          HiveUtil.showPostDetailFloatingOperationBarOnlyInArticleKey,
+          defaultValue: false);
+
+  bool get _showBottomBar =>
+      _showPostDetailFloatingOperationBar &&
+      (!_showPostDetailFloatingOperationBarOnlyInArticle || isArticle);
 
   @override
   void initState() {
@@ -593,6 +605,10 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       appBar: _buildAppBar(),
       backgroundColor: MyTheme.getBackground(context),
       body: _buildBody(),
+      extendBody: true,
+      bottomNavigationBar: _showBottomBar && _postDetailData != null && _postDetailData!.post != null
+          ? _buildFloatingOperationRow()
+          : null,
     );
   }
 
@@ -668,16 +684,31 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   _buildMainBody(ScrollPhysics physics) {
-    return Selector<AppProvider, Size>(
-      selector: (context, appProvider) => appProvider.windowSize,
-      builder: (context, windowSize, child) =>
-          windowSize.width > minimumSize.width ||
-                  ResponsiveUtil.isLandscapeTablet()
-              ? ScreenTypeLayout.builder(
-                  mobile: (context) => _buildMobileMainBody(physics),
-                  tablet: (context) => _buildTabletMainBody(),
-                )
-              : _buildMobileMainBody(physics),
+    return Stack(
+      children: [
+        Selector<AppProvider, Size>(
+          selector: (context, appProvider) => appProvider.windowSize,
+          builder: (context, windowSize, child) =>
+              windowSize.width > minimumSize.width ||
+                      ResponsiveUtil.isLandscapeTablet()
+                  ? ScreenTypeLayout.builder(
+                      mobile: (context) => _buildMobileMainBody(physics),
+                      tablet: (context) => _buildTabletMainBody(),
+                    )
+                  : _buildMobileMainBody(physics),
+        ),
+        if (!_showBottomBar)
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: ScrollToHide(
+              controller: _scrollToHideController,
+              scrollControllers: [_scrollController],
+              hideDirection: AxisDirection.down,
+              child: _buildFloatingButtons(),
+            ),
+          ),
+      ],
     );
   }
 
@@ -1043,6 +1074,16 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           topMargin: 24,
         ),
     ];
+  }
+
+  jumpToComment() {
+    if (commentKey.currentContext != null) {
+      Scrollable.ensureVisible(
+        commentKey.currentContext!,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.ease,
+      );
+    }
   }
 
   _buildEggTitle(String tag, String title) {
@@ -2096,6 +2137,127 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  _buildFloatingButtons() {
+    return Column(
+      children: [
+        ItemBuilder.buildShadowIconButton(
+          context: context,
+          icon: const Icon(Icons.comment_bank_outlined),
+          onTap: () {
+            jumpToComment();
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFloatingOperationRow() {
+    return ScrollToHide(
+      controller: _scrollToHideController,
+      scrollControllers: [_scrollController],
+      hideDirection: AxisDirection.down,
+      child: Container(
+        height: 64,
+        decoration: BoxDecoration(
+          color: Theme.of(rootContext).canvasColor,
+          border: MyTheme.topBorder,
+          boxShadow: MyTheme.defaultBoxShadow,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+        ),
+        padding: const EdgeInsets.only(left: 6, right: 16, bottom: 8),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                Stack(
+                  children: [
+                    LoftifyItemBuilder.buildLikedLottieButton(
+                      context,
+                      showCount: true,
+                      iconSize: 52,
+                      animationController: _likeController,
+                      likeCount:
+                          _postDetailData!.post!.postCount!.favoriteCount,
+                      isLiked: _postDetailData!.liked,
+                      onTap: () async {
+                        _handleLike();
+                      },
+                    ),
+                    Container(
+                      margin: const EdgeInsets.only(left: 42),
+                      child: LoftifyItemBuilder.buildLottieSharedButton(
+                        context,
+                        showCount: true,
+                        iconSize: 52,
+                        shareCount:
+                            _postDetailData!.post!.postCount!.shareCount,
+                        isShared: _postDetailData!.shared,
+                        animationController: _shareController,
+                        onTap: () async {
+                          _handleRecommend();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+              ],
+            ),
+            Positioned(
+              top: 16,
+              right: 40,
+              child: ItemBuilder.buildIconTextButton(
+                context,
+                text: _postDetailData!.post!.postCount!.responseCount > 0
+                    ? "${_postDetailData!.post!.postCount!.responseCount}"
+                    : S.current.comment,
+                icon: const Icon(Icons.comment_bank_outlined, size: 24),
+                direction: Axis.vertical,
+                spacing: 0,
+                style: Theme.of(context).textTheme.labelSmall,
+                onTap: () {
+                  jumpToComment();
+                },
+              ),
+            ),
+            Positioned(
+              top: 12,
+              right: 0,
+              child: ItemBuilder.buildIconTextButton(
+                context,
+                text: _postDetailData!.subscribedNotNull
+                    ? S.current.favorited
+                    : S.current.favorite,
+                icon: _postDetailData!.subscribedNotNull
+                    ? const Icon(Icons.star_rounded,
+                        size: 28, color: Colors.yellow)
+                    : const Icon(Icons.star_border_rounded, size: 28),
+                direction: Axis.vertical,
+                spacing: 0,
+                style: Theme.of(context).textTheme.labelSmall,
+                onTap: () {
+                  BottomSheetBuilder.showBottomSheet(
+                    context,
+                    enableDrag: false,
+                    (context) => SubscribePostBottomSheet(
+                      postId: postId,
+                      blogId: blogId,
+                      onConfirm: (folderIds) {
+                        _handleSubscribe(folderIds);
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
