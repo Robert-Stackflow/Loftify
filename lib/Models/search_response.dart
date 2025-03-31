@@ -444,7 +444,7 @@ class SearchAllResult {
     return SearchAllResult(
       hasResult: json['hasResult'] ?? false,
       jumpTag: json['jumpTag'] ?? false,
-      offset: json['offset'],
+      offset: json['offset']??0,
       posts: json['posts'] != null ? posts : [],
       tagRank:
           json['tagRank'] != null ? TagInfo.fromJson(json['tagRank']) : null,
