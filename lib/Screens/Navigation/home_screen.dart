@@ -72,7 +72,8 @@ class HomeScreenState extends State<HomeScreen>
         _onLoad();
       }
     });
-    WidgetsBinding.instance.addPostFrameCallback((_)=>panelScreenState?.refreshScrollControllers());
+    WidgetsBinding.instance.addPostFrameCallback(
+        (_) => panelScreenState?.refreshScrollControllers());
   }
 
   _fetchData({bool refresh = false}) async {

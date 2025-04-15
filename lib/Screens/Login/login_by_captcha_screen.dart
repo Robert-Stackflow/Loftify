@@ -143,7 +143,7 @@ class _LoginByCaptchaScreenState extends State<LoginByCaptchaScreen>
           context: context,
           leadingIcon: Icons.close_rounded,
           transparent: true,
-          titleLeftMargin: ResponsiveUtil.isLandscape()?15:5,
+          titleLeftMargin: ResponsiveUtil.isLandscape() ? 15 : 5,
           showLeading: !ResponsiveUtil.isLandscape(),
         ),
         body: Container(

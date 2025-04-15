@@ -175,7 +175,8 @@ class DynamicScreenState extends State<DynamicScreen>
     );
     super.initState();
     initTab();
-    WidgetsBinding.instance.addPostFrameCallback((_)=>panelScreenState?.refreshScrollControllers());
+    WidgetsBinding.instance.addPostFrameCallback(
+        (_) => panelScreenState?.refreshScrollControllers());
   }
 
   @override

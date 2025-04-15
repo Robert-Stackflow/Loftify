@@ -1,5 +1,3 @@
-
-
 class SortableItem {
   String id;
   int index;

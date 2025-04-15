@@ -71,9 +71,7 @@ class _UserMarketScreenState extends State<UserMarketScreen>
       context: context,
       showBack: true,
       title: S.current.shop,
-      actions: [
-        ItemBuilder.buildBlankIconButton(context)
-      ],
+      actions: [ItemBuilder.buildBlankIconButton(context)],
       bottomHeight: 56,
       bottomWidget: _buildCustomBottomBar(),
     );
@@ -93,15 +91,11 @@ class _UserMarketScreenState extends State<UserMarketScreen>
             child: CustomSlidingSegmentedControl(
               isStretch: true,
               decoration: BoxDecoration(
-                color: Theme
-                    .of(context)
-                    .cardColor,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(50),
               ),
               thumbDecoration: BoxDecoration(
-                color: Theme
-                    .of(context)
-                    .canvasColor,
+                color: Theme.of(context).canvasColor,
                 borderRadius: BorderRadius.circular(50),
               ),
               height: height,

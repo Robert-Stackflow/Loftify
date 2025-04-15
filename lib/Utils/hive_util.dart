@@ -70,8 +70,10 @@ class HiveUtil {
   static const String themeModeKey = "themeMode";
   static const String navItemsKey = "navItems";
   static const String tagDetailPostLayoutTypeKey = "tagDetailPostLayoutType";
-  static const String showPostDetailFloatingOperationBarKey = "showPostDetailFloatingOperationBar";
-  static const String showPostDetailFloatingOperationBarOnlyInArticleKey = "showPostDetailFloatingOperationBarOnlyInArticle";
+  static const String showPostDetailFloatingOperationBarKey =
+      "showPostDetailFloatingOperationBar";
+  static const String showPostDetailFloatingOperationBarOnlyInArticleKey =
+      "showPostDetailFloatingOperationBarOnlyInArticle";
 
   //Layout
   static const String showRecommendVideoKey = "hideRecommendVideo";

@@ -606,7 +606,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       backgroundColor: MyTheme.getBackground(context),
       body: _buildBody(),
       extendBody: true,
-      bottomNavigationBar: _showBottomBar && _postDetailData != null && _postDetailData!.post != null
+      bottomNavigationBar: _showBottomBar &&
+              _postDetailData != null &&
+              _postDetailData!.post != null
           ? _buildFloatingOperationRow()
           : null,
     );

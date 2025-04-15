@@ -49,7 +49,8 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
   bool _showPostDetailFloatingOperationBar =
       HiveUtil.getBool(HiveUtil.showPostDetailFloatingOperationBarKey);
   bool _showPostDetailFloatingOperationBarOnlyInArticle = HiveUtil.getBool(
-      HiveUtil.showPostDetailFloatingOperationBarOnlyInArticleKey,defaultValue: false);
+      HiveUtil.showPostDetailFloatingOperationBarOnlyInArticleKey,
+      defaultValue: false);
 
   @override
   void initState() {
@@ -283,7 +284,8 @@ class _AppearanceSettingScreenState extends State<AppearanceSettingScreen>
                 ItemBuilder.buildRadioItem(
                   value: _showPostDetailFloatingOperationBarOnlyInArticle,
                   context: context,
-                  title: S.current.showPostDetailFloatingOperationBarOnlyInArticle,
+                  title:
+                      S.current.showPostDetailFloatingOperationBarOnlyInArticle,
                   roundBottom: true,
                   onTap: () {
                     setState(() {

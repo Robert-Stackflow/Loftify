@@ -33,7 +33,7 @@ class _SelectFontScreenState extends State<SelectFontScreen>
       child: Scaffold(
         appBar: ItemBuilder.buildResponsiveAppBar(
           showBack: true,
-            title: S.current.chooseFontFamily,
+          title: S.current.chooseFontFamily,
           context: context,
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         ),

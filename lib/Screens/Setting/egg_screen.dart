@@ -64,7 +64,7 @@ class _EggScreenState extends State<EggScreen> with TickerProviderStateMixin {
       children: [
         Scaffold(
           appBar: ItemBuilder.buildResponsiveAppBar(
-                context: context,
+            context: context,
             showBack: true,
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           ),

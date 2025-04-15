@@ -9,7 +9,8 @@ import 'styles.dart';
 class MyTheme {
   MyTheme._();
 
-  static bool get isDarkMode => Theme.of(rootContext).brightness == Brightness.dark;
+  static bool get isDarkMode =>
+      Theme.of(rootContext).brightness == Brightness.dark;
 
   static ThemeData getTheme({required bool isDarkMode}) {
     return ThemeData(
