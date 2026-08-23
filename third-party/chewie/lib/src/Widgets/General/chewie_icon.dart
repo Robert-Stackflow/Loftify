@@ -12,6 +12,7 @@ class ChewieIcon extends StatelessWidget {
     this.enabled = true,
     this.semanticLabel,
     this.textDirection,
+    this.shadows,
     this.opticalOffset = Offset.zero,
   });
 
@@ -21,6 +22,7 @@ class ChewieIcon extends StatelessWidget {
   final bool enabled;
   final String? semanticLabel;
   final TextDirection? textDirection;
+  final List<Shadow>? shadows;
 
   /// Allows a rare glyph-specific optical correction without changing layout.
   final Offset opticalOffset;
@@ -43,6 +45,7 @@ class ChewieIcon extends StatelessWidget {
       color: effectiveColor,
       semanticLabel: semanticLabel,
       textDirection: textDirection,
+      shadows: shadows,
     );
     if (opticalOffset == Offset.zero) return child;
     return Transform.translate(offset: opticalOffset, child: child);

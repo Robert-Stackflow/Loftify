@@ -105,6 +105,24 @@ void main() {
     expect(end.disabledOpacity, start.disabledOpacity);
   });
 
+  testWidgets('semantic icons preserve optional contrast shadows',
+      (tester) async {
+    const shadows = <Shadow>[
+      Shadow(color: Colors.black, blurRadius: 8),
+    ];
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ChewieIcon(
+          LoftifyIcons.nextPost,
+          shadows: shadows,
+        ),
+      ),
+    );
+
+    final icon = tester.widget<Icon>(find.byIcon(LoftifyIcons.nextPost));
+    expect(icon.shadows, shadows);
+  });
+
   test('product semantic icons all come from the Lucide font', () {
     const icons = <IconData>[
       LoftifyIcons.home,
@@ -122,6 +140,8 @@ void main() {
       LoftifyIcons.shield,
       LoftifyIcons.previous,
       LoftifyIcons.next,
+      LoftifyIcons.previousPost,
+      LoftifyIcons.nextPost,
       LoftifyIcons.expand,
       LoftifyIcons.sortDirection,
       LoftifyIcons.favorite,
@@ -144,6 +164,11 @@ void main() {
       LoftifyIcons.unfollow,
       LoftifyIcons.bookmark,
       LoftifyIcons.comment,
+      LoftifyIcons.article,
+      LoftifyIcons.invalidContent,
+      LoftifyIcons.originalPost,
+      LoftifyIcons.quote,
+      LoftifyIcons.reblog,
       LoftifyIcons.collection,
       LoftifyIcons.grain,
       LoftifyIcons.filter,
@@ -153,6 +178,7 @@ void main() {
       LoftifyIcons.save,
       LoftifyIcons.add,
       LoftifyIcons.check,
+      LoftifyIcons.warning,
       LoftifyIcons.clear,
       LoftifyIcons.visible,
       LoftifyIcons.hidden,

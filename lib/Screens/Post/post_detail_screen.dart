@@ -28,7 +28,6 @@ import '../../Api/recommend_api.dart';
 import '../../Models/return_gift_response.dart';
 import '../../Models/search_response.dart';
 import '../../Utils/app_provider.dart';
-import '../../Utils/asset_util.dart';
 import '../../Utils/cloud_control_provider.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/lottie_files.dart';
@@ -42,6 +41,7 @@ import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
 import '../../Widgets/PostDetail/detail_bottom_bar.dart';
 import '../../Widgets/PostDetail/post_content_section.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import '../Info/user_detail_screen.dart';
 import 'grain_detail_screen.dart';
@@ -1129,12 +1129,12 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
         blurRadius: 3,
       ),
     ];
-    final icon = Icon(
+    final icon = ChewieIcon(
       _postSwipeAtBoundary
-          ? Icons.block_rounded
+          ? LoftifyIcons.block
           : previous
-              ? Icons.keyboard_double_arrow_left_rounded
-              : Icons.keyboard_double_arrow_right_rounded,
+              ? LoftifyIcons.previousPost
+              : LoftifyIcons.nextPost,
       size: 21,
       color: color,
       shadows: shadows,
@@ -1777,8 +1777,8 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
             child: _buildRichIconTextButton(
               icon: RotatedBox(
                 quarterTurns: 2,
-                child: Icon(
-                  Icons.format_quote,
+                child: ChewieIcon(
+                  LoftifyIcons.quote,
                   size: 16,
                   color: labelSmall?.color,
                 ),
@@ -2217,8 +2217,8 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
                 },
                 child: ClickableWrapper(
                   clickable: _currentIndex != 1,
-                  child: const Icon(
-                    Icons.keyboard_arrow_left_rounded,
+                  child: const ChewieIcon(
+                    LoftifyIcons.previous,
                     size: 30,
                     color: Colors.white,
                   ),
@@ -2245,8 +2245,8 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
                 },
                 child: ClickableWrapper(
                   clickable: _currentIndex != photoLinks.length,
-                  child: const Icon(
-                    Icons.keyboard_arrow_right_rounded,
+                  child: const ChewieIcon(
+                    LoftifyIcons.next,
                     size: 30,
                     color: Colors.white,
                   ),
@@ -2393,8 +2393,8 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
             children: [
               Row(
                 children: [
-                  Icon(
-                    Icons.grain_rounded,
+                  ChewieIcon(
+                    LoftifyIcons.grain,
                     size: 16,
                     color: ChewieColors.getHotTagTextColor(context),
                   ),
@@ -2416,8 +2416,8 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
                           ?.apply(fontSizeDelta: -1),
                     ),
                   ),
-                  Icon(
-                    Icons.keyboard_arrow_right_rounded,
+                  ChewieIcon(
+                    LoftifyIcons.next,
                     size: 16,
                     color: Theme.of(context).textTheme.labelSmall?.color,
                   ),
@@ -2443,11 +2443,10 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
         children: [
           Row(
             children: [
-              AssetUtil.loadDouble(
-                context,
-                AssetUtil.collectionLightIcon,
-                AssetUtil.collectionDarkIcon,
-                size: 12,
+              ChewieIcon(
+                LoftifyIcons.collection,
+                size: 16,
+                color: Theme.of(context).textTheme.labelSmall?.color,
               ),
               const SizedBox(width: 3),
               Expanded(
@@ -2637,8 +2636,11 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
                       start: true,
                       color: color,
                       spacing: 6,
-                      icon:
-                          Icon(Icons.copyright_rounded, size: 16, color: color),
+                      icon: ChewieIcon(
+                        LoftifyIcons.copyright,
+                        size: 16,
+                        color: color,
+                      ),
                     ),
                   if (showCopyright && (showMark || showReBlog))
                     const SizedBox(height: 4),
@@ -2649,8 +2651,11 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
                       start: true,
                       color: color,
                       spacing: 6,
-                      icon: Icon(Icons.auto_awesome_outlined,
-                          size: 16, color: color),
+                      icon: ChewieIcon(
+                        LoftifyIcons.magic,
+                        size: 16,
+                        color: color,
+                      ),
                     ),
                   if (showMark && showReBlog) const SizedBox(height: 4),
                   if (showReBlog)
@@ -2661,7 +2666,11 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
                       spacing: 6,
                       start: true,
                       color: color,
-                      icon: Icon(Icons.repeat_rounded, size: 16, color: color),
+                      icon: ChewieIcon(
+                        LoftifyIcons.reblog,
+                        size: 16,
+                        color: color,
+                      ),
                     ),
                   const SizedBox(height: 4),
                 ],
@@ -2724,10 +2733,13 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
               text: _postDetailData!.subscribedNotNull
                   ? appLocalizations.favorited
                   : appLocalizations.favorite,
-              icon: _postDetailData!.subscribedNotNull
-                  ? const Icon(Icons.star_rounded,
-                      size: 28, color: Colors.yellow)
-                  : const Icon(Icons.star_border_rounded, size: 28),
+              icon: ChewieIcon(
+                LoftifyIcons.bookmark,
+                size: 28,
+                color: _postDetailData!.subscribedNotNull
+                    ? Theme.of(context).primaryColor
+                    : null,
+              ),
               direction: Axis.vertical,
               spacing: 0,
               style: Theme.of(context).textTheme.labelSmall,
@@ -2877,7 +2889,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
                         _postDetailData!.post!.postCount!.responseCount,
                       )
                     : appLocalizations.comment,
-                icon: const Icon(Icons.comment_bank_outlined),
+                icon: const ChewieIcon(LoftifyIcons.comment),
                 onTap: jumpToComment,
               ),
             ),
@@ -2888,9 +2900,12 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
                 label: _postDetailData!.subscribedNotNull
                     ? appLocalizations.favorited
                     : appLocalizations.favorite,
-                icon: _postDetailData!.subscribedNotNull
-                    ? const Icon(Icons.star_rounded, color: Colors.amber)
-                    : const Icon(Icons.star_border_rounded),
+                icon: ChewieIcon(
+                  LoftifyIcons.bookmark,
+                  color: _postDetailData!.subscribedNotNull
+                      ? Theme.of(context).primaryColor
+                      : null,
+                ),
                 onTap: () {
                   BottomSheetBuilder.showBottomSheet(
                     context,
@@ -3020,8 +3035,10 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
   void setDownloadState(DownloadState state, {bool recover = true}) {
     switch (state) {
       case DownloadState.none:
-        downloadIcon = Icon(Icons.download_rounded,
-            color: Theme.of(rootContext).iconTheme.color);
+        downloadIcon = ChewieIcon(
+          LoftifyIcons.download,
+          color: Theme.of(rootContext).iconTheme.color,
+        );
         break;
       case DownloadState.loading:
         downloadIcon = Container(
@@ -3035,11 +3052,16 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
         );
         break;
       case DownloadState.succeed:
-        downloadIcon = const Icon(Icons.check_rounded, color: Colors.green);
+        downloadIcon = ChewieIcon(
+          LoftifyIcons.check,
+          color: ChewieTheme.successColor,
+        );
         break;
       case DownloadState.failed:
-        downloadIcon =
-            const Icon(Icons.warning_amber_rounded, color: Colors.redAccent);
+        downloadIcon = ChewieIcon(
+          LoftifyIcons.warning,
+          color: ChewieTheme.errorColor,
+        );
         break;
     }
     downloadState = state;
@@ -3079,11 +3101,10 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
                       ),
                       child: Row(
                         children: [
-                          AssetUtil.loadDouble(
-                            context,
-                            AssetUtil.collectionLightIcon,
-                            AssetUtil.collectionDarkIcon,
+                          ChewieIcon(
+                            LoftifyIcons.collection,
                             size: 14,
+                            color: Theme.of(context).iconTheme.color,
                           ),
                           const SizedBox(width: 3),
                           Text(
@@ -3114,18 +3135,24 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
     return [
       const SizedBox(width: 5),
       if (showDownloadButton) ...[
-        CircleIconButton(
-          icon: downloadIcon,
-          onTap: () {
-            _handleDownloadAll();
-          },
+        SizedBox.square(
+          dimension: 44,
+          child: CircleIconButton(
+            icon: downloadIcon,
+            padding: EdgeInsets.zero,
+            tooltip: appLocalizations.download,
+            onTap: () {
+              _handleDownloadAll();
+            },
+          ),
         ),
         const SizedBox(width: 5),
       ],
-      CircleIconButton(
-        icon: Icon(Icons.more_vert_rounded,
-            color: Theme.of(context).iconTheme.color),
-        onTap: () {
+      ChewieIconButton(
+        icon: LoftifyIcons.moreVertical,
+        tooltip: appLocalizations.moreInfo,
+        foregroundColor: Theme.of(context).iconTheme.color,
+        onPressed: () {
           BottomSheetBuilder.showContextMenu(context, _buildMoreButtons());
         },
       ),
@@ -3137,7 +3164,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
       entries: [
         FlutterContextMenuItem(
           appLocalizations.copyLink,
-          iconData: Icons.copy_rounded,
+          iconData: LoftifyIcons.copy,
           onPressed: () {
             ChewieUtils.copy(
               context,
@@ -3150,7 +3177,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
         ),
         FlutterContextMenuItem(
           appLocalizations.visitOriginalPost,
-          iconData: Icons.view_carousel_outlined,
+          iconData: LoftifyIcons.originalPost,
           onPressed: () {
             UriUtil.openInternal(
               context,
@@ -3164,7 +3191,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
           },
         ),
         FlutterContextMenuItem(appLocalizations.openWithBrowser,
-            iconData: Icons.open_in_browser_rounded, onPressed: () {
+            iconData: LoftifyIcons.openExternal, onPressed: () {
           UriUtil.openExternal(
             LoftifyUriUtil.getPostUrlByPermalink(
               _postDetailData!.post!.blogInfo!.blogName,
@@ -3174,7 +3201,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
         }),
         FlutterContextMenuItem(
           appLocalizations.shareToOtherApps,
-          iconData: Icons.share_rounded,
+          iconData: LoftifyIcons.share,
           onPressed: () {
             UriUtil.share(
               LoftifyUriUtil.getPostUrlByPermalink(

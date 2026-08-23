@@ -265,4 +265,20 @@ void main() {
       hasLength(3),
     );
   });
+
+  test('post detail uses semantic Lucide icons and stable bookmark glyph', () {
+    final source = File(
+      'lib/Screens/Post/post_detail_screen.dart',
+    ).readAsStringSync();
+
+    expect(RegExp(r'\b(?:Icons|CupertinoIcons)\.').hasMatch(source), isFalse);
+    expect(source.contains('AssetUtil.collectionLightIcon'), isFalse);
+    expect(source.contains('AssetUtil.collectionDarkIcon'), isFalse);
+    expect(
+      RegExp(r'LoftifyIcons\.bookmark').allMatches(source).length,
+      greaterThanOrEqualTo(2),
+    );
+    expect(source, contains('LoftifyIcons.download'));
+    expect(source, contains('CircularProgressIndicator('));
+  });
 }

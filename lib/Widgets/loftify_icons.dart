@@ -24,6 +24,8 @@ abstract final class LoftifyIcons {
   static const IconData shield = LucideIcons.shield;
   static const IconData previous = LucideIcons.chevronLeft;
   static const IconData next = LucideIcons.chevronRight;
+  static const IconData previousPost = LucideIcons.chevronsLeft;
+  static const IconData nextPost = LucideIcons.chevronsRight;
   static const IconData expand = LucideIcons.chevronDown;
   static const IconData sortDirection = LucideIcons.arrowDownUp;
   static const IconData favorite = LucideIcons.heart;
@@ -49,6 +51,8 @@ abstract final class LoftifyIcons {
   static const IconData article = LucideIcons.scrollText;
   static const IconData invalidContent = LucideIcons.circleAlert;
   static const IconData originalPost = LucideIcons.fileText;
+  static const IconData quote = LucideIcons.quote;
+  static const IconData reblog = LucideIcons.repeat2;
   static const IconData collection = LucideIcons.libraryBig;
   static const IconData grain = LucideIcons.wheat;
   static const IconData filter = LucideIcons.listFilter;
@@ -59,6 +63,7 @@ abstract final class LoftifyIcons {
   static const IconData save = LucideIcons.save;
   static const IconData add = LucideIcons.plus;
   static const IconData check = LucideIcons.check;
+  static const IconData warning = LucideIcons.triangleAlert;
   static const IconData clear = LucideIcons.x;
   static const IconData visible = LucideIcons.eye;
   static const IconData hidden = LucideIcons.eyeOff;
