@@ -174,4 +174,28 @@ void main() {
     expect(RegExp(r'icon:\s*LoftifyIcons\.select').allMatches(subscribeSource),
         hasLength(1));
   });
+
+  test('content management menus use semantic Lucide icons', () {
+    const paths = <String>[
+      'lib/Screens/Info/share_screen.dart',
+      'lib/Screens/Info/like_screen.dart',
+      'lib/Screens/Info/history_screen.dart',
+      'lib/Screens/Info/favorite_folder_list_screen.dart',
+      'lib/Screens/Info/supporter_screen.dart',
+    ];
+    final legacyGlyph = RegExp(r'\b(?:Icons|CupertinoIcons)\.');
+    final violations = paths
+        .map(File.new)
+        .where((file) => legacyGlyph.hasMatch(file.readAsStringSync()))
+        .map((file) => file.path)
+        .toList();
+
+    expect(violations, isEmpty);
+
+    for (final path in paths.take(3)) {
+      final source = File(path).readAsStringSync();
+      expect(source, contains('LoftifyIcons.moreVertical'));
+      expect(source, contains('status: MenuItemStatus.error'));
+    }
+  });
 }

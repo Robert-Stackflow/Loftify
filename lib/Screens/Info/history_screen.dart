@@ -9,6 +9,7 @@ import '../../Utils/enums.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -159,7 +160,8 @@ class _HistoryScreenState extends BaseDynamicState<HistoryScreen>
       }
       widgets.add(ItemBuilder.buildTitle(
         context,
-        title: appLocalizations.descriptionWithPostCount(e.desc, e.count.toString()),
+        title: appLocalizations.descriptionWithPostCount(
+            e.desc, e.count.toString()),
         topMargin: 16,
         bottomMargin: 0,
       ));
@@ -201,12 +203,12 @@ class _HistoryScreenState extends BaseDynamicState<HistoryScreen>
       showBack: true,
       title: appLocalizations.myHistory,
       actions: [
-        CircleIconButton(
-            icon: Icon(Icons.more_vert_rounded,
-                color: Theme.of(context).iconTheme.color),
-            onTap: () {
-              BottomSheetBuilder.showContextMenu(context, _buildMoreButtons());
-            }),
+        ChewieIconButton(
+          icon: LoftifyIcons.moreVertical,
+          tooltip: appLocalizations.moreInfo,
+          onPressed: () =>
+              BottomSheetBuilder.showContextMenu(context, _buildMoreButtons()),
+        ),
       ],
     );
   }
@@ -236,7 +238,8 @@ class _HistoryScreenState extends BaseDynamicState<HistoryScreen>
       entries: [
         FlutterContextMenuItem(
           appLocalizations.clearMyHistory,
-          iconData: Icons.clear_rounded,
+          iconData: LoftifyIcons.clear,
+          status: MenuItemStatus.error,
           onPressed: () {
             DialogBuilder.showConfirmDialog(
               context,
@@ -261,7 +264,8 @@ class _HistoryScreenState extends BaseDynamicState<HistoryScreen>
         ),
         FlutterContextMenuItem(
           appLocalizations.clearInvalidContent,
-          iconData: Icons.delete_outline_rounded,
+          iconData: LoftifyIcons.delete,
+          status: MenuItemStatus.error,
           onPressed: () async {
             UserApi.deleteInvalidHistory(blogId: await HiveUtil.getUserId())
                 .then((value) {
@@ -279,9 +283,7 @@ class _HistoryScreenState extends BaseDynamicState<HistoryScreen>
           _recordHistory == 1
               ? appLocalizations.closeMyHistory
               : appLocalizations.openMyHistory,
-          iconData: _recordHistory == 1
-              ? Icons.history_toggle_off_rounded
-              : Icons.history_toggle_off_rounded,
+          iconData: LoftifyIcons.history,
           onPressed: () {
             HiveUtil.getUserInfo().then((blogInfo) async {
               close() {
@@ -329,7 +331,7 @@ class _HistoryScreenState extends BaseDynamicState<HistoryScreen>
         ? Column(
             children: [
               ShadowIconButton(
-                icon: const Icon(Icons.more_vert_rounded),
+                icon: const ChewieIcon(LoftifyIcons.moreVertical),
                 onTap: () {
                   BottomSheetBuilder.showContextMenu(
                       context, _buildMoreButtons());

@@ -6,6 +6,7 @@ import 'package:loftify/Screens/Info/favorite_folder_detail_screen.dart';
 
 import '../../Utils/utils.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
 class FavoriteFolderListScreen extends StatefulWidget {
@@ -25,7 +26,6 @@ class _FavoriteFolderListScreenState
   bool get wantKeepAlive => true;
   final List<FavoriteFolder> _favoriteFolderList = [];
   int _createCount = 0;
-  int _subscribeCount = 0;
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
 
@@ -45,7 +45,6 @@ class _FavoriteFolderListScreenState
           return IndicatorResult.fail;
         } else {
           _createCount = value['data']['createCount'];
-          _subscribeCount = value['data']['subscribeCount'];
           _favoriteFolderList.clear();
           for (var e in value['data']['folders']) {
             _favoriteFolderList.add(FavoriteFolder.fromJson(e));
@@ -186,9 +185,10 @@ class _FavoriteFolderListScreenState
                 ),
               ),
             ),
-            CircleIconButton(
-              icon: const Icon(Icons.edit_note_rounded),
-              onTap: () {
+            ChewieIconButton(
+              icon: LoftifyIcons.edit,
+              tooltip: appLocalizations.edit,
+              onPressed: () {
                 BottomSheetBuilder.showBottomSheet(
                   context,
                   (sheetContext) => InputBottomSheet(
@@ -215,10 +215,11 @@ class _FavoriteFolderListScreenState
               },
             ),
             if (item.isDefault != 1)
-              CircleIconButton(
-                icon:
-                    const Icon(Icons.delete_outline_rounded, color: Colors.red),
-                onTap: () {
+              ChewieIconButton(
+                icon: LoftifyIcons.delete,
+                tooltip: appLocalizations.delete,
+                foregroundColor: Theme.of(context).colorScheme.error,
+                onPressed: () {
                   DialogBuilder.showConfirmDialog(
                     context,
                     title: appLocalizations.deleteFolder,
@@ -273,15 +274,10 @@ class _FavoriteFolderListScreenState
       showBack: true,
       title: appLocalizations.myFavorites,
       actions: [
-        // CircleIconButton(
-        //     context: context,
-        //     icon: Icon(Icons.search_rounded,
-        //         color: Theme.of(context).iconTheme.color),
-        //     onTap: () {}),
-        // const SizedBox(width: 5),
-        CircleIconButton(
-          icon: Icon(Icons.add_rounded, color: ChewieTheme.iconColor),
-          onTap: handleAdd,
+        ChewieIconButton(
+          icon: LoftifyIcons.add,
+          tooltip: appLocalizations.newFolder,
+          onPressed: handleAdd,
         ),
       ],
     );
@@ -292,7 +288,7 @@ class _FavoriteFolderListScreenState
         ? Column(
             children: [
               ShadowIconButton(
-                icon: const Icon(Icons.add_rounded),
+                icon: const ChewieIcon(LoftifyIcons.add),
                 onTap: handleAdd,
               ),
             ],

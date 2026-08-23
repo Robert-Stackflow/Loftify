@@ -9,6 +9,7 @@ import '../../Models/post_detail_response.dart';
 import '../../Utils/enums.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
 class ShareScreen extends StatefulWidgetForNested {
@@ -262,12 +263,12 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
       showBack: true,
       title: appLocalizations.myRecommends,
       actions: [
-        CircleIconButton(
-            icon: Icon(Icons.more_vert_rounded,
-                color: Theme.of(context).iconTheme.color),
-            onTap: () {
-              BottomSheetBuilder.showContextMenu(context, _buildMoreButtons());
-            }),
+        ChewieIconButton(
+          icon: LoftifyIcons.moreVertical,
+          tooltip: appLocalizations.moreInfo,
+          onPressed: () =>
+              BottomSheetBuilder.showContextMenu(context, _buildMoreButtons()),
+        ),
       ],
     );
   }
@@ -277,7 +278,8 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
       entries: [
         FlutterContextMenuItem(
           appLocalizations.clearInvalidContent,
-          iconData: Icons.delete_outline_rounded,
+          iconData: LoftifyIcons.delete,
+          status: MenuItemStatus.error,
           onPressed: () async {
             UserApi.deleteInvalidShare(blogId: await HiveUtil.getUserId())
                 .then((value) {
@@ -301,7 +303,7 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
         ? Column(
             children: [
               ShadowIconButton(
-                icon: const Icon(Icons.more_vert_rounded),
+                icon: const ChewieIcon(LoftifyIcons.moreVertical),
                 onTap: () {
                   BottomSheetBuilder.showContextMenu(
                       context, _buildMoreButtons());

@@ -33,7 +33,11 @@ abstract final class LoftifyIcons {
   static const IconData magic = LucideIcons.wandSparkles;
   static const IconData select = LucideIcons.circle;
   static const IconData more = LucideIcons.ellipsis;
+  static const IconData moreVertical = LucideIcons.ellipsisVertical;
   static const IconData slide = LucideIcons.chevronsRight;
+  static const IconData edit = LucideIcons.pencil;
+  static const IconData history = LucideIcons.history;
+  static const IconData premium = LucideIcons.crown;
 
   static const IconData refresh = LucideIcons.refreshCw;
   static const IconData save = LucideIcons.save;

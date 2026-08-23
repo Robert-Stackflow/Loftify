@@ -13,6 +13,7 @@ import '../../Utils/like_archive_util.dart';
 import '../../Utils/paged_data_controller.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
 class LikeScreen extends StatefulWidgetForNested {
@@ -339,12 +340,12 @@ class _LikeScreenState extends BaseDynamicState<LikeScreen>
       showBack: true,
       title: appLocalizations.myLikes,
       actions: [
-        CircleIconButton(
-            icon: Icon(Icons.more_vert_rounded,
-                color: Theme.of(context).iconTheme.color),
-            onTap: () {
-              BottomSheetBuilder.showContextMenu(context, _buildMoreButtons());
-            }),
+        ChewieIconButton(
+          icon: LoftifyIcons.moreVertical,
+          tooltip: appLocalizations.moreInfo,
+          onPressed: () =>
+              BottomSheetBuilder.showContextMenu(context, _buildMoreButtons()),
+        ),
       ],
     );
   }
@@ -354,7 +355,8 @@ class _LikeScreenState extends BaseDynamicState<LikeScreen>
       entries: [
         FlutterContextMenuItem(
           appLocalizations.clearInvalidContent,
-          iconData: Icons.delete_outline_rounded,
+          iconData: LoftifyIcons.delete,
+          status: MenuItemStatus.error,
           onPressed: () async {
             try {
               final value = await UserApi.deleteInvalidLike(
@@ -386,7 +388,7 @@ class _LikeScreenState extends BaseDynamicState<LikeScreen>
         ? Column(
             children: [
               ShadowIconButton(
-                icon: const Icon(Icons.more_vert_rounded),
+                icon: const ChewieIcon(LoftifyIcons.moreVertical),
                 onTap: () {
                   BottomSheetBuilder.showContextMenu(
                       context, _buildMoreButtons());

@@ -1,16 +1,15 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 
 import '../../l10n/l10n.dart';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:loftify/Api/user_api.dart';
 import 'package:loftify/Utils/hive_util.dart';
 
 import '../../Models/user_response.dart';
 import '../../Utils/enums.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/loftify_icons.dart';
 import 'user_detail_screen.dart';
 
 class SupporterScreen extends StatefulWidget {
@@ -173,8 +172,8 @@ class _SupporterScreenState extends BaseDynamicState<SupporterScreen>
             ),
             Container(
               margin: const EdgeInsets.only(right: 5),
-              child: Icon(
-                Icons.workspace_premium_rounded,
+              child: ChewieIcon(
+                LoftifyIcons.premium,
                 size: 22,
                 color: ChewieColors.getHotTagTextColor(context),
               ),
