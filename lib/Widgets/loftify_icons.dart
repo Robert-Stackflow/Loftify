@@ -47,6 +47,10 @@ abstract final class LoftifyIcons {
   static const IconData bookmark = LucideIcons.bookmark;
   static const IconData comment = LucideIcons.messageCircle;
   static const IconData collection = LucideIcons.libraryBig;
+  static const IconData grain = LucideIcons.wheat;
+  static const IconData filter = LucideIcons.listFilter;
+  static const IconData listLayout = LucideIcons.layoutList;
+  static const IconData gridLayout = LucideIcons.layoutGrid;
 
   static const IconData refresh = LucideIcons.refreshCw;
   static const IconData save = LucideIcons.save;

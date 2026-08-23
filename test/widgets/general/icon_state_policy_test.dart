@@ -214,4 +214,30 @@ void main() {
     expect(source, contains('LoftifyIcons.follow'));
     expect(source, contains('status: MenuItemStatus.error'));
   });
+
+  test('tag collection and grain details use semantic Lucide icons', () {
+    const paths = <String>[
+      'lib/Screens/Post/collection_detail_screen.dart',
+      'lib/Screens/Post/grain_detail_screen.dart',
+      'lib/Screens/Post/tag_detail_screen.dart',
+      'lib/Screens/Post/tag_collection_grain_screen.dart',
+    ];
+    final legacyGlyph = RegExp(r'\b(?:Icons|CupertinoIcons)\.');
+    final legacyInterfaceAsset = RegExp(
+      r'AssetUtil\.(?:orderDownDarkIcon|orderUpDarkIcon|tagLightIcon|'
+      r'tagDarkIcon|searchLightIcon|searchDarkIcon|collectionWhiteIcon|'
+      r'grainWhiteIcon|hottestIcon|hotIcon|hotlessIcon)',
+    );
+    final violations = paths
+        .map(File.new)
+        .where((file) {
+          final source = file.readAsStringSync();
+          return legacyGlyph.hasMatch(source) ||
+              legacyInterfaceAsset.hasMatch(source);
+        })
+        .map((file) => file.path)
+        .toList();
+
+    expect(violations, isEmpty);
+  });
 }

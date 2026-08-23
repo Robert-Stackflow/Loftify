@@ -24,6 +24,7 @@ import '../../Widgets/BottomSheet/newest_filter_bottom_sheet.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
 class TagDetailScreen extends StatefulWidget {
@@ -291,10 +292,8 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
                           children: [
                             Container(
                               margin: const EdgeInsets.only(top: 5),
-                              child: AssetUtil.loadDouble(
-                                context,
-                                AssetUtil.tagLightIcon,
-                                AssetUtil.tagDarkIcon,
+                              child: const ChewieIcon(
+                                LoftifyIcons.tag,
                                 size: 16,
                               ),
                             ),
@@ -652,10 +651,7 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
               const SizedBox(width: 12),
               ItemBuilder.buildIconTextButton(
                 context,
-                icon: const Icon(
-                  Icons.filter_alt_rounded,
-                  size: 16,
-                ),
+                icon: const ChewieIcon(LoftifyIcons.filter, size: 16),
                 text: appLocalizations.filter,
                 onTap: () {
                   BottomSheetBuilder.showBottomSheet(
@@ -753,10 +749,7 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
               const SizedBox(width: 12),
               ItemBuilder.buildIconTextButton(
                 context,
-                icon: const Icon(
-                  Icons.filter_alt_rounded,
-                  size: 16,
-                ),
+                icon: const ChewieIcon(LoftifyIcons.filter, size: 16),
                 text: appLocalizations.filter,
                 onTap: () {
                   BottomSheetBuilder.showBottomSheet(
@@ -798,30 +791,23 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
   List<Widget> _buildButtons([bool small = false]) {
     return [
       const SizedBox(width: 5),
-      CircleIconButton(
-        icon: AssetUtil.loadDouble(
-          context,
-          AssetUtil.searchLightIcon,
-          AssetUtil.searchDarkIcon,
-          size: small ? 20 : 24,
-        ),
-        padding: small ? const EdgeInsets.all(4) : null,
-        onTap: () {
+      ChewieIconButton(
+        icon: LoftifyIcons.search,
+        tooltip: appLocalizations.search,
+        iconSize: small ? 20 : 24,
+        onPressed: () {
           RouteUtil.pushPanelCupertinoRoute(
               context, TagInsearchScreen(tag: widget.tag));
         },
       ),
       const SizedBox(width: 5),
-      CircleIconButton(
-        icon: Icon(
-          _postLayoutType == PostLayoutType.waterfallflow
-              ? Icons.view_agenda_outlined
-              : Icons.view_module_outlined,
-          color: Theme.of(context).iconTheme.color,
-          size: small ? 20 : 24,
-        ),
-        padding: small ? const EdgeInsets.all(4) : null,
-        onTap: () {
+      ChewieIconButton(
+        icon: _postLayoutType == PostLayoutType.waterfallflow
+            ? LoftifyIcons.listLayout
+            : LoftifyIcons.gridLayout,
+        tooltip: appLocalizations.layoutSetting,
+        iconSize: small ? 20 : 24,
+        onPressed: () {
           if (_postLayoutType == PostLayoutType.waterfallflow) {
             _postLayoutType = PostLayoutType.grid;
           } else {
@@ -833,14 +819,11 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
         },
       ),
       const SizedBox(width: 5),
-      CircleIconButton(
-        icon: Icon(
-          Icons.more_vert_rounded,
-          color: Theme.of(context).iconTheme.color,
-          size: small ? 20 : 24,
-        ),
-        padding: small ? const EdgeInsets.all(4) : null,
-        onTap: () {
+      ChewieIconButton(
+        icon: LoftifyIcons.moreVertical,
+        tooltip: appLocalizations.moreInfo,
+        iconSize: small ? 20 : 24,
+        onPressed: () {
           BottomSheetBuilder.showContextMenu(context, _buildMoreButtons());
         },
       ),
@@ -853,17 +836,17 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
       entries: [
         FlutterContextMenuItem(
           appLocalizations.copyLink,
-          iconData: Icons.copy_rounded,
+          iconData: LoftifyIcons.copy,
           onPressed: () {
             ChewieUtils.copy(context, url);
           },
         ),
         FlutterContextMenuItem(appLocalizations.openWithBrowser,
-            iconData: Icons.open_in_browser_rounded, onPressed: () {
+            iconData: LoftifyIcons.openExternal, onPressed: () {
           UriUtil.openExternal(url);
         }),
         FlutterContextMenuItem(appLocalizations.shareToOtherApps,
-            iconData: Icons.share_rounded, onPressed: () {
+            iconData: LoftifyIcons.share, onPressed: () {
           UriUtil.share(url);
         }),
       ],

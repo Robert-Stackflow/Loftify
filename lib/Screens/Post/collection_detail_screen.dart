@@ -11,10 +11,10 @@ import '../../Api/collection_api.dart';
 import '../../Models/history_response.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Models/recommend_response.dart';
-import '../../Utils/asset_util.dart';
 import '../../Utils/enums.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
 import '../../Widgets/PostDetail/detail_bottom_bar.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
 class CollectionDetailScreen extends StatefulWidget {
@@ -209,15 +209,14 @@ class CollectionDetailScreenState
           expandedHeight: 265,
           backgroundWidget: _buildBackground(),
           actions: [
-            CircleIconButton(
-              onTap: () {
+            ChewieIconButton(
+              icon: LoftifyIcons.moreVertical,
+              tooltip: appLocalizations.moreInfo,
+              foregroundColor: Colors.white,
+              onPressed: () {
                 BottomSheetBuilder.showContextMenu(
                     context, _buildMoreButtons());
               },
-              icon: const Icon(
-                Icons.more_vert_rounded,
-                color: Colors.white,
-              ),
             ),
           ],
           centerTitle: !ResponsiveUtil.isLandscapeLayout(),
@@ -317,11 +316,15 @@ class CollectionDetailScreenState
                   text: isOldest
                       ? appLocalizations.order
                       : appLocalizations.reverseOrder,
-                  icon: AssetUtil.load(
-                    isOldest
-                        ? AssetUtil.orderDownDarkIcon
-                        : AssetUtil.orderUpDarkIcon,
-                    size: 15,
+                  icon: AnimatedRotation(
+                    turns: isOldest ? 0 : 0.5,
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
+                    child: ChewieIcon(
+                      LoftifyIcons.sortDirection,
+                      size: 16,
+                      color: Theme.of(context).textTheme.labelMedium?.color,
+                    ),
                   ),
                   fontSizeDelta: 1,
                   color: Theme.of(context).textTheme.labelMedium?.color,
@@ -475,15 +478,14 @@ class CollectionDetailScreenState
             ),
           ),
           if (ResponsiveUtil.isLandscapeLayout()) ...[
-            CircleIconButton(
-              onTap: () {
+            ChewieIconButton(
+              icon: LoftifyIcons.moreVertical,
+              tooltip: appLocalizations.moreInfo,
+              foregroundColor: Colors.white,
+              onPressed: () {
                 BottomSheetBuilder.showContextMenu(
                     context, _buildMoreButtons());
               },
-              icon: const Icon(
-                Icons.more_vert_rounded,
-                color: Colors.white,
-              ),
             ),
             const SizedBox(width: 5),
           ]
@@ -588,17 +590,17 @@ class CollectionDetailScreenState
       entries: [
         FlutterContextMenuItem(
           appLocalizations.copyLink,
-          iconData: Icons.copy_rounded,
+          iconData: LoftifyIcons.copy,
           onPressed: () {
             ChewieUtils.copy(context, collectionUrl);
           },
         ),
         FlutterContextMenuItem(appLocalizations.openWithBrowser,
-            iconData: Icons.open_in_browser_rounded, onPressed: () {
+            iconData: LoftifyIcons.openExternal, onPressed: () {
           UriUtil.openExternal(collectionUrl);
         }),
         FlutterContextMenuItem(appLocalizations.shareToOtherApps,
-            iconData: Icons.share_rounded, onPressed: () {
+            iconData: LoftifyIcons.share, onPressed: () {
           UriUtil.share(collectionUrl);
         }),
       ],

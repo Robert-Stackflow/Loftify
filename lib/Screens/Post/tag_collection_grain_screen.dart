@@ -3,14 +3,59 @@ import 'package:flutter/material.dart';
 import 'package:loftify/Api/tag_api.dart';
 import 'package:loftify/Models/tag_response.dart';
 import 'package:loftify/Screens/Post/collection_detail_screen.dart';
-import 'package:loftify/Utils/asset_util.dart';
 
 import '../../Utils/enums.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/tab_state_util.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import 'grain_detail_screen.dart';
+
+Widget _buildHotRankMarker(BuildContext context, int index) {
+  if (index > 2) {
+    return SizedBox(
+      width: 24,
+      child: Text(
+        '${index + 1}',
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+      ),
+    );
+  }
+  final hotColor = ChewieColors.getHotTagTextColor(context).withValues(
+    alpha: 1 - index * 0.18,
+  );
+  return Container(
+    width: 24,
+    height: 24,
+    decoration: BoxDecoration(
+      color: hotColor.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(7),
+    ),
+    child: Stack(
+      alignment: Alignment.center,
+      children: [
+        ChewieIcon(LoftifyIcons.hot, size: 16, color: hotColor),
+        Positioned(
+          top: 1,
+          right: 2,
+          child: Text(
+            '${index + 1}',
+            style: TextStyle(
+              color: hotColor,
+              fontSize: 7,
+              height: 1,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
 class TagCollectionGrainScreen extends StatefulWidget {
   const TagCollectionGrainScreen({super.key, required this.tag});
@@ -177,10 +222,10 @@ class _TagCollectionGrainScreenState
           maintainAnimation: true,
           maintainState: true,
           maintainSize: true,
-          child: CircleIconButton(
-              icon: Icon(Icons.more_vert_rounded,
-                  color: Theme.of(context).iconTheme.color),
-              onTap: () {}),
+          child: ChewieIconButton(
+            icon: LoftifyIcons.moreVertical,
+            onPressed: () {},
+          ),
         ),
       ],
     );
@@ -393,9 +438,10 @@ class CollectionTabState extends BaseDynamicState<CollectionTab>
                   child: ItemBuilder.buildTranslucentTag(
                     context,
                     text: "",
-                    icon: AssetUtil.load(
-                      AssetUtil.collectionWhiteIcon,
+                    icon: const ChewieIcon(
+                      LoftifyIcons.collection,
                       size: 12,
+                      color: Colors.white,
                     ),
                     isCircle: true,
                   ),
@@ -406,8 +452,8 @@ class CollectionTabState extends BaseDynamicState<CollectionTab>
                   child: ItemBuilder.buildTranslucentTag(
                     context,
                     text: StringUtil.formatCount(info.viewCount),
-                    icon: const Icon(
-                      Icons.local_fire_department_rounded,
+                    icon: const ChewieIcon(
+                      LoftifyIcons.hot,
                       color: Colors.white,
                       size: 12,
                     ),
@@ -469,21 +515,7 @@ class CollectionTabState extends BaseDynamicState<CollectionTab>
     );
   }
 
-  String? getIcon(int index) {
-    switch (index) {
-      case 0:
-        return AssetUtil.hottestIcon;
-      case 1:
-        return AssetUtil.hotIcon;
-      case 2:
-        return AssetUtil.hotlessIcon;
-      default:
-        return null;
-    }
-  }
-
   Widget _buildHotCollectionRankItem(int index, SimpleCollectionInfo info) {
-    String? icon = getIcon(index);
     return ClickableWrapper(
       child: GestureDetector(
         onTap: () {
@@ -504,23 +536,7 @@ class CollectionTabState extends BaseDynamicState<CollectionTab>
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                height: 24,
-                width: 24,
-                alignment: Alignment.center,
-                decoration: icon != null
-                    ? BoxDecoration(
-                        image: AssetUtil.loadDecorationImage(icon),
-                      )
-                    : null,
-                child: Text(
-                  "${index + 1}",
-                  style: Theme.of(context).textTheme.labelLarge?.apply(
-                        fontWeightDelta: 3,
-                        color: icon != null ? Colors.transparent : null,
-                      ),
-                ),
-              ),
+              _buildHotRankMarker(context, index),
               const SizedBox(width: 24),
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
@@ -777,9 +793,10 @@ class GrainTabState extends BaseDynamicState<GrainTab>
                   child: ItemBuilder.buildTranslucentTag(
                     context,
                     text: "",
-                    icon: AssetUtil.load(
-                      AssetUtil.grainWhiteIcon,
+                    icon: const ChewieIcon(
+                      LoftifyIcons.grain,
                       size: 12,
+                      color: Colors.white,
                     ),
                     isCircle: true,
                   ),
@@ -790,8 +807,8 @@ class GrainTabState extends BaseDynamicState<GrainTab>
                   child: ItemBuilder.buildTranslucentTag(
                     context,
                     text: StringUtil.formatCount(info.viewCount),
-                    icon: const Icon(
-                      Icons.local_fire_department_rounded,
+                    icon: const ChewieIcon(
+                      LoftifyIcons.hot,
                       color: Colors.white,
                       size: 12,
                     ),
@@ -853,21 +870,7 @@ class GrainTabState extends BaseDynamicState<GrainTab>
     );
   }
 
-  String? getIcon(int index) {
-    switch (index) {
-      case 0:
-        return AssetUtil.hottestIcon;
-      case 1:
-        return AssetUtil.hotIcon;
-      case 2:
-        return AssetUtil.hotlessIcon;
-      default:
-        return null;
-    }
-  }
-
   Widget _buildHotGrainRankItem(int index, SimpleGrainInfo info) {
-    String? icon = getIcon(index);
     return ClickableWrapper(
       child: GestureDetector(
         onTap: () {
@@ -886,23 +889,7 @@ class GrainTabState extends BaseDynamicState<GrainTab>
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                height: 24,
-                width: 24,
-                alignment: Alignment.center,
-                decoration: icon != null
-                    ? BoxDecoration(
-                        image: AssetUtil.loadDecorationImage(icon),
-                      )
-                    : null,
-                child: Text(
-                  "${index + 1}",
-                  style: Theme.of(context).textTheme.labelLarge?.apply(
-                        fontWeightDelta: 3,
-                        color: icon != null ? Colors.transparent : null,
-                      ),
-                ),
-              ),
+              _buildHotRankMarker(context, index),
               const SizedBox(width: 24),
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),

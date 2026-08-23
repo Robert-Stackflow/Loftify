@@ -11,9 +11,9 @@ import 'package:loftify/Widgets/PostItem/general_post_item_builder.dart';
 import 'package:loftify/Widgets/PostItem/grain_post_item_builder.dart';
 
 import '../../Models/history_response.dart';
-import '../../Utils/asset_util.dart';
 import '../../Utils/post_sequence_source.dart';
 import '../../Widgets/PostDetail/detail_bottom_bar.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
 class GrainDetailScreen extends StatefulWidget {
@@ -207,15 +207,14 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
           expandedHeight: 265,
           backgroundWidget: _buildBackground(),
           actions: [
-            CircleIconButton(
-              onTap: () {
+            ChewieIconButton(
+              icon: LoftifyIcons.moreVertical,
+              tooltip: appLocalizations.moreInfo,
+              foregroundColor: Colors.white,
+              onPressed: () {
                 BottomSheetBuilder.showContextMenu(
                     context, _buildMoreButtons());
               },
-              icon: const Icon(
-                Icons.more_vert_rounded,
-                color: Colors.white,
-              ),
             ),
           ],
           title: Text(
@@ -279,17 +278,17 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
       entries: [
         FlutterContextMenuItem(
           appLocalizations.copyLink,
-          iconData: Icons.copy_rounded,
+          iconData: LoftifyIcons.copy,
           onPressed: () {
             ChewieUtils.copy(context, grainUrl);
           },
         ),
         FlutterContextMenuItem(appLocalizations.openWithBrowser,
-            iconData: Icons.open_in_browser_rounded, onPressed: () {
+            iconData: LoftifyIcons.openExternal, onPressed: () {
           UriUtil.openExternal(grainUrl);
         }),
         FlutterContextMenuItem(appLocalizations.shareToOtherApps,
-            iconData: Icons.share_rounded, onPressed: () {
+            iconData: LoftifyIcons.share, onPressed: () {
           UriUtil.share(grainUrl);
         }),
       ],
@@ -338,11 +337,15 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
                   text: isOldest
                       ? appLocalizations.order
                       : appLocalizations.reverseOrder,
-                  icon: AssetUtil.load(
-                    isOldest
-                        ? AssetUtil.orderDownDarkIcon
-                        : AssetUtil.orderUpDarkIcon,
-                    size: 15,
+                  icon: AnimatedRotation(
+                    turns: isOldest ? 0 : 0.5,
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
+                    child: ChewieIcon(
+                      LoftifyIcons.sortDirection,
+                      size: 16,
+                      color: Theme.of(context).textTheme.labelMedium?.color,
+                    ),
                   ),
                   fontSizeDelta: 1,
                   color: Theme.of(context).textTheme.labelMedium?.color,
@@ -496,15 +499,14 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
             ),
           ),
           if (ResponsiveUtil.isLandscapeLayout()) ...[
-            CircleIconButton(
-              onTap: () {
+            ChewieIconButton(
+              icon: LoftifyIcons.moreVertical,
+              tooltip: appLocalizations.moreInfo,
+              foregroundColor: Colors.white,
+              onPressed: () {
                 BottomSheetBuilder.showContextMenu(
                     context, _buildMoreButtons());
               },
-              icon: const Icon(
-                Icons.more_vert_rounded,
-                color: Colors.white,
-              ),
             ),
             const SizedBox(width: 5),
           ],
