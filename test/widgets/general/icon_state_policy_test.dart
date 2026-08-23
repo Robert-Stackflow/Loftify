@@ -38,4 +38,43 @@ void main() {
           'and this allowlist before using it.',
     );
   });
+
+  test('global navigation uses semantic icons without glyph swapping', () {
+    final sources = <String, String>{
+      'main': File('lib/Screens/main_screen.dart').readAsStringSync(),
+      'panel': File('lib/Screens/panel_screen.dart').readAsStringSync(),
+    };
+
+    for (final entry in sources.entries) {
+      expect(
+        RegExp(r'\bIcons\.').hasMatch(entry.value),
+        isFalse,
+        reason: '${entry.key} navigation must not use Material icons',
+      );
+      expect(
+        entry.value.contains('assets/icon/'),
+        isFalse,
+        reason: '${entry.key} navigation must not use legacy icon images',
+      );
+    }
+
+    const semantics = <String>['home', 'search', 'activity', 'profile'];
+    for (final semantic in semantics) {
+      expect(
+        RegExp(
+          'icon:\\s*LoftifyIcons\\.$semantic,\\s*'
+          'selectedIcon:\\s*LoftifyIcons\\.$semantic,',
+        ).hasMatch(sources['main']!),
+        isTrue,
+      );
+      expect(
+        RegExp(
+          'icon: const ChewieIcon\\(LoftifyIcons\\.$semantic, size: 24\\),'
+          '[\\s\\S]*?activeIcon: const ChewieIcon\\('
+          'LoftifyIcons\\.$semantic, size: 24\\),',
+        ).hasMatch(sources['panel']!),
+        isTrue,
+      );
+    }
+  });
 }

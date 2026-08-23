@@ -107,6 +107,14 @@ void main() {
 
   test('product semantic icons all come from the Lucide font', () {
     const icons = <IconData>[
+      LoftifyIcons.home,
+      LoftifyIcons.search,
+      LoftifyIcons.activity,
+      LoftifyIcons.profile,
+      LoftifyIcons.logout,
+      LoftifyIcons.dress,
+      LoftifyIcons.notifications,
+      LoftifyIcons.settings,
       LoftifyIcons.generalSettings,
       LoftifyIcons.appearance,
       LoftifyIcons.image,

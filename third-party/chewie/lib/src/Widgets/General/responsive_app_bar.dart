@@ -32,7 +32,7 @@ class ResponsiveAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.title = "",
     this.titleWidget,
     this.showBack = false,
-    this.leadingIcon = Icons.arrow_back_rounded,
+    this.leadingIcon = LucideIcons.arrowLeft,
     this.onTapBack,
     this.showBorder,
     this.bottomWidget,
@@ -96,11 +96,9 @@ class ResponsiveAppBar extends StatelessWidget implements PreferredSizeWidget {
                             child: ToolButton(
                               context: context,
                               onPressed: handleBack,
-                              buttonSize: const Size(32, 32),
-                              iconBuilder: (_) => Icon(
-                                leadingIcon == Icons.arrow_back_rounded
-                                    ? LucideIcons.arrowLeft
-                                    : leadingIcon,
+                              buttonSize: const Size(44, 44),
+                              iconBuilder: (_) => ChewieIcon(
+                                leadingIcon,
                                 size: 20,
                               ),
                             ),

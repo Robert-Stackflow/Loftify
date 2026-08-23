@@ -8,10 +8,10 @@ import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:loftify/Api/server_api.dart';
 import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
 import 'package:loftify/Screens/panel_screen.dart';
-import 'package:loftify/Utils/asset_util.dart';
 import 'package:loftify/Utils/cloud_control_provider.dart';
 import 'package:loftify/Utils/lottie_files.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
+import 'package:loftify/Widgets/loftify_icons.dart';
 import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
@@ -329,7 +329,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
       entries: [
         FlutterContextMenuItem(
           appLocalizations.viewPersonalHomepage,
-          iconData: Icons.person_outline_rounded,
+          iconData: LoftifyIcons.profile,
           onPressed: () async {
             panelScreenState?.pushPage(UserDetailScreen(
               blogId: blogInfo!.blogId,
@@ -341,7 +341,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
         FlutterContextMenuItem(
           appLocalizations.logout,
           status: MenuItemStatus.warning,
-          iconData: Icons.logout_rounded,
+          iconData: LoftifyIcons.logout,
           onPressed: () async {
             HiveUtil.confirmLogout(context);
           },
@@ -417,8 +417,8 @@ class MainScreenState extends BaseWindowState<MainScreen>
                       context: context,
                       selected:
                           hideNavigator && sidebarChoice == SideBarChoice.Home,
-                      icon: Icons.explore_outlined,
-                      selectedIcon: Icons.explore_rounded,
+                      icon: LoftifyIcons.home,
+                      selectedIcon: LoftifyIcons.home,
                       onPressed: () async {
                         appProvider.sidebarChoice = SideBarChoice.Home;
                         panelScreenState?.popAll(false);
@@ -430,8 +430,8 @@ class MainScreenState extends BaseWindowState<MainScreen>
                       context: context,
                       selected: hideNavigator &&
                           sidebarChoice == SideBarChoice.Search,
-                      icon: Icons.search_rounded,
-                      selectedIcon: Icons.manage_search_rounded,
+                      icon: LoftifyIcons.search,
+                      selectedIcon: LoftifyIcons.search,
                       onPressed: () async {
                         appProvider.sidebarChoice = SideBarChoice.Search;
                         panelScreenState?.popAll(false);
@@ -442,8 +442,8 @@ class MainScreenState extends BaseWindowState<MainScreen>
                       context: context,
                       selected: hideNavigator &&
                           sidebarChoice == SideBarChoice.Dynamic,
-                      icon: Icons.favorite_border_rounded,
-                      selectedIcon: Icons.favorite_rounded,
+                      icon: LoftifyIcons.activity,
+                      selectedIcon: LoftifyIcons.activity,
                       onPressed: () async {
                         appProvider.sidebarChoice = SideBarChoice.Dynamic;
                         panelScreenState?.popAll(false);
@@ -454,8 +454,8 @@ class MainScreenState extends BaseWindowState<MainScreen>
                       context: context,
                       selected:
                           hideNavigator && sidebarChoice == SideBarChoice.Mine,
-                      icon: Icons.person_outline_rounded,
-                      selectedIcon: Icons.person_rounded,
+                      icon: LoftifyIcons.profile,
+                      selectedIcon: LoftifyIcons.profile,
                       onPressed: () async {
                         appProvider.sidebarChoice = SideBarChoice.Mine;
                         panelScreenState?.popAll(false);
@@ -506,12 +506,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
                     if (cloudControlProvider.globalControl.showDress) ...[
                       ToolButton(
                         context: context,
-                        iconBuilder: (_) => AssetUtil.loadDouble(
-                          context,
-                          AssetUtil.dressLightIcon,
-                          AssetUtil.dressDarkIcon,
-                        ),
-                        padding: const EdgeInsets.all(8),
+                        icon: LoftifyIcons.dress,
                         onPressed: () {
                           RouteUtil.pushPanelCupertinoRoute(
                               context, const SuitScreen());
@@ -521,11 +516,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
                     ],
                     ToolButton(
                       context: context,
-                      iconBuilder: (_) => Icon(
-                        Icons.notifications_on_outlined,
-                        color: Theme.of(context).iconTheme.color,
-                        size: 20,
-                      ),
+                      icon: LoftifyIcons.notifications,
                       onPressed: () {
                         RouteUtil.pushPanelCupertinoRoute(
                             context, const SystemNoticeScreen());
@@ -534,12 +525,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
                     const SizedBox(height: 2),
                     ToolButton(
                       context: context,
-                      iconBuilder: (_) => AssetUtil.loadDouble(
-                        context,
-                        AssetUtil.settingLightIcon,
-                        AssetUtil.settingDarkIcon,
-                      ),
-                      padding: const EdgeInsets.all(8),
+                      icon: LoftifyIcons.settings,
                       onPressed: () {
                         RouteUtil.pushPanelCupertinoRoute(
                             context, const SettingScreen());

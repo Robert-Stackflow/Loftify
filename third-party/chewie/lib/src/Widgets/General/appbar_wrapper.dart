@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 class AppBarWrapper extends StatelessWidget implements PreferredSizeWidget {
   final Widget? title;
@@ -60,11 +61,14 @@ class AppBarWrapper extends StatelessWidget implements PreferredSizeWidget {
     var finalLeadingWidget = Container(
       margin: EdgeInsets.only(left: leftSpacing),
       child: leadingWidget ??
-          CircleIconButton(
-            icon:
-                Icon(leadingIcon, color: leadingColor ?? ChewieTheme.iconColor),
-            onTap: onLeadingTap,
-          ),
+          (leadingIcon == null
+              ? const SizedBox.shrink()
+              : ChewieIconButton(
+                  icon: leadingIcon!,
+                  foregroundColor: leadingColor ?? ChewieTheme.iconColor,
+                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                  onPressed: onLeadingTap,
+                )),
     );
 
     return MyAppBar(
@@ -125,7 +129,7 @@ class AppBarWrapper extends StatelessWidget implements PreferredSizeWidget {
   static PreferredSizeWidget simple({
     String title = "",
     Key? key,
-    IconData leadingIcon = Icons.arrow_back_rounded,
+    IconData leadingIcon = LucideIcons.arrowLeft,
     List<Widget>? actions,
     required BuildContext context,
     bool transparent = false,

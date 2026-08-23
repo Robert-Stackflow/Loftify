@@ -53,8 +53,10 @@ class WindowButtonColors {
     this.mouseDown = mouseDown ?? defaultWindowButtonColors.mouseDown;
     this.iconNormal = iconNormal ?? defaultWindowButtonColors.iconNormal;
     this.iconSelected = iconSelected ?? defaultWindowButtonColors.iconSelected;
-    this.iconMouseOver = iconMouseOver ?? defaultWindowButtonColors.iconMouseOver;
-    this.iconMouseDown = iconMouseDown ?? defaultWindowButtonColors.iconMouseDown;
+    this.iconMouseOver =
+        iconMouseOver ?? defaultWindowButtonColors.iconMouseOver;
+    this.iconMouseDown =
+        iconMouseDown ?? defaultWindowButtonColors.iconMouseDown;
   }
 
   WindowButtonColors copyWith({
@@ -278,14 +280,18 @@ class ToolButton extends WindowButton {
           colors: colors ?? ChewieColors.getNormalButtonColors(context),
           borderRadius: borderRadius ?? ChewieDimens.borderRadius8,
           iconBuilder: iconBuilder ??
-              (buttonContext) => Transform.rotate(
-                    angle: rotateTurns ?? 0,
-                    child: Icon(
-                      selected ? selectedIcon ?? icon : icon,
-                      color: buttonContext.iconColor,
-                      size: iconSize,
-                    ),
+              (buttonContext) {
+                final effectiveIcon = selected ? selectedIcon ?? icon : icon;
+                if (effectiveIcon == null) return emptyWidget;
+                return Transform.rotate(
+                  angle: rotateTurns ?? 0,
+                  child: ChewieIcon(
+                    effectiveIcon,
+                    color: buttonContext.iconColor,
+                    size: iconSize,
                   ),
+                );
+              },
         );
 
   static Widget dynamicButton({

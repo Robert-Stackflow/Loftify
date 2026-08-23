@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 void main() {
   setUpAll(() async {
@@ -59,6 +60,11 @@ void main() {
       find.descendant(of: responsiveAppBar, matching: find.byType(SafeArea)),
       findsOneWidget,
     );
+    expect(find.byIcon(LucideIcons.arrowLeft), findsOneWidget);
+    final iconButton = find.byType(IconButton);
+    final toolButton = find.byType(ToolButton);
+    final target = iconButton.evaluate().isNotEmpty ? iconButton : toolButton;
+    expect(tester.getSize(target), const Size.square(44));
     expect(tester.takeException(), isNull);
   });
 

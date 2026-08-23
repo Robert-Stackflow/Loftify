@@ -24,6 +24,7 @@ import 'package:provider/provider.dart';
 import '../Utils/app_provider.dart';
 import '../Utils/enums.dart';
 import '../Utils/lottie_files.dart';
+import '../Widgets/loftify_icons.dart';
 import '../l10n/l10n.dart';
 import 'Navigation/home_screen.dart';
 import 'Navigation/search_screen.dart';
@@ -278,23 +279,23 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
           elevation: 0,
           items: [
             BottomNavigationBarItem(
-              icon: const Icon(Icons.explore_outlined, size: 28),
-              activeIcon: const Icon(Icons.explore_rounded, size: 28),
+              icon: const ChewieIcon(LoftifyIcons.home, size: 24),
+              activeIcon: const ChewieIcon(LoftifyIcons.home, size: 24),
               label: appLocalizations.home,
             ),
             BottomNavigationBarItem(
-              icon: const Icon(Icons.search_rounded, size: 28),
-              activeIcon: const Icon(Icons.manage_search_rounded, size: 28),
+              icon: const ChewieIcon(LoftifyIcons.search, size: 24),
+              activeIcon: const ChewieIcon(LoftifyIcons.search, size: 24),
               label: appLocalizations.search,
             ),
             BottomNavigationBarItem(
-              icon: const Icon(Icons.favorite_border_rounded, size: 28),
-              activeIcon: const Icon(Icons.favorite_rounded, size: 28),
+              icon: const ChewieIcon(LoftifyIcons.activity, size: 24),
+              activeIcon: const ChewieIcon(LoftifyIcons.activity, size: 24),
               label: appLocalizations.dynamicTab,
             ),
             BottomNavigationBarItem(
-              icon: const Icon(Icons.person_outline_rounded, size: 28),
-              activeIcon: const Icon(Icons.person_rounded, size: 28),
+              icon: const ChewieIcon(LoftifyIcons.profile, size: 24),
+              activeIcon: const ChewieIcon(LoftifyIcons.profile, size: 24),
               label: appLocalizations.mine,
             ),
           ],

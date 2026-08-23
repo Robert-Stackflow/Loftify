@@ -9,10 +9,19 @@ import 'package:lucide_icons/lucide_icons.dart';
 /// and is expressed by the shared icon component. A different glyph is only
 /// valid when the action itself changes, for example play/pause.
 abstract final class LoftifyIcons {
+  static const IconData home = LucideIcons.compass;
+  static const IconData search = LucideIcons.search;
+  static const IconData activity = LucideIcons.heart;
+  static const IconData profile = LucideIcons.userRound;
+  static const IconData logout = LucideIcons.logOut;
+  static const IconData dress = LucideIcons.shirt;
+  static const IconData notifications = LucideIcons.bell;
+  static const IconData settings = LucideIcons.settings;
+
   static const IconData generalSettings = LucideIcons.settings2;
   static const IconData appearance = LucideIcons.paintbrushVertical;
   static const IconData image = LucideIcons.image;
-  static const IconData basicSettings = LucideIcons.settings;
+  static const IconData basicSettings = settings;
   static const IconData experiment = LucideIcons.flaskConical;
   static const IconData about = LucideIcons.info;
 
