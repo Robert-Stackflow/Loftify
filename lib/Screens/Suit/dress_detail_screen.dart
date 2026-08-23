@@ -8,6 +8,7 @@ import 'package:loftify/Utils/hive_util.dart';
 
 import '../../Utils/enums.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
 class DressDetailScreen extends StatefulWidgetForNested {
@@ -43,37 +44,32 @@ class _DressDetailScreenState extends BaseDynamicState<DressDetailScreen>
     setState(() {});
   }
 
-  _fetchDetail({bool refresh = false}) async {
-    if (_loading) return;
+  Future<IndicatorResult> _fetchDetail({bool refresh = false}) async {
+    if (_loading) return IndicatorResult.none;
     _loading = true;
-    userAvatarImg = (await HiveUtil.getUserInfo())?.bigAvaImg;
-    await DressApi.getDressDetail(
-      returnGiftDressId: widget.returnGiftDressId,
-    ).then((value) {
-      try {
-        if (value['code'] != 200) {
-          IToast.showTop(value['msg']);
-          return IndicatorResult.fail;
-        } else {
-          _giftDress = GiftDress.fromJson(value['data']['returnGiftDress']);
-          _giftDress!.partList.sort((a, b) => a.partType.compareTo(b.partType));
-          if (mounted) setState(() {});
-          return IndicatorResult.success;
-        }
-      } catch (e, t) {
-        ILogger.error("Failed to load dress detail", e, t);
-        if (mounted) IToast.showTop(appLocalizations.loadFailed);
+    try {
+      userAvatarImg = (await HiveUtil.getUserInfo())?.bigAvaImg;
+      final value = await DressApi.getDressDetail(
+        returnGiftDressId: widget.returnGiftDressId,
+      );
+      if (value['code'] != 200) {
+        IToast.showTop(value['msg']);
         return IndicatorResult.fail;
-      } finally {
-        if (mounted) setState(() {});
-        _loading = false;
       }
-    });
+      _giftDress = GiftDress.fromJson(value['data']['returnGiftDress']);
+      _giftDress!.partList.sort((a, b) => a.partType.compareTo(b.partType));
+      return IndicatorResult.success;
+    } catch (e, t) {
+      ILogger.error("Failed to load dress detail", e, t);
+      if (mounted) IToast.showTop(appLocalizations.loadFailed);
+      return IndicatorResult.fail;
+    } finally {
+      _loading = false;
+      if (mounted) setState(() {});
+    }
   }
 
-  _onRefresh() async {
-    return await _fetchDetail(refresh: true);
-  }
+  Future<IndicatorResult> _onRefresh() => _fetchDetail(refresh: true);
 
   @override
   Widget build(BuildContext context) {
@@ -198,7 +194,7 @@ class _DressDetailScreenState extends BaseDynamicState<DressDetailScreen>
     );
   }
 
-  _dressOrUnDress(GiftPartItem item) async {
+  Future<void> _dressOrUnDress(GiftPartItem item) async {
     HapticFeedback.mediumImpact();
     if (currentAvatarImg == item.partUrl) {
       await ChewieHiveUtil.put(HiveUtil.customAvatarBoxKey, "");
@@ -213,7 +209,7 @@ class _DressDetailScreenState extends BaseDynamicState<DressDetailScreen>
     }
   }
 
-  _buildItem(GiftPartItem item) {
+  Widget _buildItem(GiftPartItem item) {
     final isAvatarBox = item.partType == 1;
     final isDressing = currentAvatarImg == item.partUrl;
     return Container(
@@ -308,7 +304,7 @@ class _DressDetailScreenState extends BaseDynamicState<DressDetailScreen>
                 IconButton.outlined(
                   tooltip: appLocalizations.download,
                   onPressed: () => _downloadPart(item),
-                  icon: const Icon(Icons.download_rounded, size: 19),
+                  icon: const ChewieIcon(LoftifyIcons.download, size: 19),
                 ),
                 if (isAvatarBox) ...[
                   const SizedBox(width: 8),

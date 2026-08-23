@@ -356,4 +356,19 @@ void main() {
       isFalse,
     );
   });
+
+  test('dress cards and detail actions use Lucide semantics', () {
+    final previewSource = File(
+      'lib/Widgets/Suit/dress_preview_card.dart',
+    ).readAsStringSync();
+    final detailSource = File(
+      'lib/Screens/Suit/dress_detail_screen.dart',
+    ).readAsStringSync();
+
+    for (final source in [previewSource, detailSource]) {
+      expect(RegExp(r'\b(?:Icons|CupertinoIcons)\.').hasMatch(source), isFalse);
+    }
+    expect(previewSource, contains('LoftifyIcons.next'));
+    expect(detailSource, contains('LoftifyIcons.download'));
+  });
 }

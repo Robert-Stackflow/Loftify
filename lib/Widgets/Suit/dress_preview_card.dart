@@ -1,6 +1,8 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 
+import '../loftify_icons.dart';
+
 class DressPreviewCard extends StatelessWidget {
   const DressPreviewCard({
     super.key,
@@ -134,8 +136,8 @@ class DressPreviewCard extends StatelessWidget {
                           color: colors.primary.withValues(alpha: 0.11),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
-                          Icons.arrow_forward_rounded,
+                        child: ChewieIcon(
+                          LoftifyIcons.next,
                           size: 17,
                           color: colors.primary,
                         ),
