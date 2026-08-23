@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../Screens/Post/tag_detail_screen.dart';
 import '../../Utils/app_provider.dart';
-import '../../Utils/asset_util.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/utils.dart';
+import '../loftify_icons.dart';
 
 enum TailingType { none, clear, password, icon, text, widget }
 
@@ -22,7 +22,7 @@ class ItemBuilder {
     Color? titleColor,
     Color? descriptionColor,
     CrossAxisAlignment crossAxisAlignment = CrossAxisAlignment.start,
-    IconData leading = Icons.home_filled,
+    IconData leading = LoftifyIcons.home,
     required String title,
     String tip = "",
     String description = "",
@@ -30,7 +30,7 @@ class ItemBuilder {
     double padding = 18,
     double trailingLeftMargin = 5,
     bool dividerPadding = true,
-    IconData trailing = Icons.keyboard_arrow_right_rounded,
+    IconData trailing = LoftifyIcons.next,
   }) {
     return EntryItem(
       context: context,
@@ -476,25 +476,27 @@ class ItemBuilder {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // if (tagType == TagType.normal && showIcon)
-              //   AssetUtil.load(
-              //     AssetUtil.tagDarkIcon,
-              //     size: 15,
-              //   ),
               if (tagType == TagType.hot && showIcon)
-                AssetUtil.load(AssetUtil.hotIcon, size: 12),
+                ChewieIcon(
+                  LoftifyIcons.hot,
+                  size: 14,
+                  color: ChewieColors.getHotTagTextColor(context),
+                ),
               if (tagType == TagType.hot && showIcon) const SizedBox(width: 2),
-              // Icon(Icons.local_fire_department_rounded,
-              //     size: 15, color: ChewieColors.getHotTagTextColor(context)),
               if (tagType == TagType.egg && showIcon)
-                Icon(Icons.egg_rounded,
-                    size: 15, color: ChewieColors.getHotTagTextColor(context)),
+                ChewieIcon(
+                  LoftifyIcons.egg,
+                  size: 15,
+                  color: ChewieColors.getHotTagTextColor(context),
+                ),
               if (tagType == TagType.catutu && showIcon)
                 Container(
                   margin: const EdgeInsets.only(right: 2),
-                  child: Icon(Icons.auto_fix_high_outlined,
-                      size: 15,
-                      color: ChewieColors.getHotTagTextColor(context)),
+                  child: ChewieIcon(
+                    LoftifyIcons.magic,
+                    size: 15,
+                    color: ChewieColors.getHotTagTextColor(context),
+                  ),
                 ),
               Text(
                 ((tagType == TagType.normal || !showIcon) && showTagLabel)
@@ -513,8 +515,8 @@ class ItemBuilder {
                         ),
               ),
               if (showRightIcon)
-                Icon(
-                  Icons.keyboard_arrow_right_rounded,
+                ChewieIcon(
+                  LoftifyIcons.next,
                   size: 16,
                   color: color,
                 ),
@@ -600,19 +602,10 @@ class ItemBuilder {
               ),
             ),
           ),
-          GestureDetector(
-            onTap: () {
-              onSubmitted(controller?.text);
-            },
-            child: MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: AssetUtil.loadDouble(
-                context,
-                AssetUtil.searchLightIcon,
-                AssetUtil.searchDarkIcon,
-                size: 20,
-              ),
-            ),
+          ChewieIconButton(
+            icon: LoftifyIcons.search,
+            tooltip: hintText.toString(),
+            onPressed: () => onSubmitted(controller?.text),
           ),
         ],
       ),
@@ -652,13 +645,11 @@ class ItemBuilder {
             ),
           ),
           if (icon != null)
-            CircleIconButton(
-              icon: Icon(
-                icon,
-                size: 18,
-                color: Theme.of(context).textTheme.labelSmall?.color,
-              ),
-              onTap: onTap,
+            ChewieIconButton(
+              icon: icon,
+              iconSize: 18,
+              foregroundColor: Theme.of(context).textTheme.labelSmall?.color,
+              onPressed: onTap,
             ),
           if (StringUtil.isNotEmpty(suffixText))
             GestureDetector(
@@ -669,8 +660,8 @@ class ItemBuilder {
                     suffixText!,
                     style: Theme.of(context).textTheme.labelMedium,
                   ),
-                  Icon(
-                    Icons.keyboard_arrow_right_rounded,
+                  ChewieIcon(
+                    LoftifyIcons.next,
                     size: 18,
                     color: Theme.of(context).textTheme.labelSmall?.color,
                   ),

@@ -118,4 +118,33 @@ void main() {
 
     expect(violations, isEmpty);
   });
+
+  test('shared content item builders use semantic Lucide icons', () {
+    final files = <File>[
+      File('lib/Widgets/Item/item_builder.dart'),
+      File('lib/Widgets/Item/loftify_item_builder.dart'),
+    ];
+    final legacyGlyph = RegExp(r'\b(?:Icons|CupertinoIcons)\.');
+    final legacyInterfaceAsset = RegExp(
+      r'AssetUtil\.(?:hotIcon|searchLightIcon|searchDarkIcon|'
+      r'likeFilledIcon|likeLightIcon)',
+    );
+    final violations = files
+        .where((file) {
+          final source = file.readAsStringSync();
+          return legacyGlyph.hasMatch(source) ||
+              legacyInterfaceAsset.hasMatch(source);
+        })
+        .map((file) => file.path)
+        .toList();
+
+    expect(violations, isEmpty);
+
+    final source = File(
+      'lib/Widgets/Item/loftify_item_builder.dart',
+    ).readAsStringSync();
+    expect(source, contains('ChewieIcon(\n            LoftifyIcons.favorite,'));
+    expect(
+        source, contains('ChewieIcon(\n            LoftifyIcons.recommend,'));
+  });
 }

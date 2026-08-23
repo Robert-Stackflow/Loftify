@@ -20,6 +20,7 @@ import '../../Utils/asset_util.dart';
 import '../../Utils/enums.dart';
 import '../PostDetail/comment_item.dart';
 import '../../l10n/l10n.dart';
+import '../loftify_icons.dart';
 import 'item_builder.dart';
 
 const CircleColor shareButtonCircleColor =
@@ -99,8 +100,8 @@ class LoftifyItemBuilder {
                             ),
                           ),
                           const SizedBox(width: 2),
-                          Icon(
-                            Icons.keyboard_arrow_down_rounded,
+                          ChewieIcon(
+                            LoftifyIcons.expand,
                             size: 17,
                             color:
                                 Theme.of(context).textTheme.labelMedium?.color,
@@ -448,10 +449,8 @@ class LoftifyItemBuilder {
         size: size,
         isLiked: isLiked,
         likeBuilder: (bool isLiked) {
-          return Icon(
-            isLiked || filled
-                ? Icons.favorite_rounded
-                : Icons.favorite_border_rounded,
+          return ChewieIcon(
+            LoftifyIcons.favorite,
             color: isLiked
                 ? ChewieColors.likeButtonColor
                 : defaultColor ?? Theme.of(context).iconTheme.color,
@@ -463,16 +462,6 @@ class LoftifyItemBuilder {
           //       : LottieUtil.likeBigNormalLight,
           //   size: iconSize,
           //   controller: animationController,
-          // );
-          // return AssetUtil.loadDouble(
-          //   context,
-          //   isLiked || filled
-          //       ? AssetUtil.likeFilledIcon
-          //       : AssetUtil.likeLightIcon,
-          //   isLiked || filled
-          //       ? AssetUtil.likeFilledIcon
-          //       : AssetUtil.likeLightIcon,
-          //   size: iconSize,
           // );
         },
         likeCount: likeCount,
@@ -608,10 +597,8 @@ class LoftifyItemBuilder {
         circleColor: shareButtonCircleColor,
         bubblesColor: shareButtonBubblesColor,
         likeBuilder: (bool isShared) {
-          return Icon(
-            isShared || filled
-                ? Icons.thumb_up_rounded
-                : Icons.thumb_up_outlined,
+          return ChewieIcon(
+            LoftifyIcons.recommend,
             color: isShared
                 ? ChewieColors.shareButtonColor
                 : defaultColor ?? Theme.of(context).iconTheme.color,
@@ -864,8 +851,8 @@ class LoftifyItemBuilder {
             EdgeInsets.symmetric(vertical: verticalPadding, horizontal: 16),
         child: Row(
           children: [
-            Icon(
-              tag.joinCount == -1 ? Icons.search_rounded : Icons.tag_rounded,
+            ChewieIcon(
+              tag.joinCount == -1 ? LoftifyIcons.search : LoftifyIcons.tag,
               size: 20,
               color: Theme.of(context).textTheme.labelMedium?.color,
             ),
