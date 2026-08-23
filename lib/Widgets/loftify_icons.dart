@@ -3,6 +3,11 @@ import 'package:lucide_icons/lucide_icons.dart';
 
 /// Product-level icon semantics. Pages should use these names instead of
 /// importing an icon font directly.
+///
+/// Names describe product meaning, never visual variants such as `filled`,
+/// `outlined`, `active` or `selected`. A persistent state keeps the same glyph
+/// and is expressed by the shared icon component. A different glyph is only
+/// valid when the action itself changes, for example play/pause.
 abstract final class LoftifyIcons {
   static const IconData generalSettings = LucideIcons.settings2;
   static const IconData appearance = LucideIcons.paintbrushVertical;
