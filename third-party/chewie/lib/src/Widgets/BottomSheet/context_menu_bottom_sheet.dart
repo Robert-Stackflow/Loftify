@@ -182,7 +182,7 @@ class ContextMenuBottomSheetState extends State<ContextMenuBottomSheet> {
                   ],
                   if (config.type == MenuItemType.checkbox) ...[
                     config.checked
-                        ? _buildIcon(Icons.check_rounded, iconColor)
+                        ? _buildIcon(ChewieIcons.check, iconColor)
                         : const SizedBox(width: 34, height: 34),
                     const SizedBox(width: 12),
                   ],

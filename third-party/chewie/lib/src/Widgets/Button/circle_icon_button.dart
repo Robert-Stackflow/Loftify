@@ -82,7 +82,7 @@ class BlankIconButtonState extends State<BlankIconButton> {
       maintainState: true,
       maintainSize: true,
       child: CircleIconButton(
-        icon: Icon(Icons.more_vert_rounded, color: ChewieTheme.iconColor),
+        icon: ChewieIcon(ChewieIcons.more, color: ChewieTheme.iconColor),
         onTap: () {},
       ),
     );

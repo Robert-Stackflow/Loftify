@@ -192,7 +192,7 @@
 
 ## 6. 统一组件规范
 
-`ICON-02` 已建立两层入口：业务代码只通过 `LoftifyIcons` 使用产品语义，组件代码通过 `ChewieIcon` 和 `ChewieIconButton` 统一渲染。业务页面不得再直接导入 `lucide_icons`；后续迁移时先在 `LoftifyIcons` 登记语义，再替换页面中的旧图标。
+`ICON-02` 已建立分层入口：业务代码只通过 `LoftifyIcons` 使用产品语义，复用组件通过 `ChewieIcons` 使用基础语义，并由 `ChewieIcon` 和 `ChewieIconButton` 统一渲染。业务页面不得再直接导入 `lucide_icons`；后续迁移时先在对应语义层登记，再替换页面中的旧图标。
 
 | 项目 | 统一规则 |
 | --- | --- |

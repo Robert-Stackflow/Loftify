@@ -334,8 +334,8 @@ class StayOnTopWindowButton extends WindowButton {
           enableAnimation: false,
           padding: EdgeInsets.zero,
           rotateTurns: rotateTurns ?? 0,
-          iconBuilder: (buttonContext) => Icon(
-            rotateTurns == 0 ? Icons.push_pin_rounded : Icons.push_pin_outlined,
+          iconBuilder: (buttonContext) => ChewieIcon(
+            ChewieIcons.pin,
             color: buttonContext.iconColor,
             size: iconSize,
           ),
@@ -352,7 +352,8 @@ class MinimizeWindowButton extends WindowButton {
   }) : super(
             enableAnimation: animate ?? false,
             padding: EdgeInsets.zero,
-            iconBuilder: (buttonContext) => Icon(Icons.horizontal_rule_rounded,
+            iconBuilder: (buttonContext) => ChewieIcon(
+                ChewieIcons.minimizeWindow,
                 color: buttonContext.iconColor),
             onPressed: onPressed ?? () => windowManager.minimize());
 }
@@ -367,8 +368,8 @@ class MaximizeWindowButton extends WindowButton {
   }) : super(
             padding: EdgeInsets.zero,
             enableAnimation: animate ?? false,
-            iconBuilder: (buttonContext) => Icon(
-                Icons.check_box_outline_blank_rounded,
+            iconBuilder: (buttonContext) => ChewieIcon(
+                ChewieIcons.maximizeWindow,
                 size: 19,
                 color: buttonContext.iconColor),
             onPressed: onPressed ?? () => ResponsiveUtil.maximizeOrRestore());
@@ -384,7 +385,8 @@ class RestoreWindowButton extends WindowButton {
   }) : super(
             padding: EdgeInsets.zero,
             enableAnimation: animate ?? false,
-            iconBuilder: (buttonContext) => Icon(Icons.fullscreen_exit_rounded,
+            iconBuilder: (buttonContext) => ChewieIcon(
+                ChewieIcons.restoreWindow,
                 color: buttonContext.iconColor),
             onPressed: onPressed ?? () => ResponsiveUtil.maximizeOrRestore());
 }
@@ -408,7 +410,7 @@ class CloseWindowButton extends WindowButton {
             colors: colors ?? _defaultCloseButtonColors,
             padding: EdgeInsets.zero,
             enableAnimation: animate ?? false,
-            iconBuilder: (buttonContext) => Icon(Icons.close_rounded,
+            iconBuilder: (buttonContext) => ChewieIcon(ChewieIcons.closeWindow,
                 size: iconSize, color: buttonContext.iconColor),
             onPressed: onPressed ?? () => windowManager.close());
 }

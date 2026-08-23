@@ -135,6 +135,52 @@ void main() {
     expect(icons.every((icon) => icon.fontPackage == 'lucide_icons'), isTrue);
   });
 
+  test('reusable component semantics all come from the Lucide font', () {
+    const icons = <IconData>[
+      ChewieIcons.back,
+      ChewieIcons.previous,
+      ChewieIcons.next,
+      ChewieIcons.expand,
+      ChewieIcons.collapse,
+      ChewieIcons.arrowUp,
+      ChewieIcons.arrowDown,
+      ChewieIcons.arrowLeft,
+      ChewieIcons.arrowRight,
+      ChewieIcons.add,
+      ChewieIcons.remove,
+      ChewieIcons.close,
+      ChewieIcons.check,
+      ChewieIcons.copy,
+      ChewieIcons.copyDone,
+      ChewieIcons.more,
+      ChewieIcons.refresh,
+      ChewieIcons.retry,
+      ChewieIcons.search,
+      ChewieIcons.share,
+      ChewieIcons.openExternal,
+      ChewieIcons.info,
+      ChewieIcons.success,
+      ChewieIcons.warning,
+      ChewieIcons.error,
+      ChewieIcons.imageUnavailable,
+      ChewieIcons.inbox,
+      ChewieIcons.archive,
+      ChewieIcons.star,
+      ChewieIcons.starHalf,
+      ChewieIcons.pin,
+      ChewieIcons.minimizeWindow,
+      ChewieIcons.maximizeWindow,
+      ChewieIcons.restoreWindow,
+      ChewieIcons.closeWindow,
+      ChewieIcons.square,
+      ChewieIcons.alarm,
+      ChewieIcons.time,
+    ];
+
+    expect(icons.every((icon) => icon.fontFamily == 'Lucide'), isTrue);
+    expect(icons.every((icon) => icon.fontPackage == 'lucide_icons'), isTrue);
+  });
+
   test('application pages do not import icon fonts directly', () {
     final violations = Directory('lib')
         .listSync(recursive: true)

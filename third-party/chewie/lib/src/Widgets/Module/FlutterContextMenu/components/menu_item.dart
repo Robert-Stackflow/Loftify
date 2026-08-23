@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:awesome_chewie/src/Resources/chewie_icons.dart';
 
 import '../core/models/context_menu_entry.dart';
 import '../core/models/context_menu_item.dart';
@@ -130,7 +131,7 @@ final class FlutterContextMenuItem<T> extends BaseContextMenuItem<T> {
     required this.checked,
     this.status = MenuItemStatus.normal,
   })  : type = MenuItemType.checkbox,
-        iconData = Icons.check_rounded;
+        iconData = ChewieIcons.check;
 
   FlutterContextMenuItem.divider()
       : label = '',
@@ -227,7 +228,7 @@ final class FlutterContextMenuItem<T> extends BaseContextMenuItem<T> {
                 ),
               if (type == MenuItemType.checkbox && checked)
                 Icon(
-                  Icons.check_rounded,
+                  ChewieIcons.check,
                   size: 20,
                   color: foregroundColor,
                 ),
@@ -246,7 +247,7 @@ final class FlutterContextMenuItem<T> extends BaseContextMenuItem<T> {
               Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: Icon(
-                  isSubmenuItem ? Icons.arrow_right : null,
+                  isSubmenuItem ? ChewieIcons.next : null,
                   size: 16.0,
                   color: foregroundColor,
                 ),

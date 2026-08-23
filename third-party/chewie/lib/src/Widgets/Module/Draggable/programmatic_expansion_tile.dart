@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:awesome_chewie/src/Resources/chewie_icons.dart';
 
 const Duration _kExpand = Duration(milliseconds: 200);
 
@@ -213,7 +214,7 @@ class ProgrammaticExpansionTileState extends State<ProgrammaticExpansionTile>
               trailing: widget.trailing ??
                   RotationTransition(
                     turns: _iconTurns,
-                    child: const Icon(Icons.expand_more),
+                    child: const Icon(ChewieIcons.expand),
                   ),
             ),
           ),

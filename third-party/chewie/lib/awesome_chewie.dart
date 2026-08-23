@@ -11,6 +11,7 @@ export 'src/Resources/colors.dart';
 export 'src/Resources/dimens.dart';
 export 'src/Resources/fonts.dart';
 export 'src/Resources/icon_theme.dart';
+export 'src/Resources/chewie_icons.dart';
 export 'src/Resources/styles.dart';
 export 'src/Resources/theme.dart';
 export 'src/Resources/theme_color_data.dart';

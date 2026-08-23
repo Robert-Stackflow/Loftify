@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 class SliverAppBarWrapper extends StatelessWidget {
   final BuildContext context;
@@ -62,7 +61,7 @@ class SliverAppBarWrapper extends StatelessWidget {
     var leading = Container(
       margin: EdgeInsets.only(left: leftSpacing),
       child: ChewieIconButton(
-        icon: LucideIcons.arrowLeft,
+        icon: ChewieIcons.back,
         foregroundColor: leadingColor,
         tooltip: MaterialLocalizations.of(context).backButtonTooltip,
         onPressed: onBack ?? () => Navigator.pop(context),

@@ -144,11 +144,11 @@ class _SearchFieldState<T> extends State<_SearchField<T>> {
           hintText: widget.searchHintText,
           hintStyle: widget.decoration?.hintStyle,
           prefixIcon: widget.decoration?.prefixIcon ??
-              const Icon(Icons.search_rounded, size: 20),
+              const Icon(ChewieIcons.search, size: 20),
           suffixIcon: widget.decoration?.suffixIcon?.call(onClear) ??
               GestureDetector(
                 onTap: onClear,
-                child: const Icon(Icons.close_rounded, size: 20),
+                child: const Icon(ChewieIcons.close, size: 20),
               ),
           border: widget.decoration?.border ??
               OutlineInputBorder(

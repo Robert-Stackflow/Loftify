@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 class AppBarWrapper extends StatelessWidget implements PreferredSizeWidget {
   final Widget? title;
@@ -129,7 +128,7 @@ class AppBarWrapper extends StatelessWidget implements PreferredSizeWidget {
   static PreferredSizeWidget simple({
     String title = "",
     Key? key,
-    IconData leadingIcon = LucideIcons.arrowLeft,
+    IconData leadingIcon = ChewieIcons.back,
     List<Widget>? actions,
     required BuildContext context,
     bool transparent = false,

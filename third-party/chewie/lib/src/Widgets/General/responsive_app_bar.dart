@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 class ResponsiveAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -32,7 +31,7 @@ class ResponsiveAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.title = "",
     this.titleWidget,
     this.showBack = false,
-    this.leadingIcon = LucideIcons.arrowLeft,
+    this.leadingIcon = ChewieIcons.back,
     this.onTapBack,
     this.showBorder,
     this.bottomWidget,

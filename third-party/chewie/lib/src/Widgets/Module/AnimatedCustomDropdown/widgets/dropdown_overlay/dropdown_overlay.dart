@@ -1,7 +1,7 @@
 part of '../../custom_dropdown.dart';
 
 const _defaultOverlayIconUp = Icon(
-  Icons.keyboard_arrow_up_rounded,
+  ChewieIcons.collapse,
   size: 20,
 );
 

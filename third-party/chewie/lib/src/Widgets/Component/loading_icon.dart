@@ -116,12 +116,12 @@ class LoadingIconState extends State<LoadingIcon>
                 );
               case LoadingStatus.failedAndLoading:
                 return Icon(
-                  Icons.error_outline_rounded,
+                  ChewieIcons.error,
                   color: ChewieTheme.errorColor,
                 );
               case LoadingStatus.failed:
                 return Icon(
-                  Icons.error_outline_rounded,
+                  ChewieIcons.error,
                   color: ChewieTheme.errorColor,
                 );
             }

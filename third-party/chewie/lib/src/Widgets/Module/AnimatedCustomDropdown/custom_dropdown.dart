@@ -3,6 +3,7 @@ library animated_custom_dropdown;
 import 'dart:async';
 
 import 'package:awesome_chewie/src/Providers/chewie_provider.dart';
+import 'package:awesome_chewie/src/Resources/chewie_icons.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';

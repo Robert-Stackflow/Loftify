@@ -167,7 +167,7 @@ class _EmptyThemeItemState extends State<EmptyThemeItem> {
                   border: ChewieTheme.border,
                 ),
                 child: Icon(
-                  Icons.add_rounded,
+                  ChewieIcons.add,
                   size: 30,
                   color: ChewieTheme.bodySmall.color,
                 ),

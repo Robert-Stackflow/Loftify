@@ -172,12 +172,12 @@ class _CodeWrapperWidgetState extends State<CodeWrapperWidget> {
                 ToggleIconButton(
                   tooltip: chewieLocalizations.copy,
                   iconA: Icon(
-                    CupertinoIcons.square_on_square,
+                    ChewieIcons.copy,
                     size: 18,
                     color: ChewieTheme.iconColor,
                   ),
                   iconB: Icon(
-                    CupertinoIcons.checkmark_alt,
+                    ChewieIcons.check,
                     size: 18,
                     color: ChewieTheme.iconColor,
                   ),

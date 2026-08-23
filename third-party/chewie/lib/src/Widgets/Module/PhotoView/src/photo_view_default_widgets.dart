@@ -1,4 +1,5 @@
 import 'package:awesome_chewie/src/Providers/chewie_provider.dart';
+import 'package:awesome_chewie/src/Resources/chewie_icons.dart';
 import 'package:flutter/material.dart';
 
 class PhotoViewDefaultError extends StatelessWidget {
@@ -13,7 +14,7 @@ class PhotoViewDefaultError extends StatelessWidget {
       decoration: decoration,
       child: Center(
         child: Icon(
-          Icons.broken_image,
+          ChewieIcons.imageUnavailable,
           color: Colors.grey[400],
           size: 40.0,
         ),

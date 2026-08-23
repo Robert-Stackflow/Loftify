@@ -186,7 +186,7 @@ class NumberFieldState extends State<NumberField> {
                 borderRadius:
                     const BorderRadius.horizontal(left: Radius.circular(6)),
               ),
-              child: const Icon(Icons.remove_rounded, size: 16),
+              child: const ChewieIcon(ChewieIcons.remove, size: 16),
             ),
           ),
           SizedBox(
@@ -266,7 +266,7 @@ class NumberFieldState extends State<NumberField> {
                 borderRadius:
                     const BorderRadius.horizontal(right: Radius.circular(6)),
               ),
-              child: const Icon(Icons.add_rounded, size: 16),
+              child: const ChewieIcon(ChewieIcons.add, size: 16),
             ),
           ),
         ],

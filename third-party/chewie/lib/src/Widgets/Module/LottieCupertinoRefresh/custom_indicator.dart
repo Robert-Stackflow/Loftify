@@ -140,7 +140,7 @@ class _CustomIndicatorState extends State<_CustomIndicator>
                   child: widget.emptyWidget!,
                 )
               : Icon(
-                  CupertinoIcons.archivebox,
+                  ChewieIcons.archive,
                   key: const ValueKey('noMoreDefault'),
                   color: widget.foregroundColor,
                 )

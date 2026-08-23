@@ -2,7 +2,7 @@ part of '../custom_dropdown.dart';
 
 // overlay icon
 const _defaultOverlayIconDown = Icon(
-  Icons.keyboard_arrow_down_rounded,
+  ChewieIcons.expand,
   size: 20,
 );
 

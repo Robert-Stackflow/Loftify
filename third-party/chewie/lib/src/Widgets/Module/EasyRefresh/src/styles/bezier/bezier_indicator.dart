@@ -298,7 +298,7 @@ class _BezierIndicatorState extends State<_BezierIndicator>
             child: Center(
               child: widget.noMoreWidget ??
                   Icon(
-                    Icons.inbox_outlined,
+                    ChewieIcons.inbox,
                     color: _foregroundColor,
                     size: 32,
                   ),

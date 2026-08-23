@@ -77,4 +77,25 @@ void main() {
       );
     }
   });
+
+  test('reusable Chewie runtime has no Material or Cupertino glyphs', () {
+    final violations = Directory('third-party/chewie/lib')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.dart'))
+        .expand(
+          (file) => file.readAsLinesSync().asMap().entries.where(
+            (line) {
+              final source = line.value.trimLeft();
+              if (source.startsWith('//') || source.startsWith('*')) {
+                return false;
+              }
+              return RegExp(r'\b(?:Icons|CupertinoIcons)\.').hasMatch(source);
+            },
+          ).map((line) => '${file.path}:${line.key + 1}'),
+        )
+        .toList();
+
+    expect(violations, isEmpty);
+  });
 }

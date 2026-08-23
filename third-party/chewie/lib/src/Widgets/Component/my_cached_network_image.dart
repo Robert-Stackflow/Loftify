@@ -210,7 +210,7 @@ class _MyCachedNetworkImageState extends State<MyCachedNetworkImage> {
         maxHeight: 40,
       ),
       child: CircleIconButton(
-        icon: const Icon(Icons.refresh_rounded),
+        icon: const ChewieIcon(ChewieIcons.retry),
         onTap: _retryManually,
       ),
     );
@@ -223,7 +223,7 @@ class _MyCachedNetworkImageState extends State<MyCachedNetworkImage> {
         mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error),
+          ChewieIcon(ChewieIcons.error),
           const SizedBox(height: 8),
           RoundIconTextButton(
             onPressed: _retryManually,
@@ -243,7 +243,7 @@ class _MyCachedNetworkImageState extends State<MyCachedNetworkImage> {
         mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error),
+          const ChewieIcon(ChewieIcons.error),
           SizedBox(height: 8),
           Text(
             '无法加载图片，请稍后重试',
