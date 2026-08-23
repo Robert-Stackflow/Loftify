@@ -9,6 +9,7 @@ import 'package:loftify/Widgets/Item/item_builder.dart';
 
 import '../../Screens/Suit/custom_bg_avatar_list_screen.dart';
 import '../../l10n/l10n.dart';
+import '../loftify_icons.dart';
 
 class CustomBgAvatarDetailBottomSheet extends StatefulWidget {
   const CustomBgAvatarDetailBottomSheet({super.key, required this.item});
@@ -101,10 +102,10 @@ class CustomBgAvatarDetailBottomSheetState
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _buildHeader(),
-              MyDivider( horizontal: 12, vertical: 0),
+              MyDivider(horizontal: 12, vertical: 0),
               _buildContent(),
               _buildDesc(),
-              MyDivider( horizontal: 12, vertical: 0),
+              MyDivider(horizontal: 12, vertical: 0),
               _buildFooter(),
             ],
           ),
@@ -215,56 +216,40 @@ class CustomBgAvatarDetailBottomSheetState
               if (count > 1 && ResponsiveUtil.isDesktop())
                 Positioned(
                   left: 16,
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: _currentIndex == 0
-                          ? Colors.black.withOpacity(0.1)
-                          : Colors.black.withOpacity(0.4),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: GestureDetector(
-                      onTap: () {
-                        _swiperController.previous();
-                      },
-                      child: ClickableWrapper(
-                        clickable: _currentIndex != 0,
-                        child: const Icon(
-                          Icons.keyboard_arrow_left_rounded,
-                          size: 30,
-                          color: Colors.white,
-                        ),
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: ChewieIconButton(
+                      icon: LoftifyIcons.previous,
+                      iconSize: 30,
+                      tapTargetSize: 44,
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.black.withValues(
+                        alpha: _currentIndex == 0 ? 0.26 : 0.4,
                       ),
+                      cornerRadius: 22,
+                      onPressed: _currentIndex == 0
+                          ? null
+                          : _swiperController.previous,
                     ),
                   ),
                 ),
               if (count > 1 && ResponsiveUtil.isDesktop())
                 Positioned(
                   right: 16,
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: _currentIndex == count - 1
-                          ? Colors.black.withOpacity(0.1)
-                          : Colors.black.withOpacity(0.4),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: GestureDetector(
-                      onTap: () {
-                        _swiperController.next();
-                      },
-                      child: ClickableWrapper(
-                        clickable: _currentIndex != count - 1,
-                       child: const Icon(
-                          Icons.keyboard_arrow_right_rounded,
-                          size: 30,
-                          color: Colors.white,
-                        ),
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: ChewieIconButton(
+                      icon: LoftifyIcons.next,
+                      iconSize: 30,
+                      tapTargetSize: 44,
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.black.withValues(
+                        alpha: _currentIndex == count - 1 ? 0.26 : 0.4,
                       ),
+                      cornerRadius: 22,
+                      onPressed: _currentIndex == count - 1
+                          ? null
+                          : _swiperController.next,
                     ),
                   ),
                 ),
@@ -283,41 +268,41 @@ class CustomBgAvatarDetailBottomSheetState
                   top: 6,
                   right: 15,
                   child: ClickableGestureDetector(
-                      onTap: () {
-                        if (ResponsiveUtil.isLandscapeLayout()) {
-                          Navigator.pop(context);
+                    onTap: () {
+                      if (ResponsiveUtil.isLandscapeLayout()) {
+                        Navigator.pop(context);
+                      }
+                      try {
+                        if (isLootBox) {
+                          var blogInfo = map[
+                              item.lootBox!.productItems[_currentIndex].userId];
+                          RouteUtil.pushPanelCupertinoRoute(
+                            context,
+                            UserDetailScreen(
+                              blogName: blogInfo!.blogName,
+                              blogId: blogInfo.blogId,
+                            ),
+                          );
+                        } else {
+                          var blogInfo = map[item.product!.blogId];
+                          RouteUtil.pushPanelCupertinoRoute(
+                            context,
+                            UserDetailScreen(
+                              blogName: blogInfo!.blogName,
+                              blogId: blogInfo.blogId,
+                            ),
+                          );
                         }
-                        try {
-                          if (isLootBox) {
-                            var blogInfo = map[item
-                                .lootBox!.productItems[_currentIndex].userId];
-                            RouteUtil.pushPanelCupertinoRoute(
-                              context,
-                              UserDetailScreen(
-                                blogName: blogInfo!.blogName,
-                                blogId: blogInfo.blogId,
-                              ),
-                            );
-                          } else {
-                            var blogInfo = map[item.product!.blogId];
-                            RouteUtil.pushPanelCupertinoRoute(
-                              context,
-                              UserDetailScreen(
-                                blogName: blogInfo!.blogName,
-                                blogId: blogInfo.blogId,
-                              ),
-                            );
-                          }
-                        } catch (e, t) {
-                          ILogger.error("Failed to open user detail", e, t);
-                          IToast.showTop(appLocalizations.jumpFailed);
-                        }
-                      },
-                      child: ItemBuilder.buildTranslucentTag(
-                        context,
-                        text: currentUserNickName,
-                        opacity: 0.5,
-                      ),
+                      } catch (e, t) {
+                        ILogger.error("Failed to open user detail", e, t);
+                        IToast.showTop(appLocalizations.jumpFailed);
+                      }
+                    },
+                    child: ItemBuilder.buildTranslucentTag(
+                      context,
+                      text: currentUserNickName,
+                      opacity: 0.5,
+                    ),
                   ),
                 ),
             ],
@@ -362,12 +347,13 @@ class CustomBgAvatarDetailBottomSheetState
           Center(
             child: ItemBuilder.buildIconTextButton(
               context,
-              icon: const Icon(Icons.download_done_rounded, size: 24),
+              icon: const ChewieIcon(LoftifyIcons.download, size: 24),
               direction: Axis.vertical,
               text: appLocalizations.singleImage,
               fontSizeDelta: -2,
               onTap: () async {
-                CustomLoadingDialog.showLoading(title: appLocalizations.downloading);
+                CustomLoadingDialog.showLoading(
+                    title: appLocalizations.downloading);
                 String url = getUrlByIndex(_currentIndex);
                 await FileUtil.saveImage(context, url);
                 CustomLoadingDialog.dismissLoading();
@@ -379,12 +365,13 @@ class CustomBgAvatarDetailBottomSheetState
             Center(
               child: ItemBuilder.buildIconTextButton(
                 context,
-                icon: const Icon(Icons.done_all_rounded, size: 24),
+                icon: const ChewieIcon(LoftifyIcons.batchDownload, size: 24),
                 direction: Axis.vertical,
                 text: appLocalizations.all,
                 fontSizeDelta: -2,
                 onTap: () async {
-                  CustomLoadingDialog.showLoading(title: appLocalizations.downloading);
+                  CustomLoadingDialog.showLoading(
+                      title: appLocalizations.downloading);
                   List<String> urls = [];
                   if (isLootBox) {
                     for (var item in item.lootBox!.productItems) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tuple/tuple.dart';
 
 import '../Item/item_builder.dart';
+import '../loftify_icons.dart';
 
 class TileList extends StatelessWidget {
   const TileList(
@@ -31,7 +32,7 @@ class TileList extends StatelessWidget {
               (option) => ItemBuilder.buildEntryItem(
                 roundTop: !showTitle && option == options.first,
                 title: option.item1,
-                trailing: Icons.done_rounded,
+                trailing: LoftifyIcons.check,
                 showTrailing: option.item2 == selected,
                 titleColor:
                     redOptions.contains(option.item2) ? Colors.redAccent : null,

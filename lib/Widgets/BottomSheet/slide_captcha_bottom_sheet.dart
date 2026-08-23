@@ -11,6 +11,7 @@ import 'package:loftify/Api/login_api.dart';
 
 import '../../Utils/app_provider.dart';
 import '../../l10n/l10n.dart';
+import '../loftify_icons.dart';
 
 typedef SlideCaptchaChallengeLoader = Future<dynamic> Function();
 typedef SlideCaptchaChallengeVerifier = Future<dynamic> Function({
@@ -266,7 +267,7 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
                           padding: const EdgeInsets.all(16),
                           child: TextButton.icon(
                             onPressed: _fetchCaptcha,
-                            icon: const Icon(Icons.refresh_rounded),
+                            icon: const ChewieIcon(LoftifyIcons.retry),
                             label: Text(appLocalizations.retry),
                           ),
                         ),
@@ -293,15 +294,12 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
-          CircleIconButton(
-            icon: Icon(
-              Icons.close_rounded,
-              color: Theme.of(context).textTheme.labelSmall?.color,
-              size: 20,
-            ),
-            onTap: () {
-              Navigator.pop(context);
-            },
+          ChewieIconButton(
+            icon: LoftifyIcons.close,
+            iconSize: 20,
+            tooltip: appLocalizations.cancel,
+            foregroundColor: Theme.of(context).textTheme.labelSmall?.color,
+            onPressed: () => Navigator.pop(context),
           ),
         ],
       ),
@@ -422,21 +420,15 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
               Positioned(
                 right: 6,
                 top: 6,
-                child: Material(
-                  color: Colors.black45,
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: _isVerifying ? null : _fetchCaptcha,
-                    child: const Padding(
-                      padding: EdgeInsets.all(7),
-                      child: Icon(
-                        Icons.refresh_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
+                child: ChewieIconButton(
+                  icon: LoftifyIcons.refresh,
+                  tooltip: appLocalizations.refresh,
+                  iconSize: 20,
+                  tapTargetSize: 44,
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.black45,
+                  cornerRadius: 22,
+                  onPressed: _isVerifying ? null : _fetchCaptcha,
                 ),
               ),
               Positioned(
@@ -553,10 +545,8 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
                         ),
                       ],
                     ),
-                    child: Icon(
-                      _isVerifying
-                          ? Icons.more_horiz_rounded
-                          : Icons.keyboard_double_arrow_right_rounded,
+                    child: ChewieIcon(
+                      _isVerifying ? LoftifyIcons.more : LoftifyIcons.slide,
                       color: colorScheme.onPrimary,
                     ),
                   ),

@@ -5,13 +5,13 @@ import 'package:loftify/Api/collection_api.dart';
 import 'package:loftify/Models/post_detail_response.dart';
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Screens/Post/collection_detail_screen.dart';
-import 'package:loftify/Utils/asset_util.dart';
 
 import '../../Models/history_response.dart';
 import '../../l10n/l10n.dart';
 import '../Item/item_builder.dart';
 import '../Item/loftify_item_builder.dart';
 import '../PostItem/common_info_post_item_builder.dart';
+import '../loftify_icons.dart';
 
 class CollectionBottomSheet extends StatefulWidget {
   const CollectionBottomSheet({
@@ -292,11 +292,15 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
               ItemBuilder.buildIconTextButton(
                 context,
                 text: isOldest ? "正序" : "倒序",
-                icon: AssetUtil.load(
-                  isOldest
-                      ? AssetUtil.orderDownDarkIcon
-                      : AssetUtil.orderUpDarkIcon,
-                  size: 15,
+                icon: AnimatedRotation(
+                  turns: isOldest ? 0 : 0.5,
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  child: ChewieIcon(
+                    LoftifyIcons.sortDirection,
+                    size: 16,
+                    color: Theme.of(context).textTheme.labelMedium?.color,
+                  ),
                 ),
                 fontSizeDelta: 1,
                 color: Theme.of(context).textTheme.labelMedium?.color,

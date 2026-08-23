@@ -147,4 +147,31 @@ void main() {
     expect(
         source, contains('ChewieIcon(\n            LoftifyIcons.recommend,'));
   });
+
+  test('business bottom sheets use semantic Lucide icons', () {
+    final files = Directory('lib/Widgets/BottomSheet')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.dart'));
+    final legacyGlyph = RegExp(r'\b(?:Icons|CupertinoIcons)\.');
+    final legacyInterfaceAsset = RegExp(
+      r'AssetUtil\.(?:orderDownDarkIcon|orderUpDarkIcon)',
+    );
+    final violations = files
+        .where((file) {
+          final source = file.readAsStringSync();
+          return legacyGlyph.hasMatch(source) ||
+              legacyInterfaceAsset.hasMatch(source);
+        })
+        .map((file) => file.path)
+        .toList();
+
+    expect(violations, isEmpty);
+
+    final subscribeSource = File(
+      'lib/Widgets/BottomSheet/subscribe_post_bottom_sheet.dart',
+    ).readAsStringSync();
+    expect(RegExp(r'icon:\s*LoftifyIcons\.select').allMatches(subscribeSource),
+        hasLength(1));
+  });
 }

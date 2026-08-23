@@ -5,6 +5,7 @@ import 'package:loftify/Models/favorites_response.dart';
 import '../../Api/user_api.dart';
 import '../../Utils/utils.dart';
 import '../../l10n/l10n.dart';
+import '../loftify_icons.dart';
 
 class SubscribePostBottomSheet extends StatefulWidget {
   const SubscribePostBottomSheet({
@@ -263,14 +264,11 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
                   ),
                 ),
               ),
-              CircleIconButton(
-                icon: item.postSubscribed == 1
-                    ? Icon(
-                        Icons.check_circle_outline_rounded,
-                        color: Theme.of(context).primaryColor,
-                      )
-                    : const Icon(Icons.circle_outlined),
-                onTap: () {
+              ChewieIconButton(
+                icon: LoftifyIcons.select,
+                selected: item.postSubscribed == 1,
+                semanticLabel: item.name,
+                onPressed: () {
                   item.postSubscribed = item.postSubscribed == 1 ? 0 : 1;
                   setState(() {});
                 },

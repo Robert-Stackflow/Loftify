@@ -22,13 +22,18 @@ abstract final class LoftifyIcons {
   static const IconData block = LucideIcons.ban;
   static const IconData tag = LucideIcons.tag;
   static const IconData shield = LucideIcons.shield;
+  static const IconData previous = LucideIcons.chevronLeft;
   static const IconData next = LucideIcons.chevronRight;
   static const IconData expand = LucideIcons.chevronDown;
+  static const IconData sortDirection = LucideIcons.arrowDownUp;
   static const IconData favorite = LucideIcons.heart;
   static const IconData recommend = LucideIcons.thumbsUp;
   static const IconData hot = LucideIcons.flame;
   static const IconData egg = LucideIcons.egg;
   static const IconData magic = LucideIcons.wandSparkles;
+  static const IconData select = LucideIcons.circle;
+  static const IconData more = LucideIcons.ellipsis;
+  static const IconData slide = LucideIcons.chevronsRight;
 
   static const IconData refresh = LucideIcons.refreshCw;
   static const IconData save = LucideIcons.save;
@@ -60,6 +65,7 @@ abstract final class LoftifyIcons {
   static const IconData about = info;
 
   static const IconData download = LucideIcons.download;
+  static const IconData batchDownload = LucideIcons.folderDown;
   static const IconData file = LucideIcons.file;
   static const IconData video = LucideIcons.video;
   static const IconData pause = LucideIcons.pause;

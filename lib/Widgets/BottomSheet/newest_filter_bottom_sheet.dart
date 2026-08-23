@@ -5,6 +5,7 @@ import 'package:loftify/Widgets/Item/item_builder.dart';
 
 import '../../Utils/enums.dart';
 import '../../l10n/l10n.dart';
+import '../loftify_icons.dart';
 
 class NewestFilterBottomSheet extends StatefulWidget {
   const NewestFilterBottomSheet({
@@ -193,7 +194,7 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
           Center(
             child: ItemBuilder.buildIconTextButton(
               context,
-              icon: const Icon(Icons.refresh_rounded, size: 24),
+              icon: const ChewieIcon(LoftifyIcons.reset, size: 24),
               direction: Axis.vertical,
               text: appLocalizations.reset,
               fontSizeDelta: -2,
