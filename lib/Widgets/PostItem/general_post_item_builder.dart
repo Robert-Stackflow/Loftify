@@ -19,6 +19,7 @@ import '../../Utils/utils.dart';
 import '../../l10n/l10n.dart';
 import '../Item/item_builder.dart';
 import '../Item/loftify_item_builder.dart';
+import '../loftify_icons.dart';
 import 'image_grid.dart';
 
 export 'package:loftify/Widgets/PostItem/general_post_item.dart';
@@ -54,8 +55,8 @@ Widget _buildInvalidPostCard(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.error_outline_rounded,
+                ChewieIcon(
+                  LoftifyIcons.invalidContent,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                   size: 24,
                 ),
@@ -384,8 +385,8 @@ class WaterfallFlowPostItemWidgetState
                   },
                   child: Container(
                     margin: EdgeInsets.only(top: showTitle && hasTitle ? 3 : 5),
-                    child: const Icon(
-                      Icons.more_vert_rounded,
+                    child: const ChewieIcon(
+                      LoftifyIcons.moreVertical,
                       size: 16,
                     ),
                   ),
@@ -861,8 +862,8 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
               padding: const EdgeInsets.only(bottom: 8, left: 8),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.thumb_up_alt,
+                  ChewieIcon(
+                    LoftifyIcons.recommend,
                     color: Theme.of(context).textTheme.bodySmall?.color,
                     size: 16,
                   ),
@@ -953,7 +954,10 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
               ),
             if (item.followed != true) const SizedBox(width: 8),
             CircleIconButton(
-              icon: const Icon(Icons.more_vert_rounded, size: 20),
+              icon: const ChewieIcon(
+                LoftifyIcons.moreVertical,
+                size: 20,
+              ),
               onTap: () {
                 BottomSheetBuilder.showContextMenu(
                     context, _buildMoreButtons());
@@ -970,7 +974,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
       entries: [
         FlutterContextMenuItem(
           appLocalizations.copyLink,
-          iconData: Icons.copy_rounded,
+          iconData: LoftifyIcons.copy,
           onPressed: () {
             Utils.copy(
               context,
@@ -983,7 +987,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
           },
         ),
         FlutterContextMenuItem(appLocalizations.visitOriginalPost,
-            iconData: Icons.view_carousel_outlined, onPressed: () {
+            iconData: LoftifyIcons.originalPost, onPressed: () {
           UriUtil.openInternal(
             context,
             LoftifyUriUtil.getPostUrlById(
@@ -995,7 +999,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
           );
         }),
         FlutterContextMenuItem(appLocalizations.openWithBrowser,
-            iconData: Icons.open_in_browser_rounded, onPressed: () {
+            iconData: LoftifyIcons.openExternal, onPressed: () {
           UriUtil.openExternal(
             LoftifyUriUtil.getPostUrlById(
               item.blogName,
@@ -1005,7 +1009,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
           );
         }),
         FlutterContextMenuItem(appLocalizations.shareToOtherApps,
-            iconData: Icons.share_rounded, onPressed: () {
+            iconData: LoftifyIcons.share, onPressed: () {
           UriUtil.share(
             LoftifyUriUtil.getPostUrlById(
               item.blogName,
@@ -1274,12 +1278,12 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
               text: StringUtil.formatCount(item.likeCount),
               spacing: 4,
               icon: !item.liked
-                  ? const Icon(
-                      Icons.favorite_border_rounded,
+                  ? const ChewieIcon(
+                      LoftifyIcons.favorite,
                       size: 20,
                     )
-                  : const Icon(
-                      Icons.favorite_rounded,
+                  : const ChewieIcon(
+                      LoftifyIcons.favorite,
                       color: ChewieColors.likeButtonColor,
                       size: 20,
                     ),
@@ -1293,12 +1297,12 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
               text: StringUtil.formatCount(item.shareCount),
               spacing: 4,
               icon: !item.shared
-                  ? const Icon(
-                      Icons.thumb_up_outlined,
+                  ? const ChewieIcon(
+                      LoftifyIcons.recommend,
                       size: 18,
                     )
-                  : const Icon(
-                      Icons.thumb_up,
+                  : const ChewieIcon(
+                      LoftifyIcons.recommend,
                       color: ChewieColors.shareButtonColor,
                       size: 18,
                     ),
@@ -1310,7 +1314,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
             ItemBuilder.buildIconTextButton(
               context,
               text: appLocalizations.comment,
-              icon: const Icon(Icons.mode_comment_outlined, size: 18),
+              icon: const ChewieIcon(LoftifyIcons.comment, size: 18),
               spacing: 4,
               onTap: () {
                 RouteUtil.pushPanelCupertinoRoute(

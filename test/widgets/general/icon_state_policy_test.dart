@@ -240,4 +240,29 @@ void main() {
 
     expect(violations, isEmpty);
   });
+
+  test('post cards and content fallback use semantic Lucide icons', () {
+    const paths = <String>[
+      'lib/Widgets/PostItem/general_post_item_builder.dart',
+      'lib/Widgets/PostDetail/post_content_section.dart',
+    ];
+    final legacyGlyph = RegExp(r'\b(?:Icons|CupertinoIcons)\.');
+    final violations = paths
+        .map(File.new)
+        .where((file) => legacyGlyph.hasMatch(file.readAsStringSync()))
+        .map((file) => file.path)
+        .toList();
+
+    expect(violations, isEmpty);
+
+    final postItemSource = File(paths.first).readAsStringSync();
+    expect(
+      RegExp(r'LoftifyIcons\.favorite').allMatches(postItemSource),
+      hasLength(2),
+    );
+    expect(
+      RegExp(r'LoftifyIcons\.recommend').allMatches(postItemSource),
+      hasLength(3),
+    );
+  });
 }

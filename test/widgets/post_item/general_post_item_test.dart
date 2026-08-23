@@ -9,6 +9,7 @@ import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Widgets/PostItem/general_post_item_builder.dart';
 import 'package:loftify/Widgets/PostItem/recommend_flow_item_builder.dart';
+import 'package:loftify/Widgets/loftify_icons.dart';
 import 'package:loftify/generated/app_localizations.dart';
 
 void main() {
@@ -165,7 +166,14 @@ void main() {
       await tester.pumpWidget(buildHost(layout));
       await tester.pump();
 
-      expect(find.byIcon(Icons.error_outline_rounded), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is ChewieIcon &&
+              widget.icon == LoftifyIcons.invalidContent,
+        ),
+        findsOneWidget,
+      );
       final card = tester.widget<ContainerItem>(find.byType(ContainerItem));
       expect(card.roundTop, isTrue);
       expect(card.roundBottom, isTrue);
@@ -202,7 +210,13 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.byIcon(Icons.error_outline_rounded), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is ChewieIcon && widget.icon == LoftifyIcons.invalidContent,
+      ),
+      findsOneWidget,
+    );
     expect(find.byKey(const ValueKey(42)), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

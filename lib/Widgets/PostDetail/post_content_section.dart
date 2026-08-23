@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 
+import '../loftify_icons.dart';
+
 class PostContentSection extends StatefulWidget {
   const PostContentSection({
     super.key,
@@ -97,8 +99,8 @@ class _PostContentSectionState extends State<PostContentSection> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                Icons.article_outlined,
+              ChewieIcon(
+                LoftifyIcons.article,
                 color: Theme.of(context).colorScheme.error,
               ),
               const SizedBox(height: 8),
@@ -110,7 +112,7 @@ class _PostContentSectionState extends State<PostContentSection> {
               const SizedBox(height: 10),
               RoundIconTextButton(
                 text: chewieLocalizations.retry,
-                icon: const Icon(Icons.refresh_rounded, size: 18),
+                icon: const ChewieIcon(LoftifyIcons.retry, size: 18),
                 onPressed: () {
                   setState(() {
                     _revision++;

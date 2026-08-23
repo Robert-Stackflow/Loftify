@@ -46,6 +46,9 @@ abstract final class LoftifyIcons {
   static const IconData unfollow = LucideIcons.userMinus;
   static const IconData bookmark = LucideIcons.bookmark;
   static const IconData comment = LucideIcons.messageCircle;
+  static const IconData article = LucideIcons.scrollText;
+  static const IconData invalidContent = LucideIcons.circleAlert;
+  static const IconData originalPost = LucideIcons.fileText;
   static const IconData collection = LucideIcons.libraryBig;
   static const IconData grain = LucideIcons.wheat;
   static const IconData filter = LucideIcons.listFilter;
