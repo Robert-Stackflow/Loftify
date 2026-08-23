@@ -11,7 +11,6 @@ import 'package:loftify/Screens/Info/post_screen.dart';
 import 'package:loftify/Screens/Info/share_screen.dart';
 import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
-import 'package:loftify/Utils/asset_util.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/lottie_files.dart';
@@ -23,6 +22,7 @@ import '../../Utils/app_provider.dart';
 import '../../Utils/cloud_control_provider.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import '../Info/following_follower_screen.dart';
 import '../Info/system_notice_screen.dart';
@@ -313,7 +313,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
             context,
             title: appLocalizations
                 .myFollowingWithCount(meInfoData!.blogInfo.attentionCount),
-            icon: Icons.keyboard_arrow_right_rounded,
+            icon: LoftifyIcons.next,
             onTap: () {
               RouteUtil.pushPanelCupertinoRoute(
                 context,
@@ -357,7 +357,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
             context,
             title: appLocalizations
                 .myFollowerWithCount(meInfoData!.blogInfo.followerCount),
-            icon: Icons.keyboard_arrow_right_rounded,
+            icon: LoftifyIcons.next,
             onTap: () {
               RouteUtil.pushPanelCupertinoRoute(
                 context,
@@ -478,8 +478,8 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                 ],
               ),
               const Spacer(),
-              Icon(
-                Icons.keyboard_arrow_right_rounded,
+              ChewieIcon(
+                LoftifyIcons.next,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ],
@@ -568,7 +568,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                 LikeScreen(),
               );
             },
-            leading: Icons.favorite_border_rounded,
+            leading: LoftifyIcons.favorite,
           ),
           EntryItem(
             title: appLocalizations.myRecommends,
@@ -579,7 +579,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                 ShareScreen(),
               );
             },
-            leading: Icons.thumb_up_off_alt,
+            leading: LoftifyIcons.recommend,
           ),
           EntryItem(
             title: appLocalizations.myFavorites,
@@ -590,7 +590,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                 const FavoriteFolderListScreen(),
               );
             },
-            leading: Icons.bookmark_outline_rounded,
+            leading: LoftifyIcons.bookmark,
           ),
           EntryItem(
             title: appLocalizations.myHistory,
@@ -602,7 +602,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
               );
             },
             roundBottom: true,
-            leading: Icons.history_rounded,
+            leading: LoftifyIcons.history,
           ),
         ],
       ),
@@ -623,7 +623,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                 PostScreen(),
               );
             },
-            leading: Icons.article_outlined,
+            leading: LoftifyIcons.article,
           ),
           EntryItem(
             title: appLocalizations.myCollections,
@@ -634,7 +634,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                 CollectionScreen(),
               );
             },
-            leading: Icons.bookmarks_outlined,
+            leading: LoftifyIcons.collection,
           ),
           EntryItem(
             title: appLocalizations.myGrains,
@@ -646,7 +646,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                 GrainScreen(),
               );
             },
-            leading: Icons.grain_rounded,
+            leading: LoftifyIcons.grain,
           ),
         ],
       ),
@@ -668,13 +668,11 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
       backgroundColor: Colors.transparent,
       actions: [
         if (appProvider.token.isNotEmpty)
-          CircleIconButton(
-            icon: Icon(
-              Icons.exit_to_app_rounded,
-              size: 23,
-              color: Theme.of(context).iconTheme.color,
-            ),
-            onTap: () {
+          ChewieIconButton(
+            icon: LoftifyIcons.logout,
+            tooltip: appLocalizations.logout,
+            foregroundColor: Theme.of(context).iconTheme.color,
+            onPressed: () {
               HiveUtil.confirmLogout(context);
             },
           ),
@@ -704,30 +702,27 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
               cloudControlProvider.globalControl.showDress
                   ? Row(
                       children: [
-                        CircleIconButton(
-                            icon: AssetUtil.loadDouble(
+                        ChewieIconButton(
+                          icon: LoftifyIcons.dress,
+                          tooltip: appLocalizations.dress,
+                          foregroundColor: Theme.of(context).iconTheme.color,
+                          onPressed: () {
+                            RouteUtil.pushPanelCupertinoRoute(
                               context,
-                              AssetUtil.dressLightIcon,
-                              AssetUtil.dressDarkIcon,
-                            ),
-                            onTap: () {
-                              RouteUtil.pushPanelCupertinoRoute(
-                                context,
-                                const SuitScreen(),
-                              );
-                            }),
+                              const SuitScreen(),
+                            );
+                          },
+                        ),
                         const SizedBox(width: 5),
                       ],
                     )
                   : emptyWidget,
         ),
-        CircleIconButton(
-          icon: Icon(
-            Icons.notifications_on_outlined,
-            size: 23,
-            color: Theme.of(context).iconTheme.color,
-          ),
-          onTap: () {
+        ChewieIconButton(
+          icon: LoftifyIcons.notifications,
+          tooltip: appLocalizations.notice,
+          foregroundColor: Theme.of(context).iconTheme.color,
+          onPressed: () {
             RouteUtil.pushPanelCupertinoRoute(
               context,
               const SystemNoticeScreen(),
@@ -735,16 +730,14 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
           },
         ),
         const SizedBox(width: 5),
-        ItemBuilder.buildDynamicIconButton(
-            context: context,
-            icon: AssetUtil.loadDouble(
-              context,
-              AssetUtil.settingLightIcon,
-              AssetUtil.settingDarkIcon,
-            ),
-            onTap: () {
-              RouteUtil.pushPanelCupertinoRoute(context, const SettingScreen());
-            }),
+        ChewieIconButton(
+          icon: LoftifyIcons.settings,
+          tooltip: appLocalizations.setting,
+          foregroundColor: Theme.of(context).iconTheme.color,
+          onPressed: () {
+            RouteUtil.pushPanelCupertinoRoute(context, const SettingScreen());
+          },
+        ),
       ],
     );
   }

@@ -12,7 +12,6 @@ import 'package:loftify/Screens/Post/collection_detail_screen.dart';
 import 'package:loftify/Screens/Post/grain_detail_screen.dart';
 import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Screens/Post/tag_detail_screen.dart';
-import 'package:loftify/Utils/asset_util.dart';
 import 'package:loftify/Utils/enums.dart';
 
 import '../../Api/tag_api.dart';
@@ -24,6 +23,7 @@ import '../../Utils/tab_state_util.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../Widgets/PostItem/grain_post_item_builder.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import 'home_screen.dart';
 
@@ -257,7 +257,7 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
                 icon: RotationTransition(
                   turns: Tween(begin: 0.0, end: 1.0)
                       .animate(_refreshRotationController),
-                  child: const Icon(Icons.refresh_rounded),
+                  child: const ChewieIcon(LoftifyIcons.refresh),
                 ),
                 onTap: () async {
                   refresh();
@@ -265,7 +265,7 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
               ),
               const SizedBox(height: 10),
               ShadowIconButton(
-                icon: const Icon(Icons.arrow_upward_rounded),
+                icon: const ChewieIcon(LoftifyIcons.scrollTop),
                 onTap: () {
                   scrollToTop();
                 },
@@ -925,11 +925,10 @@ class SubscribeTagTabState extends BaseDynamicState<SubscribeTagTab>
                     shape: BoxShape.circle,
                   ),
                   padding: const EdgeInsets.all(3),
-                  child: AssetUtil.loadDouble(
-                    context,
-                    AssetUtil.tagWhiteIcon,
-                    AssetUtil.tagLightIcon,
+                  child: ChewieIcon(
+                    LoftifyIcons.tag,
                     size: 10,
+                    color: Theme.of(context).colorScheme.surface,
                   ),
                 ),
                 const SizedBox(width: 6),
@@ -969,8 +968,8 @@ class SubscribeTagTabState extends BaseDynamicState<SubscribeTagTab>
                     fontSizeDelta: -1,
                   ),
                 const Spacer(),
-                Icon(
-                  Icons.keyboard_arrow_right_rounded,
+                ChewieIcon(
+                  LoftifyIcons.next,
                   color: Theme.of(context).textTheme.labelSmall?.color,
                   size: 16,
                 ),
@@ -1742,10 +1741,8 @@ class SubscribeCollectionTabState
                         text: item.subscribed
                             ? appLocalizations.unsubscribe
                             : appLocalizations.subscribe,
-                        icon: Icon(
-                          item.subscribed
-                              ? Icons.bookmark_added_rounded
-                              : Icons.bookmark_add_outlined,
+                        icon: ChewieIcon(
+                          LoftifyIcons.bookmark,
                           size: 15,
                           color: Theme.of(context).primaryColor,
                         ),

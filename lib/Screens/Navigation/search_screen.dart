@@ -22,6 +22,7 @@ import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -293,7 +294,7 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
                           ? ItemBuilder.buildTitle(
                               context,
                               title: appLocalizations.searchRecently,
-                              icon: Icons.delete_outline_rounded,
+                              icon: LoftifyIcons.delete,
                               onTap: () {
                                 DialogBuilder.showConfirmDialog(
                                   context,
@@ -322,7 +323,7 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
                 ItemBuilder.buildTitle(
                   context,
                   title: appLocalizations.guessYouSearch,
-                  icon: Icons.refresh_rounded,
+                  icon: LoftifyIcons.refresh,
                   onTap: () {
                     fetchGuessList();
                   },
@@ -581,14 +582,14 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
             ),
             const SizedBox(width: 3),
             if (item.trend == 1)
-              const Icon(
-                Icons.arrow_upward_rounded,
+              const ChewieIcon(
+                LoftifyIcons.trendUp,
                 color: ChewieColors.likeButtonColor,
                 size: 12,
               ),
             if (item.trend == 2)
-              const Icon(
-                Icons.arrow_downward_rounded,
+              const ChewieIcon(
+                LoftifyIcons.trendDown,
                 color: ChewieColors.likeButtonColor,
                 size: 12,
               ),

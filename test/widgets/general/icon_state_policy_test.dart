@@ -306,4 +306,36 @@ void main() {
       expect(sources, contains('LoftifyIcons.$semantic'));
     }
   });
+
+  test('primary navigation pages use semantic Lucide action icons', () {
+    final files = Directory('lib/Screens/Navigation')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.dart'));
+    final legacyGlyph = RegExp(r'\b(?:Icons|CupertinoIcons)\.');
+    final legacyInterfaceAsset = RegExp(
+      r'AssetUtil\.(?:dressLightIcon|dressDarkIcon|settingLightIcon|'
+      r'settingDarkIcon|tagWhiteIcon|tagLightIcon)',
+    );
+    final violations = files
+        .where((file) {
+          final source = file.readAsStringSync();
+          return legacyGlyph.hasMatch(source) ||
+              legacyInterfaceAsset.hasMatch(source);
+        })
+        .map((file) => file.path)
+        .toList();
+
+    expect(violations, isEmpty);
+
+    final dynamicSource = File(
+      'lib/Screens/Navigation/dynamic_screen.dart',
+    ).readAsStringSync();
+    expect(dynamicSource, contains('LoftifyIcons.bookmark'));
+    expect(
+      RegExp(r'bookmarkAdded|bookmarkAdd|bookmarkSelected')
+          .hasMatch(dynamicSource),
+      isFalse,
+    );
+  });
 }

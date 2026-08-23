@@ -8,6 +8,7 @@ import 'package:loftify/Widgets/PostItem/recommend_flow_item_builder.dart';
 import '../../Models/recommend_response.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/paged_data_controller.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
 int krefreshTimeout = 300;
@@ -241,7 +242,7 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
                 icon: RotationTransition(
                   turns: Tween(begin: 0.0, end: 1.0)
                       .animate(_refreshRotationController),
-                  child: const Icon(Icons.refresh_rounded),
+                  child: const ChewieIcon(LoftifyIcons.refresh),
                 ),
                 onTap: () async {
                   refresh();
@@ -249,7 +250,7 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
               ),
               const SizedBox(height: 10),
               ShadowIconButton(
-                icon: const Icon(Icons.arrow_upward_rounded),
+                icon: const ChewieIcon(LoftifyIcons.scrollTop),
                 onTap: () {
                   scrollToTop();
                 },

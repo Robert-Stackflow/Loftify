@@ -58,6 +58,9 @@ abstract final class LoftifyIcons {
   static const IconData filter = LucideIcons.listFilter;
   static const IconData listLayout = LucideIcons.layoutList;
   static const IconData gridLayout = LucideIcons.layoutGrid;
+  static const IconData scrollTop = LucideIcons.arrowUp;
+  static const IconData trendUp = LucideIcons.trendingUp;
+  static const IconData trendDown = LucideIcons.trendingDown;
 
   static const IconData refresh = LucideIcons.refreshCw;
   static const IconData save = LucideIcons.save;
