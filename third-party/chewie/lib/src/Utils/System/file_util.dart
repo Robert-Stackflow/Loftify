@@ -20,7 +20,25 @@ import 'package:win32/win32.dart';
 
 enum WindowsVersion { installed, portable }
 
+typedef SaveImageDelegate = Future<bool> Function(
+  BuildContext context,
+  String imageUrl, {
+  bool showToast,
+  String? fileName,
+});
+
+typedef SaveVideoDelegate = Future<bool> Function(
+  BuildContext context,
+  String videoUrl, {
+  bool showToast,
+  String? fileName,
+  Function(int, int)? onReceiveProgress,
+});
+
 class FileUtil {
+  static SaveImageDelegate? saveImageDelegate;
+  static SaveVideoDelegate? saveVideoDelegate;
+
   static Future<FilePickerResult?> pickFiles({
     String? dialogTitle,
     String? initialDirectory,
@@ -475,6 +493,15 @@ class FileUtil {
     bool showToast = true,
     String? fileName,
   }) async {
+    final delegate = saveImageDelegate;
+    if (delegate != null) {
+      return delegate(
+        context,
+        imageUrl,
+        showToast: showToast,
+        fileName: fileName,
+      );
+    }
     try {
       CachedNetworkImage image = CachedNetworkImage(
         imageUrl: imageUrl,
@@ -593,6 +620,16 @@ class FileUtil {
     String? fileName,
     Function(int, int)? onReceiveProgress,
   }) async {
+    final delegate = saveVideoDelegate;
+    if (delegate != null) {
+      return delegate(
+        context,
+        videoUrl,
+        showToast: showToast,
+        fileName: fileName,
+        onReceiveProgress: onReceiveProgress,
+      );
+    }
     try {
       var appDocDir = await getTemporaryDirectory();
       String savePath = appDocDir.path + extractFileNameFromUrl(videoUrl);

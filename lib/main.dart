@@ -14,7 +14,9 @@ import 'package:loftify/Database/database_manager.dart';
 import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/cloud_control_provider.dart';
 import 'package:loftify/Utils/display_mode_util.dart';
+import 'package:loftify/Utils/download_task_manager.dart';
 import 'package:loftify/Utils/hive_util.dart';
+import 'package:loftify/Utils/loftify_file_util.dart';
 import 'package:loftify/Utils/lottie_files.dart';
 import 'package:loftify/Utils/request_header_util.dart';
 import 'package:loftify/Utils/request_util.dart';
@@ -88,6 +90,8 @@ Future<void> initApp() async {
   // Hive.defaultDirectory = await FileUtil.getApplicationDir();
   await HiveUtil.initBox();
   await ResponsiveUtil.init();
+  LoftifyFileUtil.configureDownloadDelegates();
+  await DownloadTaskManager.instance.initialize();
   await RequestUtil.init();
   UriUtil.processUrl = LoftifyUriUtil.processUrl;
 }
