@@ -16,6 +16,7 @@ import '../../Utils/constant.dart';
 import '../../Utils/request_util.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/login_input_item.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
 class LoginByCaptchaScreen extends StatefulWidget {
@@ -161,7 +162,7 @@ class _LoginByCaptchaScreenState extends BaseDynamicState<LoginByCaptchaScreen>
         appBar: ResponsiveAppBar(
           title: appLocalizations.loginByCaptcha,
           showBack: !ResponsiveUtil.isLandscapeLayout(),
-          leadingIcon: Icons.close_rounded,
+          leadingIcon: LoftifyIcons.close,
           onTapBack: () => Navigator.maybeOf(context)?.maybePop(),
           showBorder: false,
           titleLeftMargin: ResponsiveUtil.isLandscapeLayout() ? 15 : 5,
@@ -187,7 +188,7 @@ class _LoginByCaptchaScreenState extends BaseDynamicState<LoginByCaptchaScreen>
                       ),
                       leadingConfig: InputItemLeadingTailingConfig(
                         type: InputItemLeadingTailingType.icon,
-                        icon: Icons.phone_android_rounded,
+                        icon: LoftifyIcons.phone,
                       ),
                       keyboardType: TextInputType.number,
                     ),
@@ -196,7 +197,7 @@ class _LoginByCaptchaScreenState extends BaseDynamicState<LoginByCaptchaScreen>
                       textInputAction: TextInputAction.next,
                       leadingConfig: InputItemLeadingTailingConfig(
                         type: InputItemLeadingTailingType.icon,
-                        icon: Icons.verified_outlined,
+                        icon: LoftifyIcons.verification,
                       ),
                       tailingConfig: InputItemLeadingTailingConfig(
                         type: InputItemLeadingTailingType.widget,
@@ -234,7 +235,7 @@ class _LoginByCaptchaScreenState extends BaseDynamicState<LoginByCaptchaScreen>
                       ),
                       leadingConfig: InputItemLeadingTailingConfig(
                         type: InputItemLeadingTailingType.icon,
-                        icon: Icons.password_rounded,
+                        icon: LoftifyIcons.verification,
                       ),
                       keyboardType: TextInputType.number,
                     ),
@@ -270,7 +271,7 @@ class _LoginByCaptchaScreenState extends BaseDynamicState<LoginByCaptchaScreen>
                       children: [
                         ToolButton(
                             context: context,
-                            icon: Icons.password_rounded,
+                            icon: LoftifyIcons.password,
                             onPressed: () {
                               RouteUtil.pushCupertinoRoute(
                                 context,
@@ -282,7 +283,7 @@ class _LoginByCaptchaScreenState extends BaseDynamicState<LoginByCaptchaScreen>
                         const SizedBox(width: 30),
                         ToolButton(
                             context: context,
-                            icon: Icons.card_membership_rounded,
+                            icon: LoftifyIcons.lofterId,
                             onPressed: () {
                               RouteUtil.pushCupertinoRoute(
                                 context,
@@ -292,7 +293,7 @@ class _LoginByCaptchaScreenState extends BaseDynamicState<LoginByCaptchaScreen>
                         // const SizedBox(width: 30),
                         // ToolButton(
                         //     context: context,
-                        //     icon: Icons.mail_outline_rounded,
+                        //     icon: LoftifyIcons.email,
                         //     onTap: () {
                         //       RouteUtil.pushCupertinoRoute(
                         //         context,

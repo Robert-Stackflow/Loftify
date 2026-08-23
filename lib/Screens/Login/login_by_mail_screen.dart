@@ -11,6 +11,7 @@ import '../../Utils/constant.dart';
 import '../../Utils/request_util.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/login_input_item.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import 'login_by_lofterid_screen.dart';
 
@@ -111,7 +112,7 @@ class _LoginByMailScreenState extends BaseDynamicState<LoginByMailScreen>
         appBar: ResponsiveAppBar(
           title: appLocalizations.loginByEmail,
           showBack: !ResponsiveUtil.isLandscapeLayout(),
-          leadingIcon: Icons.close_rounded,
+          leadingIcon: LoftifyIcons.close,
           onTapBack: () => Navigator.maybeOf(context)?.maybePop(),
           showBorder: false,
           titleLeftMargin: ResponsiveUtil.isLandscapeLayout() ? 15 : 5,
@@ -134,7 +135,7 @@ class _LoginByMailScreenState extends BaseDynamicState<LoginByMailScreen>
                       onSubmitted: (_) => _passwordFocusNode.requestFocus(),
                       leadingConfig: InputItemLeadingTailingConfig(
                         type: InputItemLeadingTailingType.icon,
-                        icon: Icons.mail_outline_rounded,
+                        icon: LoftifyIcons.email,
                       ),
                       tailingConfig: InputItemLeadingTailingConfig(
                         type: InputItemLeadingTailingType.clear,
@@ -148,7 +149,7 @@ class _LoginByMailScreenState extends BaseDynamicState<LoginByMailScreen>
                       onSubmitted: (_) => _login(),
                       leadingConfig: InputItemLeadingTailingConfig(
                         type: InputItemLeadingTailingType.icon,
-                        icon: Icons.verified_outlined,
+                        icon: LoftifyIcons.password,
                       ),
                       controller: _passwordController,
                       tailingConfig: InputItemLeadingTailingConfig(
@@ -187,7 +188,7 @@ class _LoginByMailScreenState extends BaseDynamicState<LoginByMailScreen>
                       children: [
                         ToolButton(
                             context: context,
-                            icon: Icons.phone_android_rounded,
+                            icon: LoftifyIcons.phone,
                             onPressed: () {
                               RouteUtil.pushCupertinoRoute(
                                 context,
@@ -197,7 +198,7 @@ class _LoginByMailScreenState extends BaseDynamicState<LoginByMailScreen>
                         const SizedBox(width: 30),
                         ToolButton(
                             context: context,
-                            icon: Icons.password_rounded,
+                            icon: LoftifyIcons.password,
                             onPressed: () {
                               RouteUtil.pushCupertinoRoute(
                                 context,
@@ -209,7 +210,7 @@ class _LoginByMailScreenState extends BaseDynamicState<LoginByMailScreen>
                         const SizedBox(width: 30),
                         ToolButton(
                             context: context,
-                            icon: Icons.card_membership_rounded,
+                            icon: LoftifyIcons.lofterId,
                             onPressed: () {
                               RouteUtil.pushCupertinoRoute(
                                 context,

@@ -80,6 +80,11 @@ abstract final class LoftifyIcons {
   static const IconData language = LucideIcons.languages;
   static const IconData group = LucideIcons.users;
   static const IconData send = LucideIcons.send;
+  static const IconData phone = LucideIcons.smartphone;
+  static const IconData verification = LucideIcons.shieldCheck;
+  static const IconData password = LucideIcons.keyRound;
+  static const IconData lofterId = LucideIcons.idCard;
+  static const IconData email = LucideIcons.mail;
 
   static const IconData generalSettings = LucideIcons.settings2;
   static const IconData appearance = LucideIcons.paintbrushVertical;

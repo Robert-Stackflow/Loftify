@@ -281,4 +281,29 @@ void main() {
     expect(source, contains('LoftifyIcons.download'));
     expect(source, contains('CircularProgressIndicator('));
   });
+
+  test('login screens use semantic Lucide field and method icons', () {
+    final files = Directory('lib/Screens/Login')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.dart'));
+    final legacyGlyph = RegExp(r'\b(?:Icons|CupertinoIcons)\.');
+    final violations = files
+        .where((file) => legacyGlyph.hasMatch(file.readAsStringSync()))
+        .map((file) => file.path)
+        .toList();
+
+    expect(violations, isEmpty);
+
+    final sources = files.map((file) => file.readAsStringSync()).join('\n');
+    for (final semantic in <String>[
+      'phone',
+      'verification',
+      'password',
+      'lofterId',
+      'email',
+    ]) {
+      expect(sources, contains('LoftifyIcons.$semantic'));
+    }
+  });
 }

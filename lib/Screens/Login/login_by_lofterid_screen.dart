@@ -12,6 +12,7 @@ import '../../Utils/constant.dart';
 import '../../Utils/request_util.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/login_input_item.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
 class LoginByLofterIDScreen extends StatefulWidget {
@@ -91,7 +92,7 @@ class _LoginByLofterIDScreenState
         appBar: ResponsiveAppBar(
           title: appLocalizations.loginByLofterID,
           showBack: !ResponsiveUtil.isLandscapeLayout(),
-          leadingIcon: Icons.close_rounded,
+          leadingIcon: LoftifyIcons.close,
           onTapBack: () => Navigator.maybeOf(context)?.maybePop(),
           showBorder: false,
           titleLeftMargin: ResponsiveUtil.isLandscapeLayout() ? 15 : 5,
@@ -114,7 +115,7 @@ class _LoginByLofterIDScreenState
                       onSubmitted: (_) => _passwordFocusNode.requestFocus(),
                       leadingConfig: InputItemLeadingTailingConfig(
                         type: InputItemLeadingTailingType.icon,
-                        icon: Icons.card_membership_rounded,
+                        icon: LoftifyIcons.lofterId,
                       ),
                       tailingConfig: InputItemLeadingTailingConfig(
                         type: InputItemLeadingTailingType.clear,
@@ -128,7 +129,7 @@ class _LoginByLofterIDScreenState
                       onSubmitted: (_) => _login(),
                       leadingConfig: InputItemLeadingTailingConfig(
                         type: InputItemLeadingTailingType.icon,
-                        icon: Icons.verified_outlined,
+                        icon: LoftifyIcons.password,
                       ),
                       controller: _passwordController,
                       tailingConfig: InputItemLeadingTailingConfig(
@@ -167,7 +168,7 @@ class _LoginByLofterIDScreenState
                       children: [
                         ToolButton(
                             context: context,
-                            icon: Icons.phone_android_rounded,
+                            icon: LoftifyIcons.phone,
                             onPressed: () {
                               RouteUtil.pushCupertinoRoute(
                                 context,
@@ -177,7 +178,7 @@ class _LoginByLofterIDScreenState
                         const SizedBox(width: 30),
                         ToolButton(
                             context: context,
-                            icon: Icons.password_rounded,
+                            icon: LoftifyIcons.password,
                             onPressed: () {
                               RouteUtil.pushCupertinoRoute(
                                 context,
@@ -189,7 +190,7 @@ class _LoginByLofterIDScreenState
                         // const SizedBox(width: 30),
                         // ToolButton(
                         //     context: context,
-                        //     icon: Icons.mail_outline_rounded,
+                        //     icon: LoftifyIcons.email,
                         //     onTap: () {
                         //       RouteUtil.pushCupertinoRoute(
                         //         context,
