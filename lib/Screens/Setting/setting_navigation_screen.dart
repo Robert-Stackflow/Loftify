@@ -9,9 +9,9 @@
 
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../Utils/app_provider.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import 'about_setting_screen.dart';
 import 'apperance_setting_screen.dart';
@@ -79,23 +79,23 @@ class _SettingNavigationScreenState
             },
             destinations: [
               _destination(
-                LucideIcons.settings2,
+                LoftifyIcons.generalSettings,
                 appLocalizations.generalSetting,
               ),
               _destination(
-                LucideIcons.paintbrushVertical,
+                LoftifyIcons.appearance,
                 appLocalizations.appearanceSetting,
               ),
-              _destination(LucideIcons.image, appLocalizations.imageSetting),
+              _destination(LoftifyIcons.image, appLocalizations.imageSetting),
               _destination(
-                LucideIcons.settings,
+                LoftifyIcons.basicSettings,
                 appLocalizations.lofterBasicSetting,
               ),
               _destination(
-                LucideIcons.flaskConical,
+                LoftifyIcons.experiment,
                 appLocalizations.experimentSetting,
               ),
-              _destination(LucideIcons.info, appLocalizations.about),
+              _destination(LoftifyIcons.about, appLocalizations.about),
             ],
           ),
           VerticalDivider(
@@ -116,8 +116,8 @@ class _SettingNavigationScreenState
 
   NavigationRailDestination _destination(IconData icon, String label) {
     return NavigationRailDestination(
-      icon: Icon(icon),
-      selectedIcon: Icon(icon),
+      icon: ChewieIcon(icon),
+      selectedIcon: ChewieIcon(icon),
       label: Text(label),
     );
   }

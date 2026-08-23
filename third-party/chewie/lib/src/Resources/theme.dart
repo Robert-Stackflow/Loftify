@@ -9,14 +9,14 @@ class ChewieTheme {
 
   static ThemeData getTheme({required bool isDarkMode}) {
     return ThemeData(
+      extensions: const <ThemeExtension<dynamic>>[
+        ChewieIconThemeData.standard,
+      ],
       brightness: isDarkMode ? Brightness.dark : Brightness.light,
       primaryColor: isDarkMode
           ? ChewieColors.defaultPrimaryColorDark
           : ChewieColors.defaultPrimaryColor,
       hintColor: isDarkMode
-          ? ChewieColors.defaultPrimaryColorDark
-          : ChewieColors.defaultPrimaryColor,
-      indicatorColor: isDarkMode
           ? ChewieColors.defaultPrimaryColorDark
           : ChewieColors.defaultPrimaryColor,
       scaffoldBackgroundColor:
@@ -96,6 +96,12 @@ class ChewieTheme {
         backgroundColor: isDarkMode
             ? ChewieColors.appBarBackgroundDark
             : ChewieColors.appBarBackground,
+      ),
+      tabBarTheme: TabBarThemeData(
+        indicatorColor: isDarkMode
+            ? ChewieColors.defaultPrimaryColorDark
+            : ChewieColors.defaultPrimaryColor,
+        splashFactory: NoSplash.splashFactory,
       ),
     );
   }

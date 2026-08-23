@@ -174,7 +174,7 @@ class EntryItemState extends SearchableState<EntryItem> {
         color: _leadingColor.withAlpha(25),
         borderRadius: BorderRadius.circular(7),
       ),
-      child: Icon(widget.leading, size: 15, color: _leadingColor),
+      child: ChewieIcon(widget.leading, size: 15, color: _leadingColor),
     );
   }
 
@@ -238,7 +238,7 @@ class EntryItemState extends SearchableState<EntryItem> {
         if (widget.tip.isNotEmpty && widget.showTrailing)
           const SizedBox(width: 6),
         if (widget.showTrailing)
-          Icon(
+          ChewieIcon(
             widget.trailing,
             size: 16,
             color: ChewieTheme.bodySmall.color,

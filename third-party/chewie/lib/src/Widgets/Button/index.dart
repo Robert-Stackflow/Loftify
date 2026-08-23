@@ -14,6 +14,7 @@
  */
 
 export 'circle_icon_button.dart';
+export 'chewie_icon_button.dart';
 export 'hover_icon_button.dart';
 export 'outlined_button.dart';
 export 'round_icon_button.dart';

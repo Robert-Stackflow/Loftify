@@ -15,9 +15,9 @@
 
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../Utils/app_provider.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import 'apperance_setting_screen.dart';
 import 'experiment_setting_screen.dart';
@@ -69,7 +69,7 @@ class _MobileSettingNavigationScreenState
                 children: [
                   EntryItem(
                     title: appLocalizations.generalSetting,
-                    leading: LucideIcons.settings2,
+                    leading: LoftifyIcons.generalSettings,
                     showLeading: true,
                     onTap: () {
                       RouteUtil.pushCupertinoRoute(
@@ -80,7 +80,7 @@ class _MobileSettingNavigationScreenState
                   ),
                   EntryItem(
                     title: appLocalizations.appearanceSetting,
-                    leading: LucideIcons.paintbrushVertical,
+                    leading: LoftifyIcons.appearance,
                     showLeading: true,
                     onTap: () {
                       RouteUtil.pushCupertinoRoute(
@@ -89,7 +89,7 @@ class _MobileSettingNavigationScreenState
                   ),
                   EntryItem(
                     title: appLocalizations.imageSetting,
-                    leading: LucideIcons.image,
+                    leading: LoftifyIcons.image,
                     showLeading: true,
                     onTap: () {
                       RouteUtil.pushCupertinoRoute(
@@ -98,7 +98,7 @@ class _MobileSettingNavigationScreenState
                   ),
                   EntryItem(
                     title: appLocalizations.lofterBasicSetting,
-                    leading: LucideIcons.settings,
+                    leading: LoftifyIcons.basicSettings,
                     showLeading: true,
                     onTap: () {
                       RouteUtil.pushCupertinoRoute(
@@ -107,7 +107,7 @@ class _MobileSettingNavigationScreenState
                   ),
                   EntryItem(
                     title: appLocalizations.experimentSetting,
-                    leading: LucideIcons.flaskConical,
+                    leading: LoftifyIcons.experiment,
                     showLeading: true,
                     onTap: () {
                       RouteUtil.pushCupertinoRoute(

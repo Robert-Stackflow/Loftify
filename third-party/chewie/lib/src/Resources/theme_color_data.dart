@@ -534,12 +534,14 @@ class ChewieThemeColorData {
     );
 
     return ThemeData(
+      extensions: const <ThemeExtension<dynamic>>[
+        ChewieIconThemeData.standard,
+      ],
       fontFamily: CustomFont.getCurrentFont().fontFamily,
       brightness: brightness,
       colorScheme: colorScheme,
       primaryColor: primaryColor,
       hintColor: hintColor,
-      indicatorColor: indicatorColor,
       scaffoldBackgroundColor: pageBackgroundColor,
       canvasColor: canvasColor,
       dividerColor: dividerColor,
@@ -634,7 +636,8 @@ class ChewieThemeColorData {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
       ),
-      tabBarTheme: const TabBarThemeData(
+      tabBarTheme: TabBarThemeData(
+        indicatorColor: indicatorColor,
         splashFactory: NoSplash.splashFactory,
       ),
       buttonTheme: ButtonThemeData(

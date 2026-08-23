@@ -17,6 +17,7 @@ export 'animated_sidebar_container.dart';
 export 'appbar_wrapper.dart';
 export 'clickable_gesture_detector.dart';
 export 'clickable_wrapper.dart';
+export 'chewie_icon.dart';
 export 'dropdown_wrapper.dart';
 export 'empty_placeholder.dart';
 export 'error_widget.dart';

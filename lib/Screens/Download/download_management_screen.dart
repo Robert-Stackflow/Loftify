@@ -1,9 +1,9 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../Models/download_task.dart';
 import '../../Utils/download_task_manager.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import '../Setting/base_setting_screen.dart';
 
@@ -49,10 +49,10 @@ class _DownloadManagementScreenState
           actions: history.isEmpty
               ? const <Widget>[]
               : <Widget>[
-                  IconButton(
+                  ChewieIconButton(
                     tooltip: appLocalizations.clearFinishedDownloads,
                     onPressed: _manager.clearFinished,
-                    icon: const Icon(LucideIcons.trash2, size: 20),
+                    icon: LoftifyIcons.delete,
                   ),
                 ],
           overrideBody: _buildBody(active, history),
@@ -68,7 +68,7 @@ class _DownloadManagementScreenState
     if (active.isEmpty && history.isEmpty) {
       return EmptyPlaceholder(
         text: appLocalizations.noDownloadTasks,
-        icon: LucideIcons.download,
+        icon: LoftifyIcons.download,
         shrinkWrap: false,
         topPadding: 120,
       );
@@ -243,11 +243,11 @@ class _DownloadTaskTile extends StatelessWidget {
               showLoading: false,
               simpleError: true,
             )
-          : Icon(
+          : ChewieIcon(
               switch (task.mediaType) {
-                DownloadMediaType.image => LucideIcons.image,
-                DownloadMediaType.video => LucideIcons.video,
-                DownloadMediaType.file => LucideIcons.file,
+                DownloadMediaType.image => LoftifyIcons.image,
+                DownloadMediaType.video => LoftifyIcons.video,
+                DownloadMediaType.file => LoftifyIcons.file,
               },
               size: 21,
               color: colorScheme.primary,
@@ -282,33 +282,33 @@ class _DownloadTaskTile extends StatelessWidget {
         task.status == DownloadTaskStatus.queued) {
       actions.add(_TaskActionButton(
         tooltip: appLocalizations.downloadPaused,
-        icon: LucideIcons.pause,
+        icon: LoftifyIcons.pause,
         onTap: onPause,
       ));
     } else if (task.status == DownloadTaskStatus.paused) {
       actions.add(_TaskActionButton(
         tooltip: appLocalizations.downloading,
-        icon: LucideIcons.play,
+        icon: LoftifyIcons.play,
         onTap: onResume,
       ));
     } else if (task.status == DownloadTaskStatus.failed ||
         task.status == DownloadTaskStatus.cancelled) {
       actions.add(_TaskActionButton(
         tooltip: appLocalizations.retry,
-        icon: LucideIcons.rotateCcw,
+        icon: LoftifyIcons.retry,
         onTap: onRetry,
       ));
     }
     if (task.isActive) {
       actions.add(_TaskActionButton(
         tooltip: appLocalizations.cancel,
-        icon: LucideIcons.x,
+        icon: LoftifyIcons.close,
         onTap: onCancel,
       ));
     } else {
       actions.add(_TaskActionButton(
         tooltip: appLocalizations.delete,
-        icon: LucideIcons.trash2,
+        icon: LoftifyIcons.delete,
         onTap: onRemove,
       ));
     }
@@ -356,31 +356,15 @@ class _TaskActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(left: 4),
-      child: Tooltip(
-        message: tooltip,
-        child: Semantics(
-          button: true,
-          label: tooltip,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: onTap,
-            child: SizedBox.square(
-              dimension: 32,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest
-                      .withValues(alpha: 0.58),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child:
-                    Icon(icon, size: 16, color: colorScheme.onSurfaceVariant),
-              ),
-            ),
-          ),
-        ),
+      child: ChewieIconButton(
+        icon: icon,
+        onPressed: onTap,
+        tooltip: tooltip,
+        style: ChewieIconButtonStyle.soft,
+        iconSize: 16,
+        cornerRadius: 8,
       ),
     );
   }
