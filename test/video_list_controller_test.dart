@@ -10,6 +10,7 @@ import 'package:hive/hive.dart';
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Screens/Post/video_detail_screen.dart';
 import 'package:loftify/Screens/Post/video_list_controller.dart';
+import 'package:loftify/Widgets/loftify_icons.dart';
 import 'package:loftify/l10n/l10n.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_player_platform_interface/video_player_platform_interface.dart';
@@ -360,11 +361,11 @@ void main() {
     }
 
     await tester.pumpWidget(buildButtons(following: true));
-    expect(find.byIcon(Icons.check_rounded), findsNothing);
-    expect(find.byIcon(Icons.add_rounded), findsNothing);
+    expect(find.byIcon(LoftifyIcons.check), findsNothing);
+    expect(find.byIcon(LoftifyIcons.add), findsNothing);
 
     await tester.pumpWidget(buildButtons(following: false));
-    expect(find.byIcon(Icons.add_rounded), findsOneWidget);
+    expect(find.byIcon(LoftifyIcons.add), findsOneWidget);
 
     await tester.pumpWidget(
       buildButtons(following: true, likeCount: 29509),

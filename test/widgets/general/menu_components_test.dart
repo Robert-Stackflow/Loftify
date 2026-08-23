@@ -191,6 +191,28 @@ void main() {
     expect(radius.topRight, ChewieDimens.defaultRadius);
   });
 
+  testWidgets('wide responsive panels shrink-wrap short content',
+      (tester) async {
+    await tester.pumpWidget(
+      _buildHost(
+        const BottomSheetWrapperWidget(
+          useVerticalMargin: true,
+          preferMinWidth: 450,
+          child: SizedBox(height: 180),
+        ),
+      ),
+    );
+
+    final clip = find.descendant(
+      of: find.byType(BottomSheetWrapperWidget),
+      matching: find.byType(ClipRRect),
+    );
+    expect(tester.getSize(clip).width, 450);
+    expect(tester.getSize(clip).height, 180);
+    expect(tester.getTopLeft(clip).dy, closeTo(210, 0.1));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('desktop context menus stay inside safe screen bounds',
       (tester) async {
     late BuildContext menuContext;

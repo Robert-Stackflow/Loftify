@@ -338,4 +338,22 @@ void main() {
       isFalse,
     );
   });
+
+  test('video controls use Lucide semantics and progress download states', () {
+    final source = File(
+      'lib/Screens/Post/video_detail_screen.dart',
+    ).readAsStringSync();
+
+    expect(RegExp(r'\b(?:Icons|CupertinoIcons)\.').hasMatch(source), isFalse);
+    expect(source, contains('LoftifyIcons.favorite'));
+    expect(source, contains('LoftifyIcons.recommend'));
+    expect(source, contains('LoftifyIcons.danmaku'));
+    expect(source, contains('iconWidget: widget.downloading'));
+    expect(source, contains('CircularProgressIndicator('));
+    expect(
+      RegExp(r'favoriteFilled|recommendFilled|danmakuSelected')
+          .hasMatch(source),
+      isFalse,
+    );
+  });
 }

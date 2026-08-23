@@ -101,6 +101,15 @@ abstract final class LoftifyIcons {
   static const IconData batchDownload = LucideIcons.folderDown;
   static const IconData file = LucideIcons.file;
   static const IconData video = LucideIcons.video;
+  static const IconData videoUnavailable = LucideIcons.videoOff;
+  static const IconData videoSettings = LucideIcons.slidersHorizontal;
+  static const IconData continuousPlayback = LucideIcons.listVideo;
+  static const IconData danmaku = LucideIcons.captions;
+  static const IconData back = LucideIcons.arrowLeft;
+  static const IconData sound = LucideIcons.volume2;
+  static const IconData mute = LucideIcons.volumeX;
+  static const IconData enterFullscreen = LucideIcons.maximize2;
+  static const IconData exitFullscreen = LucideIcons.minimize2;
   static const IconData pause = LucideIcons.pause;
   static const IconData play = LucideIcons.play;
   static const IconData retry = LucideIcons.rotateCcw;

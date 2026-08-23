@@ -24,6 +24,7 @@ import '../../Utils/cloud_control_provider.dart';
 import '../../Utils/loftify_file_util.dart';
 import '../../Widgets/BottomSheet/comment_bottom_sheet.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
 class VideoDetailScreen extends StatefulWidget {
@@ -523,7 +524,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline_rounded,
+            const ChewieIcon(LoftifyIcons.invalidContent,
                 size: 42, color: Colors.white70),
             const SizedBox(height: 12),
             Text(
@@ -538,7 +539,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
                 _hasMoreVideo = true;
                 unawaited(_fetchData());
               },
-              icon: const Icon(Icons.refresh_rounded),
+              icon: const ChewieIcon(LoftifyIcons.retry),
               label: Text(appLocalizations.retry),
             ),
           ],
@@ -556,7 +557,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.broken_image_outlined,
+              const ChewieIcon(LoftifyIcons.videoUnavailable,
                   size: 42, color: Colors.white70),
               const SizedBox(height: 12),
               Text(
@@ -570,7 +571,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
                 onPressed: () => unawaited(player.retry(
                   autoplay: index == _videoListController.index.value,
                 )),
-                icon: const Icon(Icons.refresh_rounded),
+                icon: const ChewieIcon(LoftifyIcons.retry),
                 label: Text(appLocalizations.retry),
               ),
             ],
@@ -634,8 +635,8 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
             height: double.infinity,
             width: double.infinity,
             alignment: Alignment.center,
-            child: Icon(
-              Icons.play_arrow_rounded,
+            child: ChewieIcon(
+              LoftifyIcons.play,
               size: 90,
               color: Colors.white.withValues(alpha: 0.6),
             ),
@@ -1048,36 +1049,30 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
         child: Row(
           children: [
-            CircleIconButton(
-              onTap: _handleBack,
-              icon: const Icon(
-                Icons.arrow_back_rounded,
-                color: Colors.white,
-              ),
+            ChewieIconButton(
+              icon: LoftifyIcons.back,
+              foregroundColor: Colors.white,
+              onPressed: _handleBack,
             ),
             const Spacer(),
-            CircleIconButton(
-              onTap: () {
+            ChewieIconButton(
+              icon: (_videoListController.currentPlayerOrNull?.isMuted ?? false)
+                  ? LoftifyIcons.mute
+                  : LoftifyIcons.sound,
+              foregroundColor: Colors.white,
+              onPressed: () {
                 unawaited(
                   _videoListController.currentPlayerOrNull?.toggleMute() ??
                       Future<void>.value(),
                 );
               },
-              icon: Icon(
-                (_videoListController.currentPlayerOrNull?.isMuted ?? false)
-                    ? Icons.volume_off_rounded
-                    : Icons.volume_up_rounded,
-                color: Colors.white,
-              ),
             ),
-            CircleIconButton(
-              onTap: () => unawaited(_toggleFullScreen()),
-              icon: Icon(
-                _isFullScreen
-                    ? Icons.fullscreen_exit_rounded
-                    : Icons.fullscreen_rounded,
-                color: Colors.white,
-              ),
+            ChewieIconButton(
+              icon: _isFullScreen
+                  ? LoftifyIcons.exitFullscreen
+                  : LoftifyIcons.enterFullscreen,
+              foregroundColor: Colors.white,
+              onPressed: () => unawaited(_toggleFullScreen()),
             ),
           ],
         ),
@@ -2058,8 +2053,8 @@ class _VideoPlaybackActionsSheetState extends State<VideoPlaybackActionsSheet> {
               color: ChewieTheme.primaryColor.withAlpha(30),
               borderRadius: BorderRadius.circular(9),
             ),
-            child: Icon(
-              Icons.video_settings_rounded,
+            child: ChewieIcon(
+              LoftifyIcons.videoSettings,
               color: ChewieTheme.primaryColor,
               size: 18,
             ),
@@ -2095,7 +2090,7 @@ class _VideoPlaybackActionsSheetState extends State<VideoPlaybackActionsSheet> {
   Widget _buildActionGrid() {
     final actions = [
       _VideoActionTile(
-        icon: Icons.playlist_play_rounded,
+        icon: LoftifyIcons.continuousPlayback,
         label: appLocalizations.continuousPlayback,
         selected: _continuousPlayback,
         onTap: () {
@@ -2104,12 +2099,12 @@ class _VideoPlaybackActionsSheetState extends State<VideoPlaybackActionsSheet> {
         },
       ),
       _VideoActionTile(
-        icon: Icons.share_rounded,
+        icon: LoftifyIcons.share,
         label: appLocalizations.share,
         onTap: widget.onShare,
       ),
       _VideoActionTile(
-        icon: Icons.subtitles_rounded,
+        icon: LoftifyIcons.danmaku,
         label: appLocalizations.danmaku,
         selected: _danmakuEnabled,
         onTap: () {
@@ -2118,9 +2113,16 @@ class _VideoPlaybackActionsSheetState extends State<VideoPlaybackActionsSheet> {
         },
       ),
       _VideoActionTile(
-        icon: widget.downloading
-            ? Icons.downloading_rounded
-            : Icons.download_rounded,
+        icon: LoftifyIcons.download,
+        iconWidget: widget.downloading
+            ? SizedBox.square(
+                dimension: 17,
+                child: CircularProgressIndicator(
+                  color: ChewieTheme.primaryColor,
+                  strokeWidth: 2,
+                ),
+              )
+            : null,
         label: widget.downloading
             ? appLocalizations.downloading
             : appLocalizations.download,
@@ -2152,11 +2154,13 @@ class _VideoActionTile extends StatelessWidget {
   const _VideoActionTile({
     required this.icon,
     required this.label,
+    this.iconWidget,
     this.selected = false,
     this.onTap,
   });
 
   final IconData icon;
+  final Widget? iconWidget;
   final String label;
   final bool selected;
   final VoidCallback? onTap;
@@ -2191,7 +2195,10 @@ class _VideoActionTile extends StatelessWidget {
                       ),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(icon, color: foreground, size: 17),
+                    child: Center(
+                      child: iconWidget ??
+                          ChewieIcon(icon, color: foreground, size: 17),
+                    ),
                   ),
                   const SizedBox(width: 9),
                   Expanded(
@@ -2207,8 +2214,8 @@ class _VideoActionTile extends StatelessWidget {
                     ),
                   ),
                   if (selected)
-                    Icon(
-                      Icons.check_circle_rounded,
+                    ChewieIcon(
+                      LoftifyIcons.check,
                       size: 16,
                       color: ChewieTheme.primaryColor,
                     ),
@@ -2253,8 +2260,8 @@ class _VideoSpeedChip extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (selected) ...[
-                    Icon(
-                      Icons.check_rounded,
+                    ChewieIcon(
+                      LoftifyIcons.check,
                       size: 15,
                       color: ChewieTheme.primaryColor,
                     ),
@@ -2325,8 +2332,8 @@ class VideoListButtonColumn extends StatelessWidget {
     final actions = <Widget>[
       _IconButton(
         compact: isLandscape,
-        icon: Icon(
-          Icons.favorite_rounded,
+        icon: ChewieIcon(
+          LoftifyIcons.favorite,
           size: iconSize,
           color: isLiked ? ChewieColors.likeButtonColor : Colors.white,
         ),
@@ -2335,8 +2342,8 @@ class VideoListButtonColumn extends StatelessWidget {
       ),
       _IconButton(
         compact: isLandscape,
-        icon: Icon(
-          Icons.thumb_up_rounded,
+        icon: ChewieIcon(
+          LoftifyIcons.recommend,
           size: iconSize,
           color: isShared ? ChewieColors.shareButtonColor : Colors.white,
         ),
@@ -2345,8 +2352,8 @@ class VideoListButtonColumn extends StatelessWidget {
       ),
       _IconButton(
         compact: isLandscape,
-        icon: Icon(
-          Icons.mode_comment_rounded,
+        icon: ChewieIcon(
+          LoftifyIcons.comment,
           size: iconSize,
           color: Colors.white,
         ),
@@ -2372,8 +2379,8 @@ class VideoListButtonColumn extends StatelessWidget {
               )
             : _IconButton(
                 compact: isLandscape,
-                icon: Icon(
-                  Icons.download_rounded,
+                icon: ChewieIcon(
+                  LoftifyIcons.download,
                   size: iconSize,
                   color: Colors.white,
                 ),
@@ -2473,8 +2480,8 @@ class VideoListButtonColumn extends StatelessWidget {
                           width: 0.5,
                         ),
                       ),
-                      child: Icon(
-                        Icons.add_rounded,
+                      child: ChewieIcon(
+                        LoftifyIcons.add,
                         size: compact ? 10 : 12,
                         color: Theme.of(context).primaryColor,
                       ),
