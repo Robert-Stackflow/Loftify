@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loftify/Models/download_task.dart';
@@ -24,11 +25,20 @@ class _MemoryDownloadTaskStore implements DownloadTaskStore {
   }
 }
 
-class _ControlledDownloadTaskExecutor implements DownloadTaskExecutor {
+class _ControlledDownloadTaskExecutor extends DownloadTaskExecutor {
   final Map<String, Completer<DownloadTaskResult>> _completers = {};
   final Map<String, DownloadProgressCallback> _progressCallbacks = {};
   final List<String> starts = [];
   final List<String> cleaned = [];
+  final List<String> paused = [];
+  final List<String> cancelled = [];
+  int initializeCount = 0;
+  int networkAvailableCount = 0;
+
+  @override
+  Future<void> initialize() async {
+    initializeCount++;
+  }
 
   @override
   Future<DownloadTaskResult> run(
@@ -79,6 +89,22 @@ class _ControlledDownloadTaskExecutor implements DownloadTaskExecutor {
   }
 
   @override
+  Future<bool> pause(DownloadTask task) async {
+    paused.add(task.id);
+    return true;
+  }
+
+  @override
+  Future<void> cancel(DownloadTask task) async {
+    cancelled.add(task.id);
+  }
+
+  @override
+  Future<void> onNetworkAvailable() async {
+    networkAvailableCount++;
+  }
+
+  @override
   Future<void> deleteTemporaryFiles(DownloadTask task) async {
     cleaned.add(task.id);
   }
@@ -102,6 +128,7 @@ void main() {
       thumbnailUrl: 'https://example.com/thumb.jpg',
       mediaType: DownloadMediaType.image,
       status: DownloadTaskStatus.paused,
+      failureKind: DownloadFailureKind.network,
       progress: 0.45,
       receivedBytes: 45,
       totalBytes: 100,
@@ -114,6 +141,7 @@ void main() {
     expect(restored.id, source.id);
     expect(restored.mediaType, DownloadMediaType.image);
     expect(restored.status, DownloadTaskStatus.paused);
+    expect(restored.failureKind, DownloadFailureKind.network);
     expect(restored.progress, 0.45);
     expect(restored.receivedBytes, 45);
     expect(restored.totalBytes, 100);
@@ -129,6 +157,7 @@ void main() {
       maxConcurrentTasks: 1,
     );
     await manager.initialize();
+    expect(executor.initializeCount, 1);
 
     final task = await manager.enqueue(
       url: 'https://example.com/video.mp4',
@@ -146,6 +175,7 @@ void main() {
     await manager.pause(task.id);
     await _settleManager();
     expect(manager.tasks.single.status, DownloadTaskStatus.paused);
+    expect(executor.paused, <String>[task.id]);
 
     await manager.resume(task.id);
     await _settleManager();
@@ -280,7 +310,48 @@ void main() {
     await manager.cancel(failed.id);
     await _settleManager();
     expect(manager.tasks.single.status, DownloadTaskStatus.cancelled);
+    expect(executor.cancelled, contains(failed.id));
     expect(executor.cleaned, contains(failed.id));
+  });
+
+  test('network failures resume automatically after connectivity returns',
+      () async {
+    final changes = StreamController<List<ConnectivityResult>>.broadcast();
+    final executor = _ControlledDownloadTaskExecutor();
+    final manager = DownloadTaskManager(
+      store: _MemoryDownloadTaskStore(),
+      executor: executor,
+      errorLogger: (_, __, ___) {},
+      monitorConnectivity: true,
+      connectivityCheck: () async => <ConnectivityResult>[
+        ConnectivityResult.none,
+      ],
+      connectivityChanges: changes.stream,
+    );
+    await manager.initialize();
+
+    final task = await manager.enqueue(
+      url: 'https://example.com/reconnect.jpg',
+      fileName: 'reconnect.jpg',
+      mediaType: DownloadMediaType.image,
+    );
+    await _settleManager();
+    executor.fail(task.id);
+    await _settleManager();
+    expect(manager.tasks.single.status, DownloadTaskStatus.failed);
+    expect(
+      manager.tasks.single.failureKind,
+      DownloadFailureKind.network,
+    );
+
+    changes.add(<ConnectivityResult>[ConnectivityResult.wifi]);
+    await _settleManager();
+    expect(executor.networkAvailableCount, 1);
+    expect(executor.starts.where((id) => id == task.id), hasLength(2));
+    expect(manager.tasks.single.failureKind, isNull);
+
+    manager.dispose();
+    await changes.close();
   });
 
   test('unsafe and oversized file names are normalized before persistence',

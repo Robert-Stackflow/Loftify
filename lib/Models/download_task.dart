@@ -27,6 +27,21 @@ enum DownloadTaskStatus {
   }
 }
 
+enum DownloadFailureKind {
+  network,
+  storage,
+  server,
+  unknown;
+
+  static DownloadFailureKind? fromName(String? value) {
+    if (value == null || value.isEmpty) return null;
+    for (final kind in DownloadFailureKind.values) {
+      if (kind.name == value) return kind;
+    }
+    return DownloadFailureKind.unknown;
+  }
+}
+
 class DownloadTask {
   const DownloadTask({
     required this.id,
@@ -43,6 +58,7 @@ class DownloadTask {
     this.totalBytes = 0,
     this.savedPath,
     this.errorMessage,
+    this.failureKind,
   });
 
   final String id;
@@ -57,6 +73,7 @@ class DownloadTask {
   final int totalBytes;
   final String? savedPath;
   final String? errorMessage;
+  final DownloadFailureKind? failureKind;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -77,6 +94,7 @@ class DownloadTask {
     int? totalBytes,
     Object? savedPath = _notSpecified,
     Object? errorMessage = _notSpecified,
+    Object? failureKind = _notSpecified,
     DateTime? updatedAt,
   }) {
     return DownloadTask(
@@ -96,6 +114,9 @@ class DownloadTask {
       errorMessage: identical(errorMessage, _notSpecified)
           ? this.errorMessage
           : errorMessage as String?,
+      failureKind: identical(failureKind, _notSpecified)
+          ? this.failureKind
+          : failureKind as DownloadFailureKind?,
       createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
     );
@@ -115,6 +136,7 @@ class DownloadTask {
       'totalBytes': totalBytes,
       'savedPath': savedPath,
       'errorMessage': errorMessage,
+      'failureKind': failureKind?.name,
       'createdAt': createdAt.millisecondsSinceEpoch,
       'updatedAt': updatedAt.millisecondsSinceEpoch,
     };
@@ -139,6 +161,9 @@ class DownloadTask {
       totalBytes: (json['totalBytes'] as num?)?.toInt() ?? 0,
       savedPath: json['savedPath']?.toString(),
       errorMessage: json['errorMessage']?.toString(),
+      failureKind: DownloadFailureKind.fromName(
+        json['failureKind']?.toString(),
+      ),
       createdAt: createdAt,
       updatedAt: DateTime.fromMillisecondsSinceEpoch(
         (json['updatedAt'] as num?)?.toInt() ??

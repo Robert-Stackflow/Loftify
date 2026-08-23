@@ -2,21 +2,17 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:path/path.dart' as path_util;
-import 'package:path_provider/path_provider.dart';
 
 import '../Models/download_task.dart';
+import 'default_download_task_executor.dart';
+import 'download_task_executor.dart';
 import 'hive_util.dart';
 
-typedef DownloadProgressCallback = void Function(int received, int total);
-typedef DownloadErrorLogger = void Function(
-  String message,
-  Object error,
-  StackTrace stackTrace,
-);
+export 'download_task_executor.dart';
 
 void _logDownloadError(
   String message,
@@ -29,12 +25,6 @@ void _logDownloadError(
     // A logging backend must never turn a recoverable download error into an
     // uncaught failure (for example before platform plugins are available).
   }
-}
-
-class DownloadTaskResult {
-  const DownloadTaskResult({required this.savedPath});
-
-  final String savedPath;
 }
 
 abstract class DownloadTaskStore {
@@ -80,245 +70,53 @@ class HiveDownloadTaskStore implements DownloadTaskStore {
   }
 }
 
-abstract class DownloadTaskExecutor {
-  Future<DownloadTaskResult> run(
-    DownloadTask task, {
-    required CancelToken cancelToken,
-    required DownloadProgressCallback onProgress,
-  });
-
-  Future<void> deleteTemporaryFiles(DownloadTask task);
-}
-
-class DefaultDownloadTaskExecutor implements DownloadTaskExecutor {
-  DefaultDownloadTaskExecutor({Dio? dio}) : _dio = dio ?? Dio();
-
-  final Dio _dio;
-
-  @override
-  Future<DownloadTaskResult> run(
-    DownloadTask task, {
-    required CancelToken cancelToken,
-    required DownloadProgressCallback onProgress,
-  }) {
-    return _run(
-      task,
-      cancelToken: cancelToken,
-      onProgress: onProgress,
-      allowPartialReset: true,
-    );
-  }
-
-  Future<DownloadTaskResult> _run(
-    DownloadTask task, {
-    required CancelToken cancelToken,
-    required DownloadProgressCallback onProgress,
-    required bool allowPartialReset,
-  }) async {
-    final temporaryFile = await _temporaryFile(task);
-    await temporaryFile.parent.create(recursive: true);
-    var existingBytes =
-        await temporaryFile.exists() ? await temporaryFile.length() : 0;
-    final headers = <String, dynamic>{};
-    if (existingBytes > 0) {
-      headers[HttpHeaders.rangeHeader] = 'bytes=$existingBytes-';
-    }
-
-    final response = await _dio.get<ResponseBody>(
-      task.url,
-      cancelToken: cancelToken,
-      options: Options(
-        responseType: ResponseType.stream,
-        headers: headers,
-        followRedirects: true,
-        validateStatus: (status) =>
-            status != null && status >= 200 && status < 500,
-      ),
-    );
-    final statusCode = response.statusCode ?? 0;
-    if (statusCode == HttpStatus.requestedRangeNotSatisfiable &&
-        existingBytes > 0) {
-      final serverLength = _totalBytesFromContentRange(
-        response.headers.value(HttpHeaders.contentRangeHeader),
-      );
-      if (serverLength != null && existingBytes == serverLength) {
-        final savedPath = await _export(task, temporaryFile);
-        await deleteTemporaryFiles(task);
-        return DownloadTaskResult(savedPath: savedPath);
-      }
-      if (allowPartialReset) {
-        await deleteTemporaryFiles(task);
-        return _run(
-          task,
-          cancelToken: cancelToken,
-          onProgress: onProgress,
-          allowPartialReset: false,
-        );
-      }
-    }
-    if (statusCode < 200 || statusCode >= 300 || response.data == null) {
-      throw DioException.badResponse(
-        statusCode: statusCode,
-        requestOptions: response.requestOptions,
-        response: response,
-      );
-    }
-
-    final canAppend =
-        statusCode == HttpStatus.partialContent && existingBytes > 0;
-    if (!canAppend) existingBytes = 0;
-    final contentLength = int.tryParse(
-          response.headers.value(Headers.contentLengthHeader) ?? '',
-        ) ??
-        -1;
-    final totalBytes = _resolveTotalBytes(
-      response.headers.value(HttpHeaders.contentRangeHeader),
-      existingBytes,
-      contentLength,
-    );
-    var receivedBytes = existingBytes;
-    onProgress(receivedBytes, totalBytes);
-
-    final sink = temporaryFile.openWrite(
-      mode: canAppend ? FileMode.append : FileMode.write,
-    );
-    try {
-      await for (final chunk in response.data!.stream) {
-        if (cancelToken.isCancelled) {
-          throw DioException.requestCancelled(
-            requestOptions: response.requestOptions,
-            reason: cancelToken.cancelError,
-          );
-        }
-        sink.add(chunk);
-        receivedBytes += chunk.length;
-        onProgress(receivedBytes, totalBytes);
-      }
-      await sink.flush();
-    } finally {
-      await sink.close();
-    }
-
-    final savedPath = await _export(task, temporaryFile);
-    await deleteTemporaryFiles(task);
-    return DownloadTaskResult(savedPath: savedPath);
-  }
-
-  int _resolveTotalBytes(
-    String? contentRange,
-    int existingBytes,
-    int contentLength,
-  ) {
-    final totalFromRange = _totalBytesFromContentRange(contentRange);
-    if (totalFromRange != null && totalFromRange > 0) return totalFromRange;
-    if (contentLength > 0) return existingBytes + contentLength;
-    return 0;
-  }
-
-  int? _totalBytesFromContentRange(String? contentRange) {
-    if (contentRange == null || !contentRange.contains('/')) return null;
-    return int.tryParse(contentRange.split('/').last.trim());
-  }
-
-  Future<String> _export(DownloadTask task, File temporaryFile) async {
-    final configuredPath = ChewieHiveUtil.getString(HiveUtil.savePathKey);
-    if (ResponsiveUtil.isMobile() && configuredPath.nullOrEmpty) {
-      final result = await ImageGallerySaver.saveFile(
-        temporaryFile.path,
-        name: task.fileName,
-      );
-      if (result == null || result['isSuccess'] != true) {
-        throw const FileSystemException('无法写入系统相册');
-      }
-      return result['filePath']?.toString() ?? 'gallery://${task.fileName}';
-    }
-    if (configuredPath.nullOrEmpty) {
-      throw const FileSystemException('请先在图片设置中选择下载路径');
-    }
-    final directory = Directory(configuredPath!);
-    await directory.create(recursive: true);
-    final target = await _availableTarget(directory, task.fileName);
-    await temporaryFile.copy(target.path);
-    return target.path;
-  }
-
-  Future<File> _availableTarget(Directory directory, String fileName) async {
-    final requested = File(path_util.join(directory.path, fileName));
-    if (!await requested.exists()) return requested;
-    final extension = path_util.extension(fileName);
-    final stem = path_util.basenameWithoutExtension(fileName);
-    for (var index = 1; index < 10000; index++) {
-      final candidate = File(
-        path_util.join(directory.path, '$stem ($index)$extension'),
-      );
-      if (!await candidate.exists()) {
-        return candidate;
-      }
-    }
-    throw const FileSystemException('同名文件过多，无法生成可用文件名');
-  }
-
-  Future<File> _temporaryFile(DownloadTask task) async {
-    final temporaryDirectory = await getTemporaryDirectory();
-    return File(
-      path_util.join(
-        temporaryDirectory.path,
-        'loftify_downloads',
-        task.id,
-        task.fileName,
-      ),
-    );
-  }
-
-  @override
-  Future<void> deleteTemporaryFiles(DownloadTask task) async {
-    try {
-      final file = await _temporaryFile(task);
-      final taskDirectory = file.parent;
-      if (await taskDirectory.exists()) {
-        await taskDirectory.delete(recursive: true);
-      }
-    } catch (error, stackTrace) {
-      _logDownloadError(
-        'Failed to clean download temporary files',
-        error,
-        stackTrace,
-      );
-    }
-  }
-}
-
 class DownloadTaskManager extends ChangeNotifier {
   DownloadTaskManager({
     DownloadTaskStore? store,
     DownloadTaskExecutor? executor,
+    Future<List<ConnectivityResult>> Function()? connectivityCheck,
+    Stream<List<ConnectivityResult>>? connectivityChanges,
     DownloadErrorLogger errorLogger = _logDownloadError,
     this.maxConcurrentTasks = 2,
+    this.monitorConnectivity = false,
   })  : assert(maxConcurrentTasks > 0),
         _store = store ?? const HiveDownloadTaskStore(),
         _executor = executor ?? DefaultDownloadTaskExecutor(),
+        _connectivityCheck =
+            connectivityCheck ?? Connectivity().checkConnectivity,
+        _connectivityChanges =
+            connectivityChanges ?? Connectivity().onConnectivityChanged,
         _errorLogger = errorLogger;
 
-  static final DownloadTaskManager instance = DownloadTaskManager();
+  static final DownloadTaskManager instance = DownloadTaskManager(
+    monitorConnectivity: true,
+  );
 
   final DownloadTaskStore _store;
   final DownloadTaskExecutor _executor;
+  final Future<List<ConnectivityResult>> Function() _connectivityCheck;
+  final Stream<List<ConnectivityResult>> _connectivityChanges;
   final DownloadErrorLogger _errorLogger;
   final int maxConcurrentTasks;
+  final bool monitorConnectivity;
   final List<DownloadTask> _tasks = <DownloadTask>[];
   final Map<String, CancelToken> _cancelTokens = <String, CancelToken>{};
   final Map<String, DateTime> _lastProgressNotification = <String, DateTime>{};
   final Map<String, DateTime> _lastProgressPersistence = <String, DateTime>{};
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   Future<void> _persistenceQueue = Future<void>.value();
+  Future<void>? _initialization;
   bool _initialized = false;
+  bool _wasOffline = false;
 
   List<DownloadTask> get tasks => List<DownloadTask>.unmodifiable(_tasks);
 
   int get activeCount => _tasks.where((task) => task.isActive).length;
 
-  Future<void> initialize() async {
-    if (_initialized) return;
-    _initialized = true;
+  Future<void> initialize() => _initialization ??= _initialize();
+
+  Future<void> _initialize() async {
+    await _executor.initialize();
     final restored = await _store.read();
     _tasks
       ..clear()
@@ -327,8 +125,11 @@ class DownloadTaskManager extends ChangeNotifier {
         return task.copyWith(
           status: DownloadTaskStatus.queued,
           errorMessage: null,
+          failureKind: null,
         );
       }));
+    _initialized = true;
+    if (monitorConnectivity) await _startConnectivityMonitor();
     await _persist();
     notifyListeners();
     _pump();
@@ -354,6 +155,7 @@ class DownloadTaskManager extends ChangeNotifier {
           existing.copyWith(
             status: DownloadTaskStatus.queued,
             errorMessage: null,
+            failureKind: null,
           ),
         );
         await _persist();
@@ -420,8 +222,15 @@ class DownloadTaskManager extends ChangeNotifier {
             task.status != DownloadTaskStatus.downloading)) {
       return;
     }
+    final wasDownloading = task.status == DownloadTaskStatus.downloading;
     _replace(task.copyWith(status: DownloadTaskStatus.paused));
-    _cancelTokens[taskId]?.cancel('paused');
+    try {
+      if (wasDownloading) await _executor.pause(task);
+    } catch (error, stackTrace) {
+      _errorLogger('Failed to pause native download task', error, stackTrace);
+    } finally {
+      _cancelTokens[taskId]?.cancel('paused');
+    }
     await _persist();
     _pump();
   }
@@ -432,6 +241,7 @@ class DownloadTaskManager extends ChangeNotifier {
     _replace(task.copyWith(
       status: DownloadTaskStatus.queued,
       errorMessage: null,
+      failureKind: null,
     ));
     await _persist();
     _pump();
@@ -441,7 +251,13 @@ class DownloadTaskManager extends ChangeNotifier {
     final task = _taskById(taskId);
     if (task == null || task.isTerminal) return;
     _replace(task.copyWith(status: DownloadTaskStatus.cancelled));
-    _cancelTokens[taskId]?.cancel('cancelled');
+    try {
+      await _executor.cancel(task);
+    } catch (error, stackTrace) {
+      _errorLogger('Failed to cancel native download task', error, stackTrace);
+    } finally {
+      _cancelTokens[taskId]?.cancel('cancelled');
+    }
     await _persist();
     await _executor.deleteTemporaryFiles(task);
     _pump();
@@ -457,6 +273,7 @@ class DownloadTaskManager extends ChangeNotifier {
     _replace(task.copyWith(
       status: DownloadTaskStatus.queued,
       errorMessage: null,
+      failureKind: null,
       savedPath: null,
     ));
     await _persist();
@@ -496,6 +313,7 @@ class DownloadTaskManager extends ChangeNotifier {
       _replace(queued.copyWith(
         status: DownloadTaskStatus.downloading,
         errorMessage: null,
+        failureKind: null,
       ));
       unawaited(_execute(queued.id, cancelToken));
     }
@@ -546,6 +364,7 @@ class DownloadTaskManager extends ChangeNotifier {
           progress: 1,
           savedPath: result.savedPath,
           errorMessage: null,
+          failureKind: null,
         ));
       }
     } catch (error, stackTrace) {
@@ -555,9 +374,11 @@ class DownloadTaskManager extends ChangeNotifier {
               current?.status == DownloadTaskStatus.cancelled;
       if (!wasIntentionallyStopped && current != null) {
         _errorLogger('Download task failed', error, stackTrace);
+        final failure = _friendlyFailure(error);
         _replace(current.copyWith(
           status: DownloadTaskStatus.failed,
-          errorMessage: _friendlyError(error),
+          errorMessage: failure.message,
+          failureKind: failure.kind,
         ));
       }
     } finally {
@@ -573,20 +394,108 @@ class DownloadTaskManager extends ChangeNotifier {
     }
   }
 
-  String _friendlyError(Object error) {
+  ({String message, DownloadFailureKind kind}) _friendlyFailure(Object error) {
+    if (error is DownloadExecutionException) {
+      return (message: error.message, kind: error.kind);
+    }
     if (error is FileSystemException) {
       final message = error.message.trim();
-      if (message.isNotEmpty) return message;
-      return '文件保存失败，请检查剩余空间和保存路径';
+      return (
+        message: message.isNotEmpty ? message : '文件保存失败，请检查剩余空间和保存路径',
+        kind: DownloadFailureKind.storage,
+      );
     }
     if (error is DioException) {
       if (error.response?.statusCode ==
           HttpStatus.requestedRangeNotSatisfiable) {
-        return '服务器不支持继续下载，请清理记录后重试';
+        return (
+          message: '服务器不支持继续下载，请清理记录后重试',
+          kind: DownloadFailureKind.server,
+        );
       }
-      return '网络连接中断，可保留进度后重试';
+      if (error.type == DioExceptionType.badResponse) {
+        return (
+          message: '下载地址不可用，请稍后重试',
+          kind: DownloadFailureKind.server,
+        );
+      }
+      return (
+        message: '网络连接中断，恢复网络后将自动继续',
+        kind: DownloadFailureKind.network,
+      );
     }
-    return '下载失败，请稍后重试';
+    return (
+      message: '下载失败，请稍后重试',
+      kind: DownloadFailureKind.unknown,
+    );
+  }
+
+  Future<void> _startConnectivityMonitor() async {
+    try {
+      final initial = await _connectivityCheck();
+      _wasOffline = _isOffline(initial);
+      _connectivitySubscription ??= _connectivityChanges.listen(
+        (results) => unawaited(_handleConnectivityChange(results)),
+        onError: (Object error, StackTrace stackTrace) {
+          _errorLogger(
+            'Download connectivity monitor failed',
+            error,
+            stackTrace,
+          );
+        },
+      );
+    } catch (error, stackTrace) {
+      _errorLogger(
+        'Unable to start download connectivity monitor',
+        error,
+        stackTrace,
+      );
+    }
+  }
+
+  bool _isOffline(List<ConnectivityResult> results) {
+    return results.isEmpty ||
+        results.every((result) => result == ConnectivityResult.none);
+  }
+
+  Future<void> _handleConnectivityChange(
+    List<ConnectivityResult> results,
+  ) async {
+    final offline = _isOffline(results);
+    if (offline) {
+      _wasOffline = true;
+      return;
+    }
+    if (!_wasOffline) return;
+    _wasOffline = false;
+    try {
+      await _executor.onNetworkAvailable();
+    } catch (error, stackTrace) {
+      _errorLogger(
+        'Failed to wake native downloads after connectivity returned',
+        error,
+        stackTrace,
+      );
+    }
+
+    var requeued = false;
+    for (var index = 0; index < _tasks.length; index++) {
+      final task = _tasks[index];
+      if (task.status != DownloadTaskStatus.failed ||
+          task.failureKind != DownloadFailureKind.network) {
+        continue;
+      }
+      _tasks[index] = task.copyWith(
+        status: DownloadTaskStatus.queued,
+        errorMessage: null,
+        failureKind: null,
+      );
+      requeued = true;
+    }
+    if (!requeued) return;
+    notifyListeners();
+    await _persist();
+    _pump();
   }
 
   DownloadTask? _taskById(String taskId) {
@@ -623,5 +532,11 @@ class DownloadTaskManager extends ChangeNotifier {
     final keepLength =
         (maxLength - extension.length).clamp(1, maxLength).toInt();
     return '${sanitized.substring(0, keepLength)}$extension';
+  }
+
+  @override
+  void dispose() {
+    unawaited(_connectivitySubscription?.cancel());
+    super.dispose();
   }
 }

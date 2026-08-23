@@ -85,6 +85,8 @@ dependencies:
   launch_at_startup: ^0.3.1 # 开机启动
   local_notifier: ^0.1.6 # 本地通知
   protocol_handler: ^0.2.0 # 协议处理
+  background_downloader: 9.5.8
+  connectivity_plus: 7.3.1
 #  desktop_multi_window: # 多窗口
 #    path: third-party/desktop_multi_window
 #  window_size: # 窗口大小
