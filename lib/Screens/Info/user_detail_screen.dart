@@ -17,6 +17,7 @@ import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:loftify/Widgets/Profile/profile_overview_card.dart';
+import 'package:loftify/Widgets/loftify_icons.dart';
 
 import '../../Api/user_api.dart';
 import '../../Models/user_response.dart';
@@ -276,7 +277,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
       entries: [
         FlutterContextMenuItem(
           appLocalizations.viewThemeBg,
-          iconData: Icons.color_lens_outlined,
+          iconData: LoftifyIcons.image,
           onPressed: () {
             RouteUtil.pushDialogRoute(
               context,
@@ -296,7 +297,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
         ),
         FlutterContextMenuItem(
           appLocalizations.viewShop,
-          iconData: Icons.shopping_bag_outlined,
+          iconData: LoftifyIcons.shop,
           onPressed: () {
             RouteUtil.pushPanelCupertinoRoute(context,
                 UserMarketScreen(blogId: _fullBlogData!.blogInfo.blogId));
@@ -309,7 +310,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
                       _fullBlogData!.blogInfo.avatarBoxImage
                   ? appLocalizations.undressAvatarBox
                   : appLocalizations.dressAvatarBox,
-              iconData: Icons.account_box,
+              iconData: LoftifyIcons.avatarFrame,
               onPressed: () async {
                 String? currentAvatarImg =
                     ChewieHiveUtil.getString(HiveUtil.customAvatarBoxKey);
@@ -332,7 +333,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
             ),
           FlutterContextMenuItem(
             appLocalizations.setRemark,
-            iconData: Icons.credit_card,
+            iconData: LoftifyIcons.edit,
             onPressed: () {
               BottomSheetBuilder.showBottomSheet(
                 context,
@@ -372,7 +373,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
             _fullBlogData!.isBlackBlog
                 ? appLocalizations.unlockBlacklist
                 : appLocalizations.blockBlacklist,
-            iconData: Icons.block_rounded,
+            iconData: LoftifyIcons.block,
             onPressed: () {
               _doBlockUser(
                 isBlock: !_fullBlogData!.isBlackBlog,
@@ -394,7 +395,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
               _fullBlogData!.isShieldRecom == 1
                   ? appLocalizations.recoverViewRecommend
                   : appLocalizations.shieldViewRecommend,
-              iconData: Icons.block_rounded,
+              iconData: LoftifyIcons.block,
               onPressed: () {
                 UserApi.shieldRecommendOrUnShield(
                   blogId: _fullBlogData!.blogInfo.blogId,
@@ -417,7 +418,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
               _fullBlogData!.shieldUserTimeline
                   ? appLocalizations.recoverViewDynamic
                   : appLocalizations.shieldViewDynamic,
-              iconData: Icons.block_rounded,
+              iconData: LoftifyIcons.block,
               onPressed: () {
                 UserApi.shieldBlogOrUnShield(
                   blogId: _fullBlogData!.blogInfo.blogId,
@@ -443,17 +444,17 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
         ),
         FlutterContextMenuItem(
           appLocalizations.copyHomepageLink,
-          iconData: Icons.copy_rounded,
+          iconData: LoftifyIcons.copy,
           onPressed: () {
             ChewieUtils.copy(context, _fullBlogData!.blogInfo.homePageUrl);
           },
         ),
         FlutterContextMenuItem(appLocalizations.openWithBrowser,
-            iconData: Icons.open_in_browser_rounded, onPressed: () {
+            iconData: LoftifyIcons.openExternal, onPressed: () {
           UriUtil.openExternal(_fullBlogData!.blogInfo.homePageUrl);
         }),
         FlutterContextMenuItem(appLocalizations.shareToOtherApps,
-            iconData: Icons.share_rounded, onPressed: () {
+            iconData: LoftifyIcons.share, onPressed: () {
           UriUtil.share(_fullBlogData!.blogInfo.homePageUrl);
         }),
       ],
@@ -462,14 +463,13 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
 
   List<Widget> _appBarActions() {
     return [
-      CircleIconButton(
-        onTap: () {
+      ChewieIconButton(
+        icon: LoftifyIcons.moreVertical,
+        tooltip: appLocalizations.moreInfo,
+        foregroundColor: Colors.white,
+        onPressed: () {
           BottomSheetBuilder.showContextMenu(context, _buildMoreButtons());
         },
-        icon: const Icon(
-          Icons.more_vert_rounded,
-          color: Colors.white,
-        ),
       ),
     ];
   }
@@ -631,14 +631,13 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
           ),
           if (ResponsiveUtil.isLandscapeLayout()) ...[
             const SizedBox(width: 6),
-            CircleIconButton(
-              onTap: () => BottomSheetBuilder.showContextMenu(
+            ChewieIconButton(
+              icon: LoftifyIcons.moreVertical,
+              tooltip: appLocalizations.moreInfo,
+              foregroundColor: Colors.white,
+              onPressed: () => BottomSheetBuilder.showContextMenu(
                 context,
                 _buildMoreButtons(),
-              ),
-              icon: const Icon(
-                Icons.more_vert_rounded,
-                color: Colors.white,
               ),
             ),
           ],
@@ -676,8 +675,8 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
                     .labelMedium
                     ?.copyWith(color: Colors.white),
               ),
-              const Icon(
-                Icons.keyboard_arrow_down_rounded,
+              const ChewieIcon(
+                LoftifyIcons.expand,
                 size: 16,
                 color: Colors.white,
               ),
@@ -727,14 +726,12 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
       text: isOwnProfile
           ? appLocalizations.openWithBrowser
           : _followButtonText.trim(),
-      icon: Icon(
+      icon: ChewieIcon(
         isOwnProfile
-            ? Icons.open_in_browser_rounded
+            ? LoftifyIcons.openExternal
             : _fullBlogData!.isBlackBlog
-                ? Icons.block_rounded
-                : _fullBlogData!.following
-                    ? Icons.person_rounded
-                    : Icons.person_add_alt_1_rounded,
+                ? LoftifyIcons.block
+                : LoftifyIcons.follow,
         size: 18,
         color: Colors.white,
       ),
@@ -809,22 +806,22 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           _buildHotItem(
-            icon: Icons.favorite_rounded,
+            icon: LoftifyIcons.favorite,
             title: appLocalizations.postLikes,
             count: hot.favoriteCount,
           ),
           _buildHotItem(
-            icon: Icons.thumb_up_rounded,
+            icon: LoftifyIcons.recommend,
             title: appLocalizations.postRecommends,
             count: hot.shareCount,
           ),
           _buildHotItem(
-            icon: Icons.bookmark_rounded,
+            icon: LoftifyIcons.bookmark,
             title: appLocalizations.postFavorites,
             count: hot.subscribeCount,
           ),
           _buildHotItem(
-            icon: Icons.mode_comment_rounded,
+            icon: LoftifyIcons.comment,
             title: appLocalizations.commentLikes,
             count: hot.tagChatFavoriteCount,
           ),
@@ -872,7 +869,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
               color: color ?? ChewieColors.getHotTagTextColor(context),
               shape: BoxShape.circle,
             ),
-            child: Icon(icon, size: 12, color: Colors.white),
+            child: ChewieIcon(icon, size: 12, color: Colors.white),
           ),
           const SizedBox(width: 10),
           Text(
@@ -980,11 +977,13 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
       FlutterContextMenuItem(
           _fullBlogData!.specialfollowing
               ? appLocalizations.unSpecialFollow
-              : appLocalizations.specialFollow, onPressed: () {
+              : appLocalizations.specialFollow,
+          iconData: LoftifyIcons.specialFollow, onPressed: () {
         _doSpecialFollow(isSpecialFollow: !_fullBlogData!.specialfollowing);
       }),
       FlutterContextMenuItem(
         appLocalizations.unfollow,
+        iconData: LoftifyIcons.unfollow,
         onPressed: () {
           _doFollow(isFollow: !_fullBlogData!.following);
         },
@@ -1062,8 +1061,8 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.workspace_premium_rounded,
+              const ChewieIcon(
+                LoftifyIcons.premium,
                 size: 16,
                 color: Colors.white,
               ),
@@ -1202,8 +1201,8 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
                         const Spacer(),
                         Row(
                           children: [
-                            const Icon(
-                              Icons.local_fire_department_rounded,
+                            const ChewieIcon(
+                              LoftifyIcons.hot,
                               size: 12,
                               color: Colors.white,
                             ),
@@ -1239,12 +1238,13 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
                   ),
                 ),
                 if (item.postCollection != null)
-                  Positioned(
+                  const Positioned(
                     top: 6,
                     left: 6,
-                    child: AssetUtil.load(
-                      AssetUtil.collectionWhiteIcon,
+                    child: ChewieIcon(
+                      LoftifyIcons.collection,
                       size: 12,
+                      color: Colors.white,
                     ),
                   ),
               ],

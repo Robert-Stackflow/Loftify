@@ -198,4 +198,20 @@ void main() {
       expect(source, contains('status: MenuItemStatus.error'));
     }
   });
+
+  test('profile detail uses semantic Lucide icons and stable follow glyph', () {
+    final source = File(
+      'lib/Screens/Info/user_detail_screen.dart',
+    ).readAsStringSync();
+
+    expect(RegExp(r'\b(?:Icons|CupertinoIcons)\.').hasMatch(source), isFalse);
+    expect(source.contains('AssetUtil.collectionWhiteIcon'), isFalse);
+    expect(
+      RegExp(r'LoftifyIcons\.following|LoftifyIcons\.followed')
+          .hasMatch(source),
+      isFalse,
+    );
+    expect(source, contains('LoftifyIcons.follow'));
+    expect(source, contains('status: MenuItemStatus.error'));
+  });
 }

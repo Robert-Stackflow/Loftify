@@ -38,6 +38,15 @@ abstract final class LoftifyIcons {
   static const IconData edit = LucideIcons.pencil;
   static const IconData history = LucideIcons.history;
   static const IconData premium = LucideIcons.crown;
+  static const IconData shop = LucideIcons.shoppingBag;
+  static const IconData avatarFrame = LucideIcons.frame;
+  static const IconData copy = LucideIcons.copy;
+  static const IconData follow = LucideIcons.userPlus;
+  static const IconData specialFollow = LucideIcons.star;
+  static const IconData unfollow = LucideIcons.userMinus;
+  static const IconData bookmark = LucideIcons.bookmark;
+  static const IconData comment = LucideIcons.messageCircle;
+  static const IconData collection = LucideIcons.libraryBig;
 
   static const IconData refresh = LucideIcons.refreshCw;
   static const IconData save = LucideIcons.save;
