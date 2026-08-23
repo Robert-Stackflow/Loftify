@@ -8,6 +8,7 @@ import 'package:loftify/Screens/Setting/lofter_basic_setting_screen.dart';
 import 'package:loftify/Screens/Setting/tagshield_setting_screen.dart';
 import 'package:loftify/Screens/Setting/userdynamicshield_setting_screen.dart';
 import 'package:loftify/Utils/app_provider.dart';
+import 'package:loftify/Widgets/loftify_icons.dart';
 
 import '../../l10n/l10n.dart';
 import 'about_setting_screen.dart';
@@ -57,7 +58,7 @@ class _SettingScreenState extends BaseDynamicState<SettingScreen>
                 RouteUtil.pushPanelCupertinoRoute(context,
                     GeneralSettingScreen(key: generalSettingScreenKey));
               },
-              leading: Icons.settings_outlined,
+              leading: LoftifyIcons.generalSettings,
             ),
             EntryItem(
               context: context,
@@ -67,7 +68,7 @@ class _SettingScreenState extends BaseDynamicState<SettingScreen>
                 RouteUtil.pushPanelCupertinoRoute(
                     context, const AppearanceSettingScreen());
               },
-              leading: Icons.color_lens_outlined,
+              leading: LoftifyIcons.appearance,
             ),
             EntryItem(
               context: context,
@@ -77,7 +78,7 @@ class _SettingScreenState extends BaseDynamicState<SettingScreen>
                 RouteUtil.pushPanelCupertinoRoute(
                     context, const ImageSettingScreen());
               },
-              leading: Icons.image_outlined,
+              leading: LoftifyIcons.image,
             ),
             EntryItem(
               context: context,
@@ -87,7 +88,7 @@ class _SettingScreenState extends BaseDynamicState<SettingScreen>
                 RouteUtil.pushPanelCupertinoRoute(
                     context, const ExperimentSettingScreen());
               },
-              leading: Icons.flag_outlined,
+              leading: LoftifyIcons.flag,
             ),
           ],
         ),
@@ -110,7 +111,7 @@ class _SettingScreenState extends BaseDynamicState<SettingScreen>
             RouteUtil.pushPanelCupertinoRoute(
                 context, const AboutSettingScreen());
           },
-          leading: Icons.info_outline_rounded,
+          leading: LoftifyIcons.info,
         ),
       ],
     );
@@ -129,7 +130,7 @@ class _SettingScreenState extends BaseDynamicState<SettingScreen>
             RouteUtil.pushPanelCupertinoRoute(
                 context, const LofterBasicSettingScreen());
           },
-          leading: Icons.copyright_rounded,
+          leading: LoftifyIcons.copyright,
         ),
         EntryItem(
           context: context,
@@ -139,7 +140,7 @@ class _SettingScreenState extends BaseDynamicState<SettingScreen>
             RouteUtil.pushPanelCupertinoRoute(
                 context, const BlacklistSettingScreen());
           },
-          leading: Icons.block_rounded,
+          leading: LoftifyIcons.block,
         ),
         EntryItem(
           context: context,
@@ -149,7 +150,7 @@ class _SettingScreenState extends BaseDynamicState<SettingScreen>
             RouteUtil.pushPanelCupertinoRoute(
                 context, const TagShieldSettingScreen());
           },
-          leading: Icons.tag_rounded,
+          leading: LoftifyIcons.tag,
         ),
         EntryItem(
           context: context,
@@ -159,7 +160,7 @@ class _SettingScreenState extends BaseDynamicState<SettingScreen>
             RouteUtil.pushPanelCupertinoRoute(
                 context, const UserDynamicShieldSettingScreen());
           },
-          leading: Icons.shield_outlined,
+          leading: LoftifyIcons.shield,
         ),
       ],
     );

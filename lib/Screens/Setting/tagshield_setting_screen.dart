@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:loftify/Api/setting_api.dart';
 
 import '../../Widgets/Item/setting_management_item.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import 'base_setting_screen.dart';
 
@@ -65,8 +66,10 @@ class _TagShieldSettingScreenState
       actions: [
         CircleIconButton(
           context: context,
-          icon:
-              Icon(Icons.add_rounded, color: Theme.of(context).iconTheme.color),
+          icon: ChewieIcon(
+            LoftifyIcons.add,
+            color: Theme.of(context).iconTheme.color,
+          ),
           onTap: () {
             BottomSheetBuilder.showBottomSheet(
               context,
@@ -126,7 +129,7 @@ class _TagShieldSettingScreenState
   Widget _buildTagRow(String tag) {
     return SettingManagementItem(
       title: tag,
-      leadingIcon: Icons.tag_rounded,
+      leadingIcon: LoftifyIcons.tag,
       actionLabel: appLocalizations.unblockShieldTag,
       onAction: () {
         DialogBuilder.showConfirmDialog(

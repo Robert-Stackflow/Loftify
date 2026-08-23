@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../Utils/cloud_control_provider.dart';
 import '../../Utils/hive_util.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import 'base_setting_screen.dart';
 
@@ -184,7 +185,7 @@ class _AboutSettingScreenState extends BaseDynamicState<AboutSettingScreen>
                                 RouteUtil.pushPanelCupertinoRoute(
                                     context, const UpdateLogScreen());
                               },
-                              leading: Icons.merge_type_outlined,
+                              leading: LoftifyIcons.merge,
                             ),
                             EntryItem(
                               title: appLocalizations.bugReport,
@@ -195,8 +196,8 @@ class _AboutSettingScreenState extends BaseDynamicState<AboutSettingScreen>
                                 );
                               },
                               showLeading: true,
-                              leading: Icons.bug_report_outlined,
-                              trailing: Icons.open_in_new_rounded,
+                              leading: LoftifyIcons.bug,
+                              trailing: LoftifyIcons.openExternal,
                             ),
                             EntryItem(
                               title: appLocalizations.githubRepo,
@@ -207,8 +208,8 @@ class _AboutSettingScreenState extends BaseDynamicState<AboutSettingScreen>
                                 );
                               },
                               showLeading: true,
-                              leading: Icons.commit_outlined,
-                              trailing: Icons.open_in_new_rounded,
+                              leading: LoftifyIcons.commit,
+                              trailing: LoftifyIcons.openExternal,
                             ),
                           ],
                         ),
@@ -226,7 +227,7 @@ class _AboutSettingScreenState extends BaseDynamicState<AboutSettingScreen>
                                   responsive: true,
                                 );
                               },
-                              leading: Icons.rate_review_outlined,
+                              leading: LoftifyIcons.review,
                             ),
                             EntryItem(
                               title: appLocalizations.shareApp,
@@ -236,7 +237,7 @@ class _AboutSettingScreenState extends BaseDynamicState<AboutSettingScreen>
                                   cloudControlProvider.globalControl.shareText,
                                 );
                               },
-                              leading: Icons.share_rounded,
+                              leading: LoftifyIcons.share,
                             ),
                             EntryItem(
                               title: appLocalizations.contact,
@@ -252,8 +253,8 @@ class _AboutSettingScreenState extends BaseDynamicState<AboutSettingScreen>
                                 );
                               },
                               showLeading: true,
-                              leading: Icons.contact_support_outlined,
-                              trailing: Icons.alternate_email_rounded,
+                              leading: LoftifyIcons.support,
+                              trailing: LoftifyIcons.contact,
                             ),
                             EntryItem(
                               title: appLocalizations.officialWebsite,
@@ -265,8 +266,8 @@ class _AboutSettingScreenState extends BaseDynamicState<AboutSettingScreen>
                                 );
                               },
                               showLeading: true,
-                              leading: Icons.language_outlined,
-                              trailing: Icons.open_in_new_rounded,
+                              leading: LoftifyIcons.language,
+                              trailing: LoftifyIcons.openExternal,
                             ),
                             if (cloudControlProvider.globalControl.showQQGroup)
                               EntryItem(
@@ -276,8 +277,8 @@ class _AboutSettingScreenState extends BaseDynamicState<AboutSettingScreen>
                                       .globalControl.qqGroupUrl);
                                 },
                                 showLeading: true,
-                                leading: Icons.group_outlined,
-                                trailing: Icons.open_in_new_rounded,
+                                leading: LoftifyIcons.group,
+                                trailing: LoftifyIcons.openExternal,
                               ),
                             if (cloudControlProvider
                                 .globalControl.showTelegramGroup)
@@ -288,8 +289,8 @@ class _AboutSettingScreenState extends BaseDynamicState<AboutSettingScreen>
                                       .globalControl.telegramGroupUrl);
                                 },
                                 showLeading: true,
-                                leading: Icons.telegram_outlined,
-                                trailing: Icons.open_in_new_rounded,
+                                leading: LoftifyIcons.send,
+                                trailing: LoftifyIcons.openExternal,
                               ),
                           ],
                         ),

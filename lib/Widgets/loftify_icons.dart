@@ -17,13 +17,40 @@ abstract final class LoftifyIcons {
   static const IconData dress = LucideIcons.shirt;
   static const IconData notifications = LucideIcons.bell;
   static const IconData settings = LucideIcons.settings;
+  static const IconData flag = LucideIcons.flag;
+  static const IconData copyright = LucideIcons.copyright;
+  static const IconData block = LucideIcons.ban;
+  static const IconData tag = LucideIcons.tag;
+  static const IconData shield = LucideIcons.shield;
+
+  static const IconData refresh = LucideIcons.refreshCw;
+  static const IconData save = LucideIcons.save;
+  static const IconData add = LucideIcons.plus;
+  static const IconData check = LucideIcons.check;
+  static const IconData clear = LucideIcons.x;
+  static const IconData visible = LucideIcons.eye;
+  static const IconData hidden = LucideIcons.eyeOff;
+  static const IconData reset = LucideIcons.rotateCcw;
+  static const IconData openExternal = LucideIcons.externalLink;
+
+  static const IconData merge = LucideIcons.gitMerge;
+  static const IconData bug = LucideIcons.bug;
+  static const IconData commit = LucideIcons.gitCommitHorizontal;
+  static const IconData review = LucideIcons.messageSquareText;
+  static const IconData share = LucideIcons.share2;
+  static const IconData support = LucideIcons.circleHelp;
+  static const IconData contact = LucideIcons.atSign;
+  static const IconData language = LucideIcons.languages;
+  static const IconData group = LucideIcons.users;
+  static const IconData send = LucideIcons.send;
 
   static const IconData generalSettings = LucideIcons.settings2;
   static const IconData appearance = LucideIcons.paintbrushVertical;
   static const IconData image = LucideIcons.image;
   static const IconData basicSettings = settings;
   static const IconData experiment = LucideIcons.flaskConical;
-  static const IconData about = LucideIcons.info;
+  static const IconData info = LucideIcons.info;
+  static const IconData about = info;
 
   static const IconData download = LucideIcons.download;
   static const IconData file = LucideIcons.file;

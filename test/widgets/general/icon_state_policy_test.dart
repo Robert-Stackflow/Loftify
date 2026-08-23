@@ -98,4 +98,24 @@ void main() {
 
     expect(violations, isEmpty);
   });
+
+  test('settings and login primitives have no legacy glyphs', () {
+    final files = <File>[
+      ...Directory('lib/Screens/Setting')
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((file) => file.path.endsWith('.dart')),
+      File('lib/Widgets/Item/setting_management_item.dart'),
+      File('lib/Widgets/Item/login_input_item.dart'),
+    ];
+    final violations = files
+        .where(
+          (file) => RegExp(r'\b(?:Icons|CupertinoIcons)\.')
+              .hasMatch(file.readAsStringSync()),
+        )
+        .map((file) => file.path)
+        .toList();
+
+    expect(violations, isEmpty);
+  });
 }

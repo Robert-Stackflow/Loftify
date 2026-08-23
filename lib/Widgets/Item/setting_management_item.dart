@@ -1,6 +1,8 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 
+import '../loftify_icons.dart';
+
 class SettingManagementItem extends StatelessWidget {
   const SettingManagementItem({
     super.key,
@@ -30,7 +32,7 @@ class SettingManagementItem extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       showLeading: leading != null || leadingIcon != null,
       leadingWidget: leading,
-      leading: leadingIcon ?? Icons.settings_rounded,
+      leading: leadingIcon ?? LoftifyIcons.settings,
       showTrailing: false,
       onTap: onTap,
       tipWidget: RoundIconTextButton(

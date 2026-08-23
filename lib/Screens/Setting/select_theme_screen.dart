@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:loftify/Utils/app_provider.dart';
 
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import 'base_setting_screen.dart';
 
@@ -206,12 +207,16 @@ class _SelectThemeScreenState extends BaseDynamicState<SelectThemeScreen>
         ),
         child: color == null
             ? Icon(
-                Icons.format_color_reset_rounded,
+                LoftifyIcons.reset,
                 size: 18,
                 color: ChewieTheme.iconColor,
               )
             : isSelected
-                ? const Icon(Icons.check_rounded, size: 18, color: Colors.white)
+                ? const ChewieIcon(
+                    LoftifyIcons.check,
+                    size: 18,
+                    color: Colors.white,
+                  )
                 : null,
       ),
     );

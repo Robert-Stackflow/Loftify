@@ -1,6 +1,8 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 
+import '../loftify_icons.dart';
+
 /// 登录流程使用的一体式输入框。
 ///
 /// 登录页原本将图标、输入区和操作区放在同一块背景中。通用 InputItem
@@ -120,17 +122,15 @@ class _LoginInputItemState extends State<LoginInputItem> {
       case InputItemLeadingTailingType.none:
         return null;
       case InputItemLeadingTailingType.clear:
-        child = Icon(
-          Icons.clear_rounded,
+        child = ChewieIcon(
+          LoftifyIcons.clear,
           color: iconColor?.withAlpha(120),
         );
         defaultAction = widget.controller.clear;
         break;
       case InputItemLeadingTailingType.password:
-        child = Icon(
-          _obscurePassword
-              ? Icons.visibility_outlined
-              : Icons.visibility_off_outlined,
+        child = ChewieIcon(
+          _obscurePassword ? LoftifyIcons.visible : LoftifyIcons.hidden,
           color: iconColor?.withAlpha(120),
         );
         defaultAction = () {
@@ -139,7 +139,7 @@ class _LoginInputItemState extends State<LoginInputItem> {
         break;
       case InputItemLeadingTailingType.icon:
         if (config.icon == null) return null;
-        child = Icon(config.icon, color: iconColor);
+        child = ChewieIcon(config.icon!, color: iconColor);
         break;
       case InputItemLeadingTailingType.text:
         if (config.text == null) return null;
@@ -158,7 +158,7 @@ class _LoginInputItemState extends State<LoginInputItem> {
         break;
       default:
         if (config.icon == null) return null;
-        child = Icon(config.icon, color: iconColor);
+        child = ChewieIcon(config.icon!, color: iconColor);
     }
     if (child == null) return null;
     if (!isTrailing) return child;
@@ -176,9 +176,9 @@ class _LoginInputItemState extends State<LoginInputItem> {
           cursor: config.enable
               ? SystemMouseCursors.click
               : SystemMouseCursors.basic,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-            child: child,
+          child: SizedBox.square(
+            dimension: ChewieIconThemeData.of(context).minimumTapTarget,
+            child: Center(child: child),
           ),
         ),
       ),

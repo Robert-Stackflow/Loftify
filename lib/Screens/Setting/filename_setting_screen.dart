@@ -4,6 +4,7 @@ import 'package:loftify/Utils/hive_util.dart';
 
 import '../../Utils/constant.dart';
 import '../../Utils/enums.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import 'base_setting_screen.dart';
 
@@ -87,12 +88,12 @@ class _FilenameSettingScreenState
                     const SizedBox(width: 5),
                     CircleIconButton(
                       context: context,
-                      icon: const Icon(Icons.refresh_rounded),
+                      icon: const ChewieIcon(LoftifyIcons.refresh),
                       onTap: _reset,
                     ),
                     CircleIconButton(
                       context: context,
-                      icon: const Icon(Icons.save_rounded),
+                      icon: const ChewieIcon(LoftifyIcons.save),
                       onTap: _save,
                     ),
                   ],
