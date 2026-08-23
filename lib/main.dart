@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
@@ -12,7 +13,9 @@ import 'package:local_notifier/local_notifier.dart';
 import 'package:loftify/Database/database_manager.dart';
 import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/cloud_control_provider.dart';
+import 'package:loftify/Utils/display_mode_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
+import 'package:loftify/Utils/lottie_files.dart';
 import 'package:loftify/Utils/request_header_util.dart';
 import 'package:loftify/Utils/request_util.dart';
 import 'package:loftify/Utils/uri_util.dart';
@@ -24,10 +27,7 @@ import 'package:window_manager/window_manager.dart';
 
 import 'Screens/Lock/pin_verify_screen.dart';
 import 'Screens/main_screen.dart';
-import 'Utils/constant.dart';
-import 'Widgets/Item/item_builder.dart';
-import 'generated/app_localizations.dart';
-import 'generated/l10n.dart';
+import 'l10n/l10n.dart';
 
 const List<String> kWindowsSchemes = ["lofter"];
 
@@ -37,7 +37,9 @@ Future<void> main(List<String> args) async {
 
 Future<void> runMyApp(List<String> args) async {
   await initApp();
+  chewieProvider.loadingWidgetBuilder = LottieFiles.buildLoadingAnimation;
   if (ResponsiveUtil.isAndroid()) {
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     await initDisplayMode();
     await RequestHeaderUtil.initAndroidInfo();
   }
@@ -95,7 +97,7 @@ Future<void> initWindow() async {
   Offset position = ChewieHiveUtil.getWindowPosition();
   WindowOptions windowOptions = WindowOptions(
     size: ChewieHiveUtil.getWindowSize(),
-    minimumSize: minimumSize,
+    minimumSize: ChewieProvider.minimumWindowSize,
     center: position == Offset.zero,
     backgroundColor: Colors.transparent,
     skipTaskbar: false,
@@ -110,20 +112,30 @@ Future<void> initWindow() async {
 
 Future<void> initDisplayMode() async {
   try {
-    var modes = await FlutterDisplayMode.supported;
+    final modes = await FlutterDisplayMode.supported;
     ILogger.info("Supported display modes: $modes");
+    final activeMode = await FlutterDisplayMode.active;
+    final preferredMode = await FlutterDisplayMode.preferred;
     ILogger.info(
-        "Current active display mode: ${await FlutterDisplayMode.active}\nCurrent preferred display mode: ${await FlutterDisplayMode.preferred}");
-    int refreshRate =
+        "Current active display mode: $activeMode\nCurrent preferred display mode: $preferredMode");
+    final legacyIndex =
         ChewieHiveUtil.getInt(HiveUtil.refreshRateKey, defaultValue: -1);
-    if (refreshRate == -1) {
-      await FlutterDisplayMode.setHighRefreshRate();
-      ILogger.info("Config display mode: high refresh rate");
-    } else {
-      DisplayMode configMode = modes[refreshRate.clamp(0, modes.length - 1)];
-      await FlutterDisplayMode.setPreferredMode(configMode);
-      ILogger.info("Config display mode: ${configMode.toString()}");
+    final encodedMode = ChewieHiveUtil.getString(HiveUtil.refreshRateModeKey);
+    final configMode = DisplayModePreference.resolve(
+      modes: modes,
+      activeMode: activeMode,
+      encodedMode: encodedMode,
+      legacyIndex: legacyIndex,
+    );
+    if ((encodedMode == null || encodedMode.isEmpty) && legacyIndex >= 0) {
+      await ChewieHiveUtil.put(
+        HiveUtil.refreshRateModeKey,
+        DisplayModePreference.encode(configMode),
+      );
+      await ChewieHiveUtil.delete(HiveUtil.refreshRateKey);
     }
+    await DisplayModeController.setPreferredMode(configMode);
+    ILogger.info("Config display mode: $configMode");
     ILogger.info(
         "Current active display mode after config: ${await FlutterDisplayMode.active}\nCurrent preferred display mode after config: ${await FlutterDisplayMode.preferred}");
   } catch (e, t) {
@@ -146,7 +158,7 @@ Future<void> onError(FlutterErrorDetails details) async {
   }
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   final Widget home;
   final String title;
 
@@ -155,6 +167,34 @@ class MyApp extends StatelessWidget {
     required this.home,
     this.title = 'Loftify',
   });
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    appProvider.refreshSystemLocale();
+  }
+
+  @override
+  void didChangeLocales(List<Locale>? locales) {
+    appProvider.refreshSystemLocale();
+  }
+
+  @override
+  void didChangePlatformBrightness() {
+    appProvider.refreshSystemTheme();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -168,7 +208,7 @@ class MyApp extends StatelessWidget {
         builder: (context, globalProvider, child) => MaterialApp(
           navigatorKey: chewieProvider.globalNavigatorKey,
           navigatorObservers: [chewieProvider.routeObserver],
-          title: title,
+          title: widget.title,
           themeMode: appProvider.themeMode.themeMode,
           theme: appProvider.lightTheme.toThemeData(),
           darkTheme: appProvider.darkTheme.toThemeData(),
@@ -180,40 +220,53 @@ class MyApp extends StatelessWidget {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          locale: context.watch<AppProvider>().locale,
+          locale: globalProvider.locale ?? resolveSystemAppLocale(),
           supportedLocales: AppLocalizations.supportedLocales,
           localeResolutionCallback: (locale, supportedLocales) {
             try {
               if (globalProvider.locale != null) {
                 return globalProvider.locale;
-              } else if (locale != null && supportedLocales.contains(locale)) {
-                return locale;
-              } else {
-                return Localizations.localeOf(context);
               }
+              return resolveAppLocale(
+                WidgetsBinding.instance.platformDispatcher.locale,
+              );
             } catch (e, t) {
               ILogger.error("Failed to load locale", e, t);
               return const Locale("zh", "CN");
             }
           },
-          home: CustomMouseRegion(child: home),
+          home: CustomMouseRegion(child: widget.home),
           builder: (context, widget) {
-            return Overlay(
-              initialEntries: [
-                if (widget != null) ...[
-                  OverlayEntry(
-                    builder: (context) => Listener(
-                      onPointerDown: (_) {
-                        if (!ResponsiveUtil.isDesktop() &&
-                            searchScreenState?.hasSearchFocus == true) {
-                          FocusManager.instance.primaryFocus?.unfocus();
-                        }
+            final systemUiOverlayStyle =
+                AppBarWrapper.systemUiOverlayStyleForBrightness(
+              Theme.of(context).brightness,
+              includeNavigationBar: true,
+            );
+            return AnnotatedRegion<SystemUiOverlayStyle>(
+              value: systemUiOverlayStyle,
+              child: Overlay(
+                initialEntries: [
+                  if (widget != null) ...[
+                    OverlayEntry(
+                      builder: (overlayContext) {
+                        chewieProvider.setRootContext(
+                          chewieProvider.globalNavigatorState?.context ??
+                              overlayContext,
+                        );
+                        return Listener(
+                          onPointerDown: (_) {
+                            if (!ResponsiveUtil.isDesktop() &&
+                                searchScreenState?.hasSearchFocus == true) {
+                              FocusManager.instance.primaryFocus?.unfocus();
+                            }
+                          },
+                          child: widget,
+                        );
                       },
-                      child: widget,
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             );
           },
         ),

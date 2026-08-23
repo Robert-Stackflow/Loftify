@@ -7,12 +7,11 @@ import 'package:loftify/Screens/Post/tag_detail_screen.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/request_header_util.dart';
 import 'package:loftify/Utils/request_util.dart';
-import 'package:loftify/Utils/utils.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../Screens/Info/user_detail_screen.dart';
 import '../Screens/Post/post_detail_screen.dart';
-import '../generated/l10n.dart';
+import '../l10n/l10n.dart';
 
 class LoftifyUriUtil {
   static bool isShortLinkUrl(String url) {
@@ -202,8 +201,17 @@ class LoftifyUriUtil {
     bool quiet = false,
   }) async {
     try {
-      if (!quiet) CustomLoadingDialog.showLoading(title: appLocalizations.loading);
-      url = Uri.decodeComponent(url);
+      if (!quiet) {
+        CustomLoadingDialog.showLoading(title: appLocalizations.loading);
+      }
+      // 搜索词可能包含未转义的 %，它不是 URI 编码且不应阻断普通搜索。
+      if (url.contains('%')) {
+        try {
+          url = Uri.decodeComponent(url);
+        } on FormatException {
+          // 保留原始文本，让调用方按普通搜索词继续处理。
+        }
+      }
       if (LoftifyUriUtil.isShortLinkUrl(url)) {
         var tmp = url;
         url = await UriUtil.getRedirectUrl(url);

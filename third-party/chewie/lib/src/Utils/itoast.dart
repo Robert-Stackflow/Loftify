@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:local_notifier/local_notifier.dart';
 
 class IToast {
+  static OverlayEntry? _toastEntry;
+  static Timer? _toastTimer;
+
   static FToast? show(
     String text, {
     Icon? icon,
@@ -11,30 +16,57 @@ class IToast {
     int seconds = 2,
     ToastGravity gravity = ToastGravity.TOP,
   }) {
-    if (ResponsiveUtil.isLandscapeLayout()) {
+    if (ResponsiveUtil.isDesktop()) {
       NotificationManager().show(
         chewieProvider.rootContext,
         text,
+        overlayState: chewieProvider.globalNavigatorState?.overlay,
         description: decription,
         duration: Duration(seconds: seconds),
         style: NotificationStyle(icon: icon?.icon, iconColor: icon?.color),
       );
     } else {
-      FToast toast = FToast().init(chewieProvider.rootContext);
-      toast.showToast(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-          decoration: ChewieTheme.defaultDecoration,
-          child: Text(
-            text,
-            textAlign: TextAlign.center,
-            style: ChewieTheme.bodyMedium,
+      final overlay = chewieProvider.globalNavigatorState?.overlay;
+      if (overlay == null || !overlay.mounted) return null;
+      _toastTimer?.cancel();
+      _toastEntry?.remove();
+      _toastEntry = OverlayEntry(
+        builder: (context) => Positioned.fill(
+          child: IgnorePointer(
+            child: SafeArea(
+              minimum: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 12,
+              ),
+              child: Align(
+                alignment: gravity == ToastGravity.BOTTOM
+                    ? Alignment.bottomCenter
+                    : Alignment.topCenter,
+                child: Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: ChewieTheme.defaultDecoration,
+                    child: Text(
+                      text,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
-        gravity: gravity,
-        toastDuration: Duration(seconds: seconds),
       );
-      return toast;
+      overlay.insert(_toastEntry!);
+      _toastTimer = Timer(Duration(seconds: seconds), () {
+        _toastEntry?.remove();
+        _toastEntry = null;
+      });
     }
     return null;
   }

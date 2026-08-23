@@ -49,22 +49,22 @@ class MenuItemStyle {
     EdgeInsets? padding,
     TextStyle? textStyle,
     TextStyle? shortcutTextStyle,
-    double disabledOpacity = 0.7,
-    double radius = 8,
+    double? disabledOpacity,
+    double? radius,
     Border? focusedBorder,
   }) {
     return MenuItemStyle(
       backgroundColor: backgroundColor ?? this.backgroundColor,
       normalColor: normalColor ?? this.normalColor,
-      normalIconColor: normalColor ?? this.normalIconColor,
+      normalIconColor: normalIconColor ?? this.normalIconColor,
       successColor: successColor ?? this.successColor,
       warningColor: warningColor ?? this.warningColor,
       errorColor: errorColor ?? this.errorColor,
       padding: padding ?? this.padding,
       textStyle: textStyle ?? this.textStyle,
       shortcutTextStyle: shortcutTextStyle ?? this.shortcutTextStyle,
-      disabledOpacity: disabledOpacity,
-      radius: radius,
+      disabledOpacity: disabledOpacity ?? this.disabledOpacity,
+      radius: radius ?? this.radius,
       focusedBorder: focusedBorder ?? this.focusedBorder,
     );
   }
@@ -191,10 +191,14 @@ final class FlutterContextMenuItem<T> extends BaseContextMenuItem<T> {
 
     TextStyle labelTextStyle = mStyle.textStyle!;
     labelTextStyle = labelTextStyle.copyWith(color: textColor);
-    final normalTextColor = labelTextStyle.color!.withValues(alpha: 0.8);
-    final normalIconColor = iconColor!.withValues(alpha: 0.8);
-    final foregroundColor = isFocused ? labelTextStyle.color : normalTextColor;
-    final foregroundIconColor = isFocused ? iconColor : normalIconColor;
+    final effectiveTextColor =
+        labelTextStyle.color ?? theme.colorScheme.onSurface;
+    final effectiveIconColor = iconColor ?? effectiveTextColor;
+    final normalTextColor = effectiveTextColor.withValues(alpha: 0.8);
+    final normalIconColor = effectiveIconColor.withValues(alpha: 0.8);
+    final foregroundColor = isFocused ? effectiveTextColor : normalTextColor;
+    final foregroundIconColor =
+        isFocused ? effectiveIconColor : normalIconColor;
 
     final Border? focusedBorder = isFocused ? mStyle.focusedBorder : null;
 

@@ -41,11 +41,22 @@ final class MenuDivider extends ContextMenuEntry {
 
   @override
   Widget builder(BuildContext context, ContextMenuState menuState) {
-    return buildDivider(
-      context,
-      width: 0.5,
-      vertical: 6,
-      horizontal: 4,
+    final effectiveThickness = thickness ?? 0.6;
+    final effectiveHeight = height ?? 13;
+    return Container(
+      height: effectiveHeight,
+      margin: EdgeInsetsDirectional.only(
+        start: indent ?? 8,
+        end: endIndent ?? 8,
+      ),
+      alignment: Alignment.center,
+      child: Container(
+        height: effectiveThickness,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(effectiveThickness),
+          color: color ?? Theme.of(context).dividerColor,
+        ),
+      ),
     );
   }
 

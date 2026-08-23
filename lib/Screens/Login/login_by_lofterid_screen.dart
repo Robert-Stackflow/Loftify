@@ -11,6 +11,7 @@ import '../../Utils/app_provider.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/request_util.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Item/login_input_item.dart';
 import '../../l10n/l10n.dart';
 
 class LoginByLofterIDScreen extends StatefulWidget {
@@ -29,6 +30,8 @@ class _LoginByLofterIDScreenState
     with TickerProviderStateMixin {
   late TextEditingController _lofterIDController;
   late TextEditingController _passwordController;
+  final FocusNode _lofterIDFocusNode = FocusNode();
+  final FocusNode _passwordFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -39,7 +42,17 @@ class _LoginByLofterIDScreenState
     _passwordController.text = widget.initPassword ?? defaultPassword;
   }
 
+  @override
+  void dispose() {
+    _lofterIDController.dispose();
+    _passwordController.dispose();
+    _lofterIDFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    super.dispose();
+  }
+
   void _login() {
+    FocusManager.instance.primaryFocus?.unfocus();
     String lofterID = _lofterIDController.text;
     String password = _passwordController.text;
     if (lofterID.isEmpty || password.isEmpty) {
@@ -73,10 +86,14 @@ class _LoginByLofterIDScreenState
     return Container(
       color: Colors.transparent,
       child: Scaffold(
-        resizeToAvoidBottomInset: false,
+        resizeToAvoidBottomInset: true,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: ResponsiveAppBar(
           title: appLocalizations.loginByLofterID,
+          showBack: !ResponsiveUtil.isLandscapeLayout(),
+          leadingIcon: Icons.close_rounded,
+          onTapBack: () => Navigator.maybeOf(context)?.maybePop(),
+          showBorder: false,
           titleLeftMargin: ResponsiveUtil.isLandscapeLayout() ? 15 : 5,
         ),
         body: Container(
@@ -88,10 +105,13 @@ class _LoginByLofterIDScreenState
                 child: ListView(
                   children: [
                     const SizedBox(height: 50),
-                    InputItem(
+                    LoginInputItem(
                       hint: appLocalizations.inputLofterID,
                       textInputAction: TextInputAction.next,
                       controller: _lofterIDController,
+                      focusNode: _lofterIDFocusNode,
+                      autofillHints: const [AutofillHints.username],
+                      onSubmitted: (_) => _passwordFocusNode.requestFocus(),
                       leadingConfig: InputItemLeadingTailingConfig(
                         type: InputItemLeadingTailingType.icon,
                         icon: Icons.card_membership_rounded,
@@ -100,9 +120,12 @@ class _LoginByLofterIDScreenState
                         type: InputItemLeadingTailingType.clear,
                       ),
                     ),
-                    InputItem(
+                    LoginInputItem(
                       hint: appLocalizations.inputPassword,
-                      textInputAction: TextInputAction.next,
+                      textInputAction: TextInputAction.done,
+                      focusNode: _passwordFocusNode,
+                      autofillHints: const [AutofillHints.password],
+                      onSubmitted: (_) => _login(),
                       leadingConfig: InputItemLeadingTailingConfig(
                         type: InputItemLeadingTailingType.icon,
                         icon: Icons.verified_outlined,

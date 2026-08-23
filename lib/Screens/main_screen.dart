@@ -16,7 +16,7 @@ import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../l10n/l10n.dart';
+import '../l10n/l10n.dart';
 import '../Api/login_api.dart';
 import '../Api/user_api.dart';
 import '../Models/account_response.dart';
@@ -50,6 +50,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
   Widget? darkModeWidget;
   FullBlogInfo? blogInfo;
   bool _hasJumpedToPinVerify = false;
+  bool _orientationPolicyUpdateScheduled = false;
   Orientation? _oldOrientation;
 
   @override
@@ -148,7 +149,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
       ResponsiveUtil.runByPlatform(desktop: () async {
         await Utils.initTray();
         trayManager.addListener(this);
-        keyboardHandlerState?.focus();
+        appProvider.shortcutFocusNode.requestFocus();
       });
     });
     initConfig();
@@ -178,7 +179,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
   }
 
   initConfig() {
-    ResponsiveUtil.checkSizeCondition();
+    unawaited(ResponsiveUtil.checkSizeCondition());
     ResponsiveUtil.runByPlatform(
       desktop: () {
         initHotKey();
@@ -190,8 +191,9 @@ class MainScreenState extends BaseWindowState<MainScreen>
             .then((value) => setState(() => isMaximized = value));
       },
       mobile: () {
-        ChewieUtils.setSafeMode(
-            ChewieHiveUtil.getBool(HiveUtil.enableSafeModeKey, defaultValue: false));
+        ChewieUtils.setSafeMode(ChewieHiveUtil.getBool(
+            HiveUtil.enableSafeModeKey,
+            defaultValue: false));
       },
     );
     initDeepLinks();
@@ -213,19 +215,23 @@ class MainScreenState extends BaseWindowState<MainScreen>
   }
 
   initEasyRefresh() {
-    // EasyRefresh.defaultHeaderBuilder = () => LottieCupertinoHeader(
-    //       backgroundColor: Theme.of(context).canvasColor,
-    //       indicator: LottieUtil.load(LottieUtil.getLoadingPath(context)),
-    //       hapticFeedback: true,
-    //       triggerOffset: 40,
-    //     );
-    EasyRefresh.defaultHeaderBuilder = () => MaterialHeader(
-          backgroundColor: Theme.of(context).canvasColor,
-          color: Theme.of(context).primaryColor,
+    EasyRefresh.defaultHeaderBuilder = () => LottieCupertinoHeader(
+          backgroundColor: Colors.transparent,
+          indicator: LottieFiles.buildLoadingAnimation(36, false),
+          hapticFeedback: true,
+          triggerOffset: 52,
+          maxOverOffset: 76,
+          radius: 18,
         );
     EasyRefresh.defaultFooterBuilder = () => LottieCupertinoFooter(
-          indicator: LottieUtil.load(LottieFiles.getLoadingPath(context)),
+          backgroundColor: Colors.transparent,
+          indicator: LottieFiles.buildLoadingAnimation(32, false),
+          triggerOffset: 48,
+          maxOverOffset: 68,
+          infiniteOffset: 240,
+          radius: 16,
         );
+    chewieProvider.loadingWidgetBuilder = LottieFiles.buildLoadingAnimation;
   }
 
   showQQGroupDialog() {
@@ -250,7 +256,8 @@ class MainScreenState extends BaseWindowState<MainScreen>
 
   void jumpToLogin() {
     if (ChewieHiveUtil.isFirstLogin() &&
-        ChewieHiveUtil.getString(HiveUtil.tokenKey, defaultValue: null) == null) {
+        ChewieHiveUtil.getString(HiveUtil.tokenKey, defaultValue: null) ==
+            null) {
       HiveUtil.initConfig();
       ChewieHiveUtil.setFirstLogin();
       if (ResponsiveUtil.isLandscapeLayout()) {
@@ -289,7 +296,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
       return ResponsiveUtil.selectByResponsive(
         landscape: Scaffold(
           resizeToAvoidBottomInset: false,
-          backgroundColor: ChewieTheme.canvasColor,
+          backgroundColor: ChewieTheme.scaffoldBackgroundColor,
           body: SafeArea(child: _buildDesktopBody()),
         ),
         desktop: _buildDesktopBody(),
@@ -378,7 +385,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
       width: 42 + leftPadding + rightPadding,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: Theme.of(context).canvasColor,
+        color: Theme.of(context).scaffoldBackgroundColor,
         border: Border(
           right: BorderSide(
             color: Theme.of(context).dividerColor,
@@ -585,6 +592,21 @@ class MainScreenState extends BaseWindowState<MainScreen>
         },
       );
     }
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    if (!ResponsiveUtil.isMobile() || _orientationPolicyUpdateScheduled) {
+      return;
+    }
+    _orientationPolicyUpdateScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _orientationPolicyUpdateScheduled = false;
+      if (mounted) {
+        unawaited(ResponsiveUtil.checkSizeCondition());
+      }
+    });
   }
 
   @override

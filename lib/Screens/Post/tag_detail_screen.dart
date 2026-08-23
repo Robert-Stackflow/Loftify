@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/material.dart';
@@ -15,8 +18,8 @@ import 'package:loftify/Utils/hive_util.dart';
 
 import '../../Models/post_detail_response.dart';
 import '../../Utils/cloud_control_provider.dart';
+import '../../Utils/tab_state_util.dart';
 import '../../Utils/uri_util.dart';
-import '../../Utils/utils.dart';
 import '../../Widgets/BottomSheet/newest_filter_bottom_sheet.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
@@ -41,13 +44,13 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
 
   TagDetailData? _tagDetailData;
   late TabController _tabController;
+  late final LazyTabLoadState _tabLoadState;
   final ScrollController _scrollController = ScrollController();
   final GlobalKey<RecommendTabState> _recommendKey = GlobalKey();
   final GlobalKey<NewestTabState> _newestKey = GlobalKey();
   final GlobalKey<HottestTabState> _hottestKey = GlobalKey();
-  final List<SubordinateScrollController?> scrollControllers =
-      List.filled(3, null);
-
+  final List<SubordinateScrollController?> _tabScrollControllers =
+      List<SubordinateScrollController?>.filled(3, null);
   PostLayoutType _postLayoutType = PostLayoutType.values[ChewieUtils.patchEnum(
       ChewieHiveUtil.getInt(HiveUtil.tagDetailPostLayoutTypeKey,
           defaultValue: 0),
@@ -59,6 +62,7 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
     appLocalizations.newest,
     appLocalizations.hottest
   ];
+  static const List<String> _tabIdList = ['explore', 'newest', 'hottest'];
 
   late GetTagPostListParams _hottestParams;
   int _currentHottestIndex = 0;
@@ -68,22 +72,68 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
   @override
   void initState() {
     super.initState();
+    initFilter();
     initTab();
     _fetchTagDetail();
-    initFilter();
   }
 
-  initFilter() {
-    _hottestParams = GetTagPostListParams(
-      tag: widget.tag,
-      tagPostResultType: TagPostResultType.week,
+  @override
+  void dispose() {
+    _tabController.dispose();
+    for (final controller in _tabScrollControllers) {
+      controller?.dispose();
+    }
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void initFilter() {
+    _hottestParams = _restoreFilter(
+      HiveUtil.tagHottestFilterKey,
+      fallbackResultType: TagPostResultType.week,
     );
-    _currentHottestIndex = _hottestParams.tagPostResultType.index - 2;
-    _newestParams = GetTagPostListParams(
-      tag: widget.tag,
-      tagPostResultType: TagPostResultType.newPost,
+    _currentHottestIndex = switch (_hottestParams.tagPostResultType) {
+      TagPostResultType.total => 0,
+      TagPostResultType.date => 1,
+      TagPostResultType.week => 2,
+      TagPostResultType.month => 3,
+      _ => 2,
+    };
+    _newestParams = _restoreFilter(
+      HiveUtil.tagNewestFilterKey,
+      fallbackResultType: TagPostResultType.newPost,
     );
-    _currentNewestIndex = _newestParams.tagPostResultType.index;
+    _currentNewestIndex = switch (_newestParams.tagPostResultType) {
+      TagPostResultType.newComment => 1,
+      _ => 0,
+    };
+  }
+
+  GetTagPostListParams _restoreFilter(
+    String key, {
+    required TagPostResultType fallbackResultType,
+  }) {
+    dynamic savedValue;
+    final encoded = ChewieHiveUtil.getString(key);
+    if (encoded != null && encoded.isNotEmpty) {
+      try {
+        savedValue = jsonDecode(encoded);
+      } catch (error, stackTrace) {
+        ILogger.error("Failed to restore tag filter", error, stackTrace);
+      }
+    }
+    return GetTagPostListParams.fromPreference(
+      tag: widget.tag,
+      value: savedValue,
+      fallbackResultType: fallbackResultType,
+    );
+  }
+
+  void _persistFilter(String key, GetTagPostListParams params) {
+    ChewieHiveUtil.put(
+      key,
+      jsonEncode(params.toPreferenceJson()),
+    );
   }
 
   @override
@@ -98,16 +148,101 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
     );
   }
 
-  initTab() {
-    _tabController = TabController(length: _tabLabelList.length, vsync: this);
-    _tabController.animation?.addListener(() {
-      int indexChange =
-          _tabController.offset.abs() > 0.8 ? _tabController.offset.round() : 0;
-      int index = _tabController.index + indexChange;
-      if (index != _currentTabIndex) {
-        setState(() => _currentTabIndex = index);
+  void initTab() {
+    final restored = PersistentTabState.restore(
+      idKey: HiveUtil.tagDetailTabIdKey,
+      legacyIndexKey: HiveUtil.tagDetailTabIndexKey,
+      itemIds: _tabIdList,
+    );
+    _tabLoadState = LazyTabLoadState(
+      itemIds: _tabIdList,
+      savedId: restored.id,
+    );
+    _currentTabIndex = _tabLoadState.currentIndex;
+    _tabController = TabController(
+      length: _tabLabelList.length,
+      initialIndex: _currentTabIndex,
+      vsync: this,
+    );
+    _tabController.addListener(() {
+      final preloadIndex = _tabController.indexIsChanging
+          ? _tabController.index
+          : _tabController.offset > 0.001
+              ? _tabController.index + 1
+              : _tabController.offset < -0.001
+                  ? _tabController.index - 1
+                  : _tabController.index;
+      if (preloadIndex >= 0 && preloadIndex < _tabLabelList.length) {
+        unawaited(_ensureTabLoaded(preloadIndex));
       }
+      final index =
+          (_tabController.animation?.value ?? _tabController.index).round();
+      if (index != _currentTabIndex) _setCurrentTab(index);
     });
+  }
+
+  void _setCurrentTab(int index) {
+    final safeIndex = TabStatePreference.restoreIndex(
+      index,
+      _tabLabelList.length,
+    );
+    if (safeIndex != _currentTabIndex) {
+      setState(() => _currentTabIndex = safeIndex);
+    }
+    PersistentTabState.save(
+      idKey: HiveUtil.tagDetailTabIdKey,
+      legacyIndexKey: HiveUtil.tagDetailTabIndexKey,
+      itemIds: _tabIdList,
+      index: safeIndex,
+    );
+    _ensureTabLoaded(safeIndex);
+  }
+
+  Future<void> _ensureTabLoaded(int index) async {
+    if (!_tabLoadState.selectAndShouldLoad(index)) return;
+    final started = await _refreshTabData(index);
+    if (!started) {
+      _tabLoadState.markLoadFailed(index);
+    }
+  }
+
+  Future<bool> _refreshTabData(int index) async {
+    // Do not start an incoming page's refresh while it is still mostly
+    // off-screen. EasyRefresh can finish a fast request before the TabBarView
+    // transition settles, which makes the required refresh animation appear
+    // to be missing. Distant pages also need more than a handful of frames to
+    // attach their nested scroll position.
+    for (var attempt = 0; attempt < 60; attempt++) {
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) return false;
+      final tabPosition =
+          _tabController.animation?.value ?? _tabController.index.toDouble();
+      if ((tabPosition - index).abs() > 0.01) continue;
+      switch (index) {
+        case 0:
+          final state = _recommendKey.currentState;
+          if (state != null && state.refreshReady) {
+            await state.callRefresh();
+            return true;
+          }
+          break;
+        case 1:
+          final state = _newestKey.currentState;
+          if (state != null && state.refreshReady) {
+            await state.filterData(_newestParams);
+            return true;
+          }
+          break;
+        case 2:
+          final state = _hottestKey.currentState;
+          if (state != null && state.refreshReady) {
+            await state.filterData(_hottestParams);
+            return true;
+          }
+          break;
+      }
+    }
+    return false;
   }
 
   _fetchTagDetail() async {
@@ -119,7 +254,10 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
           if (value['response'] != null) {
             _tagDetailData = TagDetailData.fromJson(value['response']);
           }
-          if (mounted) setState(() {});
+          if (mounted) {
+            setState(() {});
+            _ensureTabLoaded(_currentTabIndex);
+          }
         }
       } catch (e, t) {
         IToast.showTop(appLocalizations.loadFailed);
@@ -257,47 +395,29 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
   Widget _buildTabBar() {
     return SliverPersistentHeader(
       pinned: true,
-      key: ValueKey(StringUtil.getRandomString()),
+      key: ValueKey('tag-detail-tabs-${widget.tag}'),
       delegate: SliverAppBarDelegate(
         radius: 0,
         background: ChewieTheme.getBackground(context),
-        tabBar: TabBar(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-          overlayColor: WidgetStateProperty.all(Colors.transparent),
-          controller: _tabController,
+        tabBar: TabBarWrapper(
+          tabController: _tabController,
+          tabBarPadding: const EdgeInsets.symmetric(horizontal: 4),
+          labelPadding: EdgeInsets.zero,
+          background: ChewieTheme.getBackground(context),
           tabs: _tabLabelList
               .asMap()
               .entries
               .map((entry) => ItemBuilder.buildAnimatedTab(context,
-                  selected: entry.key == _currentTabIndex, text: entry.value))
+                  selected: entry.key == _currentTabIndex,
+                  text: entry.value,
+                  controller: _tabController,
+                  tabIndex: entry.key))
               .toList(),
-          labelPadding: const EdgeInsets.symmetric(horizontal: 0),
-          enableFeedback: true,
-          dividerHeight: 0,
-          physics: const BouncingScrollPhysics(),
-          labelStyle: Theme.of(context).textTheme.titleLarge,
-          unselectedLabelStyle:
-              Theme.of(context).textTheme.titleLarge?.apply(color: Colors.grey),
-          indicator: UnderlinedTabIndicator(
-            borderColor: Theme.of(context).primaryColor,
-          ),
           onTap: (index) {
             if (_currentTabIndex == index) {
-              switch (index) {
-                case 0:
-                  _recommendKey.currentState?.callRefresh();
-                  break;
-                case 1:
-                  _newestKey.currentState?.filterData(_newestParams);
-                  break;
-                case 2:
-                  _hottestKey.currentState?.filterData(_hottestParams);
-                  break;
-              }
+              _refreshTabData(index);
             }
-            setState(() {
-              _currentTabIndex = index;
-            });
+            _setCurrentTab(index);
           },
         ),
       ),
@@ -310,41 +430,54 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
   }
 
   Widget _buildTabView() {
-    List<Widget> children = [];
-    children.add(RecommendTab(
-      key: _recommendKey,
-      tag: widget.tag,
-      postLayoutType: _postLayoutType,
-    ));
-    children.add(Builder(builder: (BuildContext context) {
-      final parentController = PrimaryScrollController.of(context);
-      if (scrollControllers[0]?.parent != parentController) {
-        scrollControllers[0]?.dispose();
-        scrollControllers[0] = SubordinateScrollController(parentController);
-      }
-      return NewestTab(
-        key: _newestKey,
-        tag: widget.tag,
-        scrollController: scrollControllers[0],
-        postLayoutType: _postLayoutType,
-      );
-    }));
-    children.add(Builder(builder: (BuildContext context) {
-      final parentController = PrimaryScrollController.of(context);
-      if (scrollControllers[1]?.parent != parentController) {
-        scrollControllers[1]?.dispose();
-        scrollControllers[1] = SubordinateScrollController(parentController);
-      }
-      return HottestTab(
-        key: _hottestKey,
-        tag: widget.tag,
-        scrollController: scrollControllers[1],
-        postLayoutType: _postLayoutType,
-      );
-    }));
     return TabBarView(
       controller: _tabController,
-      children: children,
+      children: [
+        Builder(builder: (context) {
+          final parentController = PrimaryScrollController.of(context);
+          if (_tabScrollControllers[0]?.parent != parentController) {
+            _tabScrollControllers[0]?.dispose();
+            _tabScrollControllers[0] =
+                SubordinateScrollController(parentController);
+          }
+          return RecommendTab(
+            key: _recommendKey,
+            tag: widget.tag,
+            scrollController: _tabScrollControllers[0],
+            postLayoutType: _postLayoutType,
+          );
+        }),
+        Builder(builder: (context) {
+          final parentController = PrimaryScrollController.of(context);
+          if (_tabScrollControllers[1]?.parent != parentController) {
+            _tabScrollControllers[1]?.dispose();
+            _tabScrollControllers[1] =
+                SubordinateScrollController(parentController);
+          }
+          return NewestTab(
+            key: _newestKey,
+            tag: widget.tag,
+            scrollController: _tabScrollControllers[1],
+            postLayoutType: _postLayoutType,
+            initialParams: _newestParams,
+          );
+        }),
+        Builder(builder: (context) {
+          final parentController = PrimaryScrollController.of(context);
+          if (_tabScrollControllers[2]?.parent != parentController) {
+            _tabScrollControllers[2]?.dispose();
+            _tabScrollControllers[2] =
+                SubordinateScrollController(parentController);
+          }
+          return HottestTab(
+            key: _hottestKey,
+            tag: widget.tag,
+            scrollController: _tabScrollControllers[2],
+            postLayoutType: _postLayoutType,
+            initialParams: _hottestParams,
+          );
+        }),
+      ],
     );
   }
 
@@ -507,8 +640,12 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
                           );
                           break;
                       }
-                      _newestKey.currentState?.filterData(_newestParams);
                     });
+                    _persistFilter(
+                      HiveUtil.tagNewestFilterKey,
+                      _newestParams,
+                    );
+                    _refreshTabData(1);
                   },
                 ),
               ),
@@ -527,7 +664,11 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
                       params: _newestParams.clone(),
                       onConfirm: (params) {
                         _newestParams = params;
-                        _newestKey.currentState?.filterData(_newestParams);
+                        _persistFilter(
+                          HiveUtil.tagNewestFilterKey,
+                          _newestParams,
+                        );
+                        _refreshTabData(1);
                       },
                     ),
                   );
@@ -600,8 +741,12 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
                           );
                           break;
                       }
-                      _hottestKey.currentState?.filterData(_hottestParams);
                     });
+                    _persistFilter(
+                      HiveUtil.tagHottestFilterKey,
+                      _hottestParams,
+                    );
+                    _refreshTabData(2);
                   },
                 ),
               ),
@@ -620,7 +765,11 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
                       params: _hottestParams.clone(),
                       onConfirm: (params) {
                         _hottestParams = params;
-                        _hottestKey.currentState?.filterData(_hottestParams);
+                        _persistFilter(
+                          HiveUtil.tagHottestFilterKey,
+                          _hottestParams,
+                        );
+                        _refreshTabData(2);
                       },
                     ),
                   );
@@ -726,10 +875,12 @@ class RecommendTab extends StatefulWidget {
   const RecommendTab({
     super.key,
     required this.tag,
+    this.scrollController,
     required this.postLayoutType,
   });
 
   final String tag;
+  final ScrollController? scrollController;
   final PostLayoutType postLayoutType;
 
   @override
@@ -750,25 +901,34 @@ class RecommendTabState extends BaseDynamicState<RecommendTab>
   bool get isWaterfallFlow =>
       widget.postLayoutType == PostLayoutType.waterfallflow;
 
+  bool get refreshReady =>
+      (widget.scrollController?.hasClients ?? false) ||
+      _recommendResultRefreshController.headerState != null;
+
+  Future<void> callRefresh() => _recommendResultRefreshController.callRefresh(
+        overOffset: 28,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+        scrollController: widget.scrollController,
+        jumpToEdge: false,
+      );
+
   @override
-  void initState() {
-    super.initState();
-    callRefresh();
+  void dispose() {
+    _recommendResultRefreshController.dispose();
+    super.dispose();
   }
 
-  callRefresh() {
-    _fetchRecommendResult(refresh: true);
-    _recommendResultRefreshController.callRefresh();
-  }
-
-  _fetchRecommendResult({bool refresh = false}) async {
-    if (_recommendResultLoading) return;
+  Future<IndicatorResult> _fetchRecommendResult({bool refresh = false}) async {
+    if (_recommendResultLoading || (!refresh && _recommendNoMore)) {
+      return IndicatorResult.none;
+    }
     if (refresh) _recommendNoMore = false;
     _recommendResultLoading = true;
     return await TagApi.getRecommendList(
       tag: widget.tag,
       offset: refresh ? 0 : _recommendResultOffset,
-    ).then((value) {
+    ).then<IndicatorResult>((value) {
       try {
         if (value['code'] != 0) {
           IToast.showTop(value['msg']);
@@ -788,8 +948,8 @@ class RecommendTabState extends BaseDynamicState<RecommendTab>
                 .removeWhere((e) => RecommendFlowItemBuilder.isInvalid(e));
           }
           if (mounted) setState(() {});
-          if (newPosts.isEmpty) {
-            _recommendNoMore = true;
+          _recommendNoMore = newPosts.isEmpty;
+          if (_recommendNoMore && !refresh) {
             return IndicatorResult.noMore;
           } else {
             return IndicatorResult.success;
@@ -810,53 +970,51 @@ class RecommendTabState extends BaseDynamicState<RecommendTab>
     super.build(context);
     return EasyRefresh.builder(
       controller: _recommendResultRefreshController,
-      refreshOnStart: true,
+      refreshOnStart: false,
       onRefresh: () async {
         return await _fetchRecommendResult(refresh: true);
       },
-      onLoad: () async {
-        return await _fetchRecommendResult();
-      },
+      onLoad: _recommendNoMore ? null : _fetchRecommendResult,
       triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => LoadMoreNotification(
-        onLoad: _fetchRecommendResult,
-        noMore: _recommendNoMore,
-        child: isWaterfallFlow
-            ? WaterfallFlow.builder(
-                cacheExtent: 9999,
-                physics: physics,
-                padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-                gridDelegate:
-                    const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-                  mainAxisSpacing: 6,
-                  crossAxisSpacing: 6,
-                  maxCrossAxisExtent: 300,
-                ),
-                itemBuilder: (BuildContext context, int index) {
-                  return RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
-                    context,
-                    _recommendList[index],
-                    excludeTag: widget.tag,
-                  );
-                },
-                itemCount: _recommendList.length,
-              )
-            : GridView.extent(
-                shrinkWrap: true,
-                padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+      childBuilder: (context, physics) => isWaterfallFlow
+          ? WaterfallFlow.builder(
+              controller: widget.scrollController,
+              cacheExtent: MediaQuery.sizeOf(context).height,
+              physics: physics,
+              padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+              gridDelegate:
+                  const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                mainAxisSpacing: 6,
+                crossAxisSpacing: 6,
+                maxCrossAxisExtent: 300,
+              ),
+              itemBuilder: (BuildContext context, int index) {
+                return RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
+                  context,
+                  _recommendList[index],
+                  excludeTag: widget.tag,
+                );
+              },
+              itemCount: _recommendList.length,
+            )
+          : GridView.builder(
+              controller: widget.scrollController,
+              padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+              physics: physics,
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                 maxCrossAxisExtent: 160,
                 mainAxisSpacing: 6,
                 crossAxisSpacing: 6,
-                physics: physics,
-                children: List.generate(_recommendList.length, (index) {
-                  return RecommendFlowItemBuilder.buildNineGridPostItem(
-                    context,
-                    _recommendList[index],
-                    wh: 160,
-                  );
-                }),
               ),
-      ),
+              itemCount: _recommendList.length,
+              itemBuilder: (context, index) {
+                return RecommendFlowItemBuilder.buildNineGridPostItem(
+                  context,
+                  _recommendList[index],
+                  wh: 160,
+                );
+              },
+            ),
     );
   }
 }
@@ -867,11 +1025,13 @@ class HottestTab extends StatefulWidget {
     required this.tag,
     this.scrollController,
     required this.postLayoutType,
+    required this.initialParams,
   });
 
   final String tag;
   final PostLayoutType postLayoutType;
   final ScrollController? scrollController;
+  final GetTagPostListParams initialParams;
 
   @override
   State<StatefulWidget> createState() => HottestTabState();
@@ -893,28 +1053,42 @@ class HottestTabState extends BaseDynamicState<HottestTab>
   bool get isWaterfallFlow =>
       widget.postLayoutType == PostLayoutType.waterfallflow;
 
+  bool get refreshReady =>
+      (widget.scrollController?.hasClients ?? false) ||
+      _hottestResultRefreshController.headerState != null;
+
   @override
   void initState() {
     super.initState();
-    filterData(GetTagPostListParams(
-      tag: widget.tag,
-      tagPostResultType: TagPostResultType.week,
-    ));
+    _hottestParams = widget.initialParams.clone();
   }
 
-  filterData(GetTagPostListParams newParam) {
-    _hottestParams = newParam;
-    _fetchHottestResult(refresh: true);
-    _hottestResultRefreshController.callRefresh();
+  Future<void> filterData(GetTagPostListParams newParam) {
+    _hottestParams = newParam.clone();
+    return _hottestResultRefreshController.callRefresh(
+      overOffset: 28,
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+      scrollController: widget.scrollController,
+      jumpToEdge: false,
+    );
   }
 
-  _fetchHottestResult({bool refresh = false}) async {
-    if (_hottestResultLoading) return;
+  @override
+  void dispose() {
+    _hottestResultRefreshController.dispose();
+    super.dispose();
+  }
+
+  Future<IndicatorResult> _fetchHottestResult({bool refresh = false}) async {
+    if (_hottestResultLoading || (!refresh && _hottestNoMore)) {
+      return IndicatorResult.none;
+    }
     if (refresh) _hottestNoMore = false;
     _hottestResultLoading = true;
     return await TagApi.getPostList(
       _hottestParams!.copyWith(offset: refresh ? 0 : _hottestResultOffset),
-    ).then((value) {
+    ).then<IndicatorResult>((value) {
       try {
         if (value['code'] != 0) {
           IToast.showTop(value['msg']);
@@ -934,8 +1108,8 @@ class HottestTabState extends BaseDynamicState<HottestTab>
                 .removeWhere((e) => RecommendFlowItemBuilder.isInvalid(e));
           }
           if (mounted) setState(() {});
-          if (newPosts.isEmpty) {
-            _hottestNoMore = false;
+          _hottestNoMore = newPosts.isEmpty;
+          if (_hottestNoMore && !refresh) {
             return IndicatorResult.noMore;
           } else {
             return IndicatorResult.success;
@@ -956,53 +1130,51 @@ class HottestTabState extends BaseDynamicState<HottestTab>
     super.build(context);
     return EasyRefresh.builder(
       controller: _hottestResultRefreshController,
-      refreshOnStart: true,
+      refreshOnStart: false,
       onRefresh: () async {
         return await _fetchHottestResult(refresh: true);
       },
-      onLoad: () async {
-        return await _fetchHottestResult();
-      },
+      onLoad: _hottestNoMore ? null : _fetchHottestResult,
       triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => LoadMoreNotification(
-        onLoad: _fetchHottestResult,
-        noMore: _hottestNoMore,
-        child: isWaterfallFlow
-            ? WaterfallFlow.builder(
-                cacheExtent: 9999,
-                physics: physics,
-                padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-                gridDelegate:
-                    const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-                  mainAxisSpacing: 6,
-                  crossAxisSpacing: 6,
-                  maxCrossAxisExtent: 300,
-                ),
-                itemBuilder: (BuildContext context, int index) {
-                  return RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
-                    context,
-                    _hottestList[index],
-                    excludeTag: widget.tag,
-                  );
-                },
-                itemCount: _hottestList.length,
-              )
-            : GridView.extent(
-                shrinkWrap: true,
-                padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+      childBuilder: (context, physics) => isWaterfallFlow
+          ? WaterfallFlow.builder(
+              controller: widget.scrollController,
+              cacheExtent: MediaQuery.sizeOf(context).height,
+              physics: physics,
+              padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+              gridDelegate:
+                  const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                mainAxisSpacing: 6,
+                crossAxisSpacing: 6,
+                maxCrossAxisExtent: 300,
+              ),
+              itemBuilder: (BuildContext context, int index) {
+                return RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
+                  context,
+                  _hottestList[index],
+                  excludeTag: widget.tag,
+                );
+              },
+              itemCount: _hottestList.length,
+            )
+          : GridView.builder(
+              controller: widget.scrollController,
+              padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+              physics: physics,
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                 maxCrossAxisExtent: 160,
                 mainAxisSpacing: 6,
                 crossAxisSpacing: 6,
-                physics: physics,
-                children: List.generate(_hottestList.length, (index) {
-                  return RecommendFlowItemBuilder.buildNineGridPostItem(
-                    context,
-                    _hottestList[index],
-                    wh: 160,
-                  );
-                }),
               ),
-      ),
+              itemCount: _hottestList.length,
+              itemBuilder: (context, index) {
+                return RecommendFlowItemBuilder.buildNineGridPostItem(
+                  context,
+                  _hottestList[index],
+                  wh: 160,
+                );
+              },
+            ),
     );
   }
 }
@@ -1013,11 +1185,13 @@ class NewestTab extends StatefulWidget {
     required this.tag,
     this.scrollController,
     required this.postLayoutType,
+    required this.initialParams,
   });
 
   final String tag;
   final PostLayoutType postLayoutType;
   final ScrollController? scrollController;
+  final GetTagPostListParams initialParams;
 
   @override
   State<StatefulWidget> createState() => NewestTabState();
@@ -1038,28 +1212,42 @@ class NewestTabState extends BaseDynamicState<NewestTab>
   bool get isWaterfallFlow =>
       widget.postLayoutType == PostLayoutType.waterfallflow;
 
+  bool get refreshReady =>
+      (widget.scrollController?.hasClients ?? false) ||
+      _newestResultRefreshController.headerState != null;
+
   @override
   void initState() {
     super.initState();
-    filterData(GetTagPostListParams(
-      tag: widget.tag,
-      tagPostResultType: TagPostResultType.newPost,
-    ));
+    _newestParams = widget.initialParams.clone();
   }
 
-  filterData(GetTagPostListParams newParam) {
-    _newestParams = newParam;
-    _fetchNewestResult(refresh: true);
-    _newestResultRefreshController.callRefresh();
+  Future<void> filterData(GetTagPostListParams newParam) {
+    _newestParams = newParam.clone();
+    return _newestResultRefreshController.callRefresh(
+      overOffset: 28,
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+      scrollController: widget.scrollController,
+      jumpToEdge: false,
+    );
   }
 
-  _fetchNewestResult({bool refresh = false}) async {
-    if (_newestResultLoading) return;
+  @override
+  void dispose() {
+    _newestResultRefreshController.dispose();
+    super.dispose();
+  }
+
+  Future<IndicatorResult> _fetchNewestResult({bool refresh = false}) async {
+    if (_newestResultLoading || (!refresh && _newestNoMore)) {
+      return IndicatorResult.none;
+    }
     if (refresh) _newestNoMore = false;
     _newestResultLoading = true;
     return await TagApi.getPostList(
       _newestParams!.copyWith(offset: refresh ? 0 : _newestResultOffset),
-    ).then((value) {
+    ).then<IndicatorResult>((value) {
       try {
         if (value['code'] != 0) {
           IToast.showTop(value['msg']);
@@ -1080,8 +1268,8 @@ class NewestTabState extends BaseDynamicState<NewestTab>
                 .removeWhere((e) => RecommendFlowItemBuilder.isInvalid(e));
           }
           if (mounted) setState(() {});
-          if (newPosts.isEmpty) {
-            _newestNoMore = false;
+          _newestNoMore = newPosts.isEmpty;
+          if (_newestNoMore && !refresh) {
             return IndicatorResult.noMore;
           } else {
             return IndicatorResult.success;
@@ -1103,53 +1291,51 @@ class NewestTabState extends BaseDynamicState<NewestTab>
     super.build(context);
     return EasyRefresh.builder(
       controller: _newestResultRefreshController,
-      refreshOnStart: true,
+      refreshOnStart: false,
       onRefresh: () async {
         return await _fetchNewestResult(refresh: true);
       },
-      onLoad: () async {
-        return await _fetchNewestResult();
-      },
+      onLoad: _newestNoMore ? null : _fetchNewestResult,
       triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => LoadMoreNotification(
-        onLoad: _fetchNewestResult,
-        noMore: _newestNoMore,
-        child: isWaterfallFlow
-            ? WaterfallFlow.builder(
-                cacheExtent: 9999,
-                physics: physics,
-                padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-                gridDelegate:
-                    const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-                  mainAxisSpacing: 6,
-                  crossAxisSpacing: 6,
-                  maxCrossAxisExtent: 300,
-                ),
-                itemBuilder: (BuildContext context, int index) {
-                  return RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
-                    context,
-                    _newestList[index],
-                    excludeTag: widget.tag,
-                  );
-                },
-                itemCount: _newestList.length,
-              )
-            : GridView.extent(
-                padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-                shrinkWrap: true,
+      childBuilder: (context, physics) => isWaterfallFlow
+          ? WaterfallFlow.builder(
+              controller: widget.scrollController,
+              cacheExtent: MediaQuery.sizeOf(context).height,
+              physics: physics,
+              padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+              gridDelegate:
+                  const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                mainAxisSpacing: 6,
+                crossAxisSpacing: 6,
+                maxCrossAxisExtent: 300,
+              ),
+              itemBuilder: (BuildContext context, int index) {
+                return RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
+                  context,
+                  _newestList[index],
+                  excludeTag: widget.tag,
+                );
+              },
+              itemCount: _newestList.length,
+            )
+          : GridView.builder(
+              controller: widget.scrollController,
+              padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+              physics: physics,
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                 maxCrossAxisExtent: 160,
                 mainAxisSpacing: 6,
                 crossAxisSpacing: 6,
-                physics: physics,
-                children: List.generate(_newestList.length, (index) {
-                  return RecommendFlowItemBuilder.buildNineGridPostItem(
-                    context,
-                    _newestList[index],
-                    wh: 160,
-                  );
-                }),
               ),
-      ),
+              itemCount: _newestList.length,
+              itemBuilder: (context, index) {
+                return RecommendFlowItemBuilder.buildNineGridPostItem(
+                  context,
+                  _newestList[index],
+                  wh: 160,
+                );
+              },
+            ),
     );
   }
 }

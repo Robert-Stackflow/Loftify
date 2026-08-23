@@ -19,10 +19,26 @@ import 'package:window_manager/window_manager.dart';
 
 import '../Screens/Setting/about_setting_screen.dart';
 import '../Screens/Setting/setting_screen.dart';
-import '../generated/l10n.dart';
+import '../Widgets/Shortcuts/keyboard_widget.dart';
+import '../l10n/l10n.dart';
 import 'app_provider.dart';
 
 class Utils {
+  static int parseToInt(dynamic value) => NumberUtil.parseToInt(value);
+
+  static List<dynamic> parseJsonList(String json) =>
+      StringUtil.parseJsonList(json);
+
+  static String formatDuration(int seconds) =>
+      TimeUtil.formatDuration(Duration(seconds: seconds));
+
+  static void copy(
+    BuildContext context,
+    dynamic data, {
+    String? toastText,
+  }) =>
+      ChewieUtils.copy(context, data, toastText: toastText);
+
   static String getHeroTag({
     String? tagPrefix,
     String? tagSuffix,
@@ -83,7 +99,8 @@ class Utils {
   }
 
   static addSearchHistory(String str) {
-    if (ChewieHiveUtil.getBool(HiveUtil.showSearchHistoryKey, defaultValue: true)) {
+    if (ChewieHiveUtil.getBool(HiveUtil.showSearchHistoryKey,
+        defaultValue: true)) {
       while (appProvider.searchHistoryList.contains(str)) {
         appProvider.searchHistoryList.remove(str);
       }
@@ -106,9 +123,10 @@ class Utils {
     Function()? onUnlike,
     Function()? onUnrecommend,
   }) {
-    DownloadSuccessAction action = DownloadSuccessAction.values[ChewieUtils.patchEnum(
-        ChewieHiveUtil.getInt(HiveUtil.downloadSuccessActionKey),
-        DownloadSuccessAction.values.length)];
+    DownloadSuccessAction action = DownloadSuccessAction.values[
+        ChewieUtils.patchEnum(
+            ChewieHiveUtil.getInt(HiveUtil.downloadSuccessActionKey),
+            DownloadSuccessAction.values.length)];
     switch (action) {
       case DownloadSuccessAction.none:
         break;
@@ -263,7 +281,7 @@ class Utils {
     entry = OverlayEntry(
       builder: (context) {
         return KeyboardWidget(
-          bindings: defaultLoftifyShortcuts,
+          bindings: ShortcutsUtil.shortcuts,
           callbackOnHide: () {
             appProvider.shownShortcutHelp = false;
             entry.remove();
@@ -297,7 +315,10 @@ class Utils {
         IToast.showDesktopNotification(
           appLocalizations.noGestureLock,
           body: appLocalizations.noGestureLockTip,
-          actions: [appLocalizations.cancel, appLocalizations.goToSetGestureLock],
+          actions: [
+            appLocalizations.cancel,
+            appLocalizations.goToSetGestureLock
+          ],
           onClick: () {
             ChewieUtils.displayApp();
             RouteUtil.pushPanelCupertinoRoute(

@@ -12,7 +12,7 @@ class TabBarWrapper extends StatelessWidget implements PreferredSizeWidget {
   final bool showBorder;
   final Color? background;
   final double? width;
-  final bool forceUnscrollable;
+  final bool? isScrollable;
 
   const TabBarWrapper({
     super.key,
@@ -26,7 +26,7 @@ class TabBarWrapper extends StatelessWidget implements PreferredSizeWidget {
     this.showBorder = false,
     this.background,
     this.width,
-    this.forceUnscrollable = false,
+    this.isScrollable,
   });
 
   @override
@@ -34,49 +34,55 @@ class TabBarWrapper extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    bool scrollable = false;
-    if (MediaQuery.of(context).orientation == Orientation.landscape) {
-      scrollable = true;
-    } else {
-      scrollable = tabs.length > 3;
-    }
-    scrollable = forceUnscrollable ? false : scrollable;
+    final theme = Theme.of(context);
+    final textScaler = MediaQuery.textScalerOf(context);
+    final scrollable = isScrollable ??
+        tabs.length > 3 ||
+            textScaler.scale(theme.textTheme.titleMedium?.fontSize ?? 14) > 18;
+    final titleMedium = theme.textTheme.titleMedium ?? ChewieTheme.titleMedium;
+    final selectedColor = titleMedium.color ?? theme.colorScheme.onSurface;
+    final unselectedColor = theme.colorScheme.onSurfaceVariant;
+    final primaryColor = theme.colorScheme.primary;
 
-    var titleMedium = ChewieTheme.titleMedium;
-
-    return Container(
+    return SizedBox(
       height: height,
       width: width,
-      padding: containerPadding,
-      decoration: BoxDecoration(
-        color: background ?? ChewieTheme.canvasColor,
-        border: showBorder
-            ? const Border(bottom: BorderSide(color: Colors.grey, width: 0.5))
-            : null,
-      ),
-      child: TabBar(
-        controller: tabController,
-        overlayColor: WidgetStateProperty.all(Colors.transparent),
-        tabs: tabs,
-        labelPadding: labelPadding,
-        indicatorSize: TabBarIndicatorSize.tab,
-        dividerHeight: 0,
-        padding: tabBarPadding,
-        isScrollable: scrollable,
-        tabAlignment: scrollable ? TabAlignment.start : null,
-        physics: const BouncingScrollPhysics(),
-        labelStyle: titleMedium.copyWith(
-          fontWeight: FontWeight.w600,
-          color: const Color(0xFFF1F1F1),
+      child: Material(
+        color: background ?? theme.scaffoldBackgroundColor,
+        child: Container(
+          padding: containerPadding,
+          child: TabBar(
+            controller: tabController,
+            tabs: tabs,
+            labelPadding: labelPadding,
+            indicatorSize: TabBarIndicatorSize.tab,
+            dividerHeight: 0,
+            padding: tabBarPadding,
+            isScrollable: scrollable,
+            tabAlignment: scrollable ? TabAlignment.start : TabAlignment.fill,
+            physics: const BouncingScrollPhysics(),
+            enableFeedback: true,
+            splashFactory: NoSplash.splashFactory,
+            overlayColor: WidgetStateProperty.all(Colors.transparent),
+            labelColor: selectedColor,
+            unselectedLabelColor: unselectedColor,
+            labelStyle: titleMedium.copyWith(
+              fontWeight: FontWeight.w600,
+              color: selectedColor,
+            ),
+            unselectedLabelStyle: titleMedium.copyWith(
+              fontWeight: FontWeight.w400,
+              color: unselectedColor,
+            ),
+            indicator: UnderlinedTabIndicator(
+              borderColor: primaryColor,
+              indicatorBottom: 4,
+              indicatorWidth: 12,
+              borderWidth: 3,
+            ),
+            onTap: onTap,
+          ),
         ),
-        unselectedLabelStyle: titleMedium.copyWith(color: Colors.grey),
-        indicator: UnderlinedTabIndicator(
-          borderColor: ChewieTheme.primaryColor,
-          indicatorBottom: 4,
-          indicatorWidth: 12,
-          borderWidth: 3,
-        ),
-        onTap: onTap,
       ),
     );
   }

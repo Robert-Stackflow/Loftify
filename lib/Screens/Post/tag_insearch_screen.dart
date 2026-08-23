@@ -64,7 +64,8 @@ class _TagInsearchScreenState extends BaseDynamicState<TagInsearchScreen>
                   children: [
                     if (_relatedTagList.isNotEmpty && _postList.isEmpty)
                       ItemBuilder.buildTitle(context,
-                          title: appLocalizations.allAreSearching, bottomMargin: 8),
+                          title: appLocalizations.allAreSearching,
+                          bottomMargin: 8),
                     if (_relatedTagList.isNotEmpty && _postList.isEmpty)
                       ItemBuilder.buildWrapTagList(
                         context,
@@ -183,7 +184,7 @@ class _TagInsearchScreenState extends BaseDynamicState<TagInsearchScreen>
         },
         child: WaterfallFlow.builder(
           physics: physics,
-          cacheExtent: 9999,
+          cacheExtent: MediaQuery.sizeOf(context).height,
           padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
           gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
             mainAxisSpacing: 6,
@@ -215,7 +216,6 @@ class _TagInsearchScreenState extends BaseDynamicState<TagInsearchScreen>
         bottomMargin: 18,
         hintFontSizeDelta: 1,
         context: context,
-        background: Colors.grey.withAlpha(40),
         hintText: appLocalizations.multipleSearchKeySeparatedBySpaces,
         onSubmitted: (value) {
           _performSearch(value);
@@ -229,8 +229,8 @@ class _TagInsearchScreenState extends BaseDynamicState<TagInsearchScreen>
     return ResponsiveAppBar(
       showBack: true,
       centerTitle: true,
-      titleWidget: ClickableWrapper(child:
-        ItemBuilder.buildTagItem(
+      titleWidget: ClickableWrapper(
+        child: ItemBuilder.buildTagItem(
           context,
           widget.tag,
           TagType.normal,

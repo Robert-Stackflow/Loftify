@@ -19,6 +19,7 @@ class SliverAppBarWrapper extends StatelessWidget {
   final double leftSpacing;
   final double rightSpacing;
   final SystemUiOverlayStyle? systemOverlayStyle;
+  final VoidCallback? onBack;
 
   const SliverAppBarWrapper({
     super.key,
@@ -35,11 +36,24 @@ class SliverAppBarWrapper extends StatelessWidget {
     this.leftSpacing = 8,
     this.rightSpacing = 8,
     this.systemOverlayStyle,
+    this.onBack,
   });
 
   @override
   Widget build(BuildContext context) {
     bool showLeading = !ResponsiveUtil.isLandscapeLayout();
+    final backgroundColor = Theme.of(context).appBarTheme.backgroundColor ??
+        Theme.of(context).scaffoldBackgroundColor;
+    final effectiveSystemOverlayStyle = systemOverlayStyle ??
+        (backgroundWidget != null
+            ? AppBarWrapper.systemUiOverlayStyleForBrightness(Brightness.dark)
+            : AppBarWrapper.systemUiOverlayStyleForColor(
+                context,
+                backgroundColor,
+              ));
+    final leadingColor = backgroundWidget != null
+        ? Colors.white
+        : Theme.of(context).iconTheme.color;
     var finalTitleWidget = Container(
       margin: EdgeInsets.only(left: titleLeftMargin),
       child: title,
@@ -47,13 +61,13 @@ class SliverAppBarWrapper extends StatelessWidget {
     var leading = Container(
       margin: EdgeInsets.only(left: leftSpacing),
       child: CircleIconButton(
-        icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-        onTap: () => Navigator.pop(context),
+        icon: Icon(Icons.arrow_back_rounded, color: leadingColor),
+        onTap: onBack ?? () => Navigator.pop(context),
       ),
     );
 
     return MySliverAppBar(
-      systemOverlayStyle: systemOverlayStyle,
+      systemOverlayStyle: effectiveSystemOverlayStyle,
       expandedHeight: expandedHeight,
       collapsedHeight: collapsedHeight ??
           max(100, kToolbarHeight + MediaQuery.of(context).padding.top),
@@ -65,7 +79,7 @@ class SliverAppBarWrapper extends StatelessWidget {
       title: centerTitle ? Center(child: finalTitleWidget) : finalTitleWidget,
       elevation: 0,
       scrolledUnderElevation: 0,
-      backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+      backgroundColor: backgroundColor,
       flexibleSpace: flexibleSpace,
       bottom: bottom,
       actions: [

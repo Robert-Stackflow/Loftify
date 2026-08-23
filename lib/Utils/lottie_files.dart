@@ -1,6 +1,5 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:loftify/Utils/utils.dart';
+import 'package:flutter/material.dart';
 
 class LottieFiles {
   static const String brightness = "assets/lottie/brightness.json";
@@ -65,11 +64,20 @@ class LottieFiles {
   static const String videoPlayingLight =
       "assets/lottie/video_playing_light.json";
 
+  static Widget buildLoadingAnimation(double size, bool forceDark) {
+    return Builder(
+      builder: (context) => LottieUtil.load(
+        getLoadingPath(context, forceDark: forceDark),
+        size: size,
+      ),
+    );
+  }
+
   static String getLoadingPath(
     BuildContext context, {
     bool forceDark = false,
   }) {
-    return ColorUtil.isDark(context) || forceDark
+    return Theme.of(context).brightness == Brightness.dark || forceDark
         ? forceDark
             ? LottieFiles.loadingDarkTransparent
             : LottieFiles.loadingDark

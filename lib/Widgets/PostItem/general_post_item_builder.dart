@@ -1,19 +1,17 @@
-import 'dart:math';
-
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:like_button/like_button.dart';
-import 'package:loftify/Screens/Post/video_detail_screen.dart';
 import 'package:loftify/Widgets/BottomSheet/shield_bottom_sheet.dart';
+import 'package:loftify/Widgets/PostItem/general_post_item.dart';
 
 import '../../Api/post_api.dart';
 import '../../Api/user_api.dart';
-import '../../Models/grain_response.dart';
 import '../../Models/illust.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Screens/Info/user_detail_screen.dart';
 import '../../Screens/Post/post_detail_screen.dart';
+import '../../Screens/Post/video_detail_screen.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/uri_util.dart';
@@ -23,101 +21,62 @@ import '../Item/item_builder.dart';
 import '../Item/loftify_item_builder.dart';
 import 'image_grid.dart';
 
-class GeneralPostItem {
-  PostType type;
-  List<PhotoLink> photoLinks;
-  int blogId;
-  int publishTime;
-  int opTime;
-  int postId;
-  String permalink;
-  int collectionId;
-  bool liked;
-  bool shared;
-  bool? followed;
-  String blogName;
-  String blogNickName;
-  String title;
-  String digest;
-  String content;
-  String firstImageUrl;
-  int duration;
-  int likeCount;
-  int shareCount;
-  int commentCount;
-  List<String> tags;
-  String bigAvaImg;
-  int? photoCount;
-  String? tagPrefix;
-  bool? showVideo;
-  bool? showArticle;
-  bool? showLikeButton;
-  String? excludeTag;
-  bool showMoreButton;
-  ShareInfo? shareInfo;
-  final Function(String tag)? onShieldTag;
-  final Function()? onShieldContent;
-  final Function()? onShieldUser;
+export 'package:loftify/Widgets/PostItem/general_post_item.dart';
 
-  GeneralPostItem({
-    this.showLikeButton = true,
-    this.showArticle = true,
-    this.showVideo = true,
-    this.tagPrefix,
-    this.photoCount,
-    this.shareInfo,
-    this.followed,
-    this.shared = false,
-    this.shareCount = 0,
-    this.commentCount = 0,
-    required this.type,
-    required this.photoLinks,
-    required this.blogId,
-    required this.postId,
-    required this.permalink,
-    required this.collectionId,
-    required this.liked,
-    required this.blogName,
-    required this.blogNickName,
-    required this.title,
-    required this.digest,
-    required this.content,
-    required this.firstImageUrl,
-    required this.duration,
-    required this.likeCount,
-    required this.tags,
-    required this.bigAvaImg,
-    this.excludeTag,
-    this.publishTime = 0,
-    this.opTime = 0,
-    this.showMoreButton = false,
-    this.onShieldTag,
-    this.onShieldContent,
-    this.onShieldUser,
-  });
+const double _postCardRadius = 12;
 
-  bool get hasTitleOrContent {
-    var item = this;
-    String title = StringUtil.clearBlank(item.title);
-    String content = StringUtil.clearBlank(HtmlUtil.extractTextFromHtml(item.content));
-    String digest = StringUtil.clearBlank(HtmlUtil.extractTextFromHtml(item.digest));
-    return (StringUtil.isNotEmpty(title) ||
-        StringUtil.isNotEmpty(content) ||
-        StringUtil.isNotEmpty(digest));
-  }
+double _safePhotoAspectRatio(PhotoLink photo) {
+  if (photo.ow <= 0 || photo.oh <= 0) return 1;
+  final ratio = photo.ow / photo.oh;
+  return ratio.isFinite && ratio > 0 ? ratio : 1;
+}
 
-  String get processedTitle {
-    var item = this;
-    String title = StringUtil.clearBlank(item.title);
-    String digest = StringUtil.clearBlank(HtmlUtil.extractTextFromHtml(item.digest));
-    String content = StringUtil.clearBlank(HtmlUtil.extractTextFromHtml(item.content));
-    String shownTitle = StringUtil.isNotEmpty(title)
-        ? title
-        : StringUtil.isNotEmpty(digest)
-            ? digest
-            : content;
-    return shownTitle;
-  }
+Widget _buildInvalidPostCard(
+  BuildContext context, {
+  double? width,
+  double? height,
+  double minHeight = 96,
+}) {
+  return ContainerItem(
+    backgroundColor: ChewieTheme.canvasColor,
+    radius: _postCardRadius,
+    roundTop: true,
+    roundBottom: true,
+    border: Border.all(color: Theme.of(context).dividerColor, width: 0.8),
+    child: SizedBox(
+      width: width,
+      height: height,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: minHeight),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.error_outline_rounded,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  size: 24,
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  appLocalizations.invalidContent,
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelSmall
+                      ?.apply(fontWeightDelta: 1),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 class WaterfallFlowPostItemWidget extends StatefulWidget {
@@ -144,6 +103,12 @@ class WaterfallFlowPostItemWidgetState
   }
 
   @override
+  void didUpdateWidget(covariant WaterfallFlowPostItemWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    item = widget.item;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return buildWaterfallFlowPostItem();
   }
@@ -154,31 +119,50 @@ class WaterfallFlowPostItemWidgetState
     late Widget main;
     switch (type) {
       case PostType.image:
-        main = buildWaterfallFlowImageItem(width: width);
+        main = item.photoLinks.isNotEmpty
+            ? buildWaterfallFlowImageItem(width: width)
+            : item.hasTitleOrContent
+                ? buildWaterfallFlowArticleItem(width: width)
+                : _buildInvalidPostCard(
+                    context,
+                    width: width,
+                    minHeight: 120,
+                  );
       case PostType.article:
         main = item.showArticle ?? true
             ? buildWaterfallFlowArticleItem(width: width)
             : emptyWidget;
       case PostType.video:
         main = item.showVideo ?? true
-            ? buildWaterfallFlowVideoItem(width: width)
+            ? item.photoLinks.isNotEmpty
+                ? buildWaterfallFlowVideoItem(width: width)
+                : item.hasTitleOrContent
+                    ? buildWaterfallFlowArticleItem(width: width)
+                    : _buildInvalidPostCard(
+                        context,
+                        width: width,
+                        minHeight: 120,
+                      )
             : emptyWidget;
       case PostType.grain:
         main = emptyWidget;
       case PostType.invalid:
-        main = emptyWidget;
+        main = _buildInvalidPostCard(
+          context,
+          width: width,
+          minHeight: 120,
+        );
     }
     return GestureDetector(
-      onTap: () {
-        GeneralPostItemBuilder.onTapItem(context, item);
-      },
+      behavior: HitTestBehavior.opaque,
+      onTap: () => GeneralPostItemBuilder.onTapItem(context, item),
       onLongPress: item.showMoreButton
           ? () {
               HapticFeedback.mediumImpact();
               GeneralPostItemBuilder.showMoreSheet(context, item);
             }
           : null,
-      child: ClickableWrapper(child:main),
+      child: ClickableWrapper(child: main),
     );
   }
 
@@ -189,6 +173,9 @@ class WaterfallFlowPostItemWidgetState
       children: [
         ContainerItem(
           backgroundColor: Theme.of(context).cardColor,
+          radius: _postCardRadius,
+          roundTop: true,
+          roundBottom: true,
           child: Container(
             padding: const EdgeInsets.all(15),
             width: width,
@@ -235,16 +222,13 @@ class WaterfallFlowPostItemWidgetState
               decoration: BoxDecoration(
                 border: Border.all(
                     color: Theme.of(context).dividerColor, width: 0.3),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(_postCardRadius),
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(_postCardRadius),
                 child: SizedBox(
-                  height: max(
-                    min(item.photoLinks[0].oh * (width / item.photoLinks[0].ow),
-                        maxHeight),
-                    minHeight,
-                  ),
+                  height: (width / _safePhotoAspectRatio(item.photoLinks[0]))
+                      .clamp(minHeight, maxHeight),
                   width: width,
                   child: ChewieItemBuilder.buildCachedImage(
                     context: context,
@@ -289,10 +273,8 @@ class WaterfallFlowPostItemWidgetState
     double maxHeight = 300,
     double minHeight = 120,
   }) {
-    var height = max(
-      min(item.photoLinks[0].oh * (width / item.photoLinks[0].ow), maxHeight),
-      minHeight,
-    );
+    final height = (width / _safePhotoAspectRatio(item.photoLinks[0]))
+        .clamp(minHeight, maxHeight);
     return Column(
       children: [
         Stack(
@@ -301,12 +283,12 @@ class WaterfallFlowPostItemWidgetState
               decoration: BoxDecoration(
                 border: Border.all(
                     color: Theme.of(context).dividerColor, width: 0.3),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(_postCardRadius),
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(_postCardRadius),
                 child: SizedBox(
-                  height: height.isNaN ? maxHeight : height,
+                  height: height,
                   width: width,
                   child: ChewieItemBuilder.buildCachedImage(
                     context: context,
@@ -472,6 +454,7 @@ class WaterfallFlowPostItemWidgetState
                         postId: item.postId,
                         blogId: item.blogId,
                       ).then((value) {
+                        if (!mounted) return value['meta']['status'];
                         setState(() {
                           if (value['meta']['status'] != 200) {
                             IToast.showTop(
@@ -481,10 +464,12 @@ class WaterfallFlowPostItemWidgetState
                             item.likeCount += item.liked ? 1 : -1;
                             item.likeCount =
                                 item.likeCount.clamp(0, 100000000000000000);
+                            item.onLikeChanged?.call(item.liked);
                           }
                         });
                         return value['meta']['status'];
                       });
+                      if (!mounted) return item.liked;
                       if (status == 4071) {
                         Utils.validSlideCaptcha(context);
                       }
@@ -527,6 +512,12 @@ class GridPostItemWidgetState extends State<GridPostItemWidget> {
   }
 
   @override
+  void didUpdateWidget(covariant GridPostItemWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    item = widget.item;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return buildGridPostItem(
       context,
@@ -545,21 +536,48 @@ class GridPostItemWidgetState extends State<GridPostItemWidget> {
     late Widget main;
     switch (item.type) {
       case PostType.image:
-        main = buildNineGridImageItem(wh: wh, activePostId: activePostId);
+        main = item.photoLinks.isNotEmpty
+            ? buildNineGridImageItem(wh: wh, activePostId: activePostId)
+            : item.hasTitleOrContent
+                ? buildNineGridArticleItem(
+                    wh: wh,
+                    activePostId: activePostId,
+                  )
+                : buildInvalidItem(wh: wh);
       case PostType.article:
         main = buildNineGridArticleItem(wh: wh, activePostId: activePostId);
       case PostType.video:
-        main = buildNineGridVideoItem(wh: wh, activePostId: activePostId);
+        main = item.photoLinks.isNotEmpty
+            ? buildNineGridVideoItem(wh: wh, activePostId: activePostId)
+            : item.hasTitleOrContent
+                ? buildNineGridArticleItem(
+                    wh: wh,
+                    activePostId: activePostId,
+                  )
+                : buildInvalidItem(wh: wh);
       case PostType.grain:
         main = emptyWidget;
       case PostType.invalid:
         main = buildInvalidItem(wh: wh);
     }
-    return GestureDetector(
-      onTap: () {
-        GeneralPostItemBuilder.onTapItem(context, item);
-      },
-      child: ClickableWrapper(child:main),
+    return Material(
+      color: item.type == PostType.article
+          ? Theme.of(context).cardColor
+          : item.type == PostType.invalid
+              ? ChewieTheme.canvasColor
+              : Colors.transparent,
+      borderRadius: BorderRadius.circular(_postCardRadius),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(_postCardRadius),
+        onTap: () => GeneralPostItemBuilder.onTapItem(context, item),
+        onLongPress: item.showMoreButton
+            ? () {
+                HapticFeedback.mediumImpact();
+                GeneralPostItemBuilder.showMoreSheet(context, item);
+              }
+            : null,
+        child: ClickableWrapper(child: main),
+      ),
     );
   }
 
@@ -579,10 +597,10 @@ class GridPostItemWidgetState extends State<GridPostItemWidget> {
                       color: Theme.of(context).primaryColor, width: 1.6)
                   : Border.all(
                       color: Theme.of(context).dividerColor, width: 0.8),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(_postCardRadius),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(_postCardRadius),
               child: SizedBox(
                 height: wh,
                 width: wh,
@@ -617,8 +635,10 @@ class GridPostItemWidgetState extends State<GridPostItemWidget> {
     required double wh,
   }) {
     return ContainerItem(
-      backgroundColor: Theme.of(context).cardColor,
-      radius: 12,
+      backgroundColor: Colors.transparent,
+      radius: _postCardRadius,
+      roundTop: true,
+      roundBottom: true,
       border: activePostId == item.postId
           ? Border.all(color: Theme.of(context).primaryColor, width: 1.6)
           : Border.all(color: Theme.of(context).dividerColor, width: 0.8),
@@ -641,7 +661,8 @@ class GridPostItemWidgetState extends State<GridPostItemWidget> {
             SizedBox(height: item.title.isNotEmpty ? 5 : 5),
             Expanded(
               child: Text(
-                StringUtil.clearBlank(HtmlUtil.extractTextFromHtml(item.digest)),
+                StringUtil.clearBlank(
+                    HtmlUtil.extractTextFromHtml(item.digest)),
                 maxLines: item.title.isNotEmpty ? 6 : 8,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall?.apply(
@@ -671,10 +692,10 @@ class GridPostItemWidgetState extends State<GridPostItemWidget> {
                       color: Theme.of(context).primaryColor, width: 1.6)
                   : Border.all(
                       color: Theme.of(context).dividerColor, width: 0.8),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(_postCardRadius),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(_postCardRadius),
               child: SizedBox(
                 height: wh,
                 width: wh,
@@ -709,34 +730,11 @@ class GridPostItemWidgetState extends State<GridPostItemWidget> {
   }
 
   Widget buildInvalidItem({required double wh}) {
-    return ContainerItem(
-      backgroundColor: ChewieTheme.canvasColor,
-      border: Border.all(color: Theme.of(context).dividerColor, width: 0.8),
-      child: Container(
-        padding: const EdgeInsets.all(5),
-        width: wh,
-        child: Column(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline_rounded,
-              color: Theme.of(context).textTheme.labelSmall?.color,
-              size: 24,
-            ),
-            const SizedBox(height: 5),
-            Text(
-              appLocalizations.invalidContent,
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context)
-                  .textTheme
-                  .labelSmall
-                  ?.apply(fontWeightDelta: 1),
-            ),
-          ],
-        ),
-      ),
+    return _buildInvalidPostCard(
+      context,
+      width: wh,
+      height: wh,
+      minHeight: wh,
     );
   }
 }
@@ -754,7 +752,7 @@ class TilePostItemWidget extends StatefulWidget {
 }
 
 class TilePostItemWidgetState extends State<TilePostItemWidget>
-    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+    with TickerProviderStateMixin {
   late GeneralPostItem item;
 
   @override
@@ -764,32 +762,56 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
   }
 
   @override
+  void didUpdateWidget(covariant TilePostItemWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    item = widget.item;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    super.build(context);
     return buildTilePostItem();
   }
 
   Widget buildTilePostItem() {
-    double width = (MediaQuery.sizeOf(context).width - 24) / 2;
     PostType type = item.type;
     late Widget main;
     switch (type) {
       case PostType.image:
-        main = buildTileImageItem();
+        main = item.photoLinks.isNotEmpty
+            ? buildTileImageItem()
+            : item.hasTitleOrContent
+                ? buildTileArticleItem()
+                : _buildInvalidPostCard(
+                    context,
+                    width: double.infinity,
+                  );
       case PostType.article:
         main = item.showArticle ?? true ? buildTileArticleItem() : emptyWidget;
       case PostType.video:
-        main = item.showVideo ?? true ? buildTileVideoItem() : emptyWidget;
+        main = item.showVideo ?? true
+            ? item.photoLinks.isNotEmpty
+                ? buildTileVideoItem()
+                : item.hasTitleOrContent
+                    ? buildTileArticleItem()
+                    : _buildInvalidPostCard(
+                        context,
+                        width: double.infinity,
+                      )
+            : emptyWidget;
       case PostType.grain:
-      case PostType.invalid:
         main = emptyWidget;
+      case PostType.invalid:
+        main = _buildInvalidPostCard(
+          context,
+          width: double.infinity,
+        );
     }
-    var res = Material(
+    final isLandscape = ResponsiveUtil.isLandscapeLayout();
+    return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
-          GeneralPostItemBuilder.onTapItem(context, item);
-        },
+        borderRadius: BorderRadius.circular(_postCardRadius),
+        onTap: () => GeneralPostItemBuilder.onTapItem(context, item),
         onLongPress: item.showMoreButton
             ? () {
                 HapticFeedback.mediumImpact();
@@ -797,38 +819,26 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
               }
             : null,
         child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: Theme.of(context).dividerColor,
-                width: 0.3,
-              ),
-            ),
+          padding: EdgeInsets.only(
+            left: 12,
+            right: 12,
+            top: !isLandscape && widget.isFirst ? 0 : 12,
+            bottom: isLandscape ? 12 : 0,
           ),
+          decoration: isLandscape
+              ? BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                      width: 0.3,
+                    ),
+                  ),
+                )
+              : null,
           child: main,
         ),
       ),
     );
-    return ResponsiveUtil.isLandscapeLayout()
-        ? res
-        : GestureDetector(
-            onTap: () {
-              GeneralPostItemBuilder.onTapItem(context, item);
-            },
-            onLongPress: item.showMoreButton
-                ? () {
-                    HapticFeedback.mediumImpact();
-                    GeneralPostItemBuilder.showMoreSheet(context, item);
-                  }
-                : null,
-            child: Container(
-              color: Colors.transparent,
-              padding: EdgeInsets.only(
-                  left: 12, right: 12, top: widget.isFirst ? 0 : 12),
-              child: main,
-            ),
-          );
   }
 
   Widget buildTileShareRow() {
@@ -955,7 +965,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
     );
   }
 
-  _buildMoreButtons() {
+  FlutterContextMenu _buildMoreButtons() {
     return FlutterContextMenu(
       entries: [
         FlutterContextMenuItem(
@@ -1023,6 +1033,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
         if (content.isNotEmpty)
           CustomHtmlWidget(
             content: content,
+            selectable: false,
             style: Theme.of(context).textTheme.bodyMedium,
             // linkBold: false,
             // selectable: false,
@@ -1060,7 +1071,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
 
   Widget buildTileImageItem() {
     var grid = ImageGrid(
-      ratios: item.photoLinks.map((e) => e.ow / e.oh).toList(),
+      ratios: item.photoLinks.map(_safePhotoAspectRatio).toList(),
       itemCount: item.photoLinks.length,
       itemBuilder: (BuildContext context, int index, BorderRadius radius) {
         radius =
@@ -1081,8 +1092,11 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
                     showClose: false,
                     fullScreen: true,
                     useFade: true,
+                    opaque: false,
                     HeroPhotoViewScreen(
-                      imageUrls: _getImageIllusts(),
+                      imageUrls: _getImageIllusts()
+                          .map((illust) => illust.url)
+                          .toList(),
                       initIndex: index,
                       tagPrefix: "TilePost",
                       useMainColor: true,
@@ -1115,7 +1129,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
             ],
           ),
         );
-        double ratio = item.photoLinks[index].ow / item.photoLinks[index].oh;
+        double ratio = _safePhotoAspectRatio(item.photoLinks[index]);
         ratio = ratio.clamp(0.8, 1.6);
         bool isSingle = item.photoLinks.length == 1;
         return Container(
@@ -1165,7 +1179,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
     double maxHeight = 300,
     double minHeight = 120,
   }) {
-    double ratio = item.photoLinks[0].ow / item.photoLinks[0].oh;
+    double ratio = _safePhotoAspectRatio(item.photoLinks[0]);
     ratio = ratio.clamp(0.8, 1.6);
     return Column(
       children: [
@@ -1177,10 +1191,10 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
               decoration: BoxDecoration(
                 border: Border.all(
                     color: Theme.of(context).dividerColor, width: 0.3),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(_postCardRadius),
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(_postCardRadius),
                 child: AspectRatio(
                   aspectRatio: ratio,
                   child: ChewieItemBuilder.buildCachedImage(
@@ -1304,6 +1318,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
                   PostDetailScreen(
                     generalPostItem: item,
                     isArticle: item.type == PostType.article,
+                    sequenceSource: item.sequenceSource,
                   ),
                 );
               },
@@ -1326,66 +1341,64 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
     );
   }
 
-  _handleLike() async {
+  Future<void> _handleLike() async {
     HapticFeedback.mediumImpact();
-    await PostApi.likeOrUnLike(
+    final value = await PostApi.likeOrUnLike(
       isLike: !item.liked,
       postId: item.postId,
       blogId: item.blogId,
-    ).then((value) {
-      if (value['meta']['status'] != 200) {
-        if (StringUtil.isNotEmpty(value['meta']['desc']) &&
-            StringUtil.isNotEmpty(value['meta']['msg'])) {
-          IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-        }
-        if (value['meta']['status'] == 4071) {
-          Utils.validSlideCaptcha(context);
-        }
-      } else {
-        item.liked = !item.liked;
-        if (item.liked != true) {
-          IToast.showTop(appLocalizations.unlike);
-        }
-        item.likeCount += item.liked ? 1 : -1;
-        item.likeCount = item.likeCount.clamp(0, 100000000000000000);
+    );
+    if (!mounted) return;
+    if (value['meta']['status'] != 200) {
+      if (StringUtil.isNotEmpty(value['meta']['desc']) &&
+          StringUtil.isNotEmpty(value['meta']['msg'])) {
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
       }
-      setState(() {});
-    });
+      if (value['meta']['status'] == 4071) {
+        Utils.validSlideCaptcha(context);
+      }
+    } else {
+      item.liked = !item.liked;
+      if (item.liked != true) {
+        IToast.showTop(appLocalizations.unlike);
+      }
+      item.likeCount += item.liked ? 1 : -1;
+      item.likeCount = item.likeCount.clamp(0, 100000000000000000);
+      item.onLikeChanged?.call(item.liked);
+    }
+    setState(() {});
   }
 
-  _handleRecommend() async {
+  Future<void> _handleRecommend() async {
     HapticFeedback.mediumImpact();
-    await PostApi.shareOrUnShare(
+    final value = await PostApi.shareOrUnShare(
       isShare: !item.shared,
       postId: item.postId,
       blogId: item.blogId,
-    ).then((value) {
-      if (value['meta']['status'] != 200) {
-        if (StringUtil.isNotEmpty(value['meta']['desc']) &&
-            StringUtil.isNotEmpty(value['meta']['msg'])) {
-          IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-        }
-        if (value['meta']['status'] == 4071) {
-          Utils.validSlideCaptcha(context);
-        }
-      } else {
-        item.shared = !item.shared;
-        if (item.shared) {
-          IToast.showTop(appLocalizations.unrecommend);
-        }
-        item.shareCount += item.shared ? 1 : -1;
-        item.shareCount = item.shareCount.clamp(0, 100000000000000000);
+    );
+    if (!mounted) return;
+    if (value['meta']['status'] != 200) {
+      if (StringUtil.isNotEmpty(value['meta']['desc']) &&
+          StringUtil.isNotEmpty(value['meta']['msg'])) {
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
       }
-      setState(() {});
-    });
+      if (value['meta']['status'] == 4071) {
+        Utils.validSlideCaptcha(context);
+      }
+    } else {
+      item.shared = !item.shared;
+      if (item.shared) {
+        IToast.showTop(appLocalizations.unrecommend);
+      }
+      item.shareCount += item.shared ? 1 : -1;
+      item.shareCount = item.shareCount.clamp(0, 100000000000000000);
+    }
+    setState(() {});
   }
-
-  @override
-  bool get wantKeepAlive => true;
 }
 
 class GeneralPostItemBuilder {
-  static onTapItem(BuildContext context, GeneralPostItem item) {
+  static void onTapItem(BuildContext context, GeneralPostItem item) {
     if (item.type == PostType.invalid) {
       IToast.showTop(appLocalizations.invalidContent);
     } else if (item.type == PostType.video) {
@@ -1403,34 +1416,32 @@ class GeneralPostItemBuilder {
         PostDetailScreen(
           generalPostItem: item,
           isArticle: item.type == PostType.article,
+          sequenceSource: item.sequenceSource,
         ),
       );
     }
   }
 
-  static showMoreSheet(BuildContext context, GeneralPostItem item) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return BottomSheetWrapperWidget(
-          preferMinWidth: 400,
-          child: ShieldBottomSheet(
-            tags: item.tags,
-            onShieldContent: () {
-              item.onShieldContent?.call();
-              Navigator.pop(context);
-            },
-            onShieldUser: () {
-              item.onShieldUser?.call();
-              Navigator.pop(context);
-            },
-            onShieldTag: (tag) {
-              item.onShieldTag?.call(tag);
-              Navigator.pop(context);
-            },
-          ),
-        );
-      },
+  static void showMoreSheet(BuildContext context, GeneralPostItem item) {
+    BottomSheetBuilder.showBottomSheet(
+      context,
+      (sheetContext) => ShieldBottomSheet(
+        tags: item.tags,
+        onShieldContent: () {
+          item.onShieldContent?.call();
+          Navigator.pop(sheetContext);
+        },
+        onShieldUser: () {
+          item.onShieldUser?.call();
+          Navigator.pop(sheetContext);
+        },
+        onShieldTag: (tag) {
+          item.onShieldTag?.call(tag);
+          Navigator.pop(sheetContext);
+        },
+      ),
+      responsive: true,
+      preferMinWidth: 400,
     );
   }
 }

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:video_player/video_player.dart';
 
@@ -10,123 +10,163 @@ typedef LoadMoreVideo = Future<List<CustomVideoController>> Function(
   List<CustomVideoController> list,
 );
 
-/// TikTokVideoListController是一系列视频的控制器，内部管理了视频控制器数组
-/// 提供了预加载/释放/加载更多功能
+enum VideoLoadState { idle, initializing, ready, failed }
+
+/// Coordinates the short-video feed. Only the visible item is allowed to play;
+/// nearby items are prepared and distant items release their native decoders.
 class VideoListController extends ChangeNotifier {
   VideoListController({
     this.loadMoreCount = 1,
-    this.preloadCount = 2,
-
-    /// 设置为0后，任何不在画面内的视频都会被释放
-    /// 若不设置为0，安卓将会无法加载第三个开始的视频
+    this.preloadCount = 1,
     this.disposeCount = 0,
   });
 
-  /// 到第几个触发预加载，例如：1:最后一个，2:倒数第二个
   final int loadMoreCount;
-
-  /// 预加载多少个视频
   final int preloadCount;
-
-  /// 超出多少个，就释放视频
   final int disposeCount;
 
-  /// 提供视频的builder
+  final ValueNotifier<int> index = ValueNotifier<int>(0);
+  final List<CustomVideoController> playerList = [];
+
   LoadMoreVideo? _videoProvider;
-
-  loadIndex(BuildContext context, int target, {bool reload = false}) {
-    if (!reload) {
-      if (index.value == target) return;
-    }
-    var oldIndex = index.value;
-    var newIndex = target;
-
-    if (!(oldIndex == 0 && newIndex == 0)) {
-      playerOfIndex(oldIndex)?.controller.seekTo(Duration.zero);
-      // playerOfIndex(oldIndex)?.controller.addListener(_didUpdateValue);
-      // playerOfIndex(oldIndex)?.showPauseIcon.addListener(_didUpdateValue);
-      playerOfIndex(oldIndex)?.pause();
-    }
-    playerOfIndex(newIndex)?.controller.addListener(_didUpdateValue);
-    playerOfIndex(newIndex)?.showPauseIcon.addListener(_didUpdateValue);
-    playerOfIndex(newIndex)?.play();
-    for (var i = 0; i < playerList.length; i++) {
-      /// 需要释放[disposeCount]之前的视频
-      /// i < newIndex - disposeCount 向下滑动时释放视频
-      /// i > newIndex + disposeCount 向上滑动，同时避免disposeCount设置为0时失去视频预加载功能
-      if (i < newIndex - disposeCount || i > newIndex + max(disposeCount, 2)) {
-        playerOfIndex(i)?.controller.removeListener(_didUpdateValue);
-        playerOfIndex(i)?.showPauseIcon.removeListener(_didUpdateValue);
-        playerOfIndex(i)?.dispose();
-        continue;
-      }
-      if (i > newIndex && i < newIndex + preloadCount) {
-        playerOfIndex(i)?.init();
-        continue;
-      }
-    }
-    if (playerList.length - newIndex <= loadMoreCount + 1) {
-      _videoProvider?.call(newIndex, playerList).then(
-        (list) async {
-          playerList.addAll(list);
-          notifyListeners();
-        },
-      );
-    }
-
-    index.value = target;
-  }
-
-  _didUpdateValue() {
-    notifyListeners();
-  }
-
-  CustomVideoController? playerOfIndex(int index) {
-    if (index < 0 || index > playerList.length - 1) {
-      return null;
-    }
-    return playerList[index];
-  }
+  CustomVideoController? _observedPlayer;
+  bool _loadingMore = false;
+  bool _canLoadMore = true;
+  bool _closed = false;
+  int _loadGeneration = 0;
 
   int get videoCount => playerList.length;
 
-  init({
-    required BuildContext context,
-    required PageController pageController,
-    required List<CustomVideoController> initialList,
-    required LoadMoreVideo videoProvider,
-    bool loop = false,
-  }) async {
-    playerList.addAll(initialList);
-    _videoProvider = videoProvider;
-    pageController.addListener(() {
-      var p = pageController.page!;
-      if (p % 1 == 0) {
-        loadIndex(context, p ~/ 1);
-      }
-    });
-    loadIndex(context, 0, reload: true);
-    notifyListeners();
+  CustomVideoController? get currentPlayerOrNull => playerOfIndex(index.value);
+
+  CustomVideoController get currentPlayer => currentPlayerOrNull!;
+
+  CustomVideoController? playerOfIndex(int target) {
+    if (target < 0 || target >= playerList.length) return null;
+    return playerList[target];
   }
 
-  /// 目前的视频序号
-  ValueNotifier<int> index = ValueNotifier<int>(0);
+  Future<void> init({
+    required List<CustomVideoController> initialList,
+    required LoadMoreVideo videoProvider,
+  }) async {
+    if (_closed) return;
+    _videoProvider = videoProvider;
+    _canLoadMore = true;
+    playerList.addAll(initialList);
+    notifyListeners();
+    if (playerList.isNotEmpty) {
+      await loadIndex(0, reload: true);
+    }
+  }
 
-  /// 视频列表
-  List<CustomVideoController> playerList = [];
+  Future<void> loadIndex(int target, {bool reload = false}) async {
+    if (_closed || playerList.isEmpty) return;
+    final safeTarget = target.clamp(0, playerList.length - 1);
+    if (!reload && index.value == safeTarget) return;
 
-  ///
-  CustomVideoController get currentPlayer => playerList[index.value];
+    final generation = ++_loadGeneration;
+    final oldPlayer = currentPlayerOrNull;
+    final newPlayer = playerOfIndex(safeTarget);
+    index.value = safeTarget;
+    _observe(newPlayer);
+    notifyListeners();
+
+    if (!identical(oldPlayer, newPlayer)) {
+      await oldPlayer?.pause();
+      await oldPlayer?.seekToStart();
+    }
+    if (_closed || generation != _loadGeneration || newPlayer == null) return;
+
+    await newPlayer.play();
+    if (_closed || generation != _loadGeneration) {
+      await newPlayer.pause();
+      return;
+    }
+
+    unawaited(_releaseAndPreloadAround(safeTarget, generation));
+    _loadMoreIfNeeded(safeTarget);
+  }
+
+  Future<void> _releaseAndPreloadAround(int active, int generation) async {
+    for (var i = 0; i < playerList.length; i++) {
+      if (_closed || generation != _loadGeneration) return;
+      final distance = (i - active).abs();
+      if (distance > max(disposeCount, preloadCount)) {
+        await playerList[i].release();
+      } else if (i != active && distance <= preloadCount) {
+        await playerList[i].init();
+      }
+    }
+  }
+
+  void _loadMoreIfNeeded(int active) {
+    if (_closed || _loadingMore || !_canLoadMore || _videoProvider == null) {
+      return;
+    }
+    if (playerList.length - active > loadMoreCount + 1) return;
+
+    _loadingMore = true;
+    unawaited(() async {
+      try {
+        final additions = await _videoProvider!(active, playerList);
+        if (_closed) return;
+        final existingIds = playerList
+            .map((player) => player.videoInfo?.itemId)
+            .whereType<int>()
+            .toSet();
+        final unique = additions.where((player) {
+          final itemId = player.videoInfo?.itemId;
+          return itemId == null || existingIds.add(itemId);
+        }).toList();
+        if (unique.isEmpty) {
+          _canLoadMore = false;
+          for (final player in additions) {
+            await player.close();
+          }
+        } else {
+          playerList.addAll(unique);
+          notifyListeners();
+        }
+      } catch (error) {
+        debugPrint('Failed to load more videos: $error');
+      } finally {
+        _loadingMore = false;
+      }
+    }());
+  }
+
+  void _observe(CustomVideoController? player) {
+    if (identical(_observedPlayer, player)) return;
+    _observedPlayer?.revision.removeListener(_didUpdateValue);
+    _observedPlayer = player;
+    _observedPlayer?.revision.addListener(_didUpdateValue);
+  }
+
+  void _didUpdateValue() {
+    if (!_closed) notifyListeners();
+  }
+
+  Future<void> pauseCurrent({bool showPauseIcon = false}) async {
+    await currentPlayerOrNull?.pause(showPauseIcon: showPauseIcon);
+  }
+
+  Future<void> resumeCurrent() async {
+    await currentPlayerOrNull?.play();
+  }
 
   @override
-  Future<void> dispose() async {
-    for (var player in playerList) {
-      player.controller.removeListener(_didUpdateValue);
-      player.showPauseIcon.removeListener(_didUpdateValue);
-      player.showPauseIcon.dispose();
-      await player.dispose();
+  void dispose() {
+    if (_closed) return;
+    _closed = true;
+    _loadGeneration++;
+    _observedPlayer?.revision.removeListener(_didUpdateValue);
+    _observedPlayer = null;
+    for (final player in playerList) {
+      unawaited(player.close());
     }
-    playerList = [];
+    playerList.clear();
+    index.dispose();
     super.dispose();
   }
 }
@@ -134,122 +174,238 @@ class VideoListController extends ChangeNotifier {
 typedef ControllerSetter<T> = Future<void> Function(T controller);
 typedef ControllerBuilder<T> = T Function();
 
-/// 抽象类，作为视频控制器必须实现这些方法
 abstract class BaseVideoController<T> {
-  /// 获取当前的控制器实例
-  T? get controller;
+  T? get controllerOrNull;
+  ValueNotifier<int> get revision;
+  VideoLoadState get loadState;
+  bool get prepared;
+  Object? get lastError;
 
-  /// 是否显示暂停按钮
-  ValueNotifier<bool> get showPauseIcon;
-
-  /// 加载视频，在init后，应当开始下载视频内容
   Future<void> init({ControllerSetter<T>? afterInit});
-
-  /// 视频销毁，在dispose后，应当释放任何内存资源
-  Future<void> dispose();
-
-  /// 播放
+  Future<void> retry({bool autoplay = false});
+  Future<void> release();
+  Future<void> close();
   Future<void> play();
-
-  /// 暂停
   Future<void> pause({bool showPauseIcon = false});
 }
 
-/// 异步方法并发锁
-Completer<void>? _syncLock;
-
 class CustomVideoController extends BaseVideoController<VideoPlayerController> {
-  VideoPlayerController? _controller;
-  final ValueNotifier<bool> _showPauseIcon = ValueNotifier<bool>(false);
-
-  final PostListItem? videoInfo;
-
-  final ControllerBuilder<VideoPlayerController> _builder;
-  final ControllerSetter<VideoPlayerController>? _afterInit;
-
   CustomVideoController({
     this.videoInfo,
     required ControllerBuilder<VideoPlayerController> builder,
     ControllerSetter<VideoPlayerController>? afterInit,
+    bool looping = true,
+    double playbackSpeed = 1,
   })  : _builder = builder,
-        _afterInit = afterInit;
+        _afterInit = afterInit,
+        _looping = looping,
+        _playbackSpeed = playbackSpeed;
 
-  @override
-  VideoPlayerController get controller {
-    _controller ??= _builder.call();
-    return _controller!;
-  }
+  final PostListItem? videoInfo;
+  final ControllerBuilder<VideoPlayerController> _builder;
+  final ControllerSetter<VideoPlayerController>? _afterInit;
 
-  bool get isDispose => _disposeLock != null;
-
-  bool get prepared => _prepared;
+  final ValueNotifier<int> _revision = ValueNotifier<int>(0);
+  Future<void> _operationLock = Future<void>.value();
+  VideoPlayerController? _controller;
+  VideoLoadState _loadState = VideoLoadState.idle;
+  Object? _lastError;
   bool _prepared = false;
-
-  Completer<void>? _disposeLock;
-
-  /// 防止异步方法并发
-  Future<void> _syncCall(Future Function()? fn) async {
-    // 设置同步等待
-    var lastCompleter = _syncLock;
-    var completer = Completer<void>();
-    _syncLock = completer;
-    // 等待其他同步任务完成
-    await lastCompleter?.future;
-    // 主任务
-    await fn?.call();
-    // 结束
-    completer.complete();
-  }
+  bool _showPauseIcon = false;
+  bool _closed = false;
+  bool _looping;
+  double _playbackSpeed;
+  int _generation = 0;
 
   @override
-  Future<void> dispose() async {
-    if (!prepared) return;
-    _prepared = false;
-    await controller.dispose();
-    _controller = null;
-    _disposeLock = Completer<void>();
+  VideoPlayerController? get controllerOrNull => _controller;
+
+  @override
+  ValueNotifier<int> get revision => _revision;
+
+  @override
+  VideoLoadState get loadState => _loadState;
+
+  @override
+  bool get prepared => _prepared;
+
+  @override
+  Object? get lastError => _lastError;
+
+  bool get showPauseIcon => _showPauseIcon;
+
+  bool get isPlaying => _controller?.value.isPlaying ?? false;
+
+  bool get isMuted => (_controller?.value.volume ?? 1) == 0;
+
+  bool get looping => _looping;
+
+  double get playbackSpeed => _playbackSpeed;
+
+  Future<void> _runExclusive(Future<void> Function() operation) {
+    final result = _operationLock.then((_) => operation());
+    _operationLock = result.catchError((Object _) {});
+    return result;
   }
 
   @override
   Future<void> init({
     ControllerSetter<VideoPlayerController>? afterInit,
-  }) async {
-    if (prepared) return;
-    await _syncCall(() async {
-      await controller.initialize();
-      await controller.setLooping(true);
-      afterInit ??= _afterInit;
-      await afterInit?.call(controller);
-      _prepared = true;
+  }) {
+    return _runExclusive(() async {
+      if (_closed || _prepared || _loadState == VideoLoadState.initializing) {
+        return;
+      }
+      final generation = ++_generation;
+      _setLoadState(VideoLoadState.initializing);
+      _lastError = null;
+      final controller = _builder();
+      _controller = controller;
+      controller.addListener(_handleControllerValue);
+      try {
+        await controller.initialize();
+        if (_closed || generation != _generation) {
+          await _disposeController(controller);
+          return;
+        }
+        await controller.setLooping(_looping);
+        await controller.setPlaybackSpeed(_playbackSpeed);
+        await (afterInit ?? _afterInit)?.call(controller);
+        if (_closed || generation != _generation) {
+          await _disposeController(controller);
+          return;
+        }
+        _prepared = true;
+        _setLoadState(VideoLoadState.ready);
+      } catch (error) {
+        _lastError = error;
+        _prepared = false;
+        _setLoadState(VideoLoadState.failed);
+        debugPrint('Failed to initialize video: $error');
+        await _disposeController(controller);
+      }
     });
-    if (_disposeLock != null) {
-      _disposeLock?.complete();
-      _disposeLock = null;
-    }
   }
 
   @override
-  Future<void> pause({bool showPauseIcon = false}) async {
+  Future<void> retry({bool autoplay = false}) async {
+    await release();
     await init();
-    if (!prepared) return;
-    if (_disposeLock != null) {
-      await _disposeLock?.future;
-    }
-    await controller.pause();
-    _showPauseIcon.value = true;
+    if (autoplay && prepared) await play();
   }
 
   @override
   Future<void> play() async {
     await init();
-    if (!prepared) return;
-    if (_disposeLock != null) {
-      await _disposeLock?.future;
-    }
-    await controller.play();
-    _showPauseIcon.value = false;
+    return _runExclusive(() async {
+      final controller = _controller;
+      if (_closed || !_prepared || controller == null) return;
+      await controller.play();
+      _showPauseIcon = false;
+      _notifyListeners();
+    });
   }
 
   @override
-  ValueNotifier<bool> get showPauseIcon => _showPauseIcon;
+  Future<void> pause({bool showPauseIcon = false}) {
+    return _runExclusive(() async {
+      final controller = _controller;
+      if (_closed || !_prepared || controller == null) return;
+      await controller.pause();
+      _showPauseIcon = showPauseIcon;
+      _notifyListeners();
+    });
+  }
+
+  Future<void> seekToStart() async {
+    return _runExclusive(() async {
+      final controller = _controller;
+      if (_closed || !_prepared || controller == null) return;
+      await controller.seekTo(Duration.zero);
+    });
+  }
+
+  Future<void> toggleMute() async {
+    return _runExclusive(() async {
+      final controller = _controller;
+      if (_closed || !_prepared || controller == null) return;
+      await controller.setVolume(isMuted ? 1 : 0);
+      _notifyListeners();
+    });
+  }
+
+  Future<void> setLooping(bool looping) {
+    _looping = looping;
+    return _runExclusive(() async {
+      final controller = _controller;
+      if (_closed || !_prepared || controller == null) return;
+      await controller.setLooping(looping);
+      _notifyListeners();
+    });
+  }
+
+  Future<void> setPlaybackSpeed(double speed) {
+    _playbackSpeed = speed.clamp(0.5, 2).toDouble();
+    return _runExclusive(() async {
+      final controller = _controller;
+      if (_closed || !_prepared || controller == null) return;
+      await controller.setPlaybackSpeed(_playbackSpeed);
+      _notifyListeners();
+    });
+  }
+
+  @override
+  Future<void> release() {
+    return _runExclusive(() async {
+      _generation++;
+      final controller = _controller;
+      _controller = null;
+      _prepared = false;
+      _showPauseIcon = false;
+      _lastError = null;
+      if (!_closed) _setLoadState(VideoLoadState.idle);
+      if (controller != null) await _disposeController(controller);
+    });
+  }
+
+  Future<void> _disposeController(VideoPlayerController controller) async {
+    controller.removeListener(_handleControllerValue);
+    if (identical(_controller, controller)) _controller = null;
+    try {
+      await controller.dispose();
+    } catch (error) {
+      debugPrint('Failed to dispose video controller: $error');
+    }
+  }
+
+  void _handleControllerValue() {
+    final controller = _controller;
+    if (_closed || controller == null) return;
+    if (controller.value.hasError) {
+      _lastError = controller.value.errorDescription;
+      _prepared = false;
+      _setLoadState(VideoLoadState.failed);
+      return;
+    }
+    _notifyListeners();
+  }
+
+  void _setLoadState(VideoLoadState state) {
+    if (_loadState == state) return;
+    _loadState = state;
+    _notifyListeners();
+  }
+
+  void _notifyListeners() {
+    if (!_closed) _revision.value++;
+  }
+
+  @override
+  Future<void> close() async {
+    if (_closed) return;
+    await release();
+    _closed = true;
+    _generation++;
+    _revision.dispose();
+  }
 }

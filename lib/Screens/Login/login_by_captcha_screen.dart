@@ -15,6 +15,7 @@ import '../../Models/simple_response.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/request_util.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Item/login_input_item.dart';
 import '../../l10n/l10n.dart';
 
 class LoginByCaptchaScreen extends StatefulWidget {
@@ -33,6 +34,10 @@ class _LoginByCaptchaScreenState extends BaseDynamicState<LoginByCaptchaScreen>
   late TextEditingController _mobileController;
   late TextEditingController _captchaController;
   late TextEditingController _captchaCodeController;
+  final FocusNode _mobileFocusNode = FocusNode();
+  final FocusNode _photoCaptchaFocusNode = FocusNode();
+  final FocusNode _captchaCodeFocusNode = FocusNode();
+  Timer? _captchaTimer;
   dynamic _photoCaptcha;
   bool _isFetchingCaptchaCode = false;
   String _captchaText = appLocalizations.getCaptcha;
@@ -48,8 +53,22 @@ class _LoginByCaptchaScreenState extends BaseDynamicState<LoginByCaptchaScreen>
     _refreshPhotoCaptcha();
   }
 
+  @override
+  void dispose() {
+    _captchaTimer?.cancel();
+    WindowManager.instance.removeListener(this);
+    _mobileController.dispose();
+    _captchaController.dispose();
+    _captchaCodeController.dispose();
+    _mobileFocusNode.dispose();
+    _photoCaptchaFocusNode.dispose();
+    _captchaCodeFocusNode.dispose();
+    super.dispose();
+  }
+
   void _refreshPhotoCaptcha() {
     LoginApi.getPhotoCaptcha().then((value) {
+      if (!mounted) return;
       setState(() {
         _photoCaptcha = value;
       });
@@ -77,7 +96,8 @@ class _LoginByCaptchaScreenState extends BaseDynamicState<LoginByCaptchaScreen>
         setState(() {
           _captchaText = appLocalizations.resendAfterSeconds(60);
         });
-        Timer.periodic(const Duration(seconds: 1), (timer) {
+        _captchaTimer?.cancel();
+        _captchaTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
           if (timer.tick == 60) {
             timer.cancel();
             if (mounted) {
@@ -91,7 +111,8 @@ class _LoginByCaptchaScreenState extends BaseDynamicState<LoginByCaptchaScreen>
           } else {
             if (mounted) {
               setState(() {
-                _captchaText = appLocalizations.resendAfterSeconds(60 - timer.tick);
+                _captchaText =
+                    appLocalizations.resendAfterSeconds(60 - timer.tick);
               });
             }
           }
@@ -102,6 +123,7 @@ class _LoginByCaptchaScreenState extends BaseDynamicState<LoginByCaptchaScreen>
   }
 
   void _login() {
+    FocusManager.instance.primaryFocus?.unfocus();
     String mobile = _mobileController.text;
     String password = _captchaCodeController.text;
     if (mobile.isEmpty || password.isEmpty) {
@@ -134,10 +156,14 @@ class _LoginByCaptchaScreenState extends BaseDynamicState<LoginByCaptchaScreen>
     return Container(
       color: Colors.transparent,
       child: Scaffold(
-        resizeToAvoidBottomInset: false,
+        resizeToAvoidBottomInset: true,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: ResponsiveAppBar(
           title: appLocalizations.loginByCaptcha,
+          showBack: !ResponsiveUtil.isLandscapeLayout(),
+          leadingIcon: Icons.close_rounded,
+          onTapBack: () => Navigator.maybeOf(context)?.maybePop(),
+          showBorder: false,
           titleLeftMargin: ResponsiveUtil.isLandscapeLayout() ? 15 : 5,
         ),
         body: Container(
@@ -149,10 +175,13 @@ class _LoginByCaptchaScreenState extends BaseDynamicState<LoginByCaptchaScreen>
                 child: ListView(
                   children: [
                     const SizedBox(height: 50),
-                    InputItem(
+                    LoginInputItem(
                       hint: appLocalizations.inputPhone,
                       textInputAction: TextInputAction.next,
                       controller: _mobileController,
+                      focusNode: _mobileFocusNode,
+                      autofillHints: const [AutofillHints.telephoneNumber],
+                      onSubmitted: (_) => _photoCaptchaFocusNode.requestFocus(),
                       tailingConfig: InputItemLeadingTailingConfig(
                         type: InputItemLeadingTailingType.clear,
                       ),
@@ -162,7 +191,7 @@ class _LoginByCaptchaScreenState extends BaseDynamicState<LoginByCaptchaScreen>
                       ),
                       keyboardType: TextInputType.number,
                     ),
-                    InputItem(
+                    LoginInputItem(
                       hint: appLocalizations.inputImageCaptcha,
                       textInputAction: TextInputAction.next,
                       leadingConfig: InputItemLeadingTailingConfig(
@@ -186,12 +215,17 @@ class _LoginByCaptchaScreenState extends BaseDynamicState<LoginByCaptchaScreen>
                             : const SizedBox(width: 80, height: 40),
                       ),
                       controller: _captchaController,
+                      focusNode: _photoCaptchaFocusNode,
+                      onSubmitted: (_) => _captchaCodeFocusNode.requestFocus(),
                       keyboardType: TextInputType.number,
                     ),
-                    InputItem(
+                    LoginInputItem(
                       hint: appLocalizations.inputCodeCaptcha,
-                      textInputAction: TextInputAction.next,
+                      textInputAction: TextInputAction.done,
                       controller: _captchaCodeController,
+                      focusNode: _captchaCodeFocusNode,
+                      autofillHints: const [AutofillHints.oneTimeCode],
+                      onSubmitted: (_) => _login(),
                       tailingConfig: InputItemLeadingTailingConfig(
                         type: InputItemLeadingTailingType.text,
                         text: _captchaText,

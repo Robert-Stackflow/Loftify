@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/user_api.dart';
 import 'package:loftify/Models/recommend_response.dart';
+import 'package:loftify/Screens/Info/nested_mixin.dart';
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:loftify/Screens/Post/grain_detail_screen.dart';
 import 'package:loftify/Utils/hive_util.dart';
@@ -8,7 +9,6 @@ import 'package:loftify/Utils/hive_util.dart';
 import '../../Utils/enums.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../l10n/l10n.dart';
-import 'nested_mixin.dart';
 
 class GrainScreen extends StatefulWidgetForNested {
   GrainScreen({
@@ -18,6 +18,8 @@ class GrainScreen extends StatefulWidgetForNested {
     this.blogId,
     this.blogName,
     super.nested = false,
+    super.refreshListenable,
+    super.refreshId = 'grain',
   }) {
     if (infoMode == InfoMode.other) {
       assert(blogName != null);
@@ -36,13 +38,15 @@ class GrainScreen extends StatefulWidgetForNested {
 }
 
 class _GrainScreenState extends BaseDynamicState<GrainScreen>
-    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+    with
+        TickerProviderStateMixin,
+        AutomaticKeepAliveClientMixin,
+        NestedRefreshSignalMixin<GrainScreen> {
   @override
   bool get wantKeepAlive => true;
   final List<GrainInfo> _grainList = [];
   bool _loading = false;
   int _total = 0;
-  int _offset = 0;
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
   InitPhase _initPhase = InitPhase.haveNotConnected;
@@ -50,14 +54,27 @@ class _GrainScreenState extends BaseDynamicState<GrainScreen>
   @override
   void initState() {
     super.initState();
+    bindNestedRefreshSignal(() {
+      _refreshController.callRefresh(
+        overOffset: 28,
+        duration: const Duration(milliseconds: 140),
+      );
+    });
     if (widget.nested) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Future.delayed(const Duration(milliseconds: 300), () => _onRefresh());
+        if (mounted) _onRefresh();
       });
     } else {
       _initPhase = InitPhase.successful;
       setState(() {});
     }
+  }
+
+  @override
+  void dispose() {
+    unbindNestedRefreshSignal();
+    _refreshController.dispose();
+    super.dispose();
   }
 
   _fetchGrain({bool refresh = false}) async {
@@ -80,7 +97,6 @@ class _GrainScreenState extends BaseDynamicState<GrainScreen>
             return IndicatorResult.fail;
           } else {
             _total = value['data']['total'];
-            _offset = value['data']['offset'];
             List<dynamic> t = value['data']['grains'];
             if (refresh) _grainList.clear();
             for (var e in t) {
@@ -90,8 +106,8 @@ class _GrainScreenState extends BaseDynamicState<GrainScreen>
             }
             if (mounted) setState(() {});
             _initPhase = InitPhase.successful;
-            if ((t.isEmpty || _grainList.length > _total) && !refresh) {
-              _noMore = true;
+            _noMore = t.isEmpty || _grainList.length >= _total;
+            if (_noMore && !refresh) {
               return IndicatorResult.noMore;
             } else {
               return IndicatorResult.success;
@@ -140,15 +156,20 @@ class _GrainScreenState extends BaseDynamicState<GrainScreen>
         );
       case InitPhase.successful:
         return EasyRefresh.builder(
-          refreshOnStart: true,
+          header: widget.nested ? buildNestedRefreshHeader() : null,
+          refreshOnStart: !widget.nested,
           controller: _refreshController,
           onRefresh: _onRefresh,
-          onLoad: _onLoad,
+          onLoad: _noMore ? null : _onLoad,
           triggerAxis: Axis.vertical,
           childBuilder: (context, physics) {
             return _grainList.isNotEmpty
                 ? _buildMainBody(physics)
-                : EmptyPlaceholder(text: appLocalizations.noGrain, physics: physics);
+                : EmptyPlaceholder(
+                    text: appLocalizations.noGrain,
+                    physics: physics,
+                    shrinkWrap: false,
+                  );
           },
         );
       default:
@@ -157,28 +178,25 @@ class _GrainScreenState extends BaseDynamicState<GrainScreen>
   }
 
   Widget _buildMainBody(ScrollPhysics physics) {
-    return LoadMoreNotification(
-      noMore: _noMore,
-      onLoad: _onLoad,
-      child: WaterfallFlow.extent(
-        maxCrossAxisExtent: 560,
-        physics: physics,
-        padding: EdgeInsets.zero,
-        children: List.generate(
-          _grainList.length,
-          (index) => _buildGrainRow(
-            _grainList[index],
-            verticalPadding: 8,
-            onTap: () {
-              RouteUtil.pushPanelCupertinoRoute(
-                context,
-                GrainDetailScreen(
-                  grainId: _grainList[index].id,
-                  blogId: _grainList[index].userId,
-                ),
-              );
-            },
-          ),
+    return WaterfallFlow.extent(
+      controller: widget.scrollController,
+      maxCrossAxisExtent: 560,
+      physics: physics,
+      padding: EdgeInsets.zero,
+      children: List.generate(
+        _grainList.length,
+        (index) => _buildGrainRow(
+          _grainList[index],
+          verticalPadding: 8,
+          onTap: () {
+            RouteUtil.pushPanelCupertinoRoute(
+              context,
+              GrainDetailScreen(
+                grainId: _grainList[index].id,
+                blogId: _grainList[index].userId,
+              ),
+            );
+          },
         ),
       ),
     );

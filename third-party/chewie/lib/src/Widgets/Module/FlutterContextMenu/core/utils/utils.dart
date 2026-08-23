@@ -15,8 +15,18 @@ import '../utils/extensions.dart';
   AlignmentGeometry spawnAlignment,
   bool isSubmenu,
 ) {
-  final screenSize = MediaQuery.of(context).size;
-  final safeScreenRect = (Offset.zero & screenSize).deflate(8.0);
+  final mediaQuery = MediaQuery.of(context);
+  final screenSize = mediaQuery.size;
+  final obscuredBottom = max(
+    mediaQuery.padding.bottom,
+    mediaQuery.viewInsets.bottom,
+  );
+  final safeScreenRect = Rect.fromLTRB(
+    mediaQuery.padding.left + 8,
+    mediaQuery.padding.top + 8,
+    screenSize.width - mediaQuery.padding.right - 8,
+    screenSize.height - obscuredBottom - 8,
+  );
   final menuRect = context.getWidgetBounds()!;
   AlignmentGeometry nextSpawnAlignment = spawnAlignment;
 
@@ -25,9 +35,11 @@ import '../utils/extensions.dart';
   double x = menuRect.left;
   double y = menuRect.top;
 
-  bool isWidthExceed() => x + menuRect.width > screenSize.width || x < 0;
+  bool isWidthExceed() =>
+      x + menuRect.width > safeScreenRect.right || x < safeScreenRect.left;
 
-  bool isHeightExceed() => y + menuRect.height > screenSize.height || y < 0;
+  bool isHeightExceed() =>
+      y + menuRect.height > safeScreenRect.bottom || y < safeScreenRect.top;
 
   Rect currentRect() => Offset(x, y) & menuRect.size;
 
@@ -88,7 +100,14 @@ import '../utils/extensions.dart';
         }
       }
     } else if (!isSubmenu) {
-      x = max(safeScreenRect.left, menuRect.left - menuRect.width);
+      final maxLeft = max(
+        safeScreenRect.left,
+        safeScreenRect.right - menuRect.width,
+      );
+      x = (menuRect.left - menuRect.width).clamp(
+        safeScreenRect.left,
+        maxLeft,
+      );
     }
   }
 
@@ -97,7 +116,14 @@ import '../utils/extensions.dart';
       y = max(safeScreenRect.top,
           safeScreenRect.bottom - menuRect.height - menu.padding.top);
     } else if (!isSubmenu) {
-      y = max(safeScreenRect.top, menuRect.top - menuRect.height);
+      final maxTop = max(
+        safeScreenRect.top,
+        safeScreenRect.bottom - menuRect.height,
+      );
+      y = (menuRect.top - menuRect.height).clamp(
+        safeScreenRect.top,
+        maxTop,
+      );
     }
   }
 

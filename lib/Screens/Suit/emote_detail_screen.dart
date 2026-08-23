@@ -1,4 +1,3 @@
-
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/dress_api.dart';
@@ -36,8 +35,8 @@ class _EmoteDetailScreenState extends BaseDynamicState<EmoteDetailScreen>
   @override
   void initState() {
     super.initState();
-    currentAvatarImg =
-        ChewieHiveUtil.getString(HiveUtil.customAvatarBoxKey, defaultValue: null);
+    currentAvatarImg = ChewieHiveUtil.getString(HiveUtil.customAvatarBoxKey,
+        defaultValue: null);
     setState(() {});
   }
 
@@ -94,7 +93,7 @@ class _EmoteDetailScreenState extends BaseDynamicState<EmoteDetailScreen>
   Widget _buildBody(ScrollPhysics physics) {
     return WaterfallFlow.builder(
       physics: physics,
-      cacheExtent: 9999,
+      cacheExtent: MediaQuery.sizeOf(context).height,
       padding: const EdgeInsets.all(10),
       itemCount: _giftEmote?.emoteList.length ?? 0,
       gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
@@ -141,12 +140,14 @@ class _EmoteDetailScreenState extends BaseDynamicState<EmoteDetailScreen>
               Expanded(
                 flex: 2,
                 child: RoundIconTextButton(
-                    text: appLocalizations.download, onPressed: () async {
-                  CustomLoadingDialog.showLoading(title: appLocalizations.downloading);
-                  String url = item.url;
-                  await FileUtil.saveImage(context, url);
-                  CustomLoadingDialog.dismissLoading();
-                }),
+                    text: appLocalizations.download,
+                    onPressed: () async {
+                      CustomLoadingDialog.showLoading(
+                          title: appLocalizations.downloading);
+                      String url = item.url;
+                      await FileUtil.saveImage(context, url);
+                      CustomLoadingDialog.dismissLoading();
+                    }),
               ),
             ],
           ),

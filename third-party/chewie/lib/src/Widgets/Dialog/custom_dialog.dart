@@ -29,7 +29,7 @@ class CustomInfoDialog {
         barrierColor: ChewieTheme.barrierColor,
         barrierLabel: "",
         barrierDismissible: barrierDismissible,
-        context: context,
+        context: chewieProvider.navigatorContextOf(context),
         pageBuilder: (context, animation, secondaryAnimation) =>
             const SizedBox.shrink(),
         transitionBuilder: (context, animation, secondaryAnimation, _) =>
@@ -78,10 +78,10 @@ class CustomInfoDialog {
   }) =>
       showGeneralDialog<T>(
         barrierDismissible: barrierDismissible,
-        context: context,
+        context: chewieProvider.navigatorContextOf(context),
         barrierLabel: '',
         barrierColor: ChewieTheme.barrierColor,
-        transitionDuration: const Duration(milliseconds: 400),
+        transitionDuration: ChewieTheme.animationDuration,
         transitionBuilder: (context, animation, secondaryAnimation, child) {
           return CustomDialogAnimations.fromBottom(
             animation,
@@ -136,7 +136,7 @@ class CustomConfirmDialog {
         barrierColor: ChewieTheme.barrierColor,
         barrierDismissible: barrierDismissible,
         barrierLabel: "",
-        context: context,
+        context: chewieProvider.navigatorContextOf(context),
         pageBuilder: (context, animation, secondaryAnimation) =>
             const SizedBox.shrink(),
         transitionBuilder: (context, animation, secondaryAnimation, _) =>
@@ -185,10 +185,10 @@ class CustomConfirmDialog {
   }) =>
       showGeneralDialog<T>(
         barrierDismissible: barrierDismissible,
-        context: context,
+        context: chewieProvider.navigatorContextOf(context),
         barrierLabel: '',
         barrierColor: ChewieTheme.barrierColor,
-        transitionDuration: const Duration(milliseconds: 400),
+        transitionDuration: ChewieTheme.animationDuration,
         transitionBuilder: (context, animation, secondaryAnimation, child) {
           return CustomDialogAnimations.fromBottom(
             animation,
@@ -229,7 +229,8 @@ class CustomLoadingDialog {
       barrierColor: ChewieTheme.barrierColor,
       barrierDismissible: barrierDismissible,
       barrierLabel: "",
-      context: chewieProvider.rootContext,
+      context: chewieProvider.globalNavigatorState?.context ??
+          chewieProvider.rootContext,
       pageBuilder: (context, animation, secondaryAnimation) =>
           const SizedBox.shrink(),
       transitionBuilder: (context, animation, secondaryAnimation, _) =>
@@ -245,6 +246,9 @@ class CustomLoadingDialog {
   }
 
   static Future<void> dismissLoading() async {
-    return Future.sync(() => Navigator.pop(chewieProvider.rootContext));
+    return Future.sync(() => Navigator.pop(
+          chewieProvider.globalNavigatorState?.context ??
+              chewieProvider.rootContext,
+        ));
   }
 }

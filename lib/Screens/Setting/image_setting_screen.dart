@@ -1,21 +1,23 @@
+import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Screens/Setting/filename_setting_screen.dart';
 import 'package:loftify/Utils/enums.dart';
-import 'package:loftify/Utils/route_util.dart';
 
 import '../../Utils/cloud_control_provider.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/hive_util.dart';
-import '../../Utils/responsive_util.dart';
-import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
-import '../../Widgets/BottomSheet/list_bottom_sheet.dart';
-import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
-import '../../Widgets/Item/item_builder.dart';
 import '../../l10n/l10n.dart';
+import 'base_setting_screen.dart';
 
-class ImageSettingScreen extends StatefulWidget {
-  const ImageSettingScreen({super.key});
+class ImageSettingScreen extends BaseSettingScreen {
+  const ImageSettingScreen({
+    super.key,
+    super.padding,
+    super.showTitleBar,
+    super.searchConfig,
+    super.searchText,
+  });
 
   static const String routeName = "/setting/image";
 
@@ -51,217 +53,187 @@ class _ImageSettingScreenState extends BaseDynamicState<ImageSettingScreen>
     super.didChangeDependencies();
   }
 
-  showImageQualitySelect({
-    Function(ImageQuality)? onSelected,
-    dynamic selected,
-    required String title,
-  }) {
-    BottomSheetBuilder.showListBottomSheet(
-      context,
-      (context) => TileList.fromOptions(
-        EnumsLabelGetter.getImageQualityLabels(),
-        (item2) {
-          onSelected?.call(item2);
-          Navigator.pop(context);
-        },
-        selected: selected,
-        context: context,
-        title: title,
-        onCloseTap: () => Navigator.pop(context),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     bool showImageQualitySettings =
         controlProvider.globalControl.showImageQualitySettings;
     bool showBigImageSettings =
         controlProvider.globalControl.showBigImageSettings;
-    return Container(
-      color: Colors.transparent,
-      child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: ResponsiveAppBar(
-          showBack: true,
-          title: appLocalizations.imageSetting,
+    return ChewieItemBuilder.buildSettingScreen(
+      context: context,
+      title: appLocalizations.imageSetting,
+      showTitleBar: widget.showTitleBar,
+      showBack: !ResponsiveUtil.isLandscapeLayout(),
+      padding: widget.padding,
+      children: [
+        if (showImageQualitySettings) ..._imageQualitySettings(),
+        if (showBigImageSettings) ..._bigImageSettings(),
+        CaptionItem(
           context: context,
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        ),
-        body: EasyRefresh(
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            children: [
-              if (ResponsiveUtil.isLandscapeLayout()) const SizedBox(height: 10),
-              if (showImageQualitySettings) ..._imageQualitySettings(),
-              if (showImageQualitySettings) const SizedBox(height: 10),
-              if (showBigImageSettings) ..._bigImageSettings(),
-              if (showImageQualitySettings || showBigImageSettings)
-                const SizedBox(height: 10),
-              CaptionItem(
-                  context: context, title: appLocalizations.downloadImageSetting),
-              EntryItem(
-                context: context,
-                title: appLocalizations.downloadImagePath,
-                description: savePath ?? "",
-                tip: appLocalizations.edit,
-                onTap: () async {
-                  String? selectedDirectory =
-                      await FilePicker.platform.getDirectoryPath(
-                    dialogTitle: appLocalizations.chooseDownloadImagePath,
-                    lockParentWindow: true,
-                  );
-                  if (selectedDirectory != null) {
+          title: appLocalizations.downloadImageSetting,
+          children: [
+            EntryItem(
+              context: context,
+              title: appLocalizations.downloadImagePath,
+              description: savePath ?? "",
+              tip: appLocalizations.edit,
+              onTap: () async {
+                String? selectedDirectory =
+                    await FilePicker.platform.getDirectoryPath(
+                  dialogTitle: appLocalizations.chooseDownloadImagePath,
+                  lockParentWindow: true,
+                );
+                if (selectedDirectory != null) {
+                  setState(() {
+                    savePath = selectedDirectory;
+                    ChewieHiveUtil.put(HiveUtil.savePathKey, selectedDirectory);
+                  });
+                }
+              },
+            ),
+            EntryItem(
+              context: context,
+              title: appLocalizations.filenameFormat,
+              description: _filenameFormat,
+              tip: appLocalizations.edit,
+              onTap: () {
+                var page = FilenameSettingScreen(
+                  onSaved: (newFormat) {
                     setState(() {
-                      savePath = selectedDirectory;
-                      ChewieHiveUtil.put(HiveUtil.savePathKey, selectedDirectory);
+                      _filenameFormat = newFormat;
                     });
-                  }
-                },
-              ),
-              EntryItem(
-                context: context,
-                title: appLocalizations.filenameFormat,
-                description: _filenameFormat,
-                tip: appLocalizations.edit,
-                roundBottom: true,
-                onTap: () {
-                  var page = FilenameSettingScreen(
-                    onSaved: (newFormat) {
-                      setState(() {
-                        _filenameFormat = newFormat;
-                      });
-                    },
-                  );
-                  RouteUtil.pushPanelCupertinoRoute(context, page);
-                },
-              ),
-              const SizedBox(height: 30),
-            ],
-          ),
+                  },
+                );
+                RouteUtil.pushPanelCupertinoRoute(context, page);
+              },
+            ),
+          ],
         ),
-      ),
+      ],
     );
   }
 
-  _imageQualitySettings() {
+  List<SelectionItemModel<ImageQuality>> get _imageQualityOptions =>
+      EnumsLabelGetter.getImageQualityLabels()
+          .map((option) => SelectionItemModel(option.item1, option.item2))
+          .toList();
+
+  Widget _buildImageQualitySelection({
+    required String title,
+    String description = "",
+    required String hint,
+    required ImageQuality selected,
+    required ValueChanged<ImageQuality> onChanged,
+  }) {
+    return InlineSelectionItem<SelectionItemModel<ImageQuality>>(
+      title: title,
+      description: description,
+      items: _imageQualityOptions,
+      initItem: SelectionItemModel(
+        EnumsLabelGetter.getImageQualityLabel(selected),
+        selected,
+      ),
+      hint: hint,
+      onChanged: (item) {
+        if (item != null) onChanged(item.value);
+      },
+    );
+  }
+
+  List<Widget> _imageQualitySettings() {
     return [
       CaptionItem(
-          context: context, title: appLocalizations.imageQuality),
-      EntryItem(
         context: context,
-        title: appLocalizations.waterfallFlowImageQuality,
-        tip: EnumsLabelGetter.getImageQualityLabel(waterfallFlowImageQuality),
-        onTap: () {
-          showImageQualitySelect(
-            onSelected: (quality) {
+        title: appLocalizations.imageQuality,
+        children: [
+          _buildImageQualitySelection(
+            title: appLocalizations.waterfallFlowImageQuality,
+            hint: appLocalizations.chooseWaterfallFlowImageQuality,
+            selected: waterfallFlowImageQuality,
+            onChanged: (quality) {
               setState(() {
                 waterfallFlowImageQuality = quality;
                 ChewieHiveUtil.put(
                     HiveUtil.waterfallFlowImageQualityKey, quality.index);
               });
             },
-            selected: waterfallFlowImageQuality,
-            title: appLocalizations.chooseWaterfallFlowImageQuality,
-          );
-        },
-      ),
-      EntryItem(
-        context: context,
-        title: appLocalizations.postDetailImageQuality,
-        tip: EnumsLabelGetter.getImageQualityLabel(postDetailImageQuality),
-        onTap: () {
-          showImageQualitySelect(
-            onSelected: (quality) {
+          ),
+          _buildImageQualitySelection(
+            title: appLocalizations.postDetailImageQuality,
+            hint: appLocalizations.choosePostDetailImageQuality,
+            selected: postDetailImageQuality,
+            onChanged: (quality) {
               setState(() {
                 postDetailImageQuality = quality;
-                ChewieHiveUtil.put(HiveUtil.postDetailImageQualityKey, quality.index);
+                ChewieHiveUtil.put(
+                    HiveUtil.postDetailImageQualityKey, quality.index);
               });
             },
-            selected: postDetailImageQuality,
-            title: appLocalizations.choosePostDetailImageQuality,
-          );
-        },
-      ),
-      EntryItem(
-        context: context,
-        title: appLocalizations.bigImageQuality,
-        tip: EnumsLabelGetter.getImageQualityLabel(imageDetailImageQuality),
-        roundBottom: true,
-        onTap: () {
-          showImageQualitySelect(
-            onSelected: (quality) {
+          ),
+          _buildImageQualitySelection(
+            title: appLocalizations.bigImageQuality,
+            hint: appLocalizations.chooseBigImageQuality,
+            selected: imageDetailImageQuality,
+            onChanged: (quality) {
               setState(() {
                 imageDetailImageQuality = quality;
                 ChewieHiveUtil.put(
                     HiveUtil.imageDetailImageQualityKey, quality.index);
               });
             },
-            selected: imageDetailImageQuality,
-            title: appLocalizations.chooseBigImageQuality,
-          );
-        },
+          ),
+        ],
       ),
     ];
   }
 
-  _bigImageSettings() {
+  List<Widget> _bigImageSettings() {
     return [
       CaptionItem(
-          context: context, title: appLocalizations.bigImageSetting),
-      CheckboxItem(
-        value: followMainColor,
         context: context,
-        title: appLocalizations.backgroundColorFollowMainColor,
-        onTap: () {
-          setState(() {
-            followMainColor = !followMainColor;
-            ChewieHiveUtil.put(
-              HiveUtil.followMainColorKey,
-              followMainColor,
-            );
-          });
-        },
-      ),
-      EntryItem(
-        context: context,
-        title: appLocalizations.tapLinkButton,
-        tip: EnumsLabelGetter.getImageQualityLabel(tapLinkButtonImageQuality),
-        description: appLocalizations.tapLinkButtonDescription,
-        onTap: () {
-          showImageQualitySelect(
-            onSelected: (quality) {
+        title: appLocalizations.bigImageSetting,
+        children: [
+          CheckboxItem(
+            value: followMainColor,
+            context: context,
+            title: appLocalizations.backgroundColorFollowMainColor,
+            onTap: () {
+              setState(() {
+                followMainColor = !followMainColor;
+                ChewieHiveUtil.put(
+                  HiveUtil.followMainColorKey,
+                  followMainColor,
+                );
+              });
+            },
+          ),
+          _buildImageQualitySelection(
+            title: appLocalizations.tapLinkButton,
+            description: appLocalizations.tapLinkButtonDescription,
+            hint: appLocalizations.chooseTapLinkButton,
+            selected: tapLinkButtonImageQuality,
+            onChanged: (quality) {
               setState(() {
                 tapLinkButtonImageQuality = quality;
                 ChewieHiveUtil.put(
                     HiveUtil.tapLinkButtonImageQualityKey, quality.index);
               });
             },
-            selected: tapLinkButtonImageQuality,
-            title: appLocalizations.chooseTapLinkButton,
-          );
-        },
-      ),
-      EntryItem(
-        context: context,
-        title: appLocalizations.longPressLinkButton,
-        tip: EnumsLabelGetter.getImageQualityLabel(
-            longPressLinkButtonImageQuality),
-        description: appLocalizations.longPressLinkButtonDescription,
-        roundBottom: true,
-        onTap: () {
-          showImageQualitySelect(
-            onSelected: (quality) {
+          ),
+          _buildImageQualitySelection(
+            title: appLocalizations.longPressLinkButton,
+            description: appLocalizations.longPressLinkButtonDescription,
+            hint: appLocalizations.chooseLongPressLinkButton,
+            selected: longPressLinkButtonImageQuality,
+            onChanged: (quality) {
               setState(() {
                 longPressLinkButtonImageQuality = quality;
                 ChewieHiveUtil.put(
                     HiveUtil.longPressLinkButtonImageQualityKey, quality.index);
               });
             },
-            selected: longPressLinkButtonImageQuality,
-            title: appLocalizations.chooseLongPressLinkButton,
-          );
-        },
+          ),
+        ],
       ),
     ];
   }

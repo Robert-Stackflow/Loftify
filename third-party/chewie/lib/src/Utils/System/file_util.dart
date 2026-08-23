@@ -241,7 +241,6 @@ class FileUtil {
 
   static Future<void> migrationDataToSupportDirectory() async {
     try {
-      Hive.defaultDirectory = await FileUtil.getHiveDir();
       bool haveMigratedToSupportDirectoryFromHive = ChewieHiveUtil.getBool(
           ChewieHiveUtil.haveMigratedToSupportDirectoryKey,
           defaultValue: false);

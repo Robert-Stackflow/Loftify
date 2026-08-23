@@ -137,7 +137,7 @@ class _FollowingFollowerScreenState
         refreshOnStart: true,
         controller: _refreshController,
         onRefresh: _onRefresh,
-        onLoad: _onLoad,
+        onLoad: _noMore ? null : _onLoad,
         triggerAxis: Axis.vertical,
         childBuilder: (context, physics) {
           return _buildBody(physics);
@@ -147,20 +147,29 @@ class _FollowingFollowerScreenState
   }
 
   Widget _buildBody(ScrollPhysics physics) {
-    return LoadMoreNotification(
-      noMore: _noMore,
-      onLoad: _onLoad,
-      child: WaterfallFlow.extent(
-        maxCrossAxisExtent: 600,
+    if (_followingList.isEmpty) {
+      return EmptyPlaceholder(
+        text: appLocalizations.noUser,
         physics: physics,
-        children: List.generate(_followingList.length, (index) {
-          return LoftifyItemBuilder.buildFollowerOrFollowingItem(
-              context, index, _followingList[index], onFollowOrUnFollow: () {
-            total += _followingList[index].following ? 1 : -1;
-            setState(() {});
-          });
-        }),
+        shrinkWrap: false,
+      );
+    }
+    return WaterfallFlow.builder(
+      physics: physics,
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 20),
+      gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 560,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
       ),
+      itemCount: _followingList.length,
+      itemBuilder: (context, index) {
+        return LoftifyItemBuilder.buildFollowerOrFollowingItem(
+            context, index, _followingList[index], onFollowOrUnFollow: () {
+          total += _followingList[index].following ? 1 : -1;
+          setState(() {});
+        });
+      },
     );
   }
 

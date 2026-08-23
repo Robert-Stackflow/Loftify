@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' show Colors;
 import 'package:awesome_chewie/awesome_chewie.dart';
 
 class LoadingWidget extends StatefulWidget {
@@ -31,7 +32,7 @@ class LoadingWidgetState extends State<LoadingWidget> {
     return Center(
       child: Container(
         width: double.infinity,
-        color: widget.background ?? ChewieTheme.cardColor.withAlpha(127),
+        color: widget.background ?? Colors.transparent,
         padding: EdgeInsets.only(
             top: widget.topPadding, bottom: widget.bottomPadding),
         child: Column(

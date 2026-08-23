@@ -10,6 +10,7 @@ import '../../Utils/app_provider.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/request_util.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Item/login_input_item.dart';
 import '../../l10n/l10n.dart';
 import 'login_by_lofterid_screen.dart';
 
@@ -28,6 +29,8 @@ class _LoginByMailScreenState extends BaseDynamicState<LoginByMailScreen>
     with TickerProviderStateMixin {
   late TextEditingController _mailController;
   late TextEditingController _passwordController;
+  final FocusNode _mailFocusNode = FocusNode();
+  final FocusNode _passwordFocusNode = FocusNode();
   var mailPower = {};
 
   @override
@@ -39,7 +42,17 @@ class _LoginByMailScreenState extends BaseDynamicState<LoginByMailScreen>
     _passwordController.text = widget.initPassword ?? defaultPassword;
   }
 
+  @override
+  void dispose() {
+    _mailController.dispose();
+    _passwordController.dispose();
+    _mailFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    super.dispose();
+  }
+
   Future<void> _login() async {
+    FocusManager.instance.primaryFocus?.unfocus();
     try {
       String mail = _mailController.text;
       String password = _passwordController.text;
@@ -64,7 +77,8 @@ class _LoginByMailScreenState extends BaseDynamicState<LoginByMailScreen>
           await RequestUtil.clearCookie();
           await ChewieHiveUtil.put(HiveUtil.userIdKey, resL['userId']);
           await ChewieHiveUtil.put(HiveUtil.tokenKey, resL['token']);
-          await ChewieHiveUtil.put(HiveUtil.tokenTypeKey, TokenType.lofterID.index);
+          await ChewieHiveUtil.put(
+              HiveUtil.tokenTypeKey, TokenType.lofterID.index);
           mainScreenState?.login();
         } else if (resL['ret'] == "413" && resL['dt'] == "01") {
           IToast.showTop(appLocalizations.retryLoginLater);
@@ -92,10 +106,14 @@ class _LoginByMailScreenState extends BaseDynamicState<LoginByMailScreen>
     return Container(
       color: Colors.transparent,
       child: Scaffold(
-        resizeToAvoidBottomInset: false,
+        resizeToAvoidBottomInset: true,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: ResponsiveAppBar(
           title: appLocalizations.loginByEmail,
+          showBack: !ResponsiveUtil.isLandscapeLayout(),
+          leadingIcon: Icons.close_rounded,
+          onTapBack: () => Navigator.maybeOf(context)?.maybePop(),
+          showBorder: false,
           titleLeftMargin: ResponsiveUtil.isLandscapeLayout() ? 15 : 5,
         ),
         body: Container(
@@ -107,10 +125,13 @@ class _LoginByMailScreenState extends BaseDynamicState<LoginByMailScreen>
                 child: ListView(
                   children: [
                     const SizedBox(height: 50),
-                    InputItem(
+                    LoginInputItem(
                       hint: appLocalizations.inputEmail,
                       textInputAction: TextInputAction.next,
                       controller: _mailController,
+                      focusNode: _mailFocusNode,
+                      autofillHints: const [AutofillHints.email],
+                      onSubmitted: (_) => _passwordFocusNode.requestFocus(),
                       leadingConfig: InputItemLeadingTailingConfig(
                         type: InputItemLeadingTailingType.icon,
                         icon: Icons.mail_outline_rounded,
@@ -119,9 +140,12 @@ class _LoginByMailScreenState extends BaseDynamicState<LoginByMailScreen>
                         type: InputItemLeadingTailingType.clear,
                       ),
                     ),
-                    InputItem(
+                    LoginInputItem(
                       hint: appLocalizations.inputPassword,
-                      textInputAction: TextInputAction.next,
+                      textInputAction: TextInputAction.done,
+                      focusNode: _passwordFocusNode,
+                      autofillHints: const [AutofillHints.password],
+                      onSubmitted: (_) => _login(),
                       leadingConfig: InputItemLeadingTailingConfig(
                         type: InputItemLeadingTailingType.icon,
                         icon: Icons.verified_outlined,

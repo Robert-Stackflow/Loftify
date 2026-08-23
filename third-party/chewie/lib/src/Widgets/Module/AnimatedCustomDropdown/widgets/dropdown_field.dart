@@ -93,22 +93,18 @@ class _DropDownFieldState<T extends DropdownMixin>
   }
 
   Widget defaultShowSelectedBuilder({T? oneItem, List<T>? itemList}) {
-    return Container(
-      // margin: const EdgeInsets.only(left: 16),
-      // alignment: Alignment.center,
-      child: Text(
-        itemList != null
-            ? itemList.join(', ')
-            : (oneItem as DropdownMixin).display,
-        maxLines: widget.maxLines,
-        overflow: TextOverflow.ellipsis,
-        style: widget.showSelectedStyle ??
-            TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: widget.enabled ? null : Colors.black.withValues(alpha: .5),
-            ),
-      ),
+    return Text(
+      itemList != null
+          ? itemList.join(', ')
+          : (oneItem as DropdownMixin).display,
+      maxLines: widget.maxLines,
+      overflow: TextOverflow.ellipsis,
+      style: widget.showSelectedStyle ??
+          TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: widget.enabled ? null : Colors.black.withValues(alpha: .5),
+          ),
     );
   }
 
@@ -164,42 +160,56 @@ class _DropDownFieldState<T extends DropdownMixin>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: Container(
-        padding: widget.headerPadding ?? _defaultHeaderPadding,
-        decoration: BoxDecoration(
-          color: widget.fillColor ??
-              (widget.enabled
-                  ? CustomDropdownDecoration._defaultFillColor
-                  : CustomDropdownDecoration._defaultFillColor
-                      .withValues(alpha: .5)),
-          border: widget.border,
-          borderRadius: widget.borderRadius ?? _defaultBorderRadius,
-          boxShadow: widget.shadow,
-        ),
-        child: Row(
-          children: [
-            if (widget.prefixIcon != null) ...[
-              widget.prefixIcon!,
-              const SizedBox(width: 12),
-            ],
-            Expanded(
-              child: switch (widget.dropdownType) {
-                _DropdownType.singleSelect => selectedItem != null
-                    ? showSelectedBuilder(context)
-                    : hintBuilder(context),
-                _DropdownType.multipleSelect => selectedItems.isNotEmpty
-                    ? multiSelectShowSelectedBuilder(context)
-                    : hintBuilder(context),
-              },
+    final borderRadius = widget.borderRadius ?? _defaultBorderRadius;
+    final fillColor = widget.fillColor ??
+        (widget.enabled
+            ? CustomDropdownDecoration._defaultFillColor
+            : CustomDropdownDecoration._defaultFillColor.withValues(alpha: .5));
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: borderRadius,
+        boxShadow: widget.shadow,
+      ),
+      child: Material(
+        color: fillColor,
+        borderRadius: borderRadius,
+        clipBehavior: Clip.antiAlias,
+        child: Ink(
+          decoration: BoxDecoration(
+            border: widget.border,
+            borderRadius: borderRadius,
+          ),
+          child: InkWell(
+            onTap: widget.enabled ? widget.onTap : null,
+            borderRadius: borderRadius,
+            child: Padding(
+              padding: widget.headerPadding ?? _defaultHeaderPadding,
+              child: Row(
+                children: [
+                  if (widget.prefixIcon != null) ...[
+                    widget.prefixIcon!,
+                    const SizedBox(width: 12),
+                  ],
+                  Expanded(
+                    child: switch (widget.dropdownType) {
+                      _DropdownType.singleSelect => selectedItem != null
+                          ? showSelectedBuilder(context)
+                          : hintBuilder(context),
+                      _DropdownType.multipleSelect => selectedItems.isNotEmpty
+                          ? multiSelectShowSelectedBuilder(context)
+                          : hintBuilder(context),
+                    },
+                  ),
+                  const SizedBox(width: 12),
+                  widget.suffixIcon ??
+                      (widget.enabled
+                          ? _defaultOverlayIconDown
+                          : const SizedBox.shrink()),
+                ],
+              ),
             ),
-            const SizedBox(width: 12),
-            widget.suffixIcon ??
-                (widget.enabled
-                    ? _defaultOverlayIconDown
-                    : const SizedBox.shrink()),
-          ],
+          ),
         ),
       ),
     );

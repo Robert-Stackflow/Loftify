@@ -49,7 +49,7 @@ class InlineSelectionItem<T extends DropdownMixin>
     this.trailingLeftMargin = 5,
     this.dividerIndent = true,
     this.overlayController,
-    this.ink = false,
+    this.ink = true,
     super.searchText,
     super.searchConfig,
   })  : isMultiSelect = false,
@@ -78,7 +78,7 @@ class InlineSelectionItem<T extends DropdownMixin>
     this.trailingLeftMargin = 5,
     this.dividerIndent = true,
     this.overlayController,
-    this.ink = false,
+    this.ink = true,
     super.searchText,
     super.searchConfig,
   })  : isMultiSelect = true,
@@ -111,6 +111,7 @@ class InlineSelectionItem<T extends DropdownMixin>
     this.isMultiSelect = false,
     this.selectedItems = const [],
     this.onListChanged,
+    super.searchText,
     super.searchConfig,
   });
 
@@ -123,6 +124,8 @@ class InlineSelectionItem<T extends DropdownMixin>
     SearchConfig? searchConfig,
   }) {
     return InlineSelectionItem<T>._internal(
+      key: key,
+      searchText: searchText ?? this.searchText,
       searchConfig: searchConfig ?? this.searchConfig,
       title: title,
       items: items,
@@ -146,6 +149,8 @@ class InlineSelectionItem<T extends DropdownMixin>
       trailingLeftMargin: trailingLeftMargin,
       dividerIndent: dividerIndent,
       overlayController: overlayController,
+      ink: ink,
+      isMultiSelect: isMultiSelect,
     );
   }
 
@@ -175,36 +180,70 @@ class InlineSelectionItemState<T extends DropdownMixin>
 
     return InkAnimation(
       ink: widget.ink,
+      color: widget.backgroundColor ?? ChewieTheme.canvasColor,
       borderRadius: BorderRadius.vertical(
         top: widget.roundTop ? Radius.circular(widget.radius) : Radius.zero,
         bottom:
             widget.roundBottom ? Radius.circular(widget.radius) : Radius.zero,
       ),
-      child: Column(
-        children: [
-          Container(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final useStackedLayout = constraints.maxWidth < 380;
+          final title = Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (widget.showLeading) _buildLeadingIcon(),
+              SizedBox(width: widget.showLeading ? 10 : 5),
+              Expanded(child: _buildTitleDescription()),
+            ],
+          );
+
+          return Padding(
             padding: EdgeInsets.symmetric(
-                vertical: vertical, horizontal: horizontal),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                if (widget.showLeading) Icon(widget.leading, size: 20),
-                SizedBox(width: widget.showLeading ? 10 : 5),
-                Expanded(child: _buildTitleDescription()),
-                const SizedBox(width: 50),
-                SizedBox(width: 180, child: _buildDropdownContainer()),
-              ],
+              vertical: vertical,
+              horizontal: horizontal,
             ),
-          ),
-          // Container(
-          //   height: 0,
-          //   margin: const EdgeInsets.symmetric(horizontal: 10),
-          //   decoration: BoxDecoration(
-          //     border: widget.roundBottom ? null : ChewieTheme.bottomDivider,
-          //   ),
-          // ),
-        ],
+            child: useStackedLayout
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      title,
+                      const SizedBox(height: 10),
+                      Padding(
+                        padding: EdgeInsets.only(
+                          left: widget.showLeading ? 38 : 5,
+                        ),
+                        child: _buildDropdownContainer(),
+                      ),
+                    ],
+                  )
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(child: title),
+                      SizedBox(width: widget.trailingLeftMargin),
+                      SizedBox(
+                        width: 180,
+                        child: _buildDropdownContainer(),
+                      ),
+                    ],
+                  ),
+          );
+        },
       ),
+    );
+  }
+
+  Widget _buildLeadingIcon() {
+    final color = ChewieTheme.primaryColor;
+    return Container(
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        color: color.withAlpha(25),
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: Icon(widget.leading, size: 15, color: color),
     );
   }
 
@@ -259,6 +298,7 @@ class InlineSelectionItemState<T extends DropdownMixin>
       initialItem: widget.initItem,
       items: widget.items,
       excludeSelected: false,
+      maxlines: 1,
       onChanged: widget.onChanged,
       overlayController: _controller,
       closedHeaderPadding:
@@ -296,9 +336,9 @@ class InlineSelectionItemState<T extends DropdownMixin>
         splashColor: ChewieTheme.splashColor,
         highlightColor: ChewieTheme.highlightColor,
         selectedColor: ChewieTheme.hoverColor,
-        selectedIconColor: ChewieTheme.successColor,
+        selectedIconColor: ChewieTheme.primaryColor,
       ),
-      closedFillColor: ChewieTheme.canvasColor,
+      closedFillColor: ChewieTheme.scaffoldBackgroundColor,
       expandedFillColor: ChewieTheme.scaffoldBackgroundColor,
       listItemStyle: ChewieTheme.bodyMedium,
       closedSuffixIcon:

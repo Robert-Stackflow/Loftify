@@ -2,6 +2,8 @@ library animated_custom_dropdown;
 
 import 'dart:async';
 
+import 'package:awesome_chewie/src/Providers/chewie_provider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -41,12 +43,6 @@ const _defaultBorderRadius = BorderRadius.all(
 final Border _defaultErrorBorder = Border.all(
   color: _defaultErrorColor,
   width: 1.5,
-);
-
-const _defaultErrorStyle = TextStyle(
-  color: _defaultErrorColor,
-  fontSize: 14,
-  height: 0.5,
 );
 
 class CustomDropdown<T extends DropdownMixin> extends StatefulWidget {
@@ -399,13 +395,13 @@ class CustomDropdown<T extends DropdownMixin> extends StatefulWidget {
         assert(
           initialItems == null ||
               initialItems.isEmpty ||
-              initialItems.any((e) => items!.contains(e)),
+              initialItems.every((e) => items!.contains(e)),
           'Initial items must match with the items in the items list.',
         ),
         assert(
           multiSelectController == null ||
               multiSelectController.value.isEmpty ||
-              multiSelectController.value.any((e) => items!.contains(e)),
+              multiSelectController.value.every((e) => items!.contains(e)),
           'Controller value must match with one of the item in items list.',
         ),
         _searchType = null,
@@ -467,13 +463,13 @@ class CustomDropdown<T extends DropdownMixin> extends StatefulWidget {
         assert(
           initialItems == null ||
               initialItems.isEmpty ||
-              initialItems.any((e) => items!.contains(e)),
+              initialItems.every((e) => items!.contains(e)),
           'Initial items must match with the items in the items list.',
         ),
         assert(
           multiSelectController == null ||
               multiSelectController.value.isEmpty ||
-              multiSelectController.value.any((e) => items!.contains(e)),
+              multiSelectController.value.every((e) => items!.contains(e)),
           'Controller value must match with one of the item in items list.',
         ),
         _searchType = _SearchType.onListData,
@@ -547,65 +543,166 @@ class _CustomDropdownState<T extends DropdownMixin>
   late SingleSelectController<T?> selectedItemNotifier;
   late MultiSelectController<T> selectedItemsNotifier;
   FormFieldState<(T?, List<T>)>? _formFieldState;
+  bool _refreshingEquivalentCandidate = false;
+
+  T? _canonicalItem(T? candidate) {
+    if (candidate == null || widget.items == null) return candidate;
+    for (final item in widget.items!) {
+      if (item == candidate) return item;
+    }
+    return candidate;
+  }
+
+  List<T> _canonicalItems(List<T> candidates) {
+    return candidates.map((candidate) => _canonicalItem(candidate)!).toList();
+  }
+
+  bool _sameValues(List<T>? first, List<T>? second) {
+    if (identical(first, second)) return true;
+    if (first == null || second == null || first.length != second.length) {
+      return false;
+    }
+    for (var index = 0; index < first.length; index++) {
+      if (first[index] != second[index]) return false;
+    }
+    return true;
+  }
+
+  bool _sameInstances(List<T> first, List<T> second) {
+    if (first.length != second.length) return false;
+    for (var index = 0; index < first.length; index++) {
+      if (!identical(first[index], second[index])) return false;
+    }
+    return true;
+  }
+
+  void _handleSelectedItemChanged() {
+    if (!_refreshingEquivalentCandidate) {
+      widget.onChanged?.call(selectedItemNotifier.value);
+    }
+    _formFieldState?.didChange((selectedItemNotifier.value, []));
+    if (widget.validateOnChange) {
+      _formFieldState?.validate();
+    }
+  }
+
+  void _handleSelectedItemsChanged() {
+    if (!_refreshingEquivalentCandidate) {
+      widget.onListChanged?.call(selectedItemsNotifier.value);
+    }
+    _formFieldState?.didChange((null, selectedItemsNotifier.value));
+    if (widget.validateOnChange) {
+      _formFieldState?.validate();
+    }
+  }
+
+  void _refreshSelectedItem(T? nextItem) {
+    _refreshingEquivalentCandidate = true;
+    try {
+      selectedItemNotifier.replaceEquivalent(nextItem);
+    } finally {
+      _refreshingEquivalentCandidate = false;
+    }
+  }
+
+  void _refreshSelectedItems(List<T> nextItems) {
+    _refreshingEquivalentCandidate = true;
+    try {
+      selectedItemsNotifier.value = nextItems;
+    } finally {
+      _refreshingEquivalentCandidate = false;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
 
-    selectedItemNotifier =
-        widget.controller ?? SingleSelectController(widget.initialItem);
+    selectedItemNotifier = widget.controller ??
+        SingleSelectController(_canonicalItem(widget.initialItem));
 
     selectedItemsNotifier = widget.multiSelectController ??
-        MultiSelectController(widget.initialItems ?? []);
+        MultiSelectController(_canonicalItems(widget.initialItems ?? []));
 
-    selectedItemNotifier.addListener(() {
-      widget.onChanged?.call(selectedItemNotifier.value);
-      _formFieldState?.didChange((selectedItemNotifier.value, []));
-      if (widget.validateOnChange) {
-        _formFieldState?.validate();
-      }
-    });
-
-    selectedItemsNotifier.addListener(() {
-      widget.onListChanged?.call(selectedItemsNotifier.value);
-      _formFieldState?.didChange((null, selectedItemsNotifier.value));
-      if (widget.validateOnChange) {
-        _formFieldState?.validate();
-      }
-    });
+    selectedItemNotifier.addListener(_handleSelectedItemChanged);
+    selectedItemsNotifier.addListener(_handleSelectedItemsChanged);
   }
 
   @override
   void didUpdateWidget(covariant CustomDropdown<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (widget.initialItem != oldWidget.initialItem &&
-        selectedItemNotifier.value != widget.initialItem) {
+    final singleControllerChanged = widget.controller != oldWidget.controller;
+    if (singleControllerChanged) {
+      selectedItemNotifier.removeListener(_handleSelectedItemChanged);
+      if (oldWidget.controller == null) selectedItemNotifier.dispose();
+      selectedItemNotifier = widget.controller ??
+          SingleSelectController(_canonicalItem(widget.initialItem));
+      selectedItemNotifier.addListener(_handleSelectedItemChanged);
+    }
+
+    final multiControllerChanged =
+        widget.multiSelectController != oldWidget.multiSelectController;
+    if (multiControllerChanged) {
+      selectedItemsNotifier.removeListener(_handleSelectedItemsChanged);
+      if (oldWidget.multiSelectController == null) {
+        selectedItemsNotifier.dispose();
+      }
+      selectedItemsNotifier = widget.multiSelectController ??
+          MultiSelectController(_canonicalItems(widget.initialItems ?? []));
+      selectedItemsNotifier.addListener(_handleSelectedItemsChanged);
+    }
+
+    final nextInitialItem = _canonicalItem(widget.initialItem);
+    final initialValueChanged = widget.initialItem != oldWidget.initialItem;
+    final equivalentCandidateChanged = widget.initialItem != null &&
+        selectedItemNotifier.value == nextInitialItem &&
+        !identical(selectedItemNotifier.value, nextInitialItem) &&
+        !identical(widget.initialItem, oldWidget.initialItem);
+    if (!singleControllerChanged &&
+        widget.controller == null &&
+        (initialValueChanged || equivalentCandidateChanged)) {
       SchedulerBinding.instance.addPostFrameCallback((_) {
-        selectedItemNotifier.value = widget.initialItem;
+        if (!mounted || widget.controller != null) return;
+        final currentInitialItem = _canonicalItem(widget.initialItem);
+        if (!identical(selectedItemNotifier.value, currentInitialItem)) {
+          if (selectedItemNotifier.value == currentInitialItem) {
+            _refreshSelectedItem(currentInitialItem);
+          } else {
+            selectedItemNotifier.value = currentInitialItem;
+          }
+        }
       });
     }
 
-    if (widget.initialItems != oldWidget.initialItems &&
-        selectedItemsNotifier.value != widget.initialItems) {
+    final nextInitialItems = _canonicalItems(widget.initialItems ?? []);
+    final initialValuesChanged =
+        !_sameValues(widget.initialItems, oldWidget.initialItems);
+    final equivalentCandidatesChanged = widget.initialItems != null &&
+        _sameValues(selectedItemsNotifier.value, nextInitialItems) &&
+        !_sameInstances(selectedItemsNotifier.value, nextInitialItems) &&
+        !identical(widget.initialItems, oldWidget.initialItems);
+    if (!multiControllerChanged &&
+        widget.multiSelectController == null &&
+        (initialValuesChanged || equivalentCandidatesChanged)) {
       SchedulerBinding.instance.addPostFrameCallback((_) {
-        selectedItemsNotifier.value = widget.initialItems ?? [];
+        if (!mounted || widget.multiSelectController != null) return;
+        final currentInitialItems = _canonicalItems(widget.initialItems ?? []);
+        if (!_sameInstances(selectedItemsNotifier.value, currentInitialItems)) {
+          if (_sameValues(selectedItemsNotifier.value, currentInitialItems)) {
+            _refreshSelectedItems(currentInitialItems);
+          } else {
+            selectedItemsNotifier.value = currentInitialItems;
+          }
+        }
       });
-    }
-
-    if (widget.controller != oldWidget.controller &&
-        widget.controller != null) {
-      selectedItemNotifier = widget.controller!;
-    }
-
-    if (widget.multiSelectController != oldWidget.multiSelectController &&
-        widget.multiSelectController != null) {
-      selectedItemsNotifier = widget.multiSelectController!;
     }
   }
 
   @override
   void dispose() {
+    selectedItemNotifier.removeListener(_handleSelectedItemChanged);
+    selectedItemsNotifier.removeListener(_handleSelectedItemsChanged);
     if (widget.controller == null) {
       selectedItemNotifier.dispose();
     }
@@ -647,7 +744,6 @@ class _CustomDropdownState<T extends DropdownMixin>
             _formFieldState = formFieldState;
             return Container(
               decoration: const BoxDecoration(
-                // errorStyle: decoration?.errorStyle ?? _defaultErrorStyle,
                 // errorText: formFieldState.errorText,
                 border: null,
                 // contentPadding: EdgeInsets.zero,

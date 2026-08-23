@@ -111,10 +111,19 @@ class CustomFont {
   }
 
   static List<CustomFont> getAllFonts() {
-    return List.from(defaultFonts)..addAll(ChewieHiveUtil.getCustomFonts());
+    final fonts = <CustomFont>[...defaultFonts];
+    // Some Windows analyzer paths normalize this library's `Resources`
+    // segment differently from package imports. Keep the package boundary
+    // dynamic so the same runtime CustomFont objects are not treated as two
+    // unrelated static types solely because of path casing.
+    final dynamic customFonts = ChewieHiveUtil.getCustomFonts();
+    for (final dynamic font in customFonts as Iterable<dynamic>) {
+      fonts.add(font);
+    }
+    return fonts;
   }
 
-  static dynamic getCurrentFont() {
+  static CustomFont getCurrentFont() {
     dynamic fontFamily =
         ChewieHiveUtil.get(ChewieHiveUtil.fontFamilyKey, defaultValue: 0);
     List<CustomFont> allFonts = getAllFonts();
@@ -168,55 +177,67 @@ class CustomFont {
     return file.existsSync();
   }
 
-  static downloadFont({
+  static Future<bool> downloadFont({
     BuildContext? context,
     bool showToast = true,
     Function(bool)? onFinished,
     Function(double)? onReceiveProgress,
     CustomFont? customFont,
   }) async {
-    customFont ??= getCurrentFont();
-    if (customFont != Default) {
-      await FontUtil.url(
-        fontFamily: customFont!.fontFamily,
-        url: customFont.fontUrl,
-      ).load(onReceiveProgress: onReceiveProgress).then((value) {
-        onFinished?.call(value);
-        if (showToast && context != null) {
-          if (value == true) {
-            IToast.showTop(chewieLocalizations.fontFamlyLoadSuccess);
-          } else {
-            IToast.showTop(chewieLocalizations.fontFamlyLoadFailed);
-          }
-        }
-      });
-    } else {
+    final font = customFont ?? getCurrentFont();
+    if (font == Default) {
       onFinished?.call(true);
-      return Future(() => true);
+      return true;
     }
+
+    final bool value;
+    if (defaultFonts.contains(font)) {
+      value = await FontUtil.url(
+        fontFamily: font.fontFamily,
+        url: font.fontUrl,
+      ).load(onReceiveProgress: onReceiveProgress);
+    } else {
+      value = await FontUtil.file(
+        fontFamily: font.fontFamily,
+        filepath: join(await FileUtil.getFontDir(), font.fontUrl),
+      ).load(onReceiveProgress: onReceiveProgress);
+    }
+    onFinished?.call(value);
+    if (showToast && context != null) {
+      IToast.showTop(
+        value
+            ? chewieLocalizations.fontFamlyLoadSuccess
+            : chewieLocalizations.fontFamlyLoadFailed,
+      );
+    }
+    return value;
   }
 
-  static void loadFont(
+  static Future<bool> loadFont(
     BuildContext context,
     CustomFont item, {
     bool autoRestartApp = false,
   }) async {
     var dialog = showProgressDialog(chewieLocalizations.alreadyDownload);
-    await ChewieHiveUtil.put(ChewieHiveUtil.fontFamilyKey, item.fontFamily);
-    await downloadFont(
+    final loaded = await downloadFont(
       context: context,
       showToast: false,
-      onFinished: (value) {
-        dialog.dismiss();
-        chewieProvider.darkTheme = chewieProvider.darkTheme;
-        chewieProvider.lightTheme = chewieProvider.lightTheme;
-        if (autoRestartApp) {
-          ResponsiveUtil.restartApp(context);
-        }
-      },
       onReceiveProgress: (progress) {
         dialog.updateProgress(progress: progress);
       },
+      customFont: item,
     );
+    dialog.dismiss();
+    if (!loaded) {
+      IToast.showTop(chewieLocalizations.fontFamlyLoadFailed);
+      return false;
+    }
+    await ChewieHiveUtil.put(ChewieHiveUtil.fontFamilyKey, item.fontFamily);
+    chewieProvider.darkTheme = chewieProvider.darkTheme;
+    chewieProvider.lightTheme = chewieProvider.lightTheme;
+    if (autoRestartApp && context.mounted) {
+      ResponsiveUtil.restartApp(context);
+    }
+    return true;
   }
 }

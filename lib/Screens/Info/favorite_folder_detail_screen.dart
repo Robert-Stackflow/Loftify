@@ -1,7 +1,6 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Models/favorites_response.dart';
-import 'package:loftify/Models/recommend_response.dart';
 
 import '../../Api/user_api.dart';
 import '../../Models/history_response.dart';
@@ -25,14 +24,13 @@ class FavoriteFolderDetailScreen extends StatefulWidget {
       _FavoriteFolderDetailScreenState();
 }
 
-class _FavoriteFolderDetailScreenState extends BaseDynamicState<FavoriteFolderDetailScreen>
+class _FavoriteFolderDetailScreenState
+    extends BaseDynamicState<FavoriteFolderDetailScreen>
     with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
   late int favoriteFolderId;
   FavoriteFolder? _favoriteFolder;
-  bool _follow = false;
-  SimpleBlogInfo? _creatorInfo;
   final List<FavoritePostDetailData> _posts = [];
   final List<ArchiveData> _archiveDataList = [];
   bool _loading = false;
@@ -60,8 +58,6 @@ class _FavoriteFolderDetailScreenState extends BaseDynamicState<FavoriteFolderDe
             IToast.showTop(value['msg']);
             return IndicatorResult.fail;
           } else {
-            _follow = value['data']['followStatus'];
-            _creatorInfo = SimpleBlogInfo.fromJson(value['data']['blogInfo']);
             _favoriteFolder = FavoriteFolder.fromJson(value['data']['folder']);
             List<dynamic> t = value['data']['posts'];
             if (refresh) _posts.clear();
@@ -72,7 +68,7 @@ class _FavoriteFolderDetailScreenState extends BaseDynamicState<FavoriteFolderDe
             }
             Map<String, int> monthCount = {};
             for (var e in _posts) {
-              String yearMonth = TimeUtil.formatYearMonth(e.opTime ?? 0);
+              String yearMonth = formatLocalizedYearMonth(e.opTime ?? 0);
               monthCount.putIfAbsent(yearMonth, () => 0);
               monthCount[yearMonth] = monthCount[yearMonth]! + 1;
             }
@@ -87,13 +83,11 @@ class _FavoriteFolderDetailScreenState extends BaseDynamicState<FavoriteFolderDe
             }
             _archiveDataList.sort((a, b) => b.desc.compareTo(a.desc));
             if (mounted) setState(() {});
-            if (_posts.length >= (_favoriteFolder?.postCount ?? 0) &&
-                !refresh) {
-              _noMore = true;
-              return IndicatorResult.noMore;
-            } else {
-              return IndicatorResult.success;
-            }
+            _noMore =
+                t.isEmpty || _posts.length >= (_favoriteFolder?.postCount ?? 0);
+            return !refresh && _noMore
+                ? IndicatorResult.noMore
+                : IndicatorResult.success;
           }
         } catch (e, t) {
           ILogger.error("Failed to load folder detail", e, t);
@@ -125,7 +119,7 @@ class _FavoriteFolderDetailScreenState extends BaseDynamicState<FavoriteFolderDe
         refreshOnStart: true,
         controller: _refreshController,
         onRefresh: _onRefresh,
-        onLoad: _onLoad,
+        onLoad: _noMore ? null : _onLoad,
         triggerAxis: Axis.vertical,
         childBuilder: (context, physics) =>
             _archiveDataList.isNotEmpty && _posts.isNotEmpty
@@ -140,7 +134,7 @@ class _FavoriteFolderDetailScreenState extends BaseDynamicState<FavoriteFolderDe
   }
 
   Widget _buildNineGridGroup(ScrollPhysics physics) {
-    List<Widget> widgets = [];
+    final slivers = <Widget>[];
     int startIndex = 0;
     for (var e in _archiveDataList) {
       if (_posts.length < startIndex) {
@@ -151,56 +145,67 @@ class _FavoriteFolderDetailScreenState extends BaseDynamicState<FavoriteFolderDe
       if (_posts.length < startIndex + count) {
         count = _posts.length - startIndex;
       }
-      widgets.add(ItemBuilder.buildTitle(
-        context,
-        title: appLocalizations.descriptionWithPostCount(e.desc, e.count.toString()),
-        topMargin: 16,
-        bottomMargin: 0,
-      ));
-      widgets.add(_buildNineGrid(startIndex, count));
+      slivers.add(
+        SliverToBoxAdapter(
+          child: ItemBuilder.buildTitle(
+            context,
+            title: appLocalizations.descriptionWithPostCount(
+                e.desc, e.count.toString()),
+            topMargin: 16,
+            bottomMargin: 0,
+          ),
+        ),
+      );
+      slivers.add(_buildNineGrid(startIndex, count));
       startIndex += e.count;
     }
-    return ListView(
-      cacheExtent: 9999,
+    return CustomScrollView(
       physics: physics,
-      children: widgets,
+      cacheExtent: MediaQuery.sizeOf(context).height,
+      slivers: slivers,
     );
   }
 
   Widget _buildNineGrid(int startIndex, int count) {
-    return LoadMoreNotification(
-      noMore: _noMore,
-      onLoad: _onLoad,
-      child: GridView.extent(
-        padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
-        shrinkWrap: true,
-        maxCrossAxisExtent: 160,
-        mainAxisSpacing: 6,
-        crossAxisSpacing: 6,
-        physics: const NeverScrollableScrollPhysics(),
-        children: List.generate(count, (index) {
-          int trueIndex = startIndex + index;
-          return GestureDetector(
-            child: FavoriteFolderPostItemBuilder.buildNineGridPostItem(
-                context, _posts[trueIndex],
-                wh: 160),
-            onTap: () {
-              if (FavoriteFolderPostItemBuilder.isInvalid(_posts[trueIndex])) {
-                IToast.showTop(appLocalizations.invalidContent);
-              } else {
-                RouteUtil.pushPanelCupertinoRoute(
-                  context,
-                  PostDetailScreen(
-                    favoritePostDetailData: _posts[trueIndex],
-                    isArticle: FavoriteFolderPostItemBuilder.getPostType(
-                            _posts[index]) ==
-                        PostType.article,
-                  ),
-                );
-              }
-            },
-          );
-        }),
+    return SliverPadding(
+      padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
+      sliver: SliverGrid(
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 160,
+          mainAxisSpacing: 6,
+          crossAxisSpacing: 6,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            int trueIndex = startIndex + index;
+            final post = _posts[trueIndex];
+            return GestureDetector(
+              key: ValueKey('favorite-folder-${post.post?.id ?? trueIndex}'),
+              child: FavoriteFolderPostItemBuilder.buildNineGridPostItem(
+                context,
+                post,
+                wh: 160,
+              ),
+              onTap: () {
+                if (FavoriteFolderPostItemBuilder.isInvalid(post)) {
+                  IToast.showTop(appLocalizations.invalidContent);
+                } else {
+                  RouteUtil.pushPanelCupertinoRoute(
+                    context,
+                    PostDetailScreen(
+                      favoritePostDetailData: post,
+                      isArticle:
+                          FavoriteFolderPostItemBuilder.getPostType(post) ==
+                              PostType.article,
+                    ),
+                  );
+                }
+              },
+            );
+          },
+          childCount: count,
+          addAutomaticKeepAlives: false,
+        ),
       ),
     );
   }

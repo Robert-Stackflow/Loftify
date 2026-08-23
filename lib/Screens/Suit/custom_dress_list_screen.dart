@@ -6,6 +6,7 @@ import 'package:loftify/Screens/Suit/custom_bg_avatar_list_screen.dart';
 import 'package:loftify/Screens/Suit/dress_detail_screen.dart';
 
 import '../../Api/dress_api.dart';
+import '../../Widgets/Suit/dress_preview_card.dart';
 import '../../l10n/l10n.dart';
 import 'emote_detail_screen.dart';
 
@@ -15,6 +16,7 @@ class CustomDressListScreen extends StatefulWidget {
     this.tags = const [],
     this.propType = 2,
     this.blogId,
+    this.refreshOnStart = true,
   });
 
   final int propType;
@@ -22,14 +24,15 @@ class CustomDressListScreen extends StatefulWidget {
   final List<String> tags;
 
   final int? blogId;
+  final bool refreshOnStart;
 
   static const String routeName = "/suit/customDress";
 
   @override
-  State<CustomDressListScreen> createState() => _CustomDressListScreenState();
+  State<CustomDressListScreen> createState() => CustomDressListScreenState();
 }
 
-class _CustomDressListScreenState extends BaseDynamicState<CustomDressListScreen>
+class CustomDressListScreenState extends BaseDynamicState<CustomDressListScreen>
     with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
@@ -41,6 +44,8 @@ class _CustomDressListScreenState extends BaseDynamicState<CustomDressListScreen
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
   String? tag;
+
+  void callRefresh() => _refreshController.callRefresh();
 
   _fetchList({bool refresh = false}) async {
     if (_loading) return;
@@ -152,7 +157,7 @@ class _CustomDressListScreenState extends BaseDynamicState<CustomDressListScreen
           }),
         Expanded(
           child: EasyRefresh.builder(
-            refreshOnStart: true,
+            refreshOnStart: widget.refreshOnStart,
             controller: _refreshController,
             onRefresh: _onRefresh,
             onLoad: _onLoad,
@@ -163,12 +168,16 @@ class _CustomDressListScreenState extends BaseDynamicState<CustomDressListScreen
                       ? _buildEmoteBody(physics)
                       : EmptyPlaceholder(
                           text: appLocalizations.noEmotePackage,
-                          physics: physics)
+                          physics: physics,
+                          shrinkWrap: false,
+                        )
                   : _giftDressList.isNotEmpty
                       ? _buildDressBody(physics)
                       : EmptyPlaceholder(
                           text: appLocalizations.noDress,
-                          physics: physics);
+                          physics: physics,
+                          shrinkWrap: false,
+                        );
             },
           ),
         ),
@@ -180,7 +189,7 @@ class _CustomDressListScreenState extends BaseDynamicState<CustomDressListScreen
     return LoadMoreNotification(
       child: WaterfallFlow.builder(
         physics: physics,
-        cacheExtent: 9999,
+        cacheExtent: MediaQuery.sizeOf(context).height,
         padding: const EdgeInsets.all(10),
         itemCount: _giftDressList.length,
         gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
@@ -201,7 +210,7 @@ class _CustomDressListScreenState extends BaseDynamicState<CustomDressListScreen
     return LoadMoreNotification(
       child: WaterfallFlow.builder(
         physics: physics,
-        cacheExtent: 9999,
+        cacheExtent: MediaQuery.sizeOf(context).height,
         padding: const EdgeInsets.all(10),
         itemCount: _giftEmoteList.length,
         gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
@@ -219,168 +228,81 @@ class _CustomDressListScreenState extends BaseDynamicState<CustomDressListScreen
   }
 
   _buildGiftDressItem(GiftDress item) {
-    return GestureDetector(
-      onTap: () {
-        RouteUtil.pushPanelCupertinoRoute(
-          context,
-          DressDetailScreen(
-            returnGiftDressId: item.returnGiftDressId,
-          ),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-        decoration: BoxDecoration(
-          color: ChewieTheme.canvasColor,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Column(
-          children: [
-            const SizedBox(width: 15),
-            SizedBox(
-              width: 200,
-              height: 200,
-              child: item.partCount >= 4
-                  ? GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: 4,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        childAspectRatio: 1,
-                      ),
-                      itemBuilder: (context, index) {
-                        return ChewieItemBuilder.buildCachedImage(
-                          imageUrl: item.partList[index].partUrl,
-                          context: context,
-                          showLoading: false,
-                          placeholderBackground: Colors.transparent,
-                          width: 80,
-                          height: 80,
-                        );
-                      },
-                    )
-                  : ChewieItemBuilder.buildCachedImage(
-                      imageUrl: item.coverImg,
-                      context: context,
-                      showLoading: false,
-                      placeholderBackground: Colors.transparent,
-                      width: 200,
-                      height: 200,
-                    ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              item.name,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 5),
-            Text(
-              appLocalizations.pendantCount(item.partCount),
-              style: Theme.of(context).textTheme.labelMedium,
-            ),
-            const SizedBox(height: 10),
-            RoundIconTextButton(
-              text: appLocalizations.viewDetail,
-              background: Theme.of(context).primaryColor,
-              onPressed: () {
-                RouteUtil.pushPanelCupertinoRoute(
-                  context,
-                  DressDetailScreen(
-                    returnGiftDressId: item.returnGiftDressId,
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 4),
-          ],
-        ),
+    return DressPreviewCard(
+      title: item.name,
+      subtitle: StringUtil.isNotEmpty(item.creatorNickName)
+          ? item.creatorNickName
+          : appLocalizations.pendantCount(item.partCount),
+      badge: appLocalizations.pendantCount(item.partCount),
+      onTap: () => _openDressDetail(item),
+      preview: _buildDressPreview(item),
+    );
+  }
+
+  void _openDressDetail(GiftDress item) {
+    RouteUtil.pushPanelCupertinoRoute(
+      context,
+      DressDetailScreen(returnGiftDressId: item.returnGiftDressId),
+    );
+  }
+
+  Widget _buildDressPreview(GiftDress item) {
+    if (item.partCount < 4 || item.partList.length < 4) {
+      return ChewieItemBuilder.buildCachedImage(
+        imageUrl: item.coverImg,
+        context: context,
+        showLoading: false,
+        placeholderBackground: Colors.transparent,
+        width: double.infinity,
+        height: double.infinity,
+        fit: BoxFit.contain,
+      );
+    }
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: 4,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+      ),
+      itemBuilder: (context, index) => ChewieItemBuilder.buildCachedImage(
+        imageUrl: item.partList[index].partUrl,
+        context: context,
+        showLoading: false,
+        placeholderBackground: Colors.transparent,
+        fit: BoxFit.contain,
       ),
     );
   }
 
   _buildGiftEmoteItem(GiftEmote item) {
-    return GestureDetector(
+    return DressPreviewCard(
+      title: item.name,
+      subtitle: appLocalizations.emoteCount(item.emoteCount),
+      badge: appLocalizations.emoteCount(item.emoteCount),
       onTap: () {
         RouteUtil.pushPanelCupertinoRoute(
           context,
-          EmoteDetailScreen(
-            emotePackId: item.packageId,
-          ),
+          EmoteDetailScreen(emotePackId: item.packageId),
         );
       },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-        decoration: BoxDecoration(
-          color: ChewieTheme.canvasColor,
-          borderRadius: BorderRadius.circular(10),
+      preview: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: item.emoteList.length.clamp(0, 4),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
         ),
-        child: Column(
-          children: [
-            const SizedBox(width: 15),
-            SizedBox(
-              width: 200,
-              height: 200,
-              child: item.emoteCount >= 4
-                  ? GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: 4,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        childAspectRatio: 1,
-                      ),
-                      itemBuilder: (context, index) {
-                        return ChewieItemBuilder.buildCachedImage(
-                          imageUrl: item.emoteList[index].url,
-                          context: context,
-                          showLoading: false,
-                          placeholderBackground: Colors.transparent,
-                          width: 80,
-                          height: 80,
-                        );
-                      },
-                    )
-                  : ChewieItemBuilder.buildCachedImage(
-                      imageUrl: item.name,
-                      context: context,
-                      showLoading: false,
-                      placeholderBackground: Colors.transparent,
-                      width: 200,
-                      height: 200,
-                    ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              item.name,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 5),
-            Text(
-              appLocalizations.emoteCount(item.emoteCount),
-              style: Theme.of(context).textTheme.labelMedium,
-            ),
-            const SizedBox(height: 10),
-            RoundIconTextButton(
-              text: appLocalizations.viewDetail,
-              background: Theme.of(context).primaryColor,
-              onPressed: () {
-                RouteUtil.pushPanelCupertinoRoute(
-                  context,
-                  EmoteDetailScreen(
-                    emotePackId: item.packageId,
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 4),
-          ],
+        itemBuilder: (context, index) => ChewieItemBuilder.buildCachedImage(
+          imageUrl: item.emoteList[index].url,
+          context: context,
+          showLoading: false,
+          placeholderBackground: Colors.transparent,
+          fit: BoxFit.contain,
         ),
       ),
     );

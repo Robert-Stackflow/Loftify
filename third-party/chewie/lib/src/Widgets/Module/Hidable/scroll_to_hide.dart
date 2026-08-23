@@ -106,18 +106,24 @@ class ScrollToHideState extends State<ScrollToHide> {
 
   @override
   void initState() {
+    super.initState();
     for (final controller in _allScrollControllers) {
       controller.addListener(listen);
     }
     widget.controller?.doShow = show;
     widget.controller?.doHide = hide;
-    super.initState();
   }
 
   @override
   void dispose() {
     for (final controller in _allScrollControllers) {
-      controller.removeListener(() {});
+      controller.removeListener(listen);
+    }
+    if (widget.controller?.doShow == show) {
+      widget.controller?.doShow = null;
+    }
+    if (widget.controller?.doHide == hide) {
+      widget.controller?.doHide = null;
     }
     super.dispose();
   }
@@ -125,18 +131,34 @@ class ScrollToHideState extends State<ScrollToHide> {
   @override
   void didUpdateWidget(ScrollToHide oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.scrollController != widget.scrollController) {
-      widget.scrollController?.addListener(listen);
-    }
-    if (oldWidget.scrollControllers != widget.scrollControllers) {
-      for (final controller in oldWidget.scrollControllers) {
+    final oldControllers = _controllersFor(oldWidget);
+    final newControllers = _controllersFor(widget);
+    for (final controller in oldControllers) {
+      if (!newControllers.contains(controller)) {
         controller.removeListener(listen);
       }
-      for (final controller in widget.scrollControllers) {
+    }
+    for (final controller in newControllers) {
+      if (!oldControllers.contains(controller)) {
         controller.addListener(listen);
       }
     }
+    if (oldWidget.controller != widget.controller) {
+      if (oldWidget.controller?.doShow == show) {
+        oldWidget.controller?.doShow = null;
+      }
+      if (oldWidget.controller?.doHide == hide) {
+        oldWidget.controller?.doHide = null;
+      }
+      widget.controller?.doShow = show;
+      widget.controller?.doHide = hide;
+    }
   }
+
+  List<ScrollController> _controllersFor(ScrollToHide target) => [
+        if (target.scrollController != null) target.scrollController!,
+        ...target.scrollControllers,
+      ];
 
   @override
   Widget build(BuildContext context) {

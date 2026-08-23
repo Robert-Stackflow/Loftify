@@ -1,12 +1,9 @@
-import 'dart:convert';
-
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Models/account_response.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/request_util.dart';
-import 'package:loftify/Utils/utils.dart';
 
 import '../l10n/l10n.dart';
 import 'app_provider.dart';
@@ -43,6 +40,8 @@ class HiveUtil {
   static const String inappWebviewKey = "inappWebview";
   static const String doubleTapActionKey = "doubleTapAction";
   static const String downloadSuccessActionKey = "downloadSuccessAction";
+  static const String videoContinuousPlaybackKey = "videoContinuousPlayback";
+  static const String videoDanmakuEnabledKey = "videoDanmakuEnabled";
 
   //Appearance
   static const String enableLandscapeInTabletKey = "enableLandscapeInTablet";
@@ -102,10 +101,32 @@ class HiveUtil {
   //System
   static const String firstLoginKey = "firstLogin";
   static const String refreshRateKey = "refreshRate";
+  static const String refreshRateModeKey = "refreshRateMode";
+  static const String dynamicTabIndexKey = "dynamicTabIndex";
+  static const String dynamicTabIdKey = "dynamicTabId";
+  static const String searchRankTabIndexKey = "searchRankTabIndex";
+  static const String searchRankTabIdKey = "searchRankTabId";
+  static const String searchResultTabIndexKey = "searchResultTabIndex";
+  static const String searchResultTabIdKey = "searchResultTabId";
+  static const String tagDetailTabIndexKey = "tagDetailTabIndex";
+  static const String tagDetailTabIdKey = "tagDetailTabId";
+  static const String systemNoticeTabIndexKey = "systemNoticeTabIndex";
+  static const String systemNoticeTabIdKey = "systemNoticeTabId";
+  static const String tagCollectionGrainTabIndexKey =
+      "tagCollectionGrainTabIndex";
+  static const String tagCollectionGrainTabIdKey = "tagCollectionGrainTabId";
+  static const String userDetailTabIndexKey = "userDetailTabIndex";
+  static const String userDetailTabIdKey = "userDetailTabId";
+  static const String suitTabIndexKey = "suitTabIndex";
+  static const String suitTabIdKey = "suitTabId";
+  static const String suitCustomPageIndexKey = "suitCustomPageIndex";
+  static const String suitCustomPageIdKey = "suitCustomPageId";
+  static const String tagNewestFilterKey = "tagNewestFilter";
+  static const String tagHottestFilterKey = "tagHottestFilter";
   static const String haveShownQQGroupDialogKey = "haveShownQQGroupDialog";
   static const String overrideCloudControlKey = "overrideCloudControl";
 
-  static confirmLogout(BuildContext context) {
+  static void confirmLogout(BuildContext context) {
     DialogBuilder.showConfirmDialog(
       context,
       title: "退出登录",
@@ -127,7 +148,7 @@ class HiveUtil {
     );
   }
 
-  static initConfig() async {
+  static Future<void> initConfig() async {
     ChewieHiveUtil.put(HiveUtil.doubleTapActionKey, 1);
     ChewieHiveUtil.put(HiveUtil.showRecommendVideoKey, false);
     ChewieHiveUtil.put(HiveUtil.showRecommendArticleKey, true);
@@ -138,19 +159,57 @@ class HiveUtil {
     ChewieHiveUtil.put(HiveUtil.showCollectionPreNextKey, true);
     ChewieHiveUtil.put(
         HiveUtil.waterfallFlowImageQualityKey, ImageQuality.medium.index);
-    ChewieHiveUtil.put(HiveUtil.postDetailImageQualityKey, ImageQuality.origin.index);
-    ChewieHiveUtil.put(HiveUtil.imageDetailImageQualityKey, ImageQuality.raw.index);
-    ChewieHiveUtil.put(HiveUtil.tapLinkButtonImageQualityKey, ImageQuality.raw.index);
+    ChewieHiveUtil.put(
+        HiveUtil.postDetailImageQualityKey, ImageQuality.origin.index);
+    ChewieHiveUtil.put(
+        HiveUtil.imageDetailImageQualityKey, ImageQuality.raw.index);
+    ChewieHiveUtil.put(
+        HiveUtil.tapLinkButtonImageQualityKey, ImageQuality.raw.index);
     ChewieHiveUtil.put(
         HiveUtil.longPressLinkButtonImageQualityKey, ImageQuality.raw.index);
     ChewieHiveUtil.put(HiveUtil.followMainColorKey, true);
     ChewieHiveUtil.put(HiveUtil.inappWebviewKey, true);
   }
 
-  static initBox() async {
+  static Future<void> initBox() async {
     await Hive.openBox(HiveUtil.settingsBox,
         path: await FileUtil.getApplicationDir());
   }
+
+  static void setWindowSize(Size size) => ChewieHiveUtil.setWindowSize(size);
+
+  static void setWindowPosition(Offset offset) =>
+      ChewieHiveUtil.setWindowPosition(offset);
+
+  static void setCustomFonts(List<CustomFont> fonts) =>
+      ChewieHiveUtil.setCustomFonts(fonts);
+
+  static List<CustomFont> getCustomFonts() => ChewieHiveUtil.getCustomFonts();
+
+  static Locale? getLocale() => ChewieHiveUtil.getLocale();
+
+  static void setLocale(Locale? locale) => ChewieHiveUtil.setLocale(locale);
+
+  static int getFontSize() => ChewieHiveUtil.getFontSize();
+
+  static void setFontSize(int fontSize) => ChewieHiveUtil.setFontSize(fontSize);
+
+  static ActiveThemeMode getThemeMode() => ChewieHiveUtil.getThemeMode();
+
+  static void setThemeMode(ActiveThemeMode themeMode) =>
+      ChewieHiveUtil.setThemeMode(themeMode);
+
+  static int getLightThemeIndex() => ChewieHiveUtil.getLightThemeIndex();
+
+  static int getDarkThemeIndex() => ChewieHiveUtil.getDarkThemeIndex();
+
+  static ChewieThemeColorData getLightTheme() => ChewieHiveUtil.getLightTheme();
+
+  static ChewieThemeColorData getDarkTheme() => ChewieHiveUtil.getDarkTheme();
+
+  static void setLightTheme(int index) => ChewieHiveUtil.setLightTheme(index);
+
+  static void setDarkTheme(int index) => ChewieHiveUtil.setDarkTheme(index);
 
   static Future? setUserInfo(FullBlogInfo? blogInfo) {
     if (blogInfo != null) {
@@ -194,11 +253,12 @@ class HiveUtil {
       canLock() && ChewieHiveUtil.getBool(HiveUtil.autoLockKey);
 
   static bool canLock() =>
-      ChewieHiveUtil.getBool(HiveUtil.enableGuesturePasswdKey) && hasGuesturePasswd();
+      ChewieHiveUtil.getBool(HiveUtil.enableGuesturePasswdKey) &&
+      hasGuesturePasswd();
 
   static bool hasGuesturePasswd() =>
       ChewieHiveUtil.getString(HiveUtil.guesturePasswdKey) != null &&
-          ChewieHiveUtil.getString(HiveUtil.guesturePasswdKey)!.isNotEmpty;
+      ChewieHiveUtil.getString(HiveUtil.guesturePasswdKey)!.isNotEmpty;
 
   static Map<String, String> getCookie() {
     Map<String, String> map = {};

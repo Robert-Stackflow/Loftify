@@ -138,7 +138,7 @@ class ChewieTheme {
   static BoxDecoration get defaultDecoration {
     return BoxDecoration(
       color: ChewieTheme.canvasColor,
-      border: ChewieTheme.border,
+      border: ChewieTheme.responsiveBorder,
       boxShadow: ChewieTheme.defaultBoxShadow,
       borderRadius: ChewieDimens.defaultBorderRadius,
     );
@@ -174,6 +174,9 @@ class ChewieTheme {
 
   static Border get border => borderWithWidth(0.8);
 
+  static Border? get responsiveBorder =>
+      ResponsiveUtil.isLandscapeLayout() ? ChewieTheme.border : null;
+
   static Border get divider => dividerWithWidth(1);
 
   static Border get topBorder => Border(top: borderSide);
@@ -197,13 +200,13 @@ class ChewieTheme {
 
   static getBackground(BuildContext context) {
     return ChewieUtils.currentBrightness(context) == Brightness.light
-        ? canvasColor
+        ? scaffoldBackgroundColor
         : scaffoldBackgroundColor;
   }
 
   static Color getForeground(BuildContext context) {
     return ChewieUtils.currentBrightness(context) == Brightness.light
-        ? scaffoldBackgroundColor
+        ? canvasColor
         : canvasColor;
   }
 
@@ -293,7 +296,9 @@ class ChewieTheme {
 
   static Color get barrierColor => ResponsiveUtil.isLandscapeLayout()
       ? ChewieTheme.scaffoldBackgroundColor.withValues(alpha: 0.7)
-      : Colors.black54;
+      : const Color(0x59000000);
+
+  static const Duration animationDuration = Duration(milliseconds: 500);
 
   static Color get iconColor =>
       Theme.of(chewieProvider.rootContext).iconTheme.color!;

@@ -33,20 +33,31 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
   List<Comment> hotComments = [];
   List<Comment> newComments = [];
   bool loading = false;
+  bool _loadFailed = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
-  final bool _noMore = false;
+  bool _noMore = false;
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 200), () {
-      _onRefresh();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _onRefresh();
     });
   }
 
+  @override
+  void dispose() {
+    _refreshController.dispose();
+    super.dispose();
+  }
+
   _fetchComments({bool refresh = false}) async {
-    if (loading) return;
+    if (loading) return IndicatorResult.none;
     loading = true;
+    if (refresh) {
+      _loadFailed = false;
+      _noMore = false;
+    }
     return await PostApi.getL1Comments(
       postId: widget.postId,
       blogId: widget.blogId,
@@ -64,14 +75,16 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
           for (var comment in comments) {
             newComments.add(Comment.fromJson(comment));
           }
+          _loadFailed = false;
           if (comments.isEmpty && !refresh) {
+            _noMore = true;
             return IndicatorResult.noMore;
           }
           return IndicatorResult.success;
         }
       } catch (e, t) {
         ILogger.error("Failed to load newest comments", e, t);
-        IToast.showTop(appLocalizations.loadFailed);
+        if (refresh) _loadFailed = true;
         return IndicatorResult.fail;
       } finally {
         loading = false;
@@ -132,21 +145,18 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
     return Container(
       decoration: BoxDecoration(
         color: ChewieTheme.getBackground(context),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      height: MediaQuery.sizeOf(context).height * 0.8,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Column(
-        children: [
-          Expanded(
-            child: EasyRefresh(
-              controller: _refreshController,
-              onLoad: _onLoad,
-              triggerAxis: Axis.vertical,
-              child: _buildBody(),
-            ),
-          ),
-        ],
+      height: MediaQuery.sizeOf(context).height * 0.82,
+      child: SafeArea(
+        top: false,
+        child: EasyRefresh(
+          controller: _refreshController,
+          onRefresh: _onRefresh,
+          onLoad: _noMore ? null : _onLoad,
+          triggerAxis: Axis.vertical,
+          child: _buildBody(),
+        ),
       ),
     );
   }
@@ -184,10 +194,16 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
                       topPadding: 40,
                     ),
                   )
-                : Container(
-                    margin: const EdgeInsets.symmetric(vertical: 24),
-                    child: EmptyPlaceholder(text: appLocalizations.noComment),
-                  ),
+                : _loadFailed
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        child: CustomErrorWidget(onTap: _onRefresh),
+                      )
+                    : Container(
+                        margin: const EdgeInsets.symmetric(vertical: 24),
+                        child:
+                            EmptyPlaceholder(text: appLocalizations.noComment),
+                      ),
           ),
         if (newComments.isNotEmpty)
           SliverPersistentHeader(
@@ -216,33 +232,20 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
     );
   }
 
-  _buildComments(List<Comment> comments) {
-    return SliverList(
-      delegate: SliverChildListDelegate(
-        [
-          LoadMoreNotification(
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: comments.length,
-              padding: EdgeInsets.zero,
-              physics: const NeverScrollableScrollPhysics(),
-              itemBuilder: (context, index) =>
-                  LoftifyItemBuilder.buildCommentRow(
-                context,
-                comments[index],
-                padding: const EdgeInsets.only(bottom: 12),
-                writerId: widget.blogId,
-                l2Padding: const EdgeInsets.only(top: 12, right: 0),
-                onL2CommentTap: (comment) {
-                  HapticFeedback.mediumImpact();
-                  _fetchL2Comments(comment);
-                },
-              ),
-            ),
-            noMore: _noMore,
-            onLoad: _onLoad,
-          ),
-        ],
+  Widget _buildComments(List<Comment> comments) {
+    return SliverPadding(
+      padding: const EdgeInsets.only(bottom: 8),
+      sliver: SliverList.builder(
+        itemCount: comments.length,
+        itemBuilder: (context, index) => LoftifyItemBuilder.buildCommentRow(
+          context,
+          comments[index],
+          writerId: widget.blogId,
+          onL2CommentTap: (comment) {
+            HapticFeedback.mediumImpact();
+            _fetchL2Comments(comment);
+          },
+        ),
       ),
     );
   }

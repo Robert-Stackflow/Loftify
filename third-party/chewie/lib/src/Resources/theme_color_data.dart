@@ -116,6 +116,13 @@ class ChewieThemeColorData {
     }
   }
 
+  /// The full-page surface used by Scaffold and navigation chrome.
+  ///
+  /// Light themes keep their configurable canvas/card colors for visual
+  /// hierarchy, while the viewport itself stays consistently white.
+  Color get effectivePageBackgroundColor =>
+      isDarkMode ? scaffoldBackgroundColor : Colors.white;
+
   ChewieThemeColorData({
     this.isDarkMode = false,
     required this.id,
@@ -166,11 +173,11 @@ class ChewieThemeColorData {
       canvasColor: const Color(0xFFF7F8F9),
       scaffoldBackgroundColor: const Color(0xFFFFFFFF),
       cardColor: const Color(0xFFF1F1F1),
-      primaryColor: const Color(0xFF455A64),
-      cursorColor: const Color(0xFF455A64),
-      indicatorColor: const Color(0xFF455A64),
-      textSelectionColor: const Color(0xFF455A64).withAlpha(70),
-      textSelectionHandleColor: const Color(0xFF455A64),
+      primaryColor: const Color(0xFF14C2BB),
+      cursorColor: const Color(0xFF14C2BB),
+      indicatorColor: const Color(0xFF14C2BB),
+      textSelectionColor: const Color(0xFF14C2BB).withAlpha(70),
+      textSelectionHandleColor: const Color(0xFF14C2BB),
       hintColor: const Color(0xFF1F1F1F),
       iconColor: const Color(0xFF333333),
       hoverColor: const Color(0x33C8C8C8),
@@ -182,14 +189,14 @@ class ChewieThemeColorData {
       appBarShadowColor: const Color(0xFFF6F6F6),
       appBarBackgroundColor: const Color(0xFFF7F8F9),
       appBarSurfaceTintColor: const Color(0xFFF7F8F9),
-      textColor: const Color(0xFF212121),
-      textLightGreyColor: const Color(0xFF757575),
+      textColor: const Color(0xFF333333),
+      textLightGreyColor: const Color(0xFFB0B8C0),
       textDarkGreyColor: const Color(0xFF71767B),
-      buttonPrimaryColor: const Color(0xFF455A64),
+      buttonPrimaryColor: const Color(0xFF14C2BB),
       buttonSecondaryColor: const Color(0xFFF2F2F2),
       buttonHoverColor: const Color(0xFFF2F2F2),
       buttonLightHoverColor: const Color(0xFFECECED),
-      buttonDisabledColor: const Color(0xFF96BBFA),
+      buttonDisabledColor: const Color(0xFFD4D4D5),
       scrollBarThumbColor: const Color(0xFFC4C4C4),
       scrollBarThumbHoverColor: const Color(0xFFB5B5B5),
       scrollBarTrackColor: const Color(0xFFF0F0F0),
@@ -223,11 +230,11 @@ class ChewieThemeColorData {
       textColor: const Color(0xFF2D2D2D),
       textLightGreyColor: const Color(0xFF9E9E9E),
       textDarkGreyColor: const Color(0xFF636363),
-      buttonPrimaryColor: const Color(0xFF1976D2),
+      buttonPrimaryColor: const Color(0xFF3A3A3A),
       buttonSecondaryColor: const Color(0xFFE0E0E0),
-      buttonHoverColor: const Color(0xFF2196F3),
-      buttonLightHoverColor: const Color(0xFF90CAF9),
-      buttonDisabledColor: const Color(0xFFB0BEC5),
+      buttonHoverColor: const Color(0xFF5D5D5D),
+      buttonLightHoverColor: const Color(0xFF979797),
+      buttonDisabledColor: const Color(0xFFDADADA),
       scrollBarThumbColor: const Color(0xFFC1C1C1),
       scrollBarThumbHoverColor: const Color(0xFF9E9E9E),
       scrollBarTrackColor: const Color(0xFFF5F5F5),
@@ -278,19 +285,20 @@ class ChewieThemeColorData {
 
   static List<ChewieThemeColorData> defaultDarkThemes = [
     ChewieThemeColorData(
+      isDarkMode: true,
       id: "PureBlack",
       name: "极简黑",
       canvasColor: const Color(0xFF212121),
       scaffoldBackgroundColor: const Color(0xFF171717),
       cardColor: const Color(0xFF252525),
-      primaryColor: const Color(0xFF90A4AE),
-      cursorColor: const Color(0xFF90A4AE),
-      indicatorColor: const Color(0xFF90A4AE),
-      textSelectionColor: const Color(0xFF90A4AE).withAlpha(70),
-      textSelectionHandleColor: const Color(0xFF90A4AE),
+      primaryColor: const Color(0xFF14C2BB),
+      cursorColor: const Color(0xFF14C2BB),
+      indicatorColor: const Color(0xFF14C2BB),
+      textSelectionColor: const Color(0xFF14C2BB).withAlpha(70),
+      textSelectionHandleColor: const Color(0xFF14C2BB),
       hintColor: const Color(0xFFE8E8E8),
       textColor: const Color(0xFFE0E0E0),
-      textLightGreyColor: const Color(0xFFAAAAAA),
+      textLightGreyColor: const Color(0xFFA0A0A0),
       textDarkGreyColor: const Color(0xFF5C5C5C),
       iconColor: const Color(0xFFCACACA),
       hoverColor: const Color(0x44383838),
@@ -302,7 +310,7 @@ class ChewieThemeColorData {
       appBarShadowColor: const Color(0xFF1F1F1F),
       appBarBackgroundColor: const Color(0xFF212121),
       appBarSurfaceTintColor: const Color(0xFF212121),
-      buttonPrimaryColor: const Color(0xFF90A4AE),
+      buttonPrimaryColor: const Color(0xFF14C2BB),
       buttonSecondaryColor: const Color(0xFF333333),
       buttonDisabledColor: const Color(0xFF4A4A4A),
       buttonHoverColor: const Color(0xFF333333),
@@ -316,44 +324,46 @@ class ChewieThemeColorData {
       errorColor: const Color(0xFFCF6679),
     ),
     ChewieThemeColorData(
+      isDarkMode: true,
       id: "BlueIron",
       name: "蓝铁",
-      scaffoldBackgroundColor: const Color(0xFF1D2733),
-      canvasColor: const Color(0xFF242E39),
-      cardColor: const Color(0xFF2E3A45),
-      primaryColor: const Color(0xFF14C2BB),
-      hintColor: const Color(0xFF14C2BB),
-      cursorColor: const Color(0xFF14C2BB),
-      indicatorColor: const Color(0xFF14C2BB),
-      textSelectionColor: const Color(0xFF14C2BB).withAlpha(70),
-      textSelectionHandleColor: const Color(0xFF14C2BB),
-      textColor: const Color(0xFFB8B8B8),
-      textLightGreyColor: const Color(0xFF94A3B8),
-      textDarkGreyColor: const Color(0xFF5C677D),
-      iconColor: const Color(0xFFB8B8B8),
+      scaffoldBackgroundColor: const Color(0xFF1A2332),
+      canvasColor: const Color(0xFF212D3B),
+      cardColor: const Color(0xFF2A3847),
+      primaryColor: const Color(0xFF4FC3C3),
+      hintColor: const Color(0xFF4FC3C3),
+      cursorColor: const Color(0xFF4FC3C3),
+      indicatorColor: const Color(0xFF4FC3C3),
+      textSelectionColor: const Color(0xFF4FC3C3).withAlpha(70),
+      textSelectionHandleColor: const Color(0xFF4FC3C3),
+      textColor: const Color(0xFFDCE4EC),
+      textLightGreyColor: const Color(0xFFA8B8C8),
+      textDarkGreyColor: const Color(0xFF7A8FA3),
+      iconColor: const Color(0xFFC5D0DB),
       hoverColor: const Color(0x22C8C8C8),
       splashColor: const Color(0x22CCCCCC),
       highlightColor: const Color(0x22CFCFCF),
-      shadowColor: const Color(0xFF1B2530),
-      appBarShadowColor: const Color(0xFF1B2530),
-      appBarBackgroundColor: const Color(0xFF242E39),
-      appBarSurfaceTintColor: const Color(0xFF242E39),
-      buttonPrimaryColor: const Color(0xFFF2F2F2),
-      buttonSecondaryColor: const Color(0xFF333333),
-      buttonHoverColor: const Color(0xFF333333),
-      buttonLightHoverColor: const Color(0xFF2C2C2C),
-      buttonDisabledColor: const Color(0xFF4A4A4A),
-      dividerColor: const Color(0xFF2D3743),
-      borderColor: const Color(0xFF2D3743),
-      scrollBarThumbColor: const Color(0xFF5A5A5A),
-      scrollBarThumbHoverColor: const Color(0xFF242E39),
-      scrollBarTrackColor: const Color(0xFF2D3743),
-      scrollBarTrackHoverColor: const Color(0xFF404040),
-      successColor: const Color(0xFF81C784),
-      warningColor: const Color(0xFFFFA726),
-      errorColor: const Color(0xFFCF6679),
+      shadowColor: const Color(0xFF131C28),
+      appBarShadowColor: const Color(0xFF131C28),
+      appBarBackgroundColor: const Color(0xFF212D3B),
+      appBarSurfaceTintColor: const Color(0xFF212D3B),
+      buttonPrimaryColor: const Color(0xFFE8EDF2),
+      buttonSecondaryColor: const Color(0xFF2E3D4D),
+      buttonHoverColor: const Color(0xFF2E3D4D),
+      buttonLightHoverColor: const Color(0xFF283545),
+      buttonDisabledColor: const Color(0xFF3A4A5A),
+      dividerColor: const Color(0xFF2C3A4A),
+      borderColor: const Color(0xFF2C3A4A),
+      scrollBarThumbColor: const Color(0xFF4A5A6A),
+      scrollBarThumbHoverColor: const Color(0xFF5A6A7A),
+      scrollBarTrackColor: const Color(0xFF253040),
+      scrollBarTrackHoverColor: const Color(0xFF2E3D4D),
+      successColor: const Color(0xFF6ECF8E),
+      warningColor: const Color(0xFFFFB74D),
+      errorColor: const Color(0xFFEF7B7B),
     ),
     ChewieThemeColorData(
+      isDarkMode: true,
       id: "GithubDark",
       name: "Github深色",
       canvasColor: const Color(0xFF0d1117),
@@ -394,6 +404,26 @@ class ChewieThemeColorData {
   ];
 
   ThemeData toThemeData() {
+    final pageBackgroundColor = effectivePageBackgroundColor;
+    final brightness = isDarkMode ? Brightness.dark : Brightness.light;
+    final onPrimary = ColorUtil.getContrastColor(primaryColor);
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: primaryColor,
+      brightness: brightness,
+    ).copyWith(
+      primary: primaryColor,
+      onPrimary: onPrimary,
+      secondary: primaryColor,
+      onSecondary: onPrimary,
+      surface: pageBackgroundColor,
+      onSurface: textColor,
+      error: errorColor,
+      onError: ColorUtil.getContrastColor(errorColor),
+      outline: borderColor,
+      shadow: shadowColor,
+      surfaceTint: primaryColor,
+    );
+
     TextStyle displayLarge = TextStyle(
       fontWeight: FontWeight.w400,
       fontSize: 57,
@@ -505,14 +535,12 @@ class ChewieThemeColorData {
 
     return ThemeData(
       fontFamily: CustomFont.getCurrentFont().fontFamily,
-      fontFamilyFallback: const [
-        "SNPro-Regular",
-      ],
-      brightness: isDarkMode ? Brightness.dark : Brightness.light,
+      brightness: brightness,
+      colorScheme: colorScheme,
       primaryColor: primaryColor,
       hintColor: hintColor,
       indicatorColor: indicatorColor,
-      scaffoldBackgroundColor: scaffoldBackgroundColor,
+      scaffoldBackgroundColor: pageBackgroundColor,
       canvasColor: canvasColor,
       dividerColor: dividerColor,
       shadowColor: shadowColor,
@@ -597,7 +625,16 @@ class ChewieThemeColorData {
         backgroundColor: appBarBackgroundColor,
         surfaceTintColor: appBarSurfaceTintColor,
       ),
-      tabBarTheme: const TabBarTheme(
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: pageBackgroundColor,
+        elevation: 0,
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: pageBackgroundColor,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+      ),
+      tabBarTheme: const TabBarThemeData(
         splashFactory: NoSplash.splashFactory,
       ),
       buttonTheme: ButtonThemeData(
@@ -635,6 +672,11 @@ class ChewieThemeColorData {
       inputDecorationTheme: InputDecorationTheme(
         hintStyle: bodySmall,
         errorStyle: TextStyle(color: errorColor),
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: primaryColor,
+        linearTrackColor: dividerColor,
+        circularTrackColor: dividerColor,
       ),
     );
   }
@@ -681,6 +723,103 @@ class ChewieThemeColorData {
         'warningColor': warningColor.toHex(),
         'errorColor': errorColor.toHex(),
       };
+
+  static String generateId() =>
+      'custom_${DateTime.now().millisecondsSinceEpoch}';
+
+  ChewieThemeColorData copyWith({
+    bool? isDarkMode,
+    String? id,
+    String? name,
+    String? description,
+    Color? primaryColor,
+    Color? canvasColor,
+    Color? scaffoldBackgroundColor,
+    Color? cardColor,
+    Color? hintColor,
+    Color? indicatorColor,
+    Color? hoverColor,
+    Color? splashColor,
+    Color? highlightColor,
+    Color? shadowColor,
+    Color? iconColor,
+    Color? appBarBackgroundColor,
+    Color? appBarSurfaceTintColor,
+    Color? appBarShadowColor,
+    double? appBarElevation,
+    double? appBarScrollUnderElevation,
+    Color? textColor,
+    Color? textLightGreyColor,
+    Color? textDarkGreyColor,
+    Color? buttonPrimaryColor,
+    Color? buttonSecondaryColor,
+    Color? buttonDisabledColor,
+    Color? buttonHoverColor,
+    Color? buttonLightHoverColor,
+    Color? textSelectionColor,
+    Color? textSelectionHandleColor,
+    Color? cursorColor,
+    Color? dividerColor,
+    Color? borderColor,
+    Color? scrollBarThumbColor,
+    Color? scrollBarThumbHoverColor,
+    Color? scrollBarTrackColor,
+    Color? scrollBarTrackHoverColor,
+    Color? successColor,
+    Color? warningColor,
+    Color? errorColor,
+  }) {
+    return ChewieThemeColorData(
+      isDarkMode: isDarkMode ?? this.isDarkMode,
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      primaryColor: primaryColor ?? this.primaryColor,
+      canvasColor: canvasColor ?? this.canvasColor,
+      scaffoldBackgroundColor:
+          scaffoldBackgroundColor ?? this.scaffoldBackgroundColor,
+      cardColor: cardColor ?? this.cardColor,
+      hintColor: hintColor ?? this.hintColor,
+      indicatorColor: indicatorColor ?? this.indicatorColor,
+      hoverColor: hoverColor ?? this.hoverColor,
+      splashColor: splashColor ?? this.splashColor,
+      highlightColor: highlightColor ?? this.highlightColor,
+      shadowColor: shadowColor ?? this.shadowColor,
+      iconColor: iconColor ?? this.iconColor,
+      appBarBackgroundColor:
+          appBarBackgroundColor ?? this.appBarBackgroundColor,
+      appBarSurfaceTintColor:
+          appBarSurfaceTintColor ?? this.appBarSurfaceTintColor,
+      appBarShadowColor: appBarShadowColor ?? this.appBarShadowColor,
+      appBarElevation: appBarElevation ?? this.appBarElevation,
+      appBarScrollUnderElevation:
+          appBarScrollUnderElevation ?? this.appBarScrollUnderElevation,
+      textColor: textColor ?? this.textColor,
+      textLightGreyColor: textLightGreyColor ?? this.textLightGreyColor,
+      textDarkGreyColor: textDarkGreyColor ?? this.textDarkGreyColor,
+      buttonPrimaryColor: buttonPrimaryColor ?? this.buttonPrimaryColor,
+      buttonSecondaryColor: buttonSecondaryColor ?? this.buttonSecondaryColor,
+      buttonDisabledColor: buttonDisabledColor ?? this.buttonDisabledColor,
+      buttonHoverColor: buttonHoverColor ?? this.buttonHoverColor,
+      buttonLightHoverColor:
+          buttonLightHoverColor ?? this.buttonLightHoverColor,
+      textSelectionColor: textSelectionColor ?? this.textSelectionColor,
+      textSelectionHandleColor:
+          textSelectionHandleColor ?? this.textSelectionHandleColor,
+      cursorColor: cursorColor ?? this.cursorColor,
+      dividerColor: dividerColor ?? this.dividerColor,
+      borderColor: borderColor ?? this.borderColor,
+      scrollBarThumbColor: scrollBarThumbColor ?? this.scrollBarThumbColor,
+      scrollBarThumbHoverColor:
+          scrollBarThumbHoverColor ?? this.scrollBarThumbHoverColor,
+      scrollBarTrackColor: scrollBarTrackColor ?? this.scrollBarTrackColor,
+      scrollBarTrackHoverColor:
+          scrollBarTrackHoverColor ?? this.scrollBarTrackHoverColor,
+      successColor: successColor ?? this.successColor,
+      warningColor: warningColor ?? this.warningColor,
+      errorColor: errorColor ?? this.errorColor,
+    );
+  }
 
   factory ChewieThemeColorData.fromJson(Map<String, dynamic> map) {
     return ChewieThemeColorData(

@@ -1,21 +1,23 @@
+import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Models/recommend_response.dart';
 
 import '../../Api/setting_api.dart';
 import '../../Api/user_api.dart';
-import '../../Resources/theme.dart';
-import '../../Utils/ilogger.dart';
-import '../../Utils/itoast.dart';
-import '../../Utils/route_util.dart';
-import '../../Widgets/Dialog/dialog_builder.dart';
-import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
-import '../../Widgets/Item/loftify_item_builder.dart';
+import '../../Widgets/Item/setting_management_item.dart';
 import '../../l10n/l10n.dart';
 import '../Info/user_detail_screen.dart';
+import 'base_setting_screen.dart';
 
-class UserDynamicShieldSettingScreen extends StatefulWidget {
-  const UserDynamicShieldSettingScreen({super.key});
+class UserDynamicShieldSettingScreen extends BaseSettingScreen {
+  const UserDynamicShieldSettingScreen({
+    super.key,
+    super.padding,
+    super.showTitleBar,
+    super.searchConfig,
+    super.searchText,
+  });
 
   static const String routeName = "/setting/userDynamicShield";
 
@@ -61,33 +63,55 @@ class _UserDynamicShieldSettingScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: ChewieTheme.getBackground(context),
-      appBar: ResponsiveAppBar(
-        showBack: true,
-        showBorder: true,
-        title: appLocalizations.userDynamicShieldSetting,
-        context: context,
-      ),
-      body: EasyRefresh(
+    return ChewieItemBuilder.buildSettingScreen(
+      context: context,
+      title: appLocalizations.userDynamicShieldSetting,
+      showTitleBar: widget.showTitleBar,
+      showBack: !ResponsiveUtil.isLandscapeLayout(),
+      padding: widget.padding,
+      overrideBody: EasyRefresh(
         controller: _refreshController,
         refreshOnStart: true,
         onRefresh: () async {
           return await _fetchShieldList();
         },
         triggerAxis: Axis.vertical,
-        child: ListView.builder(
-          itemCount: shieldList.length,
-          padding: EdgeInsets.zero,
-          itemBuilder: (context, index) =>
-              _buildShieldlistRow(shieldList[index]),
+        child: ListView(
+          padding: widget.padding,
+          children: [
+            CaptionItem(
+              title:
+                  '${appLocalizations.userDynamicShieldSetting} (${shieldList.length})',
+              children: shieldList.isEmpty
+                  ? [
+                      SizedBox(
+                        height: 140,
+                        child: EmptyPlaceholder(
+                          text: appLocalizations.noContent,
+                          physics: const NeverScrollableScrollPhysics(),
+                          topPadding: 20,
+                        ),
+                      ),
+                    ]
+                  : shieldList.map(_buildShieldlistRow).toList(),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  _buildShieldlistRow(SimpleBlogInfo blogInfo) {
-    return GestureDetector(
+  Widget _buildShieldlistRow(SimpleBlogInfo blogInfo) {
+    return SettingManagementItem(
+      title: blogInfo.blogNickName,
+      description: blogInfo.blogName,
+      leading: ItemBuilder.buildAvatar(
+        context: context,
+        imageUrl: blogInfo.bigAvaImg,
+        showLoading: false,
+        showBorder: true,
+        size: 40,
+      ),
       onTap: () {
         RouteUtil.pushPanelCupertinoRoute(
           context,
@@ -95,59 +119,28 @@ class _UserDynamicShieldSettingScreenState
               blogId: blogInfo.blogId, blogName: blogInfo.blogName),
         );
       },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: Theme.of(context).dividerColor,
-              width: 0.5,
-            ),
-          ),
-        ),
-        child: Row(
-          children: [
-            ItemBuilder.buildAvatar(
-              context: context,
-              imageUrl: blogInfo.bigAvaImg,
-              showLoading: false,
-              showBorder: true,
-              size: 40,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(blogInfo.blogNickName),
-            ),
-            LoftifyItemBuilder.buildFramedDoubleButton(
-              context: context,
-              isFollowed: false,
-              positiveText: appLocalizations.resumeView,
-              negtiveText: appLocalizations.resumeView,
-              onTap: () {
-                DialogBuilder.showConfirmDialog(
-                  context,
-                  title: appLocalizations.resumeViewDynamic,
-                  message:
-                      appLocalizations.resumeViewDynamicMessage(blogInfo.blogNickName),
-                  onTapConfirm: () {
-                    UserApi.shieldBlogOrUnShield(
-                      blogId: blogInfo.blogId,
-                      isShield: false,
-                    ).then((value) {
-                      if (value['code'] != 0) {
-                        IToast.showTop(value['msg']);
-                      } else {
-                        shieldList.remove(blogInfo);
-                        setState(() {});
-                      }
-                    });
-                  },
-                );
-              },
-            ),
-          ],
-        ),
-      ),
+      actionLabel: appLocalizations.resumeView,
+      onAction: () {
+        DialogBuilder.showConfirmDialog(
+          context,
+          title: appLocalizations.resumeViewDynamic,
+          message:
+              appLocalizations.resumeViewDynamicMessage(blogInfo.blogNickName),
+          onTapConfirm: () {
+            UserApi.shieldBlogOrUnShield(
+              blogId: blogInfo.blogId,
+              isShield: false,
+            ).then((value) {
+              if (value['code'] != 0) {
+                IToast.showTop(value['msg']);
+              } else {
+                shieldList.remove(blogInfo);
+                setState(() {});
+              }
+            });
+          },
+        );
+      },
     );
   }
 }

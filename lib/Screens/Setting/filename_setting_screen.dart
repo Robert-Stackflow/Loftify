@@ -1,16 +1,21 @@
+import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Utils/hive_util.dart';
-import 'package:loftify/Utils/itoast.dart';
-import 'package:loftify/Widgets/Custom/no_shadow_scroll_behavior.dart';
 
 import '../../Utils/constant.dart';
 import '../../Utils/enums.dart';
-import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
-import '../../Widgets/Item/item_builder.dart';
 import '../../l10n/l10n.dart';
+import 'base_setting_screen.dart';
 
-class FilenameSettingScreen extends StatefulWidget {
-  const FilenameSettingScreen({super.key, this.onSaved});
+class FilenameSettingScreen extends BaseSettingScreen {
+  const FilenameSettingScreen({
+    super.key,
+    this.onSaved,
+    super.padding,
+    super.showTitleBar,
+    super.searchConfig,
+    super.searchText,
+  });
 
   final Function(String)? onSaved;
 
@@ -20,7 +25,8 @@ class FilenameSettingScreen extends StatefulWidget {
   State<FilenameSettingScreen> createState() => _FilenameSettingScreenState();
 }
 
-class _FilenameSettingScreenState extends BaseDynamicState<FilenameSettingScreen>
+class _FilenameSettingScreenState
+    extends BaseDynamicState<FilenameSettingScreen>
     with TickerProviderStateMixin {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
@@ -56,30 +62,27 @@ class _FilenameSettingScreenState extends BaseDynamicState<FilenameSettingScreen
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: ResponsiveAppBar(
-        showBack: true,
-        title: appLocalizations.filenameFormat,
-        context: context,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      ),
-      body: EasyRefresh(
-        child: ScrollConfiguration(
-          behavior: NoShadowScrollBehavior(),
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            children: [
-              InputItem(
-                context: context,
-                focusNode: _focusNode,
-                hint: appLocalizations.inputFilenameFormat,
-                textInputAction: TextInputAction.done,
-                controller: _controller,
-                tailingType: TailingType.widget,
-                onSubmitted: (text) {
-                  _save();
-                },
-                tailingWidget: Row(
+    return ChewieItemBuilder.buildSettingScreen(
+      context: context,
+      title: appLocalizations.filenameFormat,
+      showTitleBar: widget.showTitleBar,
+      showBack: !ResponsiveUtil.isLandscapeLayout(),
+      padding: widget.padding,
+      children: [
+        CaptionItem(
+          title: appLocalizations.filenameFormat,
+          children: [
+            InputItem(
+              focusNode: _focusNode,
+              hint: appLocalizations.inputFilenameFormat,
+              textInputAction: TextInputAction.done,
+              controller: _controller,
+              onSubmit: (text) {
+                _save();
+              },
+              tailingConfig: InputItemLeadingTailingConfig(
+                type: InputItemLeadingTailingType.widget,
+                widget: Row(
                   children: [
                     const SizedBox(width: 5),
                     CircleIconButton(
@@ -95,54 +98,55 @@ class _FilenameSettingScreenState extends BaseDynamicState<FilenameSettingScreen
                   ],
                 ),
               ),
-              const SizedBox(height: 10),
-              Wrap(
-                  alignment: WrapAlignment.start,
-                  runAlignment: WrapAlignment.start,
-                  crossAxisAlignment: WrapCrossAlignment.start,
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    RoundIconTextButton(
-                      context,
-                      text: appLocalizations.availableFields,
-                      textStyle: Theme.of(context)
-                          .textTheme
-                          .titleSmall
-                          ?.apply(fontWeightDelta: 2),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Wrap(
+                alignment: WrapAlignment.start,
+                runAlignment: WrapAlignment.start,
+                crossAxisAlignment: WrapCrossAlignment.start,
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  RoundIconTextButton(
+                    text: appLocalizations.availableFields,
+                    textStyle: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.apply(fontWeightDelta: 2),
+                    radius: 10,
+                    padding: const EdgeInsets.only(top: 8, bottom: 8, left: 8),
+                    background: Colors.transparent,
+                  ),
+                  ...FilenameField.values.map((field) {
+                    return RoundIconTextButton(
+                      text: field.label,
+                      textStyle: Theme.of(context).textTheme.titleSmall,
                       radius: 10,
-                      padding:
-                          const EdgeInsets.only(top: 8, bottom: 8, left: 8),
-                      background: Colors.transparent,
-                    ),
-                    ...FilenameField.values.map((field) {
-                      return RoundIconTextButton(
-                        context,
-                        text: field.label,
-                        textStyle: Theme.of(context).textTheme.titleSmall,
-                        radius: 10,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        background: Theme.of(context).canvasColor,
-                        onTap: () {
-                          _focusNode.requestFocus();
-                          final text = _controller.text;
-                          int cursor = _controller.selection.baseOffset;
-                          if (cursor < 0) cursor = text.length;
-                          cursor = cursor.clamp(0, text.length);
-                          final newText = text.substring(0, cursor) +
-                              field.format +
-                              text.substring(cursor);
-                          _controller.text = newText;
-                          _controller.selection = TextSelection.fromPosition(
-                              TextPosition(
-                                  offset: cursor + field.format.length));
-                        },
-                      );
-                    }),
-                  ]),
-              const SizedBox(height: 10),
-              Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      background: Theme.of(context).canvasColor,
+                      onTap: () {
+                        _focusNode.requestFocus();
+                        final text = _controller.text;
+                        int cursor = _controller.selection.baseOffset;
+                        if (cursor < 0) cursor = text.length;
+                        cursor = cursor.clamp(0, text.length);
+                        final newText = text.substring(0, cursor) +
+                            field.format +
+                            text.substring(cursor);
+                        _controller.text = newText;
+                        _controller.selection = TextSelection.fromPosition(
+                            TextPosition(offset: cursor + field.format.length));
+                      },
+                    );
+                  }),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
                   color: Theme.of(context).canvasColor,
@@ -169,11 +173,10 @@ class _FilenameSettingScreenState extends BaseDynamicState<FilenameSettingScreen
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-            ],
-          ),
+            ),
+          ],
         ),
-      ),
+      ],
     );
   }
 

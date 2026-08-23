@@ -4,17 +4,14 @@ import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_windowmanager/flutter_windowmanager.dart';
-import 'package:intl/intl.dart';
 import 'package:local_auth/error_codes.dart' as auth_error;
 import 'package:local_auth/local_auth.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:screen_protector/screen_protector.dart';
-import 'package:uuid/uuid.dart';
 import 'package:window_manager/window_manager.dart';
 
 class ChewieUtils {
-
   static Future<void> setSafeMode(bool enabled) async {
     if (ResponsiveUtil.isMobile()) {
       if (enabled) {
@@ -32,8 +29,6 @@ class ChewieUtils {
     await ScreenProtector.protectDataLeakageWithColor(
         ChewieTheme.scaffoldBackgroundColor);
     if (ResponsiveUtil.isAndroid()) {
-      SystemChrome.setSystemUIOverlayStyle(
-          const SystemUiOverlayStyle(statusBarColor: Colors.white));
       FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
       FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_BLUR_BEHIND);
     }
@@ -177,6 +172,7 @@ class ChewieUtils {
       if (showLoading) {
         CustomLoadingDialog.dismissLoading();
       }
+      if (!context.mounted) return;
       if (releases.isEmpty) {
         if (showFailedToast) {
           IToast.showTop(

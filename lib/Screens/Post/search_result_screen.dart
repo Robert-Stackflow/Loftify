@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
@@ -12,11 +13,33 @@ import 'package:loftify/Screens/Post/tag_detail_screen.dart';
 import 'package:loftify/Widgets/PostItem/search_post_flow_item_builder.dart';
 
 import '../../Utils/utils.dart';
+import '../../Utils/hive_util.dart';
+import '../../Utils/paged_data_controller.dart';
+import '../../Utils/tab_state_util.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
 import '../../l10n/l10n.dart';
 import 'collection_detail_screen.dart';
+
+class _AllSearchMetadata {
+  const _AllSearchMetadata({required this.tags, this.tagRank});
+
+  final List<TagInfo> tags;
+  final TagInfo? tagRank;
+}
+
+class _AllSearchView {
+  const _AllSearchView({
+    required this.tags,
+    required this.posts,
+    this.tagRank,
+  });
+
+  final List<TagInfo> tags;
+  final List<PostListItem> posts;
+  final TagInfo? tagRank;
+}
 
 class SearchResultScreen extends StatefulWidget {
   const SearchResultScreen({super.key, required this.searchKey});
@@ -34,16 +57,12 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
   @override
   bool get wantKeepAlive => true;
   List<SearchSuggestItem> _sugList = [];
-  SearchAllResult? _allResult;
-  TagInfo? _tagRank;
   int _currentTabIndex = 0;
-  final List<Collection> _collectionList = [];
-  final List<SearchPost> _postList = [];
-  final List<GrainInfo> _grainList = [];
-  final List<SearchBlogData> _userList = [];
   late TabController _tabController;
-  final List<TagInfo> _tagList = [];
+  late final LazyTabLoadState _tabLoadState;
   TextEditingController? _searchController;
+  int _searchIntent = 0;
+  int _suggestIntent = 0;
   final EasyRefreshController _allResultRefreshController =
       EasyRefreshController();
   final EasyRefreshController _tagResultRefreshController =
@@ -65,30 +84,153 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
     appLocalizations.article,
     appLocalizations.user
   ];
-  int _allResultOffset = 0;
-  int _tagResultOffset = 0;
-  int _collectionResultOffset = 0;
-  int _postResultOffset = 0;
-  int _grainResultOffset = 0;
-  int _userResultOffset = 0;
-  bool _allResultLoading = false;
-  bool _collectionResultLoading = false;
-  bool _tagResultLoading = false;
-  bool _postResultLoading = false;
-  bool _grainResultLoading = false;
-  bool _userResultLoading = false;
-  bool _allPostResultLoading = false;
-  bool _tagResultNoMore = false;
-  bool _collectionResultNoMore = false;
-  bool _postResultNoMore = false;
-  bool _grainResultNoMore = false;
-  bool _userResultNoMore = false;
+  static const List<String> _tabIdList = [
+    'all',
+    'tag',
+    'collection',
+    'grain',
+    'article',
+    'user',
+  ];
+  late final PagedDataController<PostListItem, int, int, _AllSearchMetadata>
+      _allPagingController;
+  late final PagedDataController<TagInfo, String, int, TagInfo>
+      _tagPagingController;
+  late final PagedDataController<Collection, int, int, void>
+      _collectionPagingController;
+  late final PagedDataController<SearchPost, int, int, void>
+      _postPagingController;
+  late final PagedDataController<GrainInfo, int, int, void>
+      _grainPagingController;
+  late final PagedDataController<SearchBlogData, int, int, void>
+      _userPagingController;
+
+  List<PagedDataController<dynamic, dynamic, int, dynamic>>
+      get _pagingControllers => [
+            _allPagingController,
+            _tagPagingController,
+            _collectionPagingController,
+            _postPagingController,
+            _grainPagingController,
+            _userPagingController,
+          ];
+
+  _AllSearchView? get _allResult {
+    final metadata = _allPagingController.metadata;
+    if (metadata == null) return null;
+    return _AllSearchView(
+      tags: metadata.tags,
+      tagRank: metadata.tagRank,
+      posts: _allPagingController.items,
+    );
+  }
+
+  TagInfo? get _tagRank => _tagPagingController.metadata;
+  List<TagInfo> get _tagList => _tagPagingController.items;
+  List<Collection> get _collectionList => _collectionPagingController.items;
+  List<SearchPost> get _postList => _postPagingController.items;
+  List<GrainInfo> get _grainList => _grainPagingController.items;
+  List<SearchBlogData> get _userList => _userPagingController.items;
+
+  bool get _allResultNoMore => _allPagingController.noMore;
+  bool get _tagResultNoMore => _tagPagingController.noMore;
+  bool get _collectionResultNoMore => _collectionPagingController.noMore;
+  bool get _postResultNoMore => _postPagingController.noMore;
+  bool get _grainResultNoMore => _grainPagingController.noMore;
+  bool get _userResultNoMore => _userPagingController.noMore;
 
   @override
   void initState() {
     super.initState();
-    _performSearch(widget.searchKey, init: true);
+    final restored = PersistentTabState.restore(
+      idKey: HiveUtil.searchResultTabIdKey,
+      legacyIndexKey: HiveUtil.searchResultTabIndexKey,
+      itemIds: _tabIdList,
+    );
+    _tabLoadState = LazyTabLoadState(
+      itemIds: _tabIdList,
+      savedId: restored.id,
+    );
+    _currentTabIndex = _tabLoadState.currentIndex;
+    _initPagingControllers();
     initTab();
+    _performSearch(widget.searchKey, init: true);
+  }
+
+  @override
+  void dispose() {
+    _searchController
+      ?..removeListener(_bindSuggest)
+      ..dispose();
+    _tabController.dispose();
+    _allResultRefreshController.dispose();
+    _tagResultRefreshController.dispose();
+    _collectionResultRefreshController.dispose();
+    _postResultRefreshController.dispose();
+    _grainResultRefreshController.dispose();
+    _userResultRefreshController.dispose();
+    for (final controller in _pagingControllers) {
+      controller
+        ..removeListener(_handlePagingChanged)
+        ..dispose();
+    }
+    super.dispose();
+  }
+
+  void _initPagingControllers() {
+    _allPagingController = PagedDataController(
+      initialCursor: 0,
+      keyOf: (item) => item.postData?.postView.id ?? item.itemId,
+      loader: _loadAllResultPage,
+      onError: _handlePagingError,
+    );
+    _tagPagingController = PagedDataController(
+      initialCursor: 0,
+      keyOf: (item) => item.tagName,
+      loader: _loadTagResultPage,
+      onError: _handlePagingError,
+    );
+    _collectionPagingController = PagedDataController(
+      initialCursor: 0,
+      keyOf: (item) => item.id,
+      loader: _loadCollectionResultPage,
+      onError: _handlePagingError,
+    );
+    _postPagingController = PagedDataController(
+      initialCursor: 0,
+      keyOf: (item) => item.id,
+      loader: _loadPostResultPage,
+      onError: _handlePagingError,
+    );
+    _grainPagingController = PagedDataController(
+      initialCursor: 0,
+      keyOf: (item) => item.id,
+      loader: _loadGrainResultPage,
+      onError: _handlePagingError,
+    );
+    _userPagingController = PagedDataController(
+      initialCursor: 0,
+      keyOf: (item) => item.blogInfo.blogId,
+      loader: _loadUserResultPage,
+      onError: _handlePagingError,
+    );
+    for (final controller in _pagingControllers) {
+      controller.addListener(_handlePagingChanged);
+    }
+  }
+
+  void _handlePagingChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _handlePagingError(Object error, StackTrace stackTrace) {
+    ILogger.error('Failed to load search result', error, stackTrace);
+    if (!mounted) return;
+    IToast.showTop(
+      error is PagedDataException && StringUtil.isNotEmpty(error.message)
+          ? error.message
+          : appLocalizations.loadFailed,
+    );
   }
 
   @override
@@ -103,20 +245,25 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
         bottomHeight: 56,
         bottomWidget: TabBarWrapper(
           tabController: _tabController,
-         tabs:  _tabLabelList
+          tabs: _tabLabelList
               .asMap()
               .entries
-              .map((entry) => ItemBuilder.buildAnimatedTab(context,
-                  selected: entry.key == _currentTabIndex, text: entry.value))
+              .map(
+                (entry) => ItemBuilder.buildAnimatedTab(
+                  context,
+                  selected: entry.key == _currentTabIndex,
+                  text: entry.value,
+                  controller: _tabController,
+                  tabIndex: entry.key,
+                ),
+              )
               .toList(),
           showBorder: true,
           width: MediaQuery.sizeOf(context).width,
+          isScrollable: false,
           onTap: (index) {
-            setState(() {
-              _currentTabIndex = index;
-            });
+            _setCurrentTab(index);
           },
-          forceUnscrollable: !ResponsiveUtil.isLandscapeLayout(),
         ),
       ),
       body: Stack(
@@ -128,16 +275,82 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
     );
   }
 
-  initTab() {
-    _tabController = TabController(length: _tabLabelList.length, vsync: this);
-    _tabController.animation?.addListener(() {
-      int indexChange =
-          _tabController.offset.abs() > 0.8 ? _tabController.offset.round() : 0;
-      int index = _tabController.index + indexChange;
-      if (index != _currentTabIndex) {
-        setState(() => _currentTabIndex = index);
+  void initTab() {
+    _tabController = TabController(
+      length: _tabLabelList.length,
+      initialIndex: _currentTabIndex,
+      vsync: this,
+    );
+    _tabController.addListener(() {
+      final preloadIndex = _tabController.indexIsChanging
+          ? _tabController.index
+          : _tabController.offset > 0.001
+              ? _tabController.index + 1
+              : _tabController.offset < -0.001
+                  ? _tabController.index - 1
+                  : _tabController.index;
+      if (preloadIndex >= 0 && preloadIndex < _tabLabelList.length) {
+        unawaited(_ensureTabLoaded(preloadIndex));
       }
+      final index =
+          (_tabController.animation?.value ?? _tabController.index).round();
+      if (index != _currentTabIndex) _setCurrentTab(index);
     });
+  }
+
+  void _setCurrentTab(int index, {bool persist = true}) {
+    final safeIndex = TabStatePreference.restoreIndex(
+      index,
+      _tabLabelList.length,
+    );
+    if (safeIndex != _currentTabIndex) {
+      setState(() => _currentTabIndex = safeIndex);
+    }
+    if (persist) {
+      PersistentTabState.save(
+        idKey: HiveUtil.searchResultTabIdKey,
+        legacyIndexKey: HiveUtil.searchResultTabIndexKey,
+        itemIds: _tabIdList,
+        index: safeIndex,
+      );
+    }
+    unawaited(_ensureTabLoaded(safeIndex));
+  }
+
+  Future<void> _ensureTabLoaded(int index) async {
+    if (_searchController == null ||
+        !_tabLoadState.selectAndShouldLoad(index)) {
+      return;
+    }
+    final started = await _refreshTabWithAnimation(index);
+    if (!started) {
+      _tabLoadState.markLoadFailed(index);
+    }
+  }
+
+  EasyRefreshController _refreshControllerFor(int index) => switch (index) {
+        0 => _allResultRefreshController,
+        1 => _tagResultRefreshController,
+        2 => _collectionResultRefreshController,
+        3 => _grainResultRefreshController,
+        4 => _postResultRefreshController,
+        _ => _userResultRefreshController,
+      };
+
+  Future<bool> _refreshTabWithAnimation(int index) async {
+    final controller = _refreshControllerFor(index);
+    for (var attempt = 0; attempt < 12; attempt++) {
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) return false;
+      if (controller.headerState == null) continue;
+      await controller.callRefresh(
+        overOffset: 8,
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+      );
+      return true;
+    }
+    return false;
   }
 
   _bindSuggest() {
@@ -149,328 +362,245 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
     }
   }
 
-  _fetchAllResult() async {
-    if (_allResultLoading) return;
-    _allResultLoading = true;
-    return await SearchApi.getAllSearchResult(key: _searchController!.text)
-        .then((value) {
-      try {
-        if (value['code'] != 0) {
-          IToast.showTop(value['msg']);
-        } else {
-          if (value['data'] != null) {
-            _allResult = SearchAllResult.fromJson(value['data']);
-            _allResultOffset = _allResult!.offset;
-          }
-          if (mounted) setState(() {});
-          return IndicatorResult.success;
+  Future<PagedDataPage<PostListItem, int, _AllSearchMetadata>>
+      _loadAllResultPage(int cursor, bool refresh) async {
+    final value = refresh
+        ? await SearchApi.getAllSearchResult(key: _searchController!.text)
+        : await SearchApi.getAllSearchPostResult(
+            key: _searchController!.text,
+            offset: cursor,
+          );
+    final data = _requireSearchData(value);
+    final rawPosts = data['posts'];
+    final posts = parsePagedDataItems<PostListItem>(
+      rawPosts,
+      PostListItem.fromJson,
+      onMalformed: (error, stackTrace) =>
+          _logMalformedSearchItem('comprehensive post', error, stackTrace),
+    );
+    final nextOffset = (data['offset'] as num?)?.toInt() ?? cursor;
+    _AllSearchMetadata? metadata;
+    if (refresh) {
+      final tags = parsePagedDataItems<TagInfo>(
+        data['tags'],
+        TagInfo.fromJson,
+        onMalformed: (error, stackTrace) =>
+            _logMalformedSearchItem('related tag', error, stackTrace),
+      );
+      TagInfo? tagRank;
+      if (data['tagRank'] is Map) {
+        try {
+          tagRank = TagInfo.fromJson(
+            Map<String, dynamic>.from(data['tagRank'] as Map),
+          );
+        } catch (error, stackTrace) {
+          _logMalformedSearchItem('rank tag', error, stackTrace);
         }
-      } catch (e, t) {
-        IToast.showTop(appLocalizations.loadFailed);
-        ILogger.error("Failed to load all result", e, t);
-        return IndicatorResult.fail;
-      } finally {
-        _allResultLoading = false;
       }
-    });
+      metadata = _AllSearchMetadata(tags: tags, tagRank: tagRank);
+    }
+    return PagedDataPage(
+      items: posts,
+      nextCursor: nextOffset,
+      hasMore: rawPosts is List && rawPosts.isNotEmpty,
+      metadata: metadata,
+    );
   }
 
-  _fetchAllPostResult() async {
-    if (_allPostResultLoading) return;
-    _allPostResultLoading = true;
-    return await SearchApi.getAllSearchPostResult(
+  Future<IndicatorResult> _fetchAllResult() => _allPagingController.refresh();
+
+  Future<IndicatorResult> _fetchAllPostResult() => _allPagingController.load();
+
+  Future<PagedDataPage<TagInfo, int, TagInfo>> _loadTagResultPage(
+    int cursor,
+    bool refresh,
+  ) async {
+    final value = await SearchApi.getTagSearchResult(
       key: _searchController!.text,
-      offset: _allResultOffset,
-    ).then((value) {
+      offset: refresh ? 0 : cursor,
+    );
+    final data = _requireSearchData(value);
+    final rawTags = data['tags'];
+    final tags = parsePagedDataItems<TagInfo>(
+      rawTags,
+      TagInfo.fromJson,
+      onMalformed: (error, stackTrace) =>
+          _logMalformedSearchItem('tag', error, stackTrace),
+    );
+    TagInfo? tagRank;
+    if (data['tagRank'] is Map) {
       try {
-        if (value['code'] != 0) {
-          IToast.showTop(value['msg']);
-        } else {
-          bool noMore = false;
-          if (value['data'] != null) {
-            var tmp = SearchAllResult.fromJson(value['data']);
-            tmp.posts.removeWhere((element) =>
-                _allResult!.posts.any((e) => e.itemId == element.itemId));
-            _allResultOffset = tmp.offset;
-            _allResult?.posts.addAll(tmp.posts);
-            noMore = tmp.posts.isEmpty;
-          }
-          if (mounted) setState(() {});
-          if (noMore) return IndicatorResult.noMore;
-          return IndicatorResult.success;
-        }
-      } catch (e, t) {
-        IToast.showTop(appLocalizations.loadFailed);
-        ILogger.error("Failed to load all post result", e, t);
-        return IndicatorResult.fail;
-      } finally {
-        if (mounted) setState(() {});
-        _allPostResultLoading = false;
+        tagRank = TagInfo.fromJson(
+          Map<String, dynamic>.from(data['tagRank'] as Map),
+        );
+      } catch (error, stackTrace) {
+        _logMalformedSearchItem('rank tag', error, stackTrace);
       }
-    });
+    }
+    return PagedDataPage(
+      items: tags,
+      nextCursor: (data['offset'] as num?)?.toInt() ?? cursor,
+      hasMore: rawTags is List && rawTags.isNotEmpty,
+      metadata: tagRank,
+    );
   }
 
-  _fetchTagResult({bool refresh = false}) async {
-    if (_tagResultLoading) return;
-    if (refresh) _tagResultNoMore = false;
-    _tagResultLoading = true;
-    return await SearchApi.getTagSearchResult(
+  Future<IndicatorResult> _fetchTagResult({bool refresh = false}) =>
+      refresh ? _tagPagingController.refresh() : _tagPagingController.load();
+
+  Future<PagedDataPage<Collection, int, void>> _loadCollectionResultPage(
+    int cursor,
+    bool refresh,
+  ) async {
+    final value = await SearchApi.getCollectionSearchResult(
       key: _searchController!.text,
-      offset: refresh ? 0 : _tagResultOffset,
-    ).then((value) {
-      try {
-        if (value['code'] != 0) {
-          IToast.showTop(value['msg']);
-        } else {
-          List<TagInfo> tmp = [];
-          if (value['data'] != null) {
-            if (value['data']['offset'] != null) {
-              _tagResultOffset = value['data']['offset'];
-            }
-            if (value['data']['tagRank'] != null) {
-              _tagRank = TagInfo.fromJson(value['data']['tagRank']);
-            }
-            if (value['data']['tags'] != null) {
-              tmp = (value['data']['tags'] as List)
-                  .map((e) => TagInfo.fromJson(e))
-                  .toList();
-              if (refresh) _tagList.clear();
-              for (var exist in _tagList) {
-                tmp.removeWhere((element) => element.tagName == exist.tagName);
-              }
-              _tagList.addAll(tmp);
-            }
-          }
-          if (mounted) setState(() {});
-          if (tmp.isEmpty) {
-            _tagResultNoMore = true;
-            return IndicatorResult.noMore;
-          } else {
-            return IndicatorResult.success;
-          }
-        }
-      } catch (e, t) {
-        IToast.showTop(appLocalizations.loadFailed);
-        ILogger.error("Failed to load tag result", e, t);
-        return IndicatorResult.fail;
-      } finally {
-        if (mounted) setState(() {});
-        _tagResultLoading = false;
-      }
-    });
+      offset: refresh ? 0 : cursor,
+    );
+    final data = _requireSearchData(value);
+    final rawItems = data['collections'];
+    return PagedDataPage(
+      items: parsePagedDataItems<Collection>(
+        rawItems,
+        Collection.fromJson,
+        onMalformed: (error, stackTrace) =>
+            _logMalformedSearchItem('collection', error, stackTrace),
+      ),
+      nextCursor: (data['offset'] as num?)?.toInt() ?? cursor,
+      hasMore: rawItems is List && rawItems.isNotEmpty,
+    );
   }
 
-  _fetchCollectionResult({bool refresh = false}) async {
-    if (_collectionResultLoading) return;
-    if (refresh) _collectionResultNoMore = false;
-    _collectionResultLoading = true;
-    return await SearchApi.getCollectionSearchResult(
+  Future<IndicatorResult> _fetchCollectionResult({bool refresh = false}) =>
+      refresh
+          ? _collectionPagingController.refresh()
+          : _collectionPagingController.load();
+
+  Future<PagedDataPage<SearchPost, int, void>> _loadPostResultPage(
+    int cursor,
+    bool refresh,
+  ) async {
+    final value = await SearchApi.getPostSearchResult(
       key: _searchController!.text,
-      offset: refresh ? 0 : _collectionResultOffset,
-    ).then((value) {
-      try {
-        if (value['code'] != 0) {
-          IToast.showTop(value['msg']);
-        } else {
-          List<Collection> tmp = [];
-          if (value['data'] != null) {
-            if (value['data']['offset'] != null) {
-              _collectionResultOffset = value['data']['offset'];
-            }
-            if (value['data']['collections'] != null) {
-              tmp = (value['data']['collections'] as List)
-                  .map((e) => Collection.fromJson(e))
-                  .toList();
-              if (refresh) _collectionList.clear();
-              for (var exist in _collectionList) {
-                tmp.removeWhere((element) => element.id == exist.id);
-              }
-              _collectionList.addAll(tmp);
-            }
-          }
-          if (mounted) setState(() {});
-          if (tmp.isEmpty) {
-            _collectionResultNoMore = true;
-            return IndicatorResult.noMore;
-          } else {
-            return IndicatorResult.success;
-          }
-        }
-      } catch (e, t) {
-        IToast.showTop(appLocalizations.loadFailed);
-        ILogger.error("Failed to load collection result", e, t);
-        return IndicatorResult.fail;
-      } finally {
-        if (mounted) setState(() {});
-        _collectionResultLoading = false;
-      }
-    });
+      offset: refresh ? 0 : cursor,
+    );
+    final data = _requireSearchData(value);
+    final rawItems = data['posts'];
+    return PagedDataPage(
+      items: parsePagedDataItems<SearchPost>(
+        rawItems,
+        SearchPost.fromJson,
+        onMalformed: (error, stackTrace) =>
+            _logMalformedSearchItem('post', error, stackTrace),
+      ),
+      nextCursor: (data['offset'] as num?)?.toInt() ?? cursor,
+      hasMore: rawItems is List && rawItems.isNotEmpty,
+    );
   }
 
-  _fetchPostResult({bool refresh = false}) async {
-    if (_postResultLoading) return;
-    if (refresh) _postResultNoMore = false;
-    _postResultLoading = true;
-    return await SearchApi.getPostSearchResult(
+  Future<IndicatorResult> _fetchPostResult({bool refresh = false}) =>
+      refresh ? _postPagingController.refresh() : _postPagingController.load();
+
+  Future<PagedDataPage<GrainInfo, int, void>> _loadGrainResultPage(
+    int cursor,
+    bool refresh,
+  ) async {
+    final value = await SearchApi.getGrainSearchResult(
       key: _searchController!.text,
-      offset: refresh ? 0 : _postResultOffset,
-    ).then((value) {
-      try {
-        if (value['code'] != 0) {
-          IToast.showTop(value['msg']);
-        } else {
-          List<SearchPost> tmp = [];
-          if (value['data'] != null) {
-            if (value['data']['offset'] != null) {
-              _postResultOffset = value['data']['offset'];
-            }
-            if (value['data']['posts'] != null) {
-              tmp = (value['data']['posts'] as List)
-                  .map((e) => SearchPost.fromJson(e))
-                  .toList();
-              if (refresh) _postList.clear();
-              for (var exist in _postList) {
-                tmp.removeWhere((element) => element.id == exist.id);
-              }
-              _postList.addAll(tmp);
-            }
-          }
-          if (mounted) setState(() {});
-          if (tmp.isEmpty) {
-            _postResultNoMore = true;
-            return IndicatorResult.noMore;
-          } else {
-            return IndicatorResult.success;
-          }
-        }
-      } catch (e, t) {
-        IToast.showTop(appLocalizations.loadFailed);
-        ILogger.error("Failed to load post result", e, t);
-        return IndicatorResult.fail;
-      } finally {
-        if (mounted) setState(() {});
-        _postResultLoading = false;
-      }
-    });
+      offset: refresh ? 0 : cursor,
+    );
+    final data = _requireSearchData(value);
+    final rawItems = data['grainList'];
+    return PagedDataPage(
+      items: parsePagedDataItems<GrainInfo>(
+        rawItems,
+        GrainInfo.fromJson,
+        onMalformed: (error, stackTrace) =>
+            _logMalformedSearchItem('grain', error, stackTrace),
+      ),
+      nextCursor: (data['offset'] as num?)?.toInt() ?? cursor,
+      hasMore: rawItems is List && rawItems.isNotEmpty,
+    );
   }
 
-  _fetchGrainResult({bool refresh = false}) async {
-    if (_grainResultLoading) return;
-    if (refresh) _grainResultNoMore = false;
-    _grainResultLoading = true;
-    return await SearchApi.getGrainSearchResult(
+  Future<IndicatorResult> _fetchGrainResult({bool refresh = false}) => refresh
+      ? _grainPagingController.refresh()
+      : _grainPagingController.load();
+
+  Future<PagedDataPage<SearchBlogData, int, void>> _loadUserResultPage(
+    int cursor,
+    bool refresh,
+  ) async {
+    final value = await SearchApi.getUserSearchResult(
       key: _searchController!.text,
-      offset: refresh ? 0 : _grainResultOffset,
-    ).then((value) {
-      try {
-        if (value['code'] != 0) {
-          IToast.showTop(value['msg']);
-        } else {
-          List<GrainInfo> tmp = [];
-          if (value['data'] != null) {
-            if (value['data']['offset'] != null) {
-              _grainResultOffset = value['data']['offset'];
-            }
-            if (value['data']['grainList'] != null) {
-              tmp = (value['data']['grainList'] as List)
-                  .map((e) => GrainInfo.fromJson(e))
-                  .toList();
-              if (refresh) _grainList.clear();
-              for (var exist in _grainList) {
-                tmp.removeWhere((element) => element.id == exist.id);
-              }
-              _grainList.addAll(tmp);
-            }
-          }
-          if (mounted) setState(() {});
-          if (tmp.isEmpty) {
-            _grainResultNoMore = true;
-            return IndicatorResult.noMore;
-          } else {
-            return IndicatorResult.success;
-          }
-        }
-      } catch (e, t) {
-        IToast.showTop(appLocalizations.loadFailed);
-        ILogger.error("Failed to load grain result", e, t);
-        return IndicatorResult.fail;
-      } finally {
-        if (mounted) setState(() {});
-        _grainResultLoading = false;
-      }
-    });
+      offset: refresh ? 0 : cursor,
+    );
+    final data = _requireSearchData(value);
+    final rawItems = data['blogs'];
+    return PagedDataPage(
+      items: parsePagedDataItems<SearchBlogData>(
+        rawItems,
+        SearchBlogData.fromJson,
+        onMalformed: (error, stackTrace) =>
+            _logMalformedSearchItem('user', error, stackTrace),
+      ),
+      nextCursor: (data['offset'] as num?)?.toInt() ?? cursor,
+      hasMore: rawItems is List && rawItems.isNotEmpty,
+    );
   }
 
-  _fetchUserResult({bool refresh = false}) async {
-    if (_userResultLoading) return;
-    if (refresh) _userResultNoMore = false;
-    _userResultLoading = true;
-    return await SearchApi.getUserSearchResult(
-      key: _searchController!.text,
-      offset: refresh ? 0 : _userResultOffset,
-    ).then((value) {
-      try {
-        if (value['code'] != 0) {
-          IToast.showTop(value['msg']);
-        } else {
-          List<SearchBlogData> tmp = [];
-          if (value['data'] != null) {
-            if (value['data']['offset'] != null) {
-              _userResultOffset = value['data']['offset'];
-            }
-            if (value['data']['blogs'] != null) {
-              tmp = (value['data']['blogs'] as List)
-                  .map((e) => SearchBlogData.fromJson(e))
-                  .toList();
-              if (refresh) _userList.clear();
-              for (var exist in _userList) {
-                tmp.removeWhere((element) =>
-                    element.blogInfo.blogId == exist.blogInfo.blogId);
-              }
-              _userList.addAll(tmp);
-            }
-          }
-          if (mounted) setState(() {});
-          if (tmp.isEmpty) {
-            _userResultNoMore = true;
-            return IndicatorResult.noMore;
-          } else {
-            return IndicatorResult.success;
-          }
-        }
-      } catch (e, t) {
-        IToast.showTop(appLocalizations.loadFailed);
-        ILogger.error("Failed to load user result", e, t);
-        return IndicatorResult.fail;
-      } finally {
-        if (mounted) setState(() {});
-        _userResultLoading = false;
-      }
-    });
+  Future<IndicatorResult> _fetchUserResult({bool refresh = false}) =>
+      refresh ? _userPagingController.refresh() : _userPagingController.load();
+
+  Map<String, dynamic> _requireSearchData(dynamic value) {
+    final code = value is Map ? (value['code'] as num?)?.toInt() : null;
+    if (code != 0) {
+      throw PagedDataException(
+        value is Map ? value['msg']?.toString() ?? '' : '',
+      );
+    }
+    final data = value['data'];
+    return data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+  }
+
+  void _logMalformedSearchItem(
+    String kind,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    ILogger.error('Skipped malformed search $kind', error, stackTrace);
   }
 
   _performSearch(String str, {bool init = false}) async {
+    final searchIntent = ++_searchIntent;
     bool processed = await UriUtil.processUrl(context, str, quiet: true);
+    if (!mounted || searchIntent != _searchIntent) return;
     if (!processed) {
-      _searchController = TextEditingController(text: str);
+      _searchController?.removeListener(_bindSuggest);
+      _searchController ??= TextEditingController();
+      _searchController!.text = str;
       _sugList.clear();
-      _userList.clear();
-      _postList.clear();
-      _tagList.clear();
-      _collectionList.clear();
-      _grainList.clear();
-      Utils.addSearchHistory(str);
-      _fetchAllResult();
-      _fetchCollectionResult(refresh: true);
-      _fetchGrainResult(refresh: true);
-      _fetchPostResult(refresh: true);
-      _fetchTagResult(refresh: true);
-      _fetchUserResult(refresh: true);
+      final targetTab = init ? _currentTabIndex : 0;
+      _tabLoadState.reset(index: targetTab);
       if (!init) {
-        FocusScope.of(context).requestFocus(FocusNode());
+        _currentTabIndex = 0;
+        PersistentTabState.save(
+          idKey: HiveUtil.searchResultTabIdKey,
+          legacyIndexKey: HiveUtil.searchResultTabIndexKey,
+          itemIds: _tabIdList,
+          index: 0,
+        );
+      }
+      for (final controller in _pagingControllers) {
+        controller.reset(notify: false);
+      }
+      setState(() {});
+      Utils.addSearchHistory(str);
+      if (!init) {
+        FocusScope.of(context).unfocus();
         _tabController.animateTo(0);
       }
       _searchController!.addListener(_bindSuggest);
+      unawaited(_ensureTabLoaded(targetTab));
     }
   }
 
@@ -479,7 +609,13 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
   }
 
   _performSuggest(String str) {
+    final suggestIntent = ++_suggestIntent;
     SearchApi.getSuggestList(key: str).then((value) {
+      if (!mounted ||
+          suggestIntent != _suggestIntent ||
+          _searchController?.text != str) {
+        return;
+      }
       if (value['code'] != 0) {
         IToast.showTop(value['msg']);
       } else {
@@ -489,7 +625,7 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
               .map((e) => SearchSuggestItem.fromJson(e))
               .toList();
         }
-        if (mounted) setState(() {});
+        setState(() {});
       }
     });
   }
@@ -570,114 +706,111 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
       onRefresh: () async {
         return await _fetchAllResult();
       },
-      onLoad: () async {
-        return await _fetchAllPostResult();
-      },
+      onLoad: _allResultNoMore
+          ? null
+          : () async {
+              return await _fetchAllPostResult();
+            },
       triggerAxis: Axis.vertical,
       childBuilder: (context, physics) => _allResult != null
-          ? LoadMoreNotification(
-              noMore: false,
-              onLoad: _fetchAllPostResult,
-              child: CustomScrollView(
-                physics: physics,
-                slivers: [
-                  SliverList(
-                    delegate: SliverChildListDelegate(
-                      [
-                        const SizedBox(height: 10),
-                        if (_allResult!.tags.isEmpty &&
-                            _allResult!.tagRank == null &&
-                            _allResult!.posts.isEmpty)
-                          Container(
-                            height: 160,
-                            margin: const EdgeInsets.symmetric(vertical: 16),
-                            alignment: Alignment.center,
-                            child: EmptyPlaceholder(
-                              text: appLocalizations.noSearchResult,
-                            ),
+          ? CustomScrollView(
+              key: const PageStorageKey('search-all-results'),
+              physics: physics,
+              slivers: [
+                SliverList(
+                  delegate: SliverChildListDelegate(
+                    [
+                      const SizedBox(height: 10),
+                      if (_allResult!.tags.isEmpty &&
+                          _allResult!.tagRank == null &&
+                          _allResult!.posts.isEmpty)
+                        Container(
+                          height: 160,
+                          margin: const EdgeInsets.symmetric(vertical: 16),
+                          alignment: Alignment.center,
+                          child: EmptyPlaceholder(
+                            text: appLocalizations.noSearchResult,
                           ),
-                        if (_allResult!.tagRank != null)
-                          LoftifyItemBuilder.buildRankTagRow(
-                            context,
-                            _allResult!.tagRank!,
-                            useBackground: false,
-                            onTap: () {
-                              _jumpToTag(_allResult!.tagRank!.tagName);
-                            },
-                          ),
-                        if (_allResult!.tagRank != null) _buildDivider(),
-                        if (_allResult!.tags.isNotEmpty)
-                          ItemBuilder.buildTitle(
-                            context,
-                            title: appLocalizations.relatedTag,
-                            suffixText: appLocalizations.viewAll,
-                            topMargin: 16,
-                            bottomMargin: 8,
-                            onTap: () {
-                              _tabController.animateTo(1);
-                            },
-                          ),
-                        if (_allResult!.tags.isNotEmpty)
-                          ...List<Widget>.generate(
-                              min(_allResult!.tags.length, 2), (index) {
-                            return LoftifyItemBuilder.buildTagRow(
-                              context,
-                              _allResult!.tags[index],
-                              verticalPadding: 8,
-                              onTap: () {
-                                if (_allResult!.tags[index].joinCount != -1) {
-                                  _jumpToTag(_allResult!.tags[index].tagName);
-                                } else {
-                                  _performSearch(
-                                      _allResult!.tags[index].tagName);
-                                }
-                              },
-                            );
-                          }),
-                        if (_allResult!.tags.isNotEmpty)
-                          const SizedBox(height: 8),
-                        if (_allResult!.tags.isNotEmpty) _buildDivider(),
-                        if (_allResult!.posts.isNotEmpty)
-                          ItemBuilder.buildTitle(
-                            context,
-                            title: appLocalizations.relatedPost,
-                            suffixText: appLocalizations.viewAll,
-                            topMargin: 16,
-                            bottomMargin: 8,
-                            onTap: () {
-                              _tabController.animateTo(4);
-                            },
-                          ),
-                      ],
-                    ),
-                  ),
-                  if (_allResult!.posts.isNotEmpty)
-                    SliverPadding(
-                      padding:
-                          const EdgeInsets.only(top: 10, left: 8, right: 8),
-                      sliver: SliverWaterfallFlow(
-                        gridDelegate:
-                            const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-                          mainAxisSpacing: 6,
-                          crossAxisSpacing: 6,
-                          maxCrossAxisExtent: 300,
                         ),
-                        delegate: SliverChildBuilderDelegate(
-                          (BuildContext context, int index) {
-                            return GestureDetector(
-                              child: RecommendFlowItemBuilder
-                                  .buildWaterfallFlowPostItem(
-                                context,
-                                _allResult!.posts[index],
-                              ),
-                            );
+                      if (_allResult!.tagRank != null)
+                        LoftifyItemBuilder.buildRankTagRow(
+                          context,
+                          _allResult!.tagRank!,
+                          useBackground: false,
+                          onTap: () {
+                            _jumpToTag(_allResult!.tagRank!.tagName);
                           },
-                          childCount: _allResult!.posts.length,
                         ),
+                      if (_allResult!.tagRank != null) _buildDivider(),
+                      if (_allResult!.tags.isNotEmpty)
+                        ItemBuilder.buildTitle(
+                          context,
+                          title: appLocalizations.relatedTag,
+                          suffixText: appLocalizations.viewAll,
+                          topMargin: 16,
+                          bottomMargin: 8,
+                          onTap: () {
+                            _tabController.animateTo(1);
+                          },
+                        ),
+                      if (_allResult!.tags.isNotEmpty)
+                        ...List<Widget>.generate(
+                            min(_allResult!.tags.length, 2), (index) {
+                          return LoftifyItemBuilder.buildTagRow(
+                            context,
+                            _allResult!.tags[index],
+                            verticalPadding: 8,
+                            onTap: () {
+                              if (_allResult!.tags[index].joinCount != -1) {
+                                _jumpToTag(_allResult!.tags[index].tagName);
+                              } else {
+                                _performSearch(_allResult!.tags[index].tagName);
+                              }
+                            },
+                          );
+                        }),
+                      if (_allResult!.tags.isNotEmpty)
+                        const SizedBox(height: 8),
+                      if (_allResult!.tags.isNotEmpty) _buildDivider(),
+                      if (_allResult!.posts.isNotEmpty)
+                        ItemBuilder.buildTitle(
+                          context,
+                          title: appLocalizations.relatedPost,
+                          suffixText: appLocalizations.viewAll,
+                          topMargin: 16,
+                          bottomMargin: 8,
+                          onTap: () {
+                            _tabController.animateTo(4);
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+                if (_allResult!.posts.isNotEmpty)
+                  SliverPadding(
+                    padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+                    sliver: SliverWaterfallFlow(
+                      gridDelegate:
+                          const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                        mainAxisSpacing: 6,
+                        crossAxisSpacing: 6,
+                        maxCrossAxisExtent: 300,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (BuildContext context, int index) {
+                          return GestureDetector(
+                            child: RecommendFlowItemBuilder
+                                .buildWaterfallFlowPostItem(
+                              context,
+                              _allResult!.posts[index],
+                            ),
+                          );
+                        },
+                        childCount: _allResult!.posts.length,
                       ),
                     ),
-                ],
-              ),
+                  ),
+              ],
             )
           : LoadingWidget(
               background: ChewieTheme.getBackground(context),
@@ -691,59 +824,58 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
       onRefresh: () async {
         return await _fetchTagResult(refresh: true);
       },
-      onLoad: () async {
-        return await _fetchTagResult();
-      },
+      onLoad: _tagResultNoMore
+          ? null
+          : () async {
+              return await _fetchTagResult();
+            },
       triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => LoadMoreNotification(
-        noMore: _tagResultNoMore,
-        onLoad: _fetchTagResult,
-        child: CustomScrollView(
-          physics: physics,
-          slivers: [
-            SliverList(
-              delegate: SliverChildListDelegate(
-                [
-                  const SizedBox(height: 10),
-                  if (_tagList.isEmpty && _tagRank == null)
-                    Container(
-                      margin: const EdgeInsets.symmetric(vertical: 16),
-                      height: 160,
-                      child: EmptyPlaceholder(
-                        text: appLocalizations.noTag,
-                      ),
+      childBuilder: (context, physics) => CustomScrollView(
+        key: const PageStorageKey('search-tag-results'),
+        physics: physics,
+        slivers: [
+          SliverList(
+            delegate: SliverChildListDelegate(
+              [
+                const SizedBox(height: 10),
+                if (_tagList.isEmpty && _tagRank == null)
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: 16),
+                    height: 160,
+                    child: EmptyPlaceholder(
+                      text: appLocalizations.noTag,
                     ),
-                  if (_tagRank != null)
-                    LoftifyItemBuilder.buildRankTagRow(
+                  ),
+                if (_tagRank != null)
+                  LoftifyItemBuilder.buildRankTagRow(
+                    context,
+                    _tagRank!,
+                    useBackground: false,
+                    onTap: () {
+                      _jumpToTag(_tagRank!.tagName);
+                    },
+                  ),
+                if (_tagRank != null && _tagList.isNotEmpty) _buildDivider(),
+                if (_tagList.isNotEmpty)
+                  ...List<Widget>.generate(_tagList.length, (index) {
+                    return LoftifyItemBuilder.buildTagRow(
                       context,
-                      _tagRank!,
-                      useBackground: false,
+                      _tagList[index],
+                      verticalPadding: 8,
                       onTap: () {
-                        _jumpToTag(_tagRank!.tagName);
+                        if (_tagList[index].joinCount != -1) {
+                          _jumpToTag(_tagList[index].tagName);
+                        } else {
+                          _performSearch(_tagList[index].tagName);
+                        }
                       },
-                    ),
-                  if (_tagRank != null && _tagList.isNotEmpty) _buildDivider(),
-                  if (_tagList.isNotEmpty)
-                    ...List<Widget>.generate(_tagList.length, (index) {
-                      return LoftifyItemBuilder.buildTagRow(
-                        context,
-                        _tagList[index],
-                        verticalPadding: 8,
-                        onTap: () {
-                          if (_tagList[index].joinCount != -1) {
-                            _jumpToTag(_tagList[index].tagName);
-                          } else {
-                            _performSearch(_tagList[index].tagName);
-                          }
-                        },
-                      );
-                    }),
-                  if (_tagList.isNotEmpty) const SizedBox(height: 8),
-                ],
-              ),
+                    );
+                  }),
+                if (_tagList.isNotEmpty) const SizedBox(height: 8),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -754,59 +886,58 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
       onRefresh: () async {
         return await _fetchCollectionResult(refresh: true);
       },
-      onLoad: () async {
-        return await _fetchCollectionResult();
-      },
+      onLoad: _collectionResultNoMore
+          ? null
+          : () async {
+              return await _fetchCollectionResult();
+            },
       triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => LoadMoreNotification(
-        noMore: _collectionResultNoMore,
-        onLoad: _fetchCollectionResult,
-        child: CustomScrollView(
-          physics: physics,
-          slivers: [
-            SliverList(
-              delegate: SliverChildListDelegate(
-                [
-                  const SizedBox(height: 10),
-                  if (_collectionList.isEmpty)
-                    Container(
-                      margin: const EdgeInsets.symmetric(vertical: 16),
-                      height: 160,
-                      child: EmptyPlaceholder(
-                        text: appLocalizations.noCollection,
-                      ),
+      childBuilder: (context, physics) => CustomScrollView(
+        key: const PageStorageKey('search-collection-results'),
+        physics: physics,
+        slivers: [
+          SliverList(
+            delegate: SliverChildListDelegate(
+              [
+                const SizedBox(height: 10),
+                if (_collectionList.isEmpty)
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: 16),
+                    height: 160,
+                    child: EmptyPlaceholder(
+                      text: appLocalizations.noCollection,
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
-            SliverWaterfallFlow(
-              gridDelegate:
-                  const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-                mainAxisSpacing: 0,
-                crossAxisSpacing: 6,
-                maxCrossAxisExtent: 600,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                (BuildContext context, int index) {
-                  return LoftifyItemBuilder.buildCollectionRow(
-                      context, _collectionList[index], verticalPadding: 8,
-                      onTap: () {
-                    RouteUtil.pushPanelCupertinoRoute(
-                      context,
-                      CollectionDetailScreen(
-                        collectionId: _collectionList[index].id,
-                        blogId: _collectionList[index].blogId,
-                        blogName: _collectionList[index].blogName,
-                        postId: 0,
-                      ),
-                    );
-                  });
-                },
-                childCount: _collectionList.length,
-              ),
+          ),
+          SliverWaterfallFlow(
+            gridDelegate:
+                const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+              mainAxisSpacing: 0,
+              crossAxisSpacing: 6,
+              maxCrossAxisExtent: 600,
             ),
-          ],
-        ),
+            delegate: SliverChildBuilderDelegate(
+              (BuildContext context, int index) {
+                return LoftifyItemBuilder.buildCollectionRow(
+                    context, _collectionList[index], verticalPadding: 8,
+                    onTap: () {
+                  RouteUtil.pushPanelCupertinoRoute(
+                    context,
+                    CollectionDetailScreen(
+                      collectionId: _collectionList[index].id,
+                      blogId: _collectionList[index].blogId,
+                      blogName: _collectionList[index].blogName,
+                      postId: 0,
+                    ),
+                  );
+                });
+              },
+              childCount: _collectionList.length,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -817,57 +948,56 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
       onRefresh: () async {
         return await _fetchPostResult(refresh: true);
       },
-      onLoad: () async {
-        return await _fetchPostResult();
-      },
+      onLoad: _postResultNoMore
+          ? null
+          : () async {
+              return await _fetchPostResult();
+            },
       triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => LoadMoreNotification(
-        noMore: _postResultNoMore,
-        onLoad: _fetchPostResult,
-        child: CustomScrollView(
-          physics: physics,
-          slivers: [
-            SliverList(
-              delegate: SliverChildListDelegate(
-                [
-                  const SizedBox(height: 10),
-                  if (_postList.isEmpty)
-                    Container(
-                      margin: const EdgeInsets.symmetric(vertical: 16),
-                      height: 160,
-                      child: EmptyPlaceholder(
-                        text: appLocalizations.noArticle,
-                      ),
+      childBuilder: (context, physics) => CustomScrollView(
+        key: const PageStorageKey('search-post-results'),
+        physics: physics,
+        slivers: [
+          SliverList(
+            delegate: SliverChildListDelegate(
+              [
+                const SizedBox(height: 10),
+                if (_postList.isEmpty)
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: 16),
+                    height: 160,
+                    child: EmptyPlaceholder(
+                      text: appLocalizations.noArticle,
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
-            if (_postList.isNotEmpty)
-              SliverPadding(
-                padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-                sliver: SliverWaterfallFlow(
-                  gridDelegate:
-                      const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-                    mainAxisSpacing: 6,
-                    crossAxisSpacing: 6,
-                    maxCrossAxisExtent: 300,
-                  ),
-                  delegate: SliverChildBuilderDelegate(
-                    (BuildContext context, int index) {
-                      return GestureDetector(
-                        child: SearchPostFlowItemBuilder
-                            .buildWaterfallFlowPostItem(
-                          context,
-                          _postList[index],
-                        ),
-                      );
-                    },
-                    childCount: _postList.length,
-                  ),
+          ),
+          if (_postList.isNotEmpty)
+            SliverPadding(
+              padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+              sliver: SliverWaterfallFlow(
+                gridDelegate:
+                    const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                  mainAxisSpacing: 6,
+                  crossAxisSpacing: 6,
+                  maxCrossAxisExtent: 300,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (BuildContext context, int index) {
+                    return GestureDetector(
+                      child:
+                          SearchPostFlowItemBuilder.buildWaterfallFlowPostItem(
+                        context,
+                        _postList[index],
+                      ),
+                    );
+                  },
+                  childCount: _postList.length,
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
@@ -878,59 +1008,58 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
       onRefresh: () async {
         return await _fetchGrainResult(refresh: true);
       },
-      onLoad: () async {
-        return await _fetchGrainResult();
-      },
+      onLoad: _grainResultNoMore
+          ? null
+          : () async {
+              return await _fetchGrainResult();
+            },
       triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => LoadMoreNotification(
-        noMore: _grainResultNoMore,
-        onLoad: _fetchGrainResult,
-        child: CustomScrollView(
-          physics: physics,
-          slivers: [
-            SliverList(
-              delegate: SliverChildListDelegate(
-                [
-                  const SizedBox(height: 10),
-                  if (_grainList.isEmpty)
-                    Container(
-                      margin: const EdgeInsets.symmetric(vertical: 16),
-                      height: 160,
-                      child: EmptyPlaceholder(
-                        text: appLocalizations.noGrain,
-                      ),
+      childBuilder: (context, physics) => CustomScrollView(
+        key: const PageStorageKey('search-grain-results'),
+        physics: physics,
+        slivers: [
+          SliverList(
+            delegate: SliverChildListDelegate(
+              [
+                const SizedBox(height: 10),
+                if (_grainList.isEmpty)
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: 16),
+                    height: 160,
+                    child: EmptyPlaceholder(
+                      text: appLocalizations.noGrain,
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
-            SliverWaterfallFlow(
-              gridDelegate:
-                  const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-                mainAxisSpacing: 0,
-                crossAxisSpacing: 6,
-                maxCrossAxisExtent: 600,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                (BuildContext context, int index) {
-                  return LoftifyItemBuilder.buildGrainRow(
-                    context,
-                    _grainList[index],
-                    verticalPadding: 8,
-                    onTap: () {
-                      RouteUtil.pushPanelCupertinoRoute(
-                        context,
-                        GrainDetailScreen(
-                            grainId: _grainList[index].id,
-                            blogId: _grainList[index].userId),
-                      );
-                    },
-                  );
-                },
-                childCount: _grainList.length,
-              ),
+          ),
+          SliverWaterfallFlow(
+            gridDelegate:
+                const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+              mainAxisSpacing: 0,
+              crossAxisSpacing: 6,
+              maxCrossAxisExtent: 600,
             ),
-          ],
-        ),
+            delegate: SliverChildBuilderDelegate(
+              (BuildContext context, int index) {
+                return LoftifyItemBuilder.buildGrainRow(
+                  context,
+                  _grainList[index],
+                  verticalPadding: 8,
+                  onTap: () {
+                    RouteUtil.pushPanelCupertinoRoute(
+                      context,
+                      GrainDetailScreen(
+                          grainId: _grainList[index].id,
+                          blogId: _grainList[index].userId),
+                    );
+                  },
+                );
+              },
+              childCount: _grainList.length,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -941,37 +1070,39 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
       onRefresh: () async {
         return await _fetchUserResult(refresh: true);
       },
-      onLoad: () async {
-        return await _fetchUserResult();
-      },
+      onLoad: _userResultNoMore
+          ? null
+          : () async {
+              return await _fetchUserResult();
+            },
       triggerAxis: Axis.vertical,
-      childBuilder: (context, physics) => LoadMoreNotification(
-        noMore: _userResultNoMore,
-        onLoad: _fetchUserResult,
-        child: CustomScrollView(
-          physics: physics,
-          slivers: [
-            SliverList(
-              delegate: SliverChildListDelegate(
-                [
-                  const SizedBox(height: 10),
-                  if (_userList.isEmpty)
-                    Container(
-                      margin: const EdgeInsets.symmetric(vertical: 16),
-                      height: 160,
-                      child: EmptyPlaceholder(
-                        text: appLocalizations.noUser,
-                      ),
+      childBuilder: (context, physics) => CustomScrollView(
+        key: const PageStorageKey('search-user-results'),
+        physics: physics,
+        slivers: [
+          SliverList(
+            delegate: SliverChildListDelegate(
+              [
+                const SizedBox(height: 10),
+                if (_userList.isEmpty)
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: 16),
+                    height: 160,
+                    child: EmptyPlaceholder(
+                      text: appLocalizations.noUser,
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
-            SliverWaterfallFlow(
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(10, 0, 10, 20),
+            sliver: SliverWaterfallFlow(
               gridDelegate:
                   const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-                mainAxisSpacing: 0,
-                crossAxisSpacing: 6,
-                maxCrossAxisExtent: 400,
+                mainAxisSpacing: 8,
+                crossAxisSpacing: 8,
+                maxCrossAxisExtent: 440,
               ),
               delegate: SliverChildBuilderDelegate(
                 (BuildContext context, int index) {
@@ -992,8 +1123,8 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
                 childCount: _userList.length,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -1013,7 +1144,6 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
         hintFontSizeDelta: 1,
         // focusNode: _focusNode,
         controller: _searchController,
-        background: Colors.grey.withAlpha(40),
         hintText: appLocalizations.searchHint,
         onSubmitted: (text) async {
           _performSearch(text);

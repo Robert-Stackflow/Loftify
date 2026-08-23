@@ -11,6 +11,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../Utils/cloud_control_provider.dart';
 import '../../Utils/hive_util.dart';
 import '../../l10n/l10n.dart';
+import 'base_setting_screen.dart';
 
 const countThreholdLevel1 = 3;
 const countThreholdLevel2 = 6;
@@ -18,8 +19,14 @@ const countThreholdLevel3 = 12;
 const countThreholdLevel4 = 18;
 const countThreholdLevel5 = 24;
 
-class AboutSettingScreen extends StatefulWidget {
-  const AboutSettingScreen({super.key});
+class AboutSettingScreen extends BaseSettingScreen {
+  const AboutSettingScreen({
+    super.key,
+    super.padding,
+    super.showTitleBar,
+    super.searchConfig,
+    super.searchText,
+  });
 
   static const String routeName = "/setting/about";
 
@@ -52,13 +59,13 @@ class _AboutSettingScreenState extends BaseDynamicState<AboutSettingScreen>
     });
   }
 
-  diaplayCelebrate() {
+  void diaplayCelebrate() {
     restore();
     RouteUtil.pushFadeRoute(context, const EggScreen());
     setState(() {});
   }
 
-  restore() {
+  void restore() {
     count = 0;
     if (_timer != null) _timer!.cancel();
     if (_hapticTimer != null) _hapticTimer!.cancel();
@@ -68,31 +75,32 @@ class _AboutSettingScreenState extends BaseDynamicState<AboutSettingScreen>
     setState(() {});
   }
 
-  startShake() {
+  void startShake() {
     _shakeAnimationController.start(shakeCount: 0);
   }
 
-  setHapticTimer(Function() callback) {
+  void setHapticTimer(VoidCallback callback) {
     if (_hapticTimer != null) _hapticTimer!.cancel();
     _hapticTimer =
-        Timer.periodic(const Duration(milliseconds: 10), (_) => callback());
+        Timer.periodic(const Duration(milliseconds: 80), (_) => callback());
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: ResponsiveAppBar(
-        showBack: true,
-        title: appLocalizations.about,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      ),
-      body: EasyRefresh(
+    return ChewieItemBuilder.buildSettingScreen(
+      context: context,
+      title: appLocalizations.about,
+      showTitleBar: widget.showTitleBar,
+      showBack: !ResponsiveUtil.isLandscapeLayout(),
+      padding: widget.padding,
+      overrideBody: EasyRefresh(
         child: ListView(
+          padding: widget.padding,
           children: [
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
             Center(
-              child: ClickableWrapper(child:
-                GestureDetector(
+              child: ClickableWrapper(
+                child: GestureDetector(
                   onLongPressStart: (details) {
                     if (controlProvider.globalControl.enableEasterEggs) {
                       if (_timer != null) _timer!.cancel();
@@ -156,7 +164,7 @@ class _AboutSettingScreenState extends BaseDynamicState<AboutSettingScreen>
               ),
             ),
             Container(
-              margin: const EdgeInsets.all(10),
+              margin: EdgeInsets.zero,
               child: ScrollConfiguration(
                   behavior: NoShadowScrollBehavior(),
                   child: Consumer<LoftifyControlProvider>(
@@ -165,113 +173,126 @@ class _AboutSettingScreenState extends BaseDynamicState<AboutSettingScreen>
                       shrinkWrap: true,
                       padding: EdgeInsets.zero,
                       children: [
-                        const SizedBox(height: 10),
-                        EntryItem(
-                          title: appLocalizations.changelog,
-                          roundTop: true,
-                          showLeading: true,
-                          onTap: () {
-                            RouteUtil.pushPanelCupertinoRoute(
-                                context, const UpdateLogScreen());
-                          },
-                          leading: Icons.merge_type_outlined,
+                        CaptionItem(
+                          context: context,
+                          title: appName,
+                          children: [
+                            EntryItem(
+                              title: appLocalizations.changelog,
+                              showLeading: true,
+                              onTap: () {
+                                RouteUtil.pushPanelCupertinoRoute(
+                                    context, const UpdateLogScreen());
+                              },
+                              leading: Icons.merge_type_outlined,
+                            ),
+                            EntryItem(
+                              title: appLocalizations.bugReport,
+                              onTap: () {
+                                UriUtil.launchUrlUri(
+                                  context,
+                                  cloudControlProvider.globalControl.issueUrl,
+                                );
+                              },
+                              showLeading: true,
+                              leading: Icons.bug_report_outlined,
+                              trailing: Icons.open_in_new_rounded,
+                            ),
+                            EntryItem(
+                              title: appLocalizations.githubRepo,
+                              onTap: () {
+                                UriUtil.launchUrlUri(
+                                  context,
+                                  cloudControlProvider.globalControl.repoUrl,
+                                );
+                              },
+                              showLeading: true,
+                              leading: Icons.commit_outlined,
+                              trailing: Icons.open_in_new_rounded,
+                            ),
+                          ],
                         ),
-                        EntryItem(
-                          title: appLocalizations.bugReport,
-                          onTap: () {
-                            UriUtil.launchUrlUri(context,
-                                cloudControlProvider.globalControl.issueUrl);
-                          },
-                          showLeading: true,
-                          leading: Icons.bug_report_outlined,
-                        ),
-                        EntryItem(
-                          title: appLocalizations.githubRepo,
-                          onTap: () {
-                            UriUtil.launchUrlUri(context,
-                                cloudControlProvider.globalControl.repoUrl);
-                          },
-                          showLeading: true,
-                          roundBottom: true,
-                          leading: Icons.commit_outlined,
-                        ),
-                        const SizedBox(height: 10),
-                        EntryItem(
-                          roundTop: true,
-                          title: appLocalizations.rate,
-                          showLeading: true,
-                          onTap: () {
-                            BottomSheetBuilder.showBottomSheet(
-                              context,
-                              (context) => const StarBottomSheet(),
-                              responsive: true,
-                            );
-                          },
-                          leading: Icons.rate_review_outlined,
-                        ),
-                        EntryItem(
-                          title: appLocalizations.shareApp,
-                          showLeading: true,
-                          onTap: () {
-                            Share.share(
-                                cloudControlProvider.globalControl.shareText);
-                          },
-                          leading: Icons.share_rounded,
-                        ),
-                        EntryItem(
+                        CaptionItem(
+                          context: context,
                           title: appLocalizations.contact,
-                          onTap: () {
-                            UriUtil.launchEmailUri(
-                              context,
-                              cloudControlProvider.globalControl.feedbackEmail,
-                              subject: cloudControlProvider
-                                  .globalControl.feedbackSubject,
-                              body: cloudControlProvider
-                                  .globalControl.feedbackBody,
-                            );
-                          },
-                          showLeading: true,
-                          leading: Icons.contact_support_outlined,
+                          children: [
+                            EntryItem(
+                              title: appLocalizations.rate,
+                              showLeading: true,
+                              onTap: () {
+                                BottomSheetBuilder.showBottomSheet(
+                                  context,
+                                  (context) => const StarBottomSheet(),
+                                  responsive: true,
+                                );
+                              },
+                              leading: Icons.rate_review_outlined,
+                            ),
+                            EntryItem(
+                              title: appLocalizations.shareApp,
+                              showLeading: true,
+                              onTap: () {
+                                Share.share(
+                                  cloudControlProvider.globalControl.shareText,
+                                );
+                              },
+                              leading: Icons.share_rounded,
+                            ),
+                            EntryItem(
+                              title: appLocalizations.contact,
+                              onTap: () {
+                                UriUtil.launchEmailUri(
+                                  context,
+                                  cloudControlProvider
+                                      .globalControl.feedbackEmail,
+                                  subject: cloudControlProvider
+                                      .globalControl.feedbackSubject,
+                                  body: cloudControlProvider
+                                      .globalControl.feedbackBody,
+                                );
+                              },
+                              showLeading: true,
+                              leading: Icons.contact_support_outlined,
+                              trailing: Icons.alternate_email_rounded,
+                            ),
+                            EntryItem(
+                              title: appLocalizations.officialWebsite,
+                              onTap: () {
+                                UriUtil.launchUrlUri(
+                                  context,
+                                  cloudControlProvider
+                                      .globalControl.officialWebsite,
+                                );
+                              },
+                              showLeading: true,
+                              leading: Icons.language_outlined,
+                              trailing: Icons.open_in_new_rounded,
+                            ),
+                            if (cloudControlProvider.globalControl.showQQGroup)
+                              EntryItem(
+                                title: appLocalizations.qqGroup,
+                                onTap: () {
+                                  UriUtil.openExternal(cloudControlProvider
+                                      .globalControl.qqGroupUrl);
+                                },
+                                showLeading: true,
+                                leading: Icons.group_outlined,
+                                trailing: Icons.open_in_new_rounded,
+                              ),
+                            if (cloudControlProvider
+                                .globalControl.showTelegramGroup)
+                              EntryItem(
+                                title: appLocalizations.telegramGroup,
+                                onTap: () {
+                                  UriUtil.openExternal(cloudControlProvider
+                                      .globalControl.telegramGroupUrl);
+                                },
+                                showLeading: true,
+                                leading: Icons.telegram_outlined,
+                                trailing: Icons.open_in_new_rounded,
+                              ),
+                          ],
                         ),
-                        EntryItem(
-                          title: appLocalizations.officialWebsite,
-                          roundBottom: !(cloudControlProvider
-                                  .globalControl.showTelegramGroup) &&
-                              !(cloudControlProvider.globalControl.showQQGroup),
-                          onTap: () {
-                            UriUtil.launchUrlUri(
-                                context,
-                                cloudControlProvider
-                                    .globalControl.officialWebsite);
-                          },
-                          showLeading: true,
-                          leading: Icons.language_outlined,
-                        ),
-                        if (cloudControlProvider.globalControl.showQQGroup)
-                          EntryItem(
-                            title: appLocalizations.qqGroup,
-                            roundBottom: !cloudControlProvider
-                                .globalControl.showTelegramGroup,
-                            onTap: () {
-                              UriUtil.openExternal(cloudControlProvider
-                                  .globalControl.qqGroupUrl);
-                            },
-                            showLeading: true,
-                            leading: Icons.group_outlined,
-                          ),
-                        if (cloudControlProvider
-                            .globalControl.showTelegramGroup)
-                          EntryItem(
-                            title: appLocalizations.telegramGroup,
-                            onTap: () {
-                              UriUtil.openExternal(cloudControlProvider
-                                  .globalControl.telegramGroupUrl);
-                            },
-                            roundBottom: true,
-                            showLeading: true,
-                            leading: Icons.telegram_outlined,
-                          ),
-                        const SizedBox(height: 10)
                       ],
                     ),
                   )),

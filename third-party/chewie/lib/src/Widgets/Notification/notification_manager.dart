@@ -24,12 +24,13 @@ class NotificationManager {
   void show(
     BuildContext context,
     String message, {
+    OverlayState? overlayState,
     String? description,
     Duration duration = const Duration(seconds: 3),
     NotificationStyle? style,
     NotificationType type = NotificationType.normal,
   }) {
-    _ensureOverlay(context);
+    _ensureOverlay(context, overlayState);
 
     if (_queue.length >= maxCount) {
       _queue.removeAt(0);
@@ -50,14 +51,19 @@ class NotificationManager {
     });
   }
 
-  void _ensureOverlay(BuildContext context) {
+  void _ensureOverlay(BuildContext context, OverlayState? overlayState) {
     if (_overlayEntry != null) return;
 
     _overlayEntry = OverlayEntry(
       builder: (_) => const NotificationOverlayWidget(),
     );
 
-    Overlay.of(context).insert(_overlayEntry!);
+    final overlay = overlayState ?? Overlay.maybeOf(context);
+    if (overlay == null) {
+      _overlayEntry = null;
+      return;
+    }
+    overlay.insert(_overlayEntry!);
   }
 }
 

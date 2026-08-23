@@ -813,8 +813,8 @@ class _MyAppBarState extends State<MyAppBar> {
     assert(debugCheckHasMaterialLocalizations(context));
     final ThemeData theme = Theme.of(context);
     final IconButtonThemeData iconButtonTheme = IconButtonTheme.of(context);
-    final AppBarTheme appBarTheme = AppBarTheme.of(context);
-    final AppBarTheme defaults = theme.useMaterial3
+    final AppBarThemeData appBarTheme = AppBarTheme.of(context);
+    final AppBarThemeData defaults = theme.useMaterial3
         ? _AppBarDefaultsM3(context)
         : _AppBarDefaultsM2(context);
     final ScaffoldState? scaffold = Scaffold.maybeOf(context);
@@ -1210,7 +1210,7 @@ class _RenderAppBarTitleBox extends RenderAligningShiftedBox {
 }
 
 // Hand coded defaults based on Material Design 2.
-class _AppBarDefaultsM2 extends AppBarTheme {
+class _AppBarDefaultsM2 extends AppBarThemeData {
   _AppBarDefaultsM2(this.context)
       : super(
           elevation: 4.0,
@@ -1249,7 +1249,7 @@ class _AppBarDefaultsM2 extends AppBarTheme {
 // Design token database by the script:
 //   dev/tools/gen_defaults/bin/gen_defaults.dart.
 
-class _AppBarDefaultsM3 extends AppBarTheme {
+class _AppBarDefaultsM3 extends AppBarThemeData {
   _AppBarDefaultsM3(this.context)
       : super(
           elevation: 0.0,
@@ -2485,8 +2485,8 @@ class _ScrollUnderFlexibleSpace extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    late final AppBarTheme appBarTheme = AppBarTheme.of(context);
-    late final AppBarTheme defaults = Theme.of(context).useMaterial3
+    late final AppBarThemeData appBarTheme = AppBarTheme.of(context);
+    late final AppBarThemeData defaults = Theme.of(context).useMaterial3
         ? _AppBarDefaultsM3(context)
         : _AppBarDefaultsM2(context);
     final FlexibleSpaceBarSettings settings =

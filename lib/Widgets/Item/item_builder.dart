@@ -10,6 +10,122 @@ import '../../Utils/utils.dart';
 enum TailingType { none, clear, password, icon, text, widget }
 
 class ItemBuilder {
+  static Widget buildEntryItem({
+    required BuildContext context,
+    double radius = 10,
+    bool roundTop = false,
+    bool roundBottom = false,
+    bool showLeading = false,
+    bool showTrailing = true,
+    bool isCaption = false,
+    Color? backgroundColor,
+    Color? titleColor,
+    Color? descriptionColor,
+    CrossAxisAlignment crossAxisAlignment = CrossAxisAlignment.start,
+    IconData leading = Icons.home_filled,
+    required String title,
+    String tip = "",
+    String description = "",
+    Function()? onTap,
+    double padding = 18,
+    double trailingLeftMargin = 5,
+    bool dividerPadding = true,
+    IconData trailing = Icons.keyboard_arrow_right_rounded,
+  }) {
+    return EntryItem(
+      context: context,
+      radius: radius,
+      roundTop: roundTop,
+      roundBottom: roundBottom,
+      showLeading: showLeading,
+      showTrailing: showTrailing,
+      backgroundColor: backgroundColor,
+      titleColor: titleColor,
+      descriptionColor: descriptionColor,
+      crossAxisAlignment: crossAxisAlignment,
+      leading: leading,
+      title: title,
+      tip: tip,
+      description: description,
+      onTap: onTap,
+      paddingVertical: padding,
+      trailingLeftMargin: trailingLeftMargin,
+      dividerPadding: dividerPadding,
+      trailing: trailing,
+    );
+  }
+
+  static Widget buildContainerItem({
+    double radius = 10,
+    bool topRadius = false,
+    bool bottomRadius = false,
+    required Widget child,
+    required BuildContext context,
+    Color? backgroundColor,
+    Border? border,
+  }) {
+    return ContainerItem(
+      radius: radius,
+      roundTop: topRadius,
+      roundBottom: bottomRadius,
+      backgroundColor: backgroundColor,
+      border: border,
+      child: child,
+    );
+  }
+
+  static Widget buildFontItem({
+    required CustomFont font,
+    required CustomFont currentFont,
+    required BuildContext context,
+    required Function(CustomFont?)? onChanged,
+    Function(CustomFont?)? onDelete,
+    bool showDelete = false,
+    double width = 110,
+    double height = 160,
+  }) {
+    return FontItem(
+      font: font,
+      currentFont: currentFont,
+      onChanged: onChanged,
+      onDelete: onDelete,
+      showDelete: showDelete,
+      width: width,
+      height: height,
+    );
+  }
+
+  static Widget buildEmptyFontItem({
+    required BuildContext context,
+    required Function()? onTap,
+    double width = 110,
+    double height = 160,
+  }) {
+    return EmptyFontItem(onTap: onTap, width: width, height: height);
+  }
+
+  static Widget buildThemeItem({
+    required ChewieThemeColorData themeColorData,
+    required int index,
+    required int groupIndex,
+    required BuildContext context,
+    required Function(int?)? onChanged,
+  }) {
+    return ThemeItem(
+      themeColorData: themeColorData,
+      index: index,
+      groupIndex: groupIndex,
+      onChanged: onChanged,
+    );
+  }
+
+  static Widget buildEmptyThemeItem({
+    required BuildContext context,
+    required Function()? onTap,
+  }) {
+    return EmptyThemeItem(onTap: onTap);
+  }
+
   static Widget buildTextDivider({
     required BuildContext context,
     required String text,
@@ -49,41 +165,60 @@ class ItemBuilder {
     );
   }
 
-  static Tab buildAnimatedTab(BuildContext context, {
+  static Tab buildAnimatedTab(
+    BuildContext context, {
     required bool selected,
     required String text,
+    TabController? controller,
+    int? tabIndex,
     bool normalUserBold = false,
     bool sameFontSize = false,
     double fontSizeDelta = 0,
   }) {
-    TextStyle normalStyle = Theme
-        .of(context)
-        .textTheme
-        .titleLarge!
-        .apply(
-      color: Colors.grey,
-      fontSizeDelta: fontSizeDelta - (sameFontSize ? 0 : 1),
-      fontWeightDelta: normalUserBold ? 0 : -2,
-    );
-    TextStyle selectedStyle = Theme
-        .of(context)
-        .textTheme
-        .titleLarge!
-        .apply(
-      fontSizeDelta: fontSizeDelta + (sameFontSize ? 0 : 1),
-    );
-    return Tab(
-      child: AnimatedDefaultTextStyle(
-        style: selected ? selectedStyle : normalStyle,
-        duration: const Duration(milliseconds: 100),
-        child: Container(
+    TextStyle normalStyle = Theme.of(context).textTheme.titleLarge!.apply(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          fontSizeDelta: fontSizeDelta - (sameFontSize ? 0 : 1),
+          fontWeightDelta: normalUserBold ? 0 : -2,
+        );
+    TextStyle selectedStyle = Theme.of(context).textTheme.titleLarge!.apply(
+          fontSizeDelta: fontSizeDelta + (sameFontSize ? 0 : 1),
+        );
+    Widget buildLabel() => Container(
           alignment: Alignment.center,
-          child: Text(text),
-        ),
-      ),
+          child: Text(
+            text,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.fade,
+            textAlign: TextAlign.center,
+          ),
+        );
+    final animation = controller?.animation;
+    return Tab(
+      child: animation != null && tabIndex != null
+          ? AnimatedBuilder(
+              animation: animation,
+              builder: (context, _) {
+                final proximity =
+                    (1 - (animation.value - tabIndex).abs()).clamp(0.0, 1.0);
+                final progress = Curves.easeOutCubic.transform(proximity);
+                return DefaultTextStyle(
+                  style: TextStyle.lerp(
+                    normalStyle,
+                    selectedStyle,
+                    progress,
+                  )!,
+                  child: buildLabel(),
+                );
+              },
+            )
+          : AnimatedDefaultTextStyle(
+              style: selected ? selectedStyle : normalStyle,
+              duration: const Duration(milliseconds: 100),
+              child: buildLabel(),
+            ),
     );
   }
-
 
   static Widget buildDynamicIconButton({
     required BuildContext context,
@@ -113,13 +248,15 @@ class ItemBuilder {
         return ToolButton(
           context: context,
           iconBuilder: iconBuilder,
+          onPressed: onTap,
           padding: const EdgeInsets.all(7),
         );
       },
     );
   }
 
-  static Widget buildTranslucentTag(BuildContext context, {
+  static Widget buildTranslucentTag(
+    BuildContext context, {
     required String text,
     bool isCircle = false,
     int? width,
@@ -149,21 +286,18 @@ class ItemBuilder {
             const SizedBox(width: 3),
           Text(
             text,
-            style: Theme
-                .of(context)
-                .textTheme
-                .bodySmall
-                ?.apply(
-              color: Colors.white,
-              fontSizeDelta: fontSizeDelta ?? -1,
-            ),
+            style: Theme.of(context).textTheme.bodySmall?.apply(
+                  color: Colors.white,
+                  fontSizeDelta: fontSizeDelta ?? -1,
+                ),
           ),
         ],
       ),
     );
   }
 
-  static Widget buildCopyable(BuildContext context, {
+  static Widget buildCopyable(
+    BuildContext context, {
     required Widget child,
     Function()? onTap,
     required String? text,
@@ -205,119 +339,122 @@ class ItemBuilder {
       url: tagUrl,
     );
     String avatarTag =
-    hasAvatarBox && showDetailMode == ShowDetailMode.avatarBox
-        ? StringUtil.getRandomString()
-        : heroTag;
+        hasAvatarBox && showDetailMode == ShowDetailMode.avatarBox
+            ? StringUtil.getRandomString()
+            : heroTag;
     String avatarBoxTag =
-    hasAvatarBox && showDetailMode == ShowDetailMode.avatarBox
-        ? heroTag
-        : StringUtil.getRandomString();
+        hasAvatarBox && showDetailMode == ShowDetailMode.avatarBox
+            ? heroTag
+            : StringUtil.getRandomString();
     return Container(
       decoration: BoxDecoration(
         border: showBorder && !hasAvatarBox
             ? Border.all(
-          color: Theme
-              .of(context)
-              .dividerColor,
-          width: 0.5,
-        )
+                color: Theme.of(context).dividerColor,
+                width: 0.5,
+              )
             : const Border.fromBorderSide(BorderSide.none),
         shape: BoxShape.circle,
       ),
       child: useDefaultAvatar || tagUrl.isEmpty
           ? ClipOval(
-        child: Image.asset(
-          "assets/avatar.png",
-          width: size,
-          height: size,
-        ),
-      )
+              child: Image.asset(
+                "assets/avatar.png",
+                width: size,
+                height: size,
+              ),
+            )
           : ClickableGestureDetector(
-        clickable: clickable,
-        onTap: showDetailMode != ShowDetailMode.not
-            ? () {
-          RouteUtil.pushDialogRoute(
-            context,
-            showClose: false,
-            fullScreen: true,
-            useFade: true,
-            HeroPhotoViewScreen(
-              tagPrefix: tagPrefix,
-              tagSuffix: tagSuffix,
-              imageUrls: [tagUrl],
-              useMainColor: false,
-              title: title,
-              captions: [caption ?? ""],
+              clickable: clickable,
+              onTap: showDetailMode != ShowDetailMode.not
+                  ? () {
+                      RouteUtil.pushDialogRoute(
+                        context,
+                        showClose: false,
+                        fullScreen: true,
+                        useFade: true,
+                        opaque: false,
+                        HeroPhotoViewScreen(
+                          tagPrefix: tagPrefix,
+                          tagSuffix: tagSuffix,
+                          imageUrls: [tagUrl],
+                          useMainColor: false,
+                          title: title,
+                          captions: [caption ?? ""],
+                        ),
+                      );
+                    }
+                  : null,
+              child: hasAvatarBox
+                  ? Stack(
+                      children: [
+                        Positioned(
+                          top: avatarBoxDeltaSize / 2,
+                          left: avatarBoxDeltaSize / 2,
+                          child: Hero(
+                            tag: avatarTag,
+                            child: ClipOval(
+                              child: ChewieItemBuilder.buildCachedImage(
+                                context: context,
+                                imageUrl: imageUrl,
+                                width: size,
+                                showLoading: showLoading,
+                                height: size,
+                                fit: BoxFit.cover,
+                                simpleError: true,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Hero(
+                          tag: avatarBoxTag,
+                          child: ChewieItemBuilder.buildCachedImage(
+                            context: context,
+                            imageUrl: avatarBoxImageUrl!,
+                            width: size + avatarBoxDeltaSize,
+                            showLoading: false,
+                            placeholderBackground: Colors.transparent,
+                            topPadding: 0,
+                            bottomPadding: 0,
+                            height: size + avatarBoxDeltaSize,
+                            fit: BoxFit.contain,
+                            simpleError: true,
+                          ),
+                        ),
+                      ],
+                    )
+                  : ClipOval(
+                      child: ChewieItemBuilder.buildCachedImage(
+                        context: context,
+                        imageUrl: tagUrl,
+                        width: size,
+                        showLoading: showLoading,
+                        height: size,
+                        fit: BoxFit.cover,
+                        simpleError: true,
+                      ),
+                    ),
             ),
-          );
-        }
-            : null,
-        child: hasAvatarBox
-            ? Stack(
-          children: [
-            Positioned(
-              top: avatarBoxDeltaSize / 2,
-              left: avatarBoxDeltaSize / 2,
-              child: Hero(
-                tag: avatarTag,
-                child: ClipOval(
-                  child: ChewieItemBuilder.buildCachedImage(
-                    context: context,
-                    imageUrl: imageUrl,
-                    width: size,
-                    showLoading: showLoading,
-                    height: size,
-                    simpleError: true,
-                  ),
-                ),
-              ),
-            ),
-            Hero(
-              tag: avatarBoxTag,
-              child: ChewieItemBuilder.buildCachedImage(
-                context: context,
-                imageUrl: avatarBoxImageUrl!,
-                width: size + avatarBoxDeltaSize,
-                showLoading: false,
-                placeholderBackground: Colors.transparent,
-                topPadding: 0,
-                bottomPadding: 0,
-                height: size + avatarBoxDeltaSize,
-                simpleError: true,
-              ),
-            ),
-          ],
-        )
-            : ClipOval(
-          child: ChewieItemBuilder.buildCachedImage(
-            context: context,
-            imageUrl: tagUrl,
-            width: size,
-            showLoading: showLoading,
-            height: size,
-            simpleError: true,
-          ),
-        ),
-      ),
     );
   }
 
-  static Widget buildTagItem(BuildContext context,
-      String tag,
-      TagType tagType, {
-        String? shownTag,
-        Function()? onTap,
-        Color? backgroundColor,
-        Color? color,
-        bool showIcon = true,
-        bool showRightIcon = false,
-        bool showTagLabel = true,
-        bool jumpToTag = true,
-        EdgeInsets padding =
+  static Widget buildTagItem(
+    BuildContext context,
+    String tag,
+    TagType tagType, {
+    String? shownTag,
+    Function()? onTap,
+    Color? backgroundColor,
+    Color? color,
+    bool showIcon = true,
+    bool showRightIcon = false,
+    bool showTagLabel = true,
+    bool jumpToTag = true,
+    EdgeInsets padding =
         const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        double fontSizeDelta = 0,
-        int fontWeightDelta = 0,
-      }) {
+    double fontSizeDelta = 0,
+    int fontWeightDelta = 0,
+  }) {
     String str = StringUtil.isNotEmpty(shownTag) ? shownTag! : tag;
     return GestureDetector(
       onTap: () {
@@ -333,9 +470,7 @@ class ItemBuilder {
           decoration: BoxDecoration(
             color: tagType != TagType.normal
                 ? ChewieColors.getHotTagBackground(context)
-                : backgroundColor ?? Theme
-                .of(context)
-                .cardColor,
+                : backgroundColor ?? Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(50),
           ),
           child: Row(
@@ -366,24 +501,16 @@ class ItemBuilder {
                     ? "#$str"
                     : str,
                 style: tagType != TagType.normal
-                    ? Theme
-                    .of(context)
-                    .textTheme
-                    .labelMedium
-                    ?.apply(
-                  color: color ?? ChewieColors.hotTagTextColor,
-                  fontSizeDelta: fontSizeDelta,
-                  fontWeightDelta: fontWeightDelta,
-                )
-                    : Theme
-                    .of(context)
-                    .textTheme
-                    .labelMedium
-                    ?.apply(
-                  color: color,
-                  fontSizeDelta: fontSizeDelta,
-                  fontWeightDelta: fontWeightDelta,
-                ),
+                    ? Theme.of(context).textTheme.labelMedium?.apply(
+                          color: color ?? ChewieColors.hotTagTextColor,
+                          fontSizeDelta: fontSizeDelta,
+                          fontWeightDelta: fontWeightDelta,
+                        )
+                    : Theme.of(context).textTheme.labelMedium?.apply(
+                          color: color,
+                          fontSizeDelta: fontSizeDelta,
+                          fontWeightDelta: fontWeightDelta,
+                        ),
               ),
               if (showRightIcon)
                 Icon(
@@ -398,12 +525,13 @@ class ItemBuilder {
     );
   }
 
-  static Widget buildSmallTagItem(BuildContext context,
-      String tag, {
-        Function()? onTap,
-        Color? backgroundColor,
-        bool showIcon = true,
-      }) {
+  static Widget buildSmallTagItem(
+    BuildContext context,
+    String tag, {
+    Function()? onTap,
+    Color? backgroundColor,
+    bool showIcon = true,
+  }) {
     return GestureDetector(
       onTap: () {
         panelScreenState?.pushPage(TagDetailScreen(tag: tag));
@@ -412,17 +540,12 @@ class ItemBuilder {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(
-          color: Theme
-              .of(context)
-              .cardColor,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(50),
         ),
         child: Text(
           "#$tag",
-          style: Theme
-              .of(context)
-              .textTheme
-              .labelSmall,
+          style: Theme.of(context).textTheme.labelSmall,
         ),
       ),
     );
@@ -442,9 +565,7 @@ class ItemBuilder {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: background ?? Theme
-            .of(context)
-            .cardColor,
+        color: background ?? Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(borderRadius),
       ),
       child: Row(
@@ -462,30 +583,18 @@ class ItemBuilder {
                   controller: controller,
                   textInputAction: TextInputAction.search,
                   onSubmitted: onSubmitted,
-                  style: Theme
-                      .of(context)
-                      .textTheme
-                      .titleSmall
-                      ?.apply(
-                    fontSizeDelta: hintFontSizeDelta,
-                  ),
+                  style: Theme.of(context).textTheme.titleSmall?.apply(
+                        fontSizeDelta: hintFontSizeDelta,
+                      ),
                   decoration: InputDecoration(
                     contentPadding: const EdgeInsets.only(left: 8),
                     border:
-                    const OutlineInputBorder(borderSide: BorderSide.none),
+                        const OutlineInputBorder(borderSide: BorderSide.none),
                     hintText: hintText,
-                    hintStyle: Theme
-                        .of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.apply(
-                      color: Theme
-                          .of(context)
-                          .textTheme
-                          .labelSmall
-                          ?.color,
-                      fontSizeDelta: hintFontSizeDelta,
-                    ),
+                    hintStyle: Theme.of(context).textTheme.titleSmall?.apply(
+                          color: Theme.of(context).textTheme.labelSmall?.color,
+                          fontSizeDelta: hintFontSizeDelta,
+                        ),
                   ),
                 ),
               ),
@@ -510,7 +619,8 @@ class ItemBuilder {
     );
   }
 
-  static Widget buildTitle(BuildContext context, {
+  static Widget buildTitle(
+    BuildContext context, {
     String? title,
     IconData? icon,
     String? suffixText,
@@ -535,8 +645,7 @@ class ItemBuilder {
             child: Text(
               title ?? "",
               style: textStyle ??
-                  Theme
-                      .of(context)
+                  Theme.of(context)
                       .textTheme
                       .titleSmall
                       ?.apply(fontWeightDelta: 2, fontSizeDelta: 1),
@@ -547,11 +656,7 @@ class ItemBuilder {
               icon: Icon(
                 icon,
                 size: 18,
-                color: Theme
-                    .of(context)
-                    .textTheme
-                    .labelSmall
-                    ?.color,
+                color: Theme.of(context).textTheme.labelSmall?.color,
               ),
               onTap: onTap,
             ),
@@ -562,19 +667,12 @@ class ItemBuilder {
                 children: [
                   Text(
                     suffixText!,
-                    style: Theme
-                        .of(context)
-                        .textTheme
-                        .labelMedium,
+                    style: Theme.of(context).textTheme.labelMedium,
                   ),
                   Icon(
                     Icons.keyboard_arrow_right_rounded,
                     size: 18,
-                    color: Theme
-                        .of(context)
-                        .textTheme
-                        .labelSmall
-                        ?.color,
+                    color: Theme.of(context).textTheme.labelSmall?.color,
                   ),
                 ],
               ),
@@ -584,7 +682,8 @@ class ItemBuilder {
     );
   }
 
-  static buildStatisticItem(BuildContext context, {
+  static buildStatisticItem(
+    BuildContext context, {
     Color? labelColor,
     Color? countColor,
     int labelFontWeightDelta = 0,
@@ -596,7 +695,7 @@ class ItemBuilder {
     Map countWithScale = NumberUtil.formatCountToMap(count ?? 0);
     return MouseRegion(
       cursor:
-      onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+          onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
       child: GestureDetector(
         onTap: onTap,
         child: Container(
@@ -605,55 +704,42 @@ class ItemBuilder {
             children: [
               count != null
                   ? Row(
-                children: [
-                  Text(
-                    countWithScale['count'],
-                    style: Theme
-                        .of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.apply(
-                        color: countColor,
-                        fontWeightDelta: countFontWeightDelta),
-                  ),
-                  if (countWithScale.containsKey("scale"))
-                    const SizedBox(width: 2),
-                  if (countWithScale.containsKey("scale"))
-                    Text(
-                      countWithScale['scale'],
-                      style: Theme
-                          .of(context)
-                          .textTheme
-                          .titleSmall
-                          ?.apply(
-                          fontSizeDelta: -2,
+                      children: [
+                        Text(
+                          countWithScale['count'],
+                          style: Theme.of(context).textTheme.titleLarge?.apply(
+                              color: countColor,
+                              fontWeightDelta: countFontWeightDelta),
+                        ),
+                        if (countWithScale.containsKey("scale"))
+                          const SizedBox(width: 2),
+                        if (countWithScale.containsKey("scale"))
+                          Text(
+                            countWithScale['scale'],
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.apply(
+                                    fontSizeDelta: -2,
+                                    color: countColor,
+                                    fontWeightDelta: countFontWeightDelta),
+                          ),
+                      ],
+                    )
+                  : Text(
+                      "-",
+                      style: Theme.of(context).textTheme.titleLarge?.apply(
                           color: countColor,
                           fontWeightDelta: countFontWeightDelta),
                     ),
-                ],
-              )
-                  : Text(
-                "-",
-                style: Theme
-                    .of(context)
-                    .textTheme
-                    .titleLarge
-                    ?.apply(
-                    color: countColor,
-                    fontWeightDelta: countFontWeightDelta),
-              ),
               const SizedBox(height: 4),
               Text(
                 title,
-                style: Theme
-                    .of(context)
-                    .textTheme
-                    .labelMedium
-                    ?.apply(
-                  fontSizeDelta: -1,
-                  color: labelColor,
-                  fontWeightDelta: labelFontWeightDelta,
-                ),
+                style: Theme.of(context).textTheme.labelMedium?.apply(
+                      fontSizeDelta: -1,
+                      color: labelColor,
+                      fontWeightDelta: labelFontWeightDelta,
+                    ),
               ),
             ],
           ),
@@ -662,7 +748,8 @@ class ItemBuilder {
     );
   }
 
-  static buildIconTextButton(BuildContext context, {
+  static buildIconTextButton(
+    BuildContext context, {
     Axis direction = Axis.horizontal,
     double spacing = 2,
     Widget? icon,
@@ -682,61 +769,54 @@ class ItemBuilder {
         onTap: onTap,
         child: direction == Axis.horizontal
             ? Row(
-          mainAxisAlignment:
-          start ? MainAxisAlignment.start : MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            if (icon != null && showIcon)
-              RotatedBox(quarterTurns: quarterTurns, child: icon),
-            if (icon != null && showIcon) SizedBox(width: spacing),
-            if (text.isNotEmpty)
-              Text(
-                text,
-                style: style ??
-                    Theme
-                        .of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.apply(
-                      fontSizeDelta: fontSizeDelta,
-                      color: color,
-                      fontWeightDelta: fontWeightDelta,
+                mainAxisAlignment:
+                    start ? MainAxisAlignment.start : MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (icon != null && showIcon)
+                    RotatedBox(quarterTurns: quarterTurns, child: icon),
+                  if (icon != null && showIcon) SizedBox(width: spacing),
+                  if (text.isNotEmpty)
+                    Text(
+                      text,
+                      style: style ??
+                          Theme.of(context).textTheme.titleSmall?.apply(
+                                fontSizeDelta: fontSizeDelta,
+                                color: color,
+                                fontWeightDelta: fontWeightDelta,
+                              ),
                     ),
-              ),
-          ],
-        )
+                ],
+              )
             : Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            if (icon != null && showIcon)
-              RotatedBox(quarterTurns: quarterTurns, child: icon),
-            if (icon != null && showIcon) SizedBox(height: spacing),
-            if (text.isNotEmpty)
-              Text(
-                text,
-                style: style ??
-                    Theme
-                        .of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.apply(
-                      fontSizeDelta: fontSizeDelta,
-                      color: color,
-                      fontWeightDelta: fontWeightDelta,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (icon != null && showIcon)
+                    RotatedBox(quarterTurns: quarterTurns, child: icon),
+                  if (icon != null && showIcon) SizedBox(height: spacing),
+                  if (text.isNotEmpty)
+                    Text(
+                      text,
+                      style: style ??
+                          Theme.of(context).textTheme.titleSmall?.apply(
+                                fontSizeDelta: fontSizeDelta,
+                                color: color,
+                                fontWeightDelta: fontWeightDelta,
+                              ),
                     ),
+                ],
               ),
-          ],
-        ),
       ),
     );
   }
 
-  static Widget buildWrapTagList(BuildContext context,
-      List<String> list, {
-        Function(String)? onTap,
-        EdgeInsets? margin,
-      }) {
+  static Widget buildWrapTagList(
+    BuildContext context,
+    List<String> list, {
+    Function(String)? onTap,
+    EdgeInsets? margin,
+  }) {
     return Container(
       margin: margin ?? const EdgeInsets.only(left: 16, right: 16, bottom: 4),
       child: Wrap(
@@ -750,10 +830,11 @@ class ItemBuilder {
     );
   }
 
-  static Widget buildWrapTagItem(BuildContext context,
-      String str, {
-        Function(String)? onTap,
-      }) {
+  static Widget buildWrapTagItem(
+    BuildContext context,
+    String str, {
+    Function(String)? onTap,
+  }) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
@@ -766,18 +847,13 @@ class ItemBuilder {
             color: Colors.transparent,
             borderRadius: BorderRadius.circular(50),
             border: Border.all(
-              color: Theme
-                  .of(context)
-                  .dividerColor,
+              color: Theme.of(context).dividerColor,
               width: 0.5,
             ),
           ),
           child: Text(
             str,
-            style: Theme
-                .of(context)
-                .textTheme
-                .titleSmall,
+            style: Theme.of(context).textTheme.titleSmall,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

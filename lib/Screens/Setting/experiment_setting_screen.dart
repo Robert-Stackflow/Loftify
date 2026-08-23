@@ -4,11 +4,10 @@ import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:provider/provider.dart';
-import 'package:tuple/tuple.dart';
 
 import '../../Utils/app_provider.dart';
+import '../../Utils/display_mode_util.dart';
 import '../../Utils/hive_util.dart';
-import '../../Widgets/Item/item_builder.dart';
 import '../../l10n/l10n.dart';
 import '../Lock/pin_change_screen.dart';
 import '../Lock/pin_verify_screen.dart';
@@ -40,13 +39,10 @@ class _ExperimentSettingScreenState
       ChewieHiveUtil.getBool(HiveUtil.enableSafeModeKey, defaultValue: false);
   bool _enableBiometric = ChewieHiveUtil.getBool(HiveUtil.enableBiometricKey);
   bool _biometricAvailable = false;
-  int _refreshRate = ChewieHiveUtil.getInt(HiveUtil.refreshRateKey);
   List<DisplayMode> _modes = [];
+  DisplayMode? _selectedMode;
   DisplayMode? _activeMode;
   DisplayMode? _preferredMode;
-
-  List<Tuple2<String, DisplayMode>> get _supportedModeTuples =>
-      _modes.map((e) => Tuple2(e.toString(), e)).toList();
 
   @override
   void initState() {
@@ -55,13 +51,37 @@ class _ExperimentSettingScreenState
     if (ResponsiveUtil.isAndroid()) getRefreshRate();
   }
 
-  getRefreshRate() async {
-    _modes = await FlutterDisplayMode.supported;
-    _activeMode = await FlutterDisplayMode.active;
-    _preferredMode = await FlutterDisplayMode.preferred;
-    ILogger.info(
-        "Current active display mode: $_activeMode\nCurrent preferred display mode: $_preferredMode");
-    setState(() {});
+  Future<void> getRefreshRate() async {
+    try {
+      final supportedModes = await FlutterDisplayMode.supported;
+      final activeMode = await FlutterDisplayMode.active;
+      final preferredMode = await FlutterDisplayMode.preferred;
+      final selectedMode = DisplayModePreference.resolve(
+        modes: supportedModes,
+        activeMode: activeMode,
+        encodedMode: ChewieHiveUtil.getString(HiveUtil.refreshRateModeKey),
+        legacyIndex: ChewieHiveUtil.getInt(
+          HiveUtil.refreshRateKey,
+          defaultValue: -1,
+        ),
+      );
+      ILogger.info(
+          "Current active display mode: $activeMode\nCurrent preferred display mode: $preferredMode");
+      if (!mounted) return;
+      setState(() {
+        _modes = DisplayModePreference.ordered(supportedModes);
+        _activeMode = activeMode;
+        _preferredMode = preferredMode;
+        _selectedMode = selectedMode;
+      });
+    } catch (error, stackTrace) {
+      ILogger.error("Failed to load display modes", error, stackTrace);
+      if (mounted) {
+        IToast.showTop(
+          appLocalizations.setRefreshRateFailedWithError(error.toString()),
+        );
+      }
+    }
   }
 
   @override
@@ -77,73 +97,79 @@ class _ExperimentSettingScreenState
           selector: (context, globalProvider) => globalProvider.pinSettled,
           builder: (context, pinSettled, child) => _privacySettings(pinSettled),
         ),
-        if (ResponsiveUtil.isAndroid()) _fpsSettings(),
+        if (ResponsiveUtil.isAndroid()) ...[
+          _fpsSettings(),
+        ],
       ],
     );
   }
 
-  _fpsSettings() {
-    return [
-      const SizedBox(height: 10),
-      EntryItem(
-        title: appLocalizations.refreshRate,
-        description: appLocalizations.refreshRateDescription(
-          _modes.isNotEmpty
-              ? _modes[_refreshRate.clamp(0, _modes.length - 1)].toString()
-              : "",
-          _preferredMode?.toString() ?? "Unknown",
-          _activeMode?.toString() ?? "Unknown",
-        ),
-        roundTop: true,
-        roundBottom: true,
-        onTap: () {
-          getRefreshRate();
-          BottomSheetBuilder.showListBottomSheet(
-            context,
-            (context) => TileList.fromOptions(
-              _supportedModeTuples,
-              (item2) async {
-                try {
-                  ILogger.info("Try to set display mode: ${item2.toString()}");
-                  ILogger.info(
-                      "Active display mode before set: ${_activeMode.toString()}\nPreferred display mode before set: ${_preferredMode.toString()}");
-                  await FlutterDisplayMode.setPreferredMode(item2);
-                  _activeMode = await FlutterDisplayMode.active;
-                  _preferredMode = await FlutterDisplayMode.preferred;
-                  ILogger.info(
-                      "Active display mode after set: ${_activeMode.toString()}\nPreferred display mode after set: ${_preferredMode.toString()}");
-                  if (_preferredMode?.toString() != item2.toString()) {
-                    IToast.showTop(appLocalizations.setRefreshRateFailed);
-                  } else {
-                    if (_activeMode?.toString() != item2.toString()) {
-                      IToast.showTop(S.current
-                          .setRefreshRateSuccessWithDisplayModeNotChanged);
-                    } else {
-                      IToast.showTop(appLocalizations.setRefreshRateSuccess);
-                    }
-                  }
-                } catch (e, t) {
-                  IToast.showTop(appLocalizations
-                      .setRefreshRateFailedWithError(e.toString()));
-                  ILogger.error("Failed to set display mode", e, t);
-                }
-                _refreshRate = _modes.indexOf(item2);
-                getRefreshRate();
-                ChewieHiveUtil.put(HiveUtil.refreshRateKey, _refreshRate);
-                Navigator.pop(context);
-              },
-              selected: _modes[_refreshRate.clamp(0, _modes.length - 1)],
-              context: context,
-              title: appLocalizations.chooseRefreshRate,
-              onCloseTap: () => Navigator.pop(context),
+  Widget _fpsSettings() {
+    String modeLabel(DisplayMode mode) => DisplayModePreference.label(
+          mode,
+          automaticLabel: appLocalizations.followSystem,
+        );
+    final selectedMode = _selectedMode;
+    return CaptionItem(
+      title: appLocalizations.refreshRate,
+      children: [
+        InlineSelectionItem<SelectionItemModel<DisplayMode>>(
+            title: appLocalizations.refreshRate,
+            description: appLocalizations.refreshRateDescription(
+              selectedMode == null ? "" : modeLabel(selectedMode),
+              _preferredMode == null ? "Unknown" : modeLabel(_preferredMode!),
+              _activeMode == null ? "Unknown" : modeLabel(_activeMode!),
             ),
-          );
-        },
-      ),
-    ];
+            items: _modes
+                .map((mode) => SelectionItemModel(modeLabel(mode), mode))
+                .toList(),
+            initItem: selectedMode == null
+                ? null
+                : SelectionItemModel(modeLabel(selectedMode), selectedMode),
+            hint: appLocalizations.chooseRefreshRate,
+            onChanged: (item) async {
+              if (item == null) return;
+              final mode = item.value;
+              try {
+                ILogger.info("Try to set display mode: $mode");
+                await DisplayModeController.setPreferredMode(mode);
+                await ChewieHiveUtil.put(
+                  HiveUtil.refreshRateModeKey,
+                  DisplayModePreference.encode(mode),
+                );
+                await ChewieHiveUtil.delete(HiveUtil.refreshRateKey);
+                final activeMode = await FlutterDisplayMode.active;
+                final preferredMode = await FlutterDisplayMode.preferred;
+                if (!mounted) return;
+                setState(() {
+                  _selectedMode = mode;
+                  _activeMode = activeMode;
+                  _preferredMode = preferredMode;
+                });
+                if (preferredMode != mode) {
+                  IToast.showTop(appLocalizations.setRefreshRateFailed);
+                } else if (activeMode != mode) {
+                  IToast.showTop(
+                    appLocalizations
+                        .setRefreshRateSuccessWithDisplayModeNotChanged,
+                  );
+                } else {
+                  IToast.showTop(appLocalizations.setRefreshRateSuccess);
+                }
+              } catch (error, stackTrace) {
+                IToast.showTop(
+                  appLocalizations
+                      .setRefreshRateFailedWithError(error.toString()),
+                );
+                ILogger.error("Failed to set display mode", error, stackTrace);
+              }
+              await getRefreshRate();
+            }),
+      ],
+    );
   }
 
-  _privacySettings(bool pinSettled) {
+  Widget _privacySettings(bool pinSettled) {
     return CaptionItem(
       title: appLocalizations.privacySetting,
       children: [
@@ -187,24 +213,20 @@ class _ExperimentSettingScreenState
           child: Selector<AppProvider, int>(
             selector: (context, globalProvider) =>
                 globalProvider.autoLockSeconds,
-            builder: (context, autoLockTime, child) => InlineSelectionItem<SelectionItemModel<(
+            builder: (context, autoLockTime, child) =>
+                InlineSelectionItem<SelectionItemModel<int>>(
               title: appLocalizations.autoLockDelay,
-              tip: AppProvider.getAutoLockOptionLabel(autoLockTime),
-              onTap: () {
-                BottomSheetBuilder.showListBottomSheet(
-                  context,
-                  (context) => TileList.fromOptions(
-                    AppProvider.getAutoLockOptions(),
-                    (item2) {
-                      appProvider.autoLockSeconds = item2;
-                      Navigator.pop(context);
-                    },
-                    selected: autoLockTime,
-                    context: context,
-                    title: appLocalizations.chooseAutoLockDelay,
-                    onCloseTap: () => Navigator.pop(context),
-                  ),
-                );
+              items: AppProvider.getAutoLockOptions()
+                  .map((option) =>
+                      SelectionItemModel(option.item1, option.item2))
+                  .toList(),
+              initItem: SelectionItemModel(
+                AppProvider.getAutoLockOptionLabel(autoLockTime),
+                autoLockTime,
+              ),
+              hint: appLocalizations.chooseAutoLockDelay,
+              onChanged: (item) {
+                if (item != null) appProvider.autoLockSeconds = item.value;
               },
             ),
           ),
@@ -221,15 +243,16 @@ class _ExperimentSettingScreenState
     );
   }
 
-  initBiometricAuthentication() async {
-    LocalAuthentication localAuth = LocalAuthentication();
-    bool available = await localAuth.canCheckBiometrics;
+  Future<void> initBiometricAuthentication() async {
+    final localAuth = LocalAuthentication();
+    final available = await localAuth.canCheckBiometrics;
+    if (!mounted) return;
     setState(() {
       _biometricAvailable = available;
     });
   }
 
-  onEnablePinTapped() {
+  void onEnablePinTapped() {
     setState(() {
       RouteUtil.pushPanelCupertinoRoute(
         context,
@@ -250,7 +273,7 @@ class _ExperimentSettingScreenState
     });
   }
 
-  onBiometricTapped() {
+  void onBiometricTapped() {
     if (!_enableBiometric) {
       RouteUtil.pushPanelCupertinoRoute(
         context,
@@ -273,7 +296,7 @@ class _ExperimentSettingScreenState
     }
   }
 
-  onChangePinTapped() {
+  void onChangePinTapped() {
     setState(() {
       RouteUtil.pushPanelCupertinoRoute(context, const PinChangeScreen());
       //     .then((value) {
@@ -286,14 +309,14 @@ class _ExperimentSettingScreenState
     });
   }
 
-  onEnableAutoLockTapped() {
+  void onEnableAutoLockTapped() {
     setState(() {
       _autoLock = !_autoLock;
       ChewieHiveUtil.put(HiveUtil.autoLockKey, _autoLock);
     });
   }
 
-  onSafeModeTapped() {
+  void onSafeModeTapped() {
     setState(() {
       _enableSafeMode = !_enableSafeMode;
       if (ResponsiveUtil.isMobile()) {

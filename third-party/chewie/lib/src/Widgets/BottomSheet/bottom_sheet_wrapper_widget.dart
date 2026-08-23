@@ -22,7 +22,7 @@ class BottomSheetWrapperWidget extends StatelessWidget {
     double width = MediaQuery.sizeOf(context).width - 60;
     double height = MediaQuery.sizeOf(context).height - 60;
     double preferWidth = min(width, preferMinWidth ?? 540);
-    double preferHeight = min(width, 500);
+    double preferHeight = min(height, 500);
     double preferHorizontalMargin = isLandScape
         ? width > preferWidth
             ? (width - preferWidth) / 2
@@ -30,6 +30,11 @@ class BottomSheetWrapperWidget extends StatelessWidget {
         : 0;
     double preferVerticalMargin =
         height > preferHeight ? (height - preferHeight) / 2 : 0;
+    double bottomPadding = isLandScape
+        ? 0
+        : MediaQuery.of(context).viewInsets.bottom > 0
+            ? 0
+            : MediaQuery.of(context).viewPadding.bottom;
     return BackdropFilter(
       filter: ResponsiveUtil.isDesktop()
           ? ImageFilter.blur(sigmaX: 2, sigmaY: 2)
@@ -45,7 +50,24 @@ class BottomSheetWrapperWidget extends StatelessWidget {
                   : 100,
           bottom: useVerticalMargin ? preferVerticalMargin : 0,
         ),
-        child: child,
+        child: ClipRRect(
+          borderRadius: BorderRadius.vertical(
+            top: ChewieDimens.defaultRadius,
+            bottom: useVerticalMargin || isLandScape
+                ? ChewieDimens.defaultRadius
+                : Radius.zero,
+          ),
+          child: ColoredBox(
+            color: ChewieTheme.scaffoldBackgroundColor,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(child: child),
+                if (bottomPadding > 0) SizedBox(height: bottomPadding),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

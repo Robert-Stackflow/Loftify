@@ -19,12 +19,14 @@ class RoundIconTextButton extends StatelessWidget {
   final double spacing;
   final Border? border;
   final bool disabled;
+  final Widget? trailing;
 
   const RoundIconTextButton({
     super.key,
     this.text,
     this.tooltip,
-    this.onPressed,
+    Function()? onPressed,
+    Function()? onTap,
     this.background,
     this.icon,
     this.padding = const EdgeInsets.symmetric(horizontal: 24),
@@ -38,7 +40,8 @@ class RoundIconTextButton extends StatelessWidget {
     this.minHeight = 32,
     this.border,
     this.disabled = false,
-  });
+    this.trailing,
+  }) : onPressed = onPressed ?? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -96,6 +99,10 @@ class RoundIconTextButton extends StatelessWidget {
                               ),
                         ),
                       ),
+                      if (trailing != null) ...[
+                        SizedBox(width: spacing),
+                        trailing!,
+                      ],
                     ],
                   ),
                 ),

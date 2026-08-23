@@ -226,6 +226,60 @@ class GetTagPostListParams {
     };
   }
 
+  Map<String, dynamic> toPreferenceJson() {
+    return {
+      "resultType": tagPostResultType.index,
+      "recentDayType": recentDayType.index,
+      "rangeType": tagRangeType.index,
+      "protected": protectedFlag,
+      "postType": postTypes.index,
+      "postYm": postYm,
+    };
+  }
+
+  factory GetTagPostListParams.fromPreference({
+    required String tag,
+    required dynamic value,
+    required TagPostResultType fallbackResultType,
+  }) {
+    if (value is! Map) {
+      return GetTagPostListParams(
+        tag: tag,
+        tagPostResultType: fallbackResultType,
+      );
+    }
+    return GetTagPostListParams(
+      tag: tag,
+      tagPostResultType: _enumAt(
+        TagPostResultType.values,
+        value["resultType"],
+        fallbackResultType,
+      ),
+      recentDayType: _enumAt(
+        TagRecentDayType.values,
+        value["recentDayType"],
+        TagRecentDayType.noLimit,
+      ),
+      tagRangeType: _enumAt(
+        TagRangeType.values,
+        value["rangeType"],
+        TagRangeType.noLimit,
+      ),
+      protectedFlag: value["protected"] == true,
+      postTypes: _enumAt(
+        TagPostType.values,
+        value["postType"],
+        TagPostType.noLimit,
+      ),
+      postYm: value["postYm"] is String ? value["postYm"] as String : "",
+    );
+  }
+
+  static T _enumAt<T>(List<T> values, dynamic value, T fallback) {
+    final index = value is num ? value.toInt() : -1;
+    return index >= 0 && index < values.length ? values[index] : fallback;
+  }
+
   GetTagPostListParams clone() {
     return GetTagPostListParams(
       tag: tag,

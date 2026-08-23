@@ -1,15 +1,14 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/user_api.dart';
+import 'package:loftify/Screens/Info/nested_mixin.dart';
 import 'package:loftify/Utils/hive_util.dart';
 
 import '../../Models/post_detail_response.dart';
 import '../../Utils/enums.dart';
-import '../../Utils/utils.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../l10n/l10n.dart';
 import '../Post/collection_detail_screen.dart';
-import 'nested_mixin.dart';
 
 class CollectionScreen extends StatefulWidgetForNested {
   CollectionScreen({
@@ -20,6 +19,8 @@ class CollectionScreen extends StatefulWidgetForNested {
     this.blogName,
     this.collectionCount,
     super.nested = false,
+    super.refreshListenable,
+    super.refreshId = 'collection',
   }) {
     if (infoMode == InfoMode.other) {
       assert(blogName != null);
@@ -39,7 +40,10 @@ class CollectionScreen extends StatefulWidgetForNested {
 }
 
 class _CollectionScreenState extends BaseDynamicState<CollectionScreen>
-    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+    with
+        TickerProviderStateMixin,
+        AutomaticKeepAliveClientMixin,
+        NestedRefreshSignalMixin<CollectionScreen> {
   @override
   bool get wantKeepAlive => true;
   final List<FullPostCollection> _collectionList = [];
@@ -51,14 +55,27 @@ class _CollectionScreenState extends BaseDynamicState<CollectionScreen>
   @override
   void initState() {
     super.initState();
+    bindNestedRefreshSignal(() {
+      _refreshController.callRefresh(
+        overOffset: 28,
+        duration: const Duration(milliseconds: 140),
+      );
+    });
     if (widget.nested) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Future.delayed(const Duration(milliseconds: 300), () => _onRefresh());
+        if (mounted) _onRefresh();
       });
     } else {
       _initPhase = InitPhase.successful;
       setState(() {});
     }
+  }
+
+  @override
+  void dispose() {
+    unbindNestedRefreshSignal();
+    _refreshController.dispose();
+    super.dispose();
   }
 
   _fetchGrain({bool refresh = false}) async {
@@ -94,11 +111,10 @@ class _CollectionScreenState extends BaseDynamicState<CollectionScreen>
             _collectionList.addAll(tmp);
             if (mounted) setState(() {});
             _initPhase = InitPhase.successful;
-            if (((widget.collectionCount != null &&
-                        _collectionList.length >= widget.collectionCount!) ||
-                    tmp.isEmpty) &&
-                !refresh) {
-              _noMore = true;
+            _noMore = (widget.collectionCount != null &&
+                    _collectionList.length >= widget.collectionCount!) ||
+                tmp.isEmpty;
+            if (_noMore && !refresh) {
               return IndicatorResult.noMore;
             } else {
               return IndicatorResult.success;
@@ -140,25 +156,27 @@ class _CollectionScreenState extends BaseDynamicState<CollectionScreen>
   _buildBody() {
     switch (_initPhase) {
       case InitPhase.connecting:
-        return const LoadingWidget(
-            background: Colors.transparent);
+        return const LoadingWidget(background: Colors.transparent);
       case InitPhase.failed:
         return CustomErrorWidget(
           onTap: _onRefresh,
         );
       case InitPhase.successful:
         return EasyRefresh.builder(
-          refreshOnStart: true,
+          header: widget.nested ? buildNestedRefreshHeader() : null,
+          refreshOnStart: !widget.nested,
           controller: _refreshController,
           onRefresh: _onRefresh,
-          onLoad: _onLoad,
+          onLoad: _noMore ? null : _onLoad,
           triggerAxis: Axis.vertical,
           childBuilder: (context, physics) {
             return _collectionList.isNotEmpty
                 ? _buildMainBody(physics)
                 : EmptyPlaceholder(
                     text: appLocalizations.noCollection,
-                    physics: physics);
+                    physics: physics,
+                    shrinkWrap: false,
+                  );
           },
         );
       default:
@@ -167,30 +185,27 @@ class _CollectionScreenState extends BaseDynamicState<CollectionScreen>
   }
 
   Widget _buildMainBody(ScrollPhysics physics) {
-    return LoadMoreNotification(
-      noMore: _noMore,
-      onLoad: _onLoad,
-      child: WaterfallFlow.extent(
-        maxCrossAxisExtent: 560,
-        physics: physics,
-        padding: const EdgeInsets.only(bottom: 20),
-        children: List.generate(
-          _collectionList.length,
-          (index) => _buildCollectionRow(
-            _collectionList[index],
-            verticalPadding: 8,
-            onTap: () {
-              RouteUtil.pushPanelCupertinoRoute(
-                context,
-                CollectionDetailScreen(
-                  collectionId: _collectionList[index].id,
-                  blogId: _collectionList[index].blogId,
-                  blogName: "",
-                  postId: 0,
-                ),
-              );
-            },
-          ),
+    return WaterfallFlow.extent(
+      controller: widget.scrollController,
+      maxCrossAxisExtent: 560,
+      physics: physics,
+      padding: const EdgeInsets.only(bottom: 20),
+      children: List.generate(
+        _collectionList.length,
+        (index) => _buildCollectionRow(
+          _collectionList[index],
+          verticalPadding: 8,
+          onTap: () {
+            RouteUtil.pushPanelCupertinoRoute(
+              context,
+              CollectionDetailScreen(
+                collectionId: _collectionList[index].id,
+                blogId: _collectionList[index].blogId,
+                blogName: "",
+                postId: 0,
+              ),
+            );
+          },
         ),
       ),
     );
@@ -202,77 +217,75 @@ class _CollectionScreenState extends BaseDynamicState<CollectionScreen>
     double verticalPadding = 12,
   }) {
     List<String> tags = collection.tags.split(",");
-    return
-      ClickableGestureDetector(
-        onTap: onTap,
-        child: Container(
-          color: Colors.transparent,
-          padding:
-              EdgeInsets.symmetric(vertical: verticalPadding, horizontal: 16),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: MyCachedNetworkImage(
-                      imageUrl: collection.coverUrl,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                      showLoading: false,
-                    ),
+    return ClickableGestureDetector(
+      onTap: onTap,
+      child: Container(
+        color: Colors.transparent,
+        padding:
+            EdgeInsets.symmetric(vertical: verticalPadding, horizontal: 16),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: MyCachedNetworkImage(
+                    imageUrl: collection.coverUrl,
+                    width: 80,
+                    height: 80,
+                    fit: BoxFit.cover,
+                    showLoading: false,
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: SizedBox(
-                      height: 80,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.max,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            collection.name,
-                            style: Theme.of(context).textTheme.titleMedium,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            "${collection.postCount}${appLocalizations.chapter} · ${appLocalizations.updateAt}${TimeUtil.formatTimestamp(collection.lastPublishTime)}",
-                            style: Theme.of(context).textTheme.labelMedium,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(
-                            height: 20,
-                            child: ListView(
-                              scrollDirection: Axis.horizontal,
-                              cacheExtent: 9999,
-                              children: [
-                                ...List.generate(
-                                  tags.length,
-                                  (index) => Container(
-                                    margin: const EdgeInsets.only(right: 5),
-                                    child: ItemBuilder.buildSmallTagItem(
-                                      context,
-                                      tags[index],
-                                      showIcon: false,
-                                    ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SizedBox(
+                    height: 80,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          collection.name,
+                          style: Theme.of(context).textTheme.titleMedium,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          "${collection.postCount}${appLocalizations.chapter} · ${appLocalizations.updateAt}${TimeUtil.formatTimestamp(collection.lastPublishTime)}",
+                          style: Theme.of(context).textTheme.labelMedium,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(
+                          height: 20,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: [
+                              ...List.generate(
+                                tags.length,
+                                (index) => Container(
+                                  margin: const EdgeInsets.only(right: 5),
+                                  child: ItemBuilder.buildSmallTagItem(
+                                    context,
+                                    tags[index],
+                                    showIcon: false,
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              )
-            ],
-          ),
+                ),
+              ],
+            )
+          ],
         ),
+      ),
     );
   }
 

@@ -1,7 +1,25 @@
 part of '../custom_dropdown.dart';
 
-class SingleSelectController<T> extends ValueNotifier<T?> {
-  SingleSelectController(super._value);
+class SingleSelectController<T> extends ChangeNotifier
+    implements ValueListenable<T?> {
+  T? _value;
+
+  SingleSelectController(this._value);
+
+  @override
+  T? get value => _value;
+
+  set value(T? newValue) {
+    if (_value == newValue) return;
+    _value = newValue;
+    notifyListeners();
+  }
+
+  void replaceEquivalent(T? newValue) {
+    if (identical(_value, newValue)) return;
+    _value = newValue;
+    notifyListeners();
+  }
 
   void clear() {
     value = null;

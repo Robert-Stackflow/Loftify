@@ -1,8 +1,6 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:loftify/Models/collection_response.dart';
 
-import '../Utils/utils.dart';
-
 ///PostListItem
 class PostListItem {
   ///作者信息
@@ -663,15 +661,20 @@ class PostCount {
 
   factory PostCount.fromJson(Map<String, dynamic> json) {
     return PostCount(
-      blogId: json['blogId'],
-      favoriteCount: json['favoriteCount'],
-      hotCount: json['hotCount'],
-      postHot: json['postHot'],
-      reblogCount: json['reblogCount'],
-      responseCount: json['responseCount'],
-      shareCount: json['shareCount'],
-      subscribeCount: json['subscribeCount'],
-      viewCount: json['viewCount'],
+      blogId:
+          json['blogId'] == null ? null : NumberUtil.parseToInt(json['blogId']),
+      favoriteCount: NumberUtil.parseToInt(json['favoriteCount']),
+      hotCount: json['hotCount'] == null
+          ? null
+          : NumberUtil.parseToInt(json['hotCount']),
+      postHot: json['postHot'] == null
+          ? null
+          : NumberUtil.parseToInt(json['postHot']),
+      reblogCount: NumberUtil.parseToInt(json['reblogCount']),
+      responseCount: NumberUtil.parseToInt(json['responseCount']),
+      shareCount: NumberUtil.parseToInt(json['shareCount']),
+      subscribeCount: NumberUtil.parseToInt(json['subscribeCount']),
+      viewCount: NumberUtil.parseToInt(json['viewCount']),
     );
   }
 

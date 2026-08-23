@@ -141,36 +141,36 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
             style: Theme.of(context).textTheme.titleLarge,
           ),
           ClickableGestureDetector(
-              onTap: () {
-                BottomSheetBuilder.showBottomSheet(
-                  context,
-                  (sheetContext) => InputBottomSheet(
-                    title: appLocalizations.newFolder,
-                    hint: appLocalizations.inputFolderTitle,
-                    text: "",
-                    onConfirm: (text) {
-                      UserApi.createFolder(name: text).then((value) {
-                        if (value['code'] == 0) {
-                          IToast.showTop(appLocalizations.createSuccess);
-                          _fetchFavoriteFolderList();
-                        } else {
-                          IToast.showTop(value['msg']);
-                        }
-                      });
-                    },
+            onTap: () {
+              BottomSheetBuilder.showBottomSheet(
+                context,
+                (sheetContext) => InputBottomSheet(
+                  title: appLocalizations.newFolder,
+                  hint: appLocalizations.inputFolderTitle,
+                  text: "",
+                  onConfirm: (text) {
+                    UserApi.createFolder(name: text).then((value) {
+                      if (value['code'] == 0) {
+                        IToast.showTop(appLocalizations.createSuccess);
+                        _fetchFavoriteFolderList();
+                      } else {
+                        IToast.showTop(value['msg']);
+                      }
+                    });
+                  },
+                ),
+                preferMinWidth: 400,
+                responsive: true,
+              );
+            },
+            child: Text(
+              appLocalizations.newOp,
+              style: Theme.of(context).textTheme.titleLarge?.apply(
+                    fontSizeDelta: -2,
+                    color: Theme.of(context).primaryColor,
                   ),
-                  preferMinWidth: 400,
-                  responsive: true,
-                );
-              },
-              child: Text(
-                appLocalizations.newOp,
-                style: Theme.of(context).textTheme.titleLarge?.apply(
-                      fontSizeDelta: -2,
-                      color: Theme.of(context).primaryColor,
-                    ),
-              ),
             ),
+          ),
         ],
       ),
     );
@@ -183,17 +183,18 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
       onLoad: _onLoad,
       triggerAxis: Axis.vertical,
       child: _favoriteFolderList.isNotEmpty
-          ? ListView(
-              cacheExtent: 9999,
+          ? ListView.builder(
+              cacheExtent: MediaQuery.sizeOf(context).height,
               padding: const EdgeInsets.symmetric(vertical: 6),
-              children: List.generate(
-                _favoriteFolderList.length,
-                (index) {
-                  return _buildFolderItem(
-                    context,
-                    _favoriteFolderList[index],
-                  );
-                },
+              itemCount: _favoriteFolderList.length,
+              itemBuilder: (context, index) => KeyedSubtree(
+                key: ValueKey(
+                  'subscribe-folder-${_favoriteFolderList[index].id}',
+                ),
+                child: _buildFolderItem(
+                  context,
+                  _favoriteFolderList[index],
+                ),
               ),
             )
           : EmptyPlaceholder(text: appLocalizations.noFavoriteFolder),
@@ -243,10 +244,10 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
                     children: <Widget>[
                       Text(
                         item.name ?? "",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 10),
                       Text(

@@ -1,13 +1,18 @@
+import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Models/grain_response.dart';
 
 import '../../Models/post_detail_response.dart';
 import '../../Utils/enums.dart';
+import '../../Utils/post_sequence_source.dart';
 import '../../Utils/utils.dart';
 import 'general_post_item_builder.dart';
 
 class GrainPostItemBuilder {
-  static GeneralPostItem getGeneralPostItem(GrainPostItem item) {
+  static GeneralPostItem getGeneralPostItem(
+    GrainPostItem item, {
+    PostSequenceSource? sequenceSource,
+  }) {
     List<PhotoLink> photoLinks = [];
     switch (getPostType(item)) {
       case PostType.video:
@@ -83,6 +88,7 @@ class GrainPostItemBuilder {
       shareCount: item.postData.postCountView.shareCount,
       commentCount: item.postData.postCountView.responseCount,
       shared: item.shared,
+      sequenceSource: sequenceSource,
     );
   }
 
@@ -144,11 +150,12 @@ class GrainPostItemBuilder {
     GrainPostItem item, {
     double wh = 100,
     int? activePostId,
+    PostSequenceSource? sequenceSource,
   }) {
     return GridPostItemWidget(
       wh: wh,
       activePostId: activePostId,
-      item: getGeneralPostItem(item),
+      item: getGeneralPostItem(item, sequenceSource: sequenceSource),
     );
   }
 }

@@ -1,4 +1,6 @@
+import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:loftify/Screens/Setting/general_setting_screen.dart';
 import 'package:tuple/tuple.dart';
 
@@ -10,7 +12,7 @@ import '../l10n/l10n.dart';
 import 'enums.dart';
 import 'hive_util.dart';
 
-NavigatorState? get globalNavigatorState => globalNavigatorKey.currentState;
+NavigatorState? get globalNavigatorState => chewieProvider.globalNavigatorState;
 
 BuildContext get rootContext => globalNavigatorState!.context;
 
@@ -18,9 +20,10 @@ GlobalKey<MainScreenState> mainScreenKey = GlobalKey<MainScreenState>();
 
 MainScreenState? get mainScreenState => mainScreenKey.currentState;
 
-GlobalKey<PanelScreenState> panelScreenKey = GlobalKey<PanelScreenState>();
+GlobalKey<BasePanelScreenState> panelScreenKey = chewieProvider.panelScreenKey;
 
-PanelScreenState? get panelScreenState => panelScreenKey.currentState;
+PanelScreenState? get panelScreenState =>
+    panelScreenKey.currentState as PanelScreenState?;
 
 GlobalKey<SearchScreenState> searchScreenKey = GlobalKey<SearchScreenState>();
 
@@ -42,17 +45,15 @@ GlobalKey<DialogWrapperWidgetState> dialogNavigatorKey =
 DialogWrapperWidgetState? get dialogNavigatorState =>
     dialogNavigatorKey.currentState;
 
-GlobalKey<KeyboardHandlerState> keyboardHandlerKey =
-    GlobalKey<KeyboardHandlerState>();
-
-KeyboardHandlerState? get keyboardHandlerState =>
-    keyboardHandlerKey.currentState;
-
 RouteObserver<PageRoute> routeObserver = RouteObserver();
 
 AppProvider appProvider = AppProvider();
 
 class AppProvider with ChangeNotifier {
+  AppProvider() {
+    Intl.defaultLocale = (_locale ?? resolveSystemAppLocale()).toString();
+  }
+
   bool _pinSettled = HiveUtil.hasGuesturePasswd();
 
   bool get pinSettled => _pinSettled;
@@ -77,8 +78,9 @@ class AppProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Map<Type, Action<Intent>> _dynamicShortcuts =
-      KeyboardHandlerState.mainScreenShortcuts;
+  final FocusNode shortcutFocusNode = FocusNode();
+
+  Map<Type, Action<Intent>> _dynamicShortcuts = {};
 
   Map<Type, Action<Intent>> get dynamicShortcuts => _dynamicShortcuts;
 
@@ -124,8 +126,10 @@ class AppProvider with ChangeNotifier {
   CustomFont get currentFont => _currentFont;
 
   set currentFont(CustomFont value) {
-    _currentFont = value;
-    notifyListeners();
+    if (value != _currentFont) {
+      _currentFont = value;
+      notifyListeners();
+    }
   }
 
   ChewieThemeColorData _lightTheme = HiveUtil.getLightTheme();
@@ -134,12 +138,14 @@ class AppProvider with ChangeNotifier {
 
   set lightTheme(ChewieThemeColorData value) {
     _lightTheme = value;
+    chewieProvider.lightTheme = value;
     notifyListeners();
   }
 
-  setLightTheme(int index) {
+  void setLightTheme(int index) {
     HiveUtil.setLightTheme(index);
     _lightTheme = HiveUtil.getLightTheme();
+    chewieProvider.lightTheme = _lightTheme;
     notifyListeners();
   }
 
@@ -149,13 +155,107 @@ class AppProvider with ChangeNotifier {
 
   set darkTheme(ChewieThemeColorData value) {
     _darkTheme = value;
+    chewieProvider.darkTheme = value;
     notifyListeners();
   }
 
-  setDarkTheme(int index) {
+  void setDarkTheme(int index) {
     HiveUtil.setDarkTheme(index);
     _darkTheme = HiveUtil.getDarkTheme();
+    chewieProvider.darkTheme = _darkTheme;
     notifyListeners();
+  }
+
+  final List<ChewieThemeColorData> _customLightThemes =
+      ChewieHiveUtil.getCustomLightThemes();
+
+  List<ChewieThemeColorData> get customLightThemes => _customLightThemes;
+
+  final List<ChewieThemeColorData> _customDarkThemes =
+      ChewieHiveUtil.getCustomDarkThemes();
+
+  List<ChewieThemeColorData> get customDarkThemes => _customDarkThemes;
+
+  void addCustomLightTheme(ChewieThemeColorData theme) {
+    _customLightThemes.add(theme);
+    ChewieHiveUtil.setCustomLightThemes(_customLightThemes);
+    notifyListeners();
+  }
+
+  void addCustomDarkTheme(ChewieThemeColorData theme) {
+    _customDarkThemes.add(theme);
+    ChewieHiveUtil.setCustomDarkThemes(_customDarkThemes);
+    notifyListeners();
+  }
+
+  void updateCustomLightTheme(int index, ChewieThemeColorData theme) {
+    if (index < 0 || index >= _customLightThemes.length) return;
+    _customLightThemes[index] = theme;
+    ChewieHiveUtil.setCustomLightThemes(_customLightThemes);
+    final activeIndex = ChewieHiveUtil.getLightThemeIndex();
+    final builtInCount = ChewieThemeColorData.defaultLightThemes.length;
+    if (activeIndex == builtInCount + index) {
+      lightTheme = ChewieHiveUtil.getLightTheme();
+    } else {
+      notifyListeners();
+    }
+  }
+
+  void updateCustomDarkTheme(int index, ChewieThemeColorData theme) {
+    if (index < 0 || index >= _customDarkThemes.length) return;
+    _customDarkThemes[index] = theme;
+    ChewieHiveUtil.setCustomDarkThemes(_customDarkThemes);
+    final activeIndex = ChewieHiveUtil.getDarkThemeIndex();
+    final builtInCount = ChewieThemeColorData.defaultDarkThemes.length;
+    if (activeIndex == builtInCount + index) {
+      darkTheme = ChewieHiveUtil.getDarkTheme();
+    } else {
+      notifyListeners();
+    }
+  }
+
+  void deleteCustomLightTheme(int index) {
+    if (index < 0 || index >= _customLightThemes.length) return;
+    _customLightThemes.removeAt(index);
+    ChewieHiveUtil.setCustomLightThemes(_customLightThemes);
+    final activeIndex = ChewieHiveUtil.getLightThemeIndex();
+    final builtInCount = ChewieThemeColorData.defaultLightThemes.length;
+    final deletedIndex = builtInCount + index;
+    if (activeIndex == deletedIndex) {
+      setLightTheme(0);
+    } else if (activeIndex > deletedIndex) {
+      setLightTheme(activeIndex - 1);
+    } else {
+      notifyListeners();
+    }
+  }
+
+  void deleteCustomDarkTheme(int index) {
+    if (index < 0 || index >= _customDarkThemes.length) return;
+    _customDarkThemes.removeAt(index);
+    ChewieHiveUtil.setCustomDarkThemes(_customDarkThemes);
+    final activeIndex = ChewieHiveUtil.getDarkThemeIndex();
+    final builtInCount = ChewieThemeColorData.defaultDarkThemes.length;
+    final deletedIndex = builtInCount + index;
+    if (activeIndex == deletedIndex) {
+      setDarkTheme(0);
+    } else if (activeIndex > deletedIndex) {
+      setDarkTheme(activeIndex - 1);
+    } else {
+      notifyListeners();
+    }
+  }
+
+  void setLightPrimaryColorOverride(Color? color, int paletteIndex) {
+    ChewieHiveUtil.setCustomLightPrimaryColor(color);
+    ChewieHiveUtil.setLightThemePrimaryColorIndex(paletteIndex);
+    lightTheme = ChewieHiveUtil.getLightTheme();
+  }
+
+  void setDarkPrimaryColorOverride(Color? color, int paletteIndex) {
+    ChewieHiveUtil.setCustomDarkPrimaryColor(color);
+    ChewieHiveUtil.setDarkThemePrimaryColorIndex(paletteIndex);
+    darkTheme = ChewieHiveUtil.getDarkTheme();
   }
 
   Locale? _locale = HiveUtil.getLocale();
@@ -165,20 +265,32 @@ class AppProvider with ChangeNotifier {
   set locale(Locale? value) {
     if (value != _locale) {
       _locale = value;
-      notifyListeners();
       HiveUtil.setLocale(value);
+      Intl.defaultLocale = (value ?? resolveSystemAppLocale()).toString();
+      notifyListeners();
     }
   }
 
-  int? _fontSize = HiveUtil.getFontSize();
+  void refreshSystemLocale() {
+    if (_locale == null) {
+      Intl.defaultLocale = resolveSystemAppLocale().toString();
+      notifyListeners();
+    }
+  }
 
-  int? get fontSize => _fontSize;
+  void refreshSystemTheme() {
+    if (_themeMode == ActiveThemeMode.system) notifyListeners();
+  }
 
-  set fontSize(int? value) {
+  int _fontSize = HiveUtil.getFontSize();
+
+  int get fontSize => _fontSize;
+
+  set fontSize(int value) {
     if (value != _fontSize) {
       _fontSize = value;
+      chewieProvider.fontSize = value;
       notifyListeners();
-      HiveUtil.setFontSize(value);
     }
   }
 
@@ -189,8 +301,8 @@ class AppProvider with ChangeNotifier {
   set themeMode(ActiveThemeMode value) {
     if (value != _themeMode) {
       _themeMode = value;
+      chewieProvider.themeMode = value;
       notifyListeners();
-      HiveUtil.setThemeMode(value);
     }
   }
 

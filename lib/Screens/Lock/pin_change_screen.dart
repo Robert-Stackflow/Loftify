@@ -78,8 +78,12 @@ class PinChangeScreenState extends BaseDynamicState<PinChangeScreen> {
               key: _indicator,
               size: 30,
               roundSpace: 4,
-              defaultColor: Colors.grey.withOpacity(0.5),
-              selectedColor: Theme.of(context).primaryColor.withOpacity(0.6),
+              defaultColor: Theme.of(context)
+                  .colorScheme
+                  .onSurfaceVariant
+                  .withValues(alpha: 0.5),
+              selectedColor:
+                  Theme.of(context).primaryColor.withValues(alpha: 0.6),
             ),
             Flexible(
               child: GestureUnlockView(
@@ -87,10 +91,13 @@ class PinChangeScreenState extends BaseDynamicState<PinChangeScreen> {
                 size: min(MediaQuery.sizeOf(context).width, 400),
                 padding: 60,
                 roundSpace: 40,
-                defaultColor: Colors.grey.withOpacity(0.5),
+                defaultColor: Theme.of(context)
+                    .colorScheme
+                    .onSurfaceVariant
+                    .withValues(alpha: 0.5),
                 selectedColor: Theme.of(context).primaryColor,
                 failedColor: Theme.of(context).colorScheme.error,
-                disableColor: Colors.grey,
+                disableColor: Theme.of(context).colorScheme.onSurfaceVariant,
                 solidRadiusRatio: 0.3,
                 lineWidth: 2,
                 touchRadiusRatio: 0.3,

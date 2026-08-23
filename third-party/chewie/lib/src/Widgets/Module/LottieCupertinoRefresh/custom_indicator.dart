@@ -77,7 +77,9 @@ class _CustomIndicatorState extends State<_CustomIndicator>
   }
 
   Widget _buildIndicator() {
-    final scale = (_offset / _actualTriggerOffset).clamp(0.01, 0.99);
+    final progress =
+        (_offset / math.max(1, _actualTriggerOffset)).clamp(0.0, 1.0);
+    final scale = Curves.easeOutCubic.transform(progress).clamp(0.0, 1.0);
     Widget indicator;
     switch (_mode) {
       case IndicatorMode.drag:
@@ -89,12 +91,16 @@ class _CustomIndicatorState extends State<_CustomIndicator>
         );
         indicator = Opacity(
           key: const ValueKey('indicatorArmed'),
-          opacity: opacityCurve.transform(scale),
-          child: _CustomActivityIndicator.partiallyRevealed(
-            radius: _radius,
-            progress: scale,
-            color: widget.foregroundColor,
-            indicator: widget.indicator,
+          opacity: opacityCurve.transform(progress),
+          child: Transform.scale(
+            key: const ValueKey('indicatorPullScale'),
+            scale: scale,
+            child: _CustomActivityIndicator.partiallyRevealed(
+              radius: _radius,
+              progress: progress,
+              color: widget.foregroundColor,
+              indicator: widget.indicator,
+            ),
           ),
         );
         break;
@@ -112,7 +118,7 @@ class _CustomIndicatorState extends State<_CustomIndicator>
       case IndicatorMode.done:
         indicator = _CustomActivityIndicator(
           key: const ValueKey('indicatorDone'),
-          radius: _radius * scale,
+          radius: _radius * progress,
           color: widget.foregroundColor,
           animating: true,
           indicator: widget.indicator,
@@ -159,18 +165,13 @@ class _CustomIndicatorState extends State<_CustomIndicator>
           width: _axis == Axis.vertical ? double.infinity : offset,
         ),
         // Indicator.
-        Positioned(
-          top: 0,
-          left: 0,
-          right: _axis == Axis.vertical ? 0 : null,
-          bottom: _axis == Axis.vertical ? null : 0,
-          child: Container(
-            alignment: Alignment.center,
-            height:
-                _axis == Axis.vertical ? _actualTriggerOffset : double.infinity,
-            width:
-                _axis == Axis.vertical ? double.infinity : _actualTriggerOffset,
-            child: _buildIndicator(),
+        Positioned.fill(
+          child: ColoredBox(
+            color: widget.backgroundColor ?? const Color(0x00000000),
+            child: Align(
+              alignment: Alignment.center,
+              child: _buildIndicator(),
+            ),
           ),
         ),
       ],

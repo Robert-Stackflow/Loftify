@@ -56,9 +56,7 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(20),
         ),
-        color: Theme
-            .of(context)
-            .canvasColor,
+        color: Theme.of(context).canvasColor,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -79,10 +77,7 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
       alignment: Alignment.center,
       child: Text(
         appLocalizations.filter,
-        style: Theme
-            .of(context)
-            .textTheme
-            .titleLarge,
+        style: Theme.of(context).textTheme.titleLarge,
       ),
     );
   }
@@ -98,8 +93,7 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
             title: appLocalizations.contentRange,
             left: 0,
             bottomMargin: 12,
-            textStyle: Theme
-                .of(context)
+            textStyle: Theme.of(context)
                 .textTheme
                 .titleMedium
                 ?.apply(fontSizeDelta: -2),
@@ -111,6 +105,7 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
               appLocalizations.haveNotVisitRecentSevenDays
             ],
             controller: _rangeController,
+            constraintWidth: false,
             onSelected: (value, index, selected) {
               params.tagRangeType = TagRangeType.values[index];
             },
@@ -121,15 +116,19 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
             left: 0,
             topMargin: 20,
             bottomMargin: 12,
-            textStyle: Theme
-                .of(context)
+            textStyle: Theme.of(context)
                 .textTheme
                 .titleMedium
                 ?.apply(fontSizeDelta: -2),
           ),
           ChewieItemBuilder.buildGroupButtons(
-            buttons: [appLocalizations.noLimit, appLocalizations.words, appLocalizations.images],
+            buttons: [
+              appLocalizations.noLimit,
+              appLocalizations.words,
+              appLocalizations.images
+            ],
             controller: _postTypeController,
+            constraintWidth: false,
             onSelected: (value, index, selected) {
               params.postTypes = TagPostType.values[index];
             },
@@ -140,8 +139,7 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
             left: 0,
             topMargin: 20,
             bottomMargin: 12,
-            textStyle: Theme
-                .of(context)
+            textStyle: Theme.of(context)
                 .textTheme
                 .titleMedium
                 ?.apply(fontSizeDelta: -2),
@@ -154,6 +152,7 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
               appLocalizations.inOneMonth
             ],
             controller: _recentDayController,
+            constraintWidth: false,
             onSelected: (value, index, selected) {
               params.recentDayType = TagRecentDayType.values[index];
             },
@@ -164,8 +163,7 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
             left: 0,
             topMargin: 20,
             bottomMargin: 12,
-            textStyle: Theme
-                .of(context)
+            textStyle: Theme.of(context)
                 .textTheme
                 .titleMedium
                 ?.apply(fontSizeDelta: -2),
@@ -173,6 +171,7 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
           ChewieItemBuilder.buildGroupButtons(
             buttons: [appLocalizations.tagProtection],
             controller: _tagProtectedController,
+            constraintWidth: false,
             enableDeselect: true,
             onSelected: (value, index, selected) {
               params.protectedFlag = selected;
@@ -205,9 +204,7 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
           Expanded(
             child: RoundIconTextButton(
               text: appLocalizations.confirm,
-              background: Theme
-                  .of(context)
-                  .primaryColor,
+              background: Theme.of(context).primaryColor,
               color: Colors.white,
               onPressed: () {
                 widget.onConfirm?.call(params);

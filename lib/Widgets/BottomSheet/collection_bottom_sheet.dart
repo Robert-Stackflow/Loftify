@@ -8,7 +8,6 @@ import 'package:loftify/Screens/Post/collection_detail_screen.dart';
 import 'package:loftify/Utils/asset_util.dart';
 
 import '../../Models/history_response.dart';
-import '../../Utils/utils.dart';
 import '../../l10n/l10n.dart';
 import '../Item/item_builder.dart';
 import '../Item/loftify_item_builder.dart';
@@ -49,10 +48,15 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
 
   @override
   void initState() {
-    setState(() {
-      subscribed = widget.postCollection.subscribed;
-    });
     super.initState();
+    subscribed = widget.postCollection.subscribed;
+  }
+
+  @override
+  void dispose() {
+    _refreshController.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   _fetchData({
@@ -60,8 +64,13 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
     int startPostId = 0,
     bool showLoading = false,
   }) async {
-    if (loading || (upDown != -1 && startPostId == 0)) return;
-    if (showLoading) CustomLoadingDialog.showLoading(title: appLocalizations.loading);
+    if (loading ||
+        (upDown != -1 && startPostId == 0) ||
+        (upDown == 1 && bottomNoMore)) {
+      return IndicatorResult.none;
+    }
+    if (showLoading)
+      CustomLoadingDialog.showLoading(title: appLocalizations.loading);
     loading = true;
     return await CollectionApi.getCollection(
       postId: widget.postId,
@@ -107,7 +116,7 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
           }
           Map<String, int> monthCount = {};
           for (var e in posts) {
-            String yearMonth = TimeUtil.formatYearMonth(e.post!.publishTime);
+            String yearMonth = formatLocalizedYearMonth(e.post!.publishTime);
             monthCount.putIfAbsent(yearMonth, () => 0);
             monthCount[yearMonth] = monthCount[yearMonth]! + 1;
           }
@@ -186,7 +195,7 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
               refreshOnStart: true,
               controller: _refreshController,
               onRefresh: _onRefresh,
-              onLoad: _onLoad,
+              onLoad: bottomNoMore ? null : _onLoad,
               triggerAxis: Axis.vertical,
               child: _buildNineGridGroup(),
             ),
@@ -214,8 +223,8 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
                 ),
               );
             },
-            child: ClickableWrapper(child:
-              Row(
+            child: ClickableWrapper(
+              child: Row(
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
@@ -336,14 +345,10 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
       widgets.add(_buildNineGrid(startIndex, count));
       startIndex += e.count;
     }
-    return LoadMoreNotification(
-      child: ListView(
-        controller: _scrollController,
-        padding: EdgeInsets.zero,
-        children: widgets,
-      ),
-      noMore: bottomNoMore,
-      onLoad: _onLoad,
+    return ListView(
+      controller: _scrollController,
+      padding: EdgeInsets.zero,
+      children: widgets,
     );
   }
 

@@ -147,11 +147,10 @@ extension HexColor on Color {
     return hexString.toColor();
   }
 
-  String toHex({bool leadingHashSign = true}) => '${leadingHashSign ? '#' : ''}'
-      '${a.toInt().toRadixString(16).padLeft(2, '0')}'
-      '${r.toInt().toRadixString(16).padLeft(2, '0')}'
-      '${g.toInt().toRadixString(16).padLeft(2, '0')}'
-      '${b.toInt().toRadixString(16).padLeft(2, '0')}';
+  String toHex({bool leadingHashSign = true}) {
+    final value = toARGB32().toRadixString(16).padLeft(8, '0');
+    return '${leadingHashSign ? '#' : ''}$value';
+  }
 }
 
 extension HexColorString on String {

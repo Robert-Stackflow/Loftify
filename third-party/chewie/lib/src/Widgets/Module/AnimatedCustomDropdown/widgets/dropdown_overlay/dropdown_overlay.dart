@@ -196,13 +196,27 @@ class _DropdownOverlayState<T extends DropdownMixin>
     super.initState();
     scrollController = widget.itemsScrollCtrl ?? ScrollController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final render1 = key1.currentContext?.findRenderObject() as RenderBox;
-      final render2 = key2.currentContext?.findRenderObject() as RenderBox;
-      final screenHeight = MediaQuery.of(context).size.height;
-      double y = render1.localToGlobal(Offset.zero).dy;
-      if (screenHeight - y < render2.size.height) {
-        displayOverlayBottom = false;
-        setState(() {});
+      if (!mounted) return;
+      final render1 = key1.currentContext?.findRenderObject();
+      final render2 = key2.currentContext?.findRenderObject();
+      if (render1 is! RenderBox ||
+          render2 is! RenderBox ||
+          !render1.attached ||
+          !render2.attached) {
+        return;
+      }
+
+      final mediaQuery = MediaQuery.of(context);
+      final y = render1.localToGlobal(Offset.zero).dy;
+      final availableBelow = mediaQuery.size.height -
+          mediaQuery.padding.bottom -
+          mediaQuery.viewInsets.bottom -
+          y;
+      final availableAbove = y - mediaQuery.padding.top;
+      final shouldDisplayBelow = availableBelow >= render2.size.height ||
+          availableBelow >= availableAbove;
+      if (displayOverlayBottom != shouldDisplayBelow) {
+        setState(() => displayOverlayBottom = shouldDisplayBelow);
       }
     });
 
@@ -359,11 +373,13 @@ class _DropdownOverlayState<T extends DropdownMixin>
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               if (!widget.hideSelectedFieldWhenOpen)
-                                GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
+                                InkWell(
                                   onTap: () {
                                     setState(() => displayOverly = false);
                                   },
+                                  borderRadius:
+                                      decoration?.expandedBorderRadius ??
+                                          _defaultBorderRadius,
                                   child: Padding(
                                     padding: widget.headerPadding ??
                                         _defaultHeaderPadding,
@@ -402,11 +418,13 @@ class _DropdownOverlayState<T extends DropdownMixin>
                                         decoration?.searchFieldDecoration,
                                   )
                                 else
-                                  GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
+                                  InkWell(
                                     onTap: () {
                                       setState(() => displayOverly = false);
                                     },
+                                    borderRadius:
+                                        decoration?.expandedBorderRadius ??
+                                            _defaultBorderRadius,
                                     child: Padding(
                                       padding: const EdgeInsetsDirectional.only(
                                         top: 12.0,
@@ -462,11 +480,13 @@ class _DropdownOverlayState<T extends DropdownMixin>
                                         decoration?.searchFieldDecoration,
                                   )
                                 else
-                                  GestureDetector(
-                                    behavior: HitTestBehavior.opaque,
+                                  InkWell(
                                     onTap: () {
                                       setState(() => displayOverly = false);
                                     },
+                                    borderRadius:
+                                        decoration?.expandedBorderRadius ??
+                                            _defaultBorderRadius,
                                     child: Padding(
                                       padding: const EdgeInsetsDirectional.only(
                                         top: 12.0,
@@ -513,17 +533,15 @@ class _DropdownOverlayState<T extends DropdownMixin>
                                   ),
                               if (isSearchRequestLoading)
                                 widget.searchRequestLoadingIndicator ??
-                                    const Padding(
-                                      padding: EdgeInsets.symmetric(
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
                                         vertical: 20.0,
                                       ),
                                       child: Center(
-                                        child: SizedBox(
-                                          width: 25,
-                                          height: 25,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 3,
-                                          ),
+                                        child:
+                                            chewieProvider.loadingWidgetBuilder(
+                                          25,
+                                          false,
                                         ),
                                       ),
                                     )

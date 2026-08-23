@@ -1,4 +1,3 @@
-
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Models/gift_response.dart';
@@ -7,6 +6,7 @@ import 'package:loftify/Screens/Suit/dress_detail_screen.dart';
 import '../../Api/dress_api.dart';
 import '../../Utils/enums.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Suit/dress_preview_card.dart';
 import '../../l10n/l10n.dart';
 
 class DressScreen extends StatefulWidget {
@@ -125,7 +125,7 @@ class _DressScreenState extends BaseDynamicState<DressScreen>
     return LoadMoreNotification(
       child: WaterfallFlow.builder(
         physics: physics,
-        cacheExtent: 9999,
+        cacheExtent: MediaQuery.sizeOf(context).height,
         padding: const EdgeInsets.all(10),
         itemCount: _giftDressList.length,
         gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
@@ -143,57 +143,28 @@ class _DressScreenState extends BaseDynamicState<DressScreen>
   }
 
   _buildGiftDressItem(GiftDress item) {
-    return GestureDetector(
-      onTap: () {
-        RouteUtil.pushPanelCupertinoRoute(
-          context,
-          DressDetailScreen(
-            returnGiftDressId: item.returnGiftDressId,
-          ),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-        decoration: BoxDecoration(
-          color: ChewieTheme.canvasColor,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Column(
-          children: [
-            const SizedBox(width: 15),
-            ChewieItemBuilder.buildCachedImage(
-              imageUrl: item.coverImg,
-              context: context,
-              showLoading: false,
-              placeholderBackground: Colors.transparent,
-              width: 200,
-              height: 200,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              item.name,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            Text(
-              appLocalizations.pendantCount(item.partCount),
-              style: Theme.of(context).textTheme.labelMedium,
-            ),
-            const SizedBox(height: 10),
-            RoundIconTextButton(
-              text: appLocalizations.viewDetail,
-              background: Theme.of(context).primaryColor,
-              onPressed: () {
-                RouteUtil.pushPanelCupertinoRoute(
-                  context,
-                  DressDetailScreen(
-                    returnGiftDressId: item.returnGiftDressId,
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 4),
-          ],
-        ),
+    void openDetail() {
+      RouteUtil.pushPanelCupertinoRoute(
+        context,
+        DressDetailScreen(returnGiftDressId: item.returnGiftDressId),
+      );
+    }
+
+    return DressPreviewCard(
+      title: item.name,
+      subtitle: StringUtil.isNotEmpty(item.creatorNickName)
+          ? item.creatorNickName
+          : appLocalizations.pendantCount(item.partCount),
+      badge: appLocalizations.pendantCount(item.partCount),
+      onTap: openDetail,
+      preview: ChewieItemBuilder.buildCachedImage(
+        imageUrl: item.coverImg,
+        context: context,
+        showLoading: false,
+        placeholderBackground: Colors.transparent,
+        width: double.infinity,
+        height: double.infinity,
+        fit: BoxFit.contain,
       ),
     );
   }
@@ -203,8 +174,8 @@ class _DressScreenState extends BaseDynamicState<DressScreen>
       showBack: true,
       centerTitle: StringUtil.isNotEmpty(widget.tag),
       titleWidget: StringUtil.isNotEmpty(widget.tag)
-          ? ClickableWrapper(child:
-              ItemBuilder.buildTagItem(
+          ? ClickableWrapper(
+              child: ItemBuilder.buildTagItem(
                 context,
                 widget.tag!,
                 TagType.normal,

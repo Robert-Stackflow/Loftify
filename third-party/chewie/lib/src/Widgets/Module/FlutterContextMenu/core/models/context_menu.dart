@@ -77,6 +77,8 @@ class FlutterContextMenu {
     double? maxWidth,
     Clip? clipBehavior,
     BoxDecoration? boxDecoration,
+    FocusNode? focusNode,
+    Map<ShortcutActivator, VoidCallback>? shortcuts,
   }) {
     return FlutterContextMenu(
       position: position ?? this.position,
@@ -86,6 +88,8 @@ class FlutterContextMenu {
       maxWidth: maxWidth ?? this.maxWidth,
       clipBehavior: clipBehavior ?? this.clipBehavior,
       boxDecoration: boxDecoration ?? this.boxDecoration,
+      focusNode: focusNode ?? this.focusNode,
+      shortcuts: shortcuts ?? this.shortcuts,
     );
   }
 }

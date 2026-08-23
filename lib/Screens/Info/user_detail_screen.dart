@@ -1,7 +1,6 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:blur/blur.dart';
 import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
-import 'package:flutter/material.dart' hide AnimatedSlide;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Models/show_case_response.dart';
@@ -17,10 +16,12 @@ import 'package:loftify/Screens/Suit/user_market_screen.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
+import 'package:loftify/Widgets/Profile/profile_overview_card.dart';
 
 import '../../Api/user_api.dart';
 import '../../Models/user_response.dart';
 import '../../Utils/asset_util.dart';
+import '../../Utils/tab_state_util.dart';
 import '../../Utils/utils.dart';
 import '../../l10n/l10n.dart';
 import '../Post/collection_detail_screen.dart';
@@ -30,10 +31,12 @@ class UserDetailScreen extends StatefulWidget {
     super.key,
     required this.blogId,
     required this.blogName,
+    this.onBack,
   });
 
   final int blogId;
   final String blogName;
+  final VoidCallback? onBack;
 
   static const String routeName = "/user/detail";
 
@@ -46,35 +49,44 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
   TotalBlogData? _fullBlogData;
   bool? isMe = false;
   late TabController _tabController;
+  bool _tabControllerInitialized = false;
   List<Tab> tabList = [];
+  final List<String> _tabIdList = [];
+  int _currentTabIndex = 0;
   List<ShowCaseItem> showCases = [];
   String _followButtonText = appLocalizations.follow;
   Color? _followButtonColor;
-  SubordinateScrollController? controller;
-  double _expandedHeight = 270;
+  double get _portraitExpandedHeight => showCases.isEmpty ? 350 : 510;
+
+  double get _landscapeHeaderHeight => showCases.isEmpty ? 240 : 400;
 
   InfoMode get infoMode => isMe == true ? InfoMode.me : InfoMode.other;
 
-  _fetchData() {
-    UserApi.getUserDetail(blogId: widget.blogId, blogName: widget.blogName)
-        .then((value) async {
-      try {
-        if (value['meta']['status'] != 200) {
-          IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-        } else {
-          _fullBlogData = TotalBlogData.fromJson(value['response']);
-          isMe = _fullBlogData!.blogInfo.blogId == await HiveUtil.getUserId();
-          initTab();
-          updateFollowStatus();
-          _fetchShowCases();
-          setState(() {});
-        }
-      } catch (e, t) {
-        ILogger.error("Failed to get user detail", e, t);
-        if (mounted) IToast.showTop(appLocalizations.loadFailed);
+  Future<void> _fetchData() async {
+    try {
+      final value = await UserApi.getUserDetail(
+        blogId: widget.blogId,
+        blogName: widget.blogName,
+      );
+      if (!mounted) return;
+      if (value['meta']['status'] != 200) {
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+        return;
       }
-      if (mounted) setState(() {});
-    });
+
+      final blogData = TotalBlogData.fromJson(value['response']);
+      final userId = await HiveUtil.getUserId();
+      if (!mounted) return;
+      _fullBlogData = blogData;
+      isMe = blogData.blogInfo.blogId == userId;
+      initTab();
+      updateFollowStatus(rebuild: false);
+      setState(() {});
+      _fetchShowCases();
+    } catch (e, t) {
+      ILogger.error("Failed to get user detail", e, t);
+      if (mounted) IToast.showTop(appLocalizations.loadFailed);
+    }
   }
 
   @override
@@ -83,49 +95,103 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
     _fetchData();
   }
 
-  initTab() {
+  void initTab() {
+    if (_tabControllerInitialized) {
+      _tabController.dispose();
+    }
     tabList.clear();
+    _tabIdList.clear();
     tabList.add(Tab(text: appLocalizations.article));
+    _tabIdList.add('article');
     if (_fullBlogData!.showLike == 1) {
       tabList.add(Tab(text: appLocalizations.like));
+      _tabIdList.add('like');
     }
     if (_fullBlogData!.showShare == 1) {
       tabList.add(Tab(text: appLocalizations.recommend));
+      _tabIdList.add('recommend');
     }
     tabList.add(Tab(text: appLocalizations.collection));
+    _tabIdList.add('collection');
     if (_fullBlogData!.showFoods == 1) {
       tabList.add(Tab(text: appLocalizations.grain));
+      _tabIdList.add('grain');
     }
-    _tabController = TabController(length: tabList.length, vsync: this);
+    _currentTabIndex = PersistentTabState.restore(
+      idKey: HiveUtil.userDetailTabIdKey,
+      legacyIndexKey: HiveUtil.userDetailTabIndexKey,
+      itemIds: _tabIdList,
+    ).index;
+    _tabController = TabController(
+      length: tabList.length,
+      initialIndex: _currentTabIndex,
+      vsync: this,
+    );
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging ||
+          _tabController.offset.abs() > 0.001) {
+        return;
+      }
+      _setCurrentTab(_tabController.index);
+    });
+    _tabControllerInitialized = true;
+  }
+
+  void _setCurrentTab(int index) {
+    final safeIndex = TabStatePreference.restoreIndex(index, tabList.length);
+    if (safeIndex != _currentTabIndex && mounted) {
+      setState(() => _currentTabIndex = safeIndex);
+    }
+    PersistentTabState.save(
+      idKey: HiveUtil.userDetailTabIdKey,
+      legacyIndexKey: HiveUtil.userDetailTabIndexKey,
+      itemIds: _tabIdList,
+      index: safeIndex,
+    );
+  }
+
+  @override
+  void dispose() {
+    if (_tabControllerInitialized) {
+      _tabController.dispose();
+    }
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: ChewieTheme.getBackground(context),
       resizeToAvoidBottomInset: false,
       appBar: ResponsiveUtil.isLandscapeLayout()
           ? ResponsiveAppBar(
-              showBack: true, title: appLocalizations.personalHomepage)
+              showBack: true,
+              title: appLocalizations.personalHomepage,
+              onTapBack: widget.onBack,
+            )
           : null,
       body: _fullBlogData != null
           ? ExtendedNestedScrollView(
+              onlyOneScrollInBody: true,
               headerSliverBuilder: (_, __) => _buildHeaderSlivers(),
-              body: _mainContent())
+              body: _mainContent(),
+            )
           : LoadingWidget(
               background: ChewieTheme.getBackground(context),
             ),
     );
   }
 
-  _buildHeaderSlivers() {
+  List<Widget> _buildHeaderSlivers() {
     if (!ResponsiveUtil.isLandscapeLayout()) {
       return <Widget>[
         SliverAppBarWrapper(
           context: context,
-          expandedHeight: _expandedHeight,
+          onBack: widget.onBack,
+          expandedHeight: _portraitExpandedHeight,
           systemOverlayStyle: SystemUiOverlayStyle.light,
           collapsedHeight: 56,
-          backgroundWidget: _buildBackground(height: _expandedHeight + 60),
+          backgroundWidget: _buildHeaderBackground(),
           actions: _appBarActions(),
           centerTitle: !ResponsiveUtil.isLandscapeLayout(),
           title: Text(
@@ -137,27 +203,25 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
           ),
           flexibleSpace: FlexibleSpaceBar(
             background: Stack(
+              fit: StackFit.expand,
               children: [
-                _buildBackground(height: _expandedHeight + 60),
+                _buildHeaderBackground(),
                 _buildInfo(),
               ],
             ),
           ),
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(40),
-            child: Container(
-              decoration: BoxDecoration(
-                color: ChewieTheme.getBackground(context),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
               ),
               child: TabBarWrapper(
                 tabController: _tabController,
                 tabs: tabList,
                 width: MediaQuery.sizeOf(context).width,
-                forceUnscrollable: !ResponsiveUtil.isLandscapeLayout(),
+                isScrollable: false,
+                onTap: _setCurrentTab,
               ),
             ),
           ),
@@ -166,15 +230,19 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
     } else {
       return [
         SliverToBoxAdapter(
-          child: Stack(
-            children: [
-              _buildBackground(height: _expandedHeight - 84),
-              _buildInfo(10),
-            ],
+          child: SizedBox(
+            height: _landscapeHeaderHeight,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                _buildHeaderBackground(),
+                _buildInfo(12),
+              ],
+            ),
           ),
         ),
         SliverPersistentHeader(
-          key: ValueKey(StringUtil.getRandomString()),
+          key: const ValueKey('user-profile-tabs'),
           pinned: true,
           delegate: SliverAppBarDelegate(
             radius: 0,
@@ -183,8 +251,9 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
               tabController: _tabController,
               tabs: tabList,
               width: MediaQuery.sizeOf(context).width,
+              isScrollable: false,
               showBorder: true,
-              forceUnscrollable: !ResponsiveUtil.isLandscapeLayout(),
+              onTap: _setCurrentTab,
             ),
           ),
         ),
@@ -193,10 +262,16 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
   }
 
   Widget _mainContent() {
-    return _buildTabView();
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      child: ColoredBox(
+        color: ChewieTheme.getBackground(context),
+        child: _buildTabView(),
+      ),
+    );
   }
 
-  _buildMoreButtons() {
+  FlutterContextMenu _buildMoreButtons() {
     return FlutterContextMenu(
       entries: [
         FlutterContextMenuItem(
@@ -208,6 +283,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
               showClose: false,
               fullScreen: true,
               useFade: true,
+              opaque: false,
               HeroPhotoViewScreen(
                 tagPrefix: StringUtil.getRandomString(),
                 imageUrls: [Utils.removeImageParam(backgroudUrl)],
@@ -240,12 +316,14 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
                 if (currentAvatarImg ==
                     _fullBlogData!.blogInfo.avatarBoxImage) {
                   await ChewieHiveUtil.put(HiveUtil.customAvatarBoxKey, "");
+                  if (!mounted) return;
                   currentAvatarImg = "";
                   setState(() {});
                   IToast.showTop(appLocalizations.unDressSuccess);
                 } else {
                   await ChewieHiveUtil.put(HiveUtil.customAvatarBoxKey,
                       _fullBlogData!.blogInfo.avatarBoxImage);
+                  if (!mounted) return;
                   currentAvatarImg = _fullBlogData!.blogInfo.avatarBoxImage;
                   setState(() {});
                   IToast.showTop(appLocalizations.dressSuccess);
@@ -267,6 +345,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
                       blogId: _fullBlogData!.blogInfo.blogId,
                       remark: text,
                     ).then((value) {
+                      if (!mounted) return;
                       if (value['meta']['status'] != 200) {
                         IToast.showTop(
                             value['meta']['desc'] ?? value['meta']['msg']);
@@ -283,9 +362,13 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
               );
             },
           ),
-          FlutterContextMenuItem.divider(),
+          const MenuDivider(
+            thickness: 0.6,
+            indent: 46,
+            endIndent: 8,
+          ),
           FlutterContextMenuItem(
-            status: MenuItemStatus.warning,
+            status: MenuItemStatus.error,
             _fullBlogData!.isBlackBlog
                 ? appLocalizations.unlockBlacklist
                 : appLocalizations.blockBlacklist,
@@ -294,12 +377,12 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
               _doBlockUser(
                 isBlock: !_fullBlogData!.isBlackBlog,
                 onSuccess: () {
+                  if (!mounted) return;
                   if (_fullBlogData!.isBlackBlog) {
                     IToast.showTop(appLocalizations.blockBlacklistSuccess);
                   } else {
                     IToast.showTop(appLocalizations.unblockBlacklistSuccess);
                   }
-                  setState(() {});
                   updateFollowStatus();
                 },
               );
@@ -307,7 +390,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
           ),
           if (_fullBlogData!.following) ...[
             FlutterContextMenuItem(
-              status: MenuItemStatus.warning,
+              status: MenuItemStatus.error,
               _fullBlogData!.isShieldRecom == 1
                   ? appLocalizations.recoverViewRecommend
                   : appLocalizations.shieldViewRecommend,
@@ -317,6 +400,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
                   blogId: _fullBlogData!.blogInfo.blogId,
                   isShield: !(_fullBlogData!.isShieldRecom == 1),
                 ).then((value) {
+                  if (!mounted) return;
                   if (value['meta']['status'] != 200) {
                     IToast.showTop(
                         value['meta']['desc'] ?? value['meta']['msg']);
@@ -329,7 +413,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
               },
             ),
             FlutterContextMenuItem(
-              status: MenuItemStatus.warning,
+              status: MenuItemStatus.error,
               _fullBlogData!.shieldUserTimeline
                   ? appLocalizations.recoverViewDynamic
                   : appLocalizations.shieldViewDynamic,
@@ -339,6 +423,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
                   blogId: _fullBlogData!.blogInfo.blogId,
                   isShield: !_fullBlogData!.shieldUserTimeline,
                 ).then((value) {
+                  if (!mounted) return;
                   if (value['code'] != 0) {
                     IToast.showTop(value['msg']);
                   } else {
@@ -351,7 +436,11 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
             ),
           ],
         ],
-        FlutterContextMenuItem.divider(),
+        const MenuDivider(
+          thickness: 0.6,
+          indent: 46,
+          endIndent: 8,
+        ),
         FlutterContextMenuItem(
           appLocalizations.copyHomepageLink,
           iconData: Icons.copy_rounded,
@@ -371,7 +460,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
     );
   }
 
-  _appBarActions() {
+  List<Widget> _appBarActions() {
     return [
       CircleIconButton(
         onTap: () {
@@ -385,11 +474,13 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
     ];
   }
 
-  _fetchShowCases() {
-    UserApi.getShowCases(
-            blogId: _fullBlogData!.blogInfo.blogId,
-            blogName: _fullBlogData!.blogInfo.blogName)
-        .then((value) {
+  Future<void> _fetchShowCases() async {
+    try {
+      final value = await UserApi.getShowCases(
+        blogId: _fullBlogData!.blogInfo.blogId,
+        blogName: _fullBlogData!.blogInfo.blogName,
+      );
+      if (!mounted) return;
       if (value['code'] != 200) {
         IToast.showTop(value['msg']);
       } else if (value['data']['showCaseList'] != null) {
@@ -400,16 +491,15 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
             .where(
                 (e) => !(e.postCollection == null && e.postSimpleData == null))
             .toList();
-        updateFollowStatus();
-        if (showCases.isNotEmpty) {
-          _expandedHeight = 430;
-        }
+        updateFollowStatus(rebuild: false);
         setState(() {});
       }
-    });
+    } catch (e, t) {
+      ILogger.error("Failed to get user showcases", e, t);
+    }
   }
 
-  getAvatarBoxImage() {
+  String getAvatarBoxImage() {
     if (infoMode == InfoMode.me) {
       String url = ChewieHiveUtil.getString(HiveUtil.customAvatarBoxKey) ?? "";
       return url.isNotEmpty ? url : _fullBlogData!.blogInfo.avatarBoxImage;
@@ -419,327 +509,351 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
   }
 
   Widget _buildInfo([double? topMargin]) {
-    bool hasRemarkName =
+    final hasRemarkName =
         StringUtil.isNotEmpty(_fullBlogData!.blogInfo.remarkName);
-    return Container(
-      margin: EdgeInsets.only(
-          top:
-              topMargin ?? kToolbarHeight + MediaQuery.of(context).padding.top),
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: const BoxDecoration(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
+    final hasDescription = StringUtil.isNotEmpty(
+      StringUtil.clearBlank(_fullBlogData!.blogInfo.selfIntro),
+    );
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        topMargin ?? kToolbarHeight + MediaQuery.paddingOf(context).top + 8,
+        16,
+        12,
       ),
-      width: MediaQuery.sizeOf(context).width,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          _buildIdentitySummary(
+            hasRemarkName: hasRemarkName,
+            hasDescription: hasDescription,
+          ),
+          const SizedBox(height: 12),
+          _buildStatisticsCard(),
           const SizedBox(height: 10),
-          Row(
-            children: [
-              const SizedBox(width: 12),
-              ItemBuilder.buildAvatar(
-                context: context,
-                size: StringUtil.isNotEmpty(getAvatarBoxImage()) ? 54 : 80,
-                showBorder: false,
-                showDetailMode: ShowDetailMode.avatar,
-                imageUrl:
-                    Utils.removeImageParam(_fullBlogData!.blogInfo.bigAvaImg),
-                avatarBoxImageUrl: getAvatarBoxImage(),
-                title: appLocalizations.personalAvatar,
-                caption: "「${_fullBlogData!.blogInfo.blogNickName}」",
-                tagPrefix: StringUtil.getRandomString(),
-              ),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  ItemBuilder.buildCopyable(
-                    context,
-                    child: Text(
-                      _fullBlogData!.blogInfo.blogNickName,
-                      style: Theme.of(context).textTheme.titleLarge?.apply(
-                            fontSizeDelta: 2,
-                            color: Colors.white,
-                          ),
-                    ),
-                    text: _fullBlogData!.blogInfo.blogNickName,
-                    toastText: appLocalizations.haveCopiedNickName,
-                  ),
-                  Text.rich(
-                    TextSpan(
-                      children: [
-                        WidgetSpan(
-                          child: ItemBuilder.buildCopyable(
-                            context,
-                            child: Text(
-                              textAlign: TextAlign.center,
-                              'ID: ${_fullBlogData!.blogInfo.blogName}',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelMedium
-                                  ?.apply(color: Colors.white70),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            text: _fullBlogData!.blogInfo.blogName,
-                            toastText: appLocalizations.haveCopiedLofterID,
-                          ),
-                        ),
-                        if (hasRemarkName)
-                          WidgetSpan(
-                            child: ItemBuilder.buildCopyable(
-                              context,
-                              child: Text(
-                                textAlign: TextAlign.center,
-                                appLocalizations.remarkSuffix(
-                                    _fullBlogData!.blogInfo.remarkName),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelMedium
-                                    ?.apply(color: Colors.white70),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              text: _fullBlogData!.blogInfo.remarkName,
-                              toastText: appLocalizations.haveCopiedRemark,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(
-                        fit: FlexFit.loose,
-                        child: Text(
-                          textAlign: TextAlign.center,
-                          '${appLocalizations.gender}: ${_fullBlogData!.blogInfo.gendar == 1 ? appLocalizations.male : _fullBlogData!.blogInfo.gendar == 2 ? appLocalizations.female : appLocalizations.confidential}${StringUtil.isNotEmpty(_fullBlogData!.blogInfo.ipLocation) ? "${appLocalizations.ipSuffix}${_fullBlogData!.blogInfo.ipLocation}" : ""}',
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelMedium
-                              ?.apply(color: Colors.white70),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 5),
-                      if (StringUtil.isNotEmpty(StringUtil.clearBlank(
-                          _fullBlogData!.blogInfo.selfIntro)))
-                        ClickableGestureDetector(
-                          onTap: () {
-                            DialogBuilder.showInfoDialog(
-                              context,
-                              title: appLocalizations.descriptionTitle(
-                                  _fullBlogData!.blogInfo.blogNickName),
-                              message: _fullBlogData!.blogInfo.selfIntro,
-                              onTapDismiss: () {},
-                              customDialogType: CustomDialogType.normal,
-                            );
-                          },
-                          child: Text.rich(
-                            TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: appLocalizations.moreInfo,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelMedium
-                                      ?.apply(color: Colors.white),
-                                ),
-                                const WidgetSpan(
-                                  child: Icon(
-                                    Icons.keyboard_arrow_down_rounded,
-                                    size: 16,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-              const Spacer(),
-              if (ResponsiveUtil.isLandscapeLayout()) ...[
-                CircleIconButton(
-                  onTap: () {
-                    BottomSheetBuilder.showContextMenu(
-                        context, _buildMoreButtons());
-                  },
-                  icon: const Icon(
-                    Icons.more_vert_rounded,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 10),
-              ],
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ItemBuilder.buildStatisticItem(
-                context,
-                title: appLocalizations.following,
-                count: _fullBlogData!.blogInfo.blogStat.followingCount,
-                countColor: Colors.white,
-                labelColor: Colors.white.withOpacity(0.9),
-                onTap: () {
-                  if (_fullBlogData!.showFollow == 1 ||
-                      infoMode == InfoMode.me) {
-                    RouteUtil.pushPanelCupertinoRoute(
-                      context,
-                      FollowingFollowerScreen(
-                        infoMode: infoMode,
-                        followingMode: infoMode == InfoMode.me
-                            ? FollowingMode.following
-                            : FollowingMode.timeline,
-                        blogId: _fullBlogData!.blogInfo.blogId,
-                        blogName: _fullBlogData!.blogInfo.blogName,
-                        total: _fullBlogData!.blogInfo.blogStat.followingCount,
-                      ),
-                    );
-                  } else {
-                    IToast.showTop(appLocalizations.cannotViewFollowingList);
-                  }
-                },
-              ),
-              ItemBuilder.buildStatisticItem(
-                context,
-                title: appLocalizations.follower,
-                count: _fullBlogData!.blogInfo.blogStat.followedCount,
-                countColor: Colors.white,
-                labelColor: Colors.white.withOpacity(0.9),
-                onTap: () {
-                  if (_fullBlogData!.showFans == 1 || infoMode == InfoMode.me) {
-                    RouteUtil.pushPanelCupertinoRoute(
-                      context,
-                      FollowingFollowerScreen(
-                        infoMode: infoMode,
-                        followingMode: FollowingMode.follower,
-                        blogId: _fullBlogData!.blogInfo.blogId,
-                        blogName: _fullBlogData!.blogInfo.blogName,
-                        total: _fullBlogData!.blogInfo.blogStat.followedCount,
-                      ),
-                    );
-                  } else {
-                    IToast.showTop(appLocalizations.cannotViewFollowerList);
-                  }
-                },
-              ),
-              ItemBuilder.buildStatisticItem(
-                context,
-                title: appLocalizations.hotCount,
-                count: _fullBlogData!.blogInfo.hot.hotCount,
-                countColor: Colors.white,
-                labelColor: Colors.white.withOpacity(0.9),
-                onTap: () {
-                  DialogBuilder.showInfoDialog(
-                    context,
-                    title:
-                        "${appLocalizations.totalHotCount}${_fullBlogData!.blogInfo.hot.hotCount}",
-                    messageChild: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        _buildHotItem(
-                          icon: Icons.favorite_rounded,
-                          title: appLocalizations.postLikes,
-                          count: _fullBlogData!.blogInfo.hot.favoriteCount,
-                        ),
-                        _buildHotItem(
-                          icon: Icons.thumb_up_rounded,
-                          title: appLocalizations.postRecommends,
-                          count: _fullBlogData!.blogInfo.hot.shareCount,
-                        ),
-                        _buildHotItem(
-                          icon: Icons.bookmark_rounded,
-                          title: appLocalizations.postFavorites,
-                          count: _fullBlogData!.blogInfo.hot.subscribeCount,
-                        ),
-                        _buildHotItem(
-                          icon: Icons.mode_comment_rounded,
-                          title: appLocalizations.commentLikes,
-                          count:
-                              _fullBlogData!.blogInfo.hot.tagChatFavoriteCount,
-                        ),
-                      ],
-                    ),
-                    buttonText: appLocalizations.comeOn,
-                    onTapDismiss: () {},
-                    customDialogType: CustomDialogType.custom,
-                  );
-                },
-              ),
-              ItemBuilder.buildStatisticItem(
-                context,
-                title: appLocalizations.supporter,
-                count: _fullBlogData!.blogInfo.blogStat.supporterCount,
-                countColor: Colors.white,
-                labelColor: Colors.white.withOpacity(0.9),
-                onTap: () {
-                  if (_fullBlogData!.showSupport == 1 ||
-                      infoMode == InfoMode.me) {
-                    RouteUtil.pushPanelCupertinoRoute(
-                      context,
-                      SupporterScreen(
-                        infoMode: infoMode,
-                        blogId: _fullBlogData!.blogInfo.blogId,
-                      ),
-                    );
-                  } else {
-                    IToast.showTop(appLocalizations.cannotViewSupporterList);
-                  }
-                },
-              ),
-              if (infoMode == InfoMode.other)
-                RoundIconTextButton(
-                  onPressed: _processFollow,
-                  text: _followButtonText,
-                  background: _followButtonColor,
-                  fontSizeDelta: 2,
-                ),
-              if (infoMode == InfoMode.me)
-                RoundIconTextButton(
-                  onPressed: () {},
-                  text: appLocalizations.editProfile,
-                  background: Colors.white.withOpacity(0.2),
-                  fontSizeDelta: 2,
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          if (showCases.isNotEmpty) _buildShowCases(),
+          _buildProfileAction(),
+          if (showCases.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _buildShowCases(),
+          ],
         ],
       ),
     );
   }
 
-  updateFollowStatus() {
+  Widget _buildIdentitySummary({
+    required bool hasRemarkName,
+    required bool hasDescription,
+  }) {
+    final info = _fullBlogData!.blogInfo;
+    final idLabel = 'ID: ${info.blogName}'
+        '${hasRemarkName ? appLocalizations.remarkSuffix(info.remarkName) : ''}';
+    final gender = info.gendar == 1
+        ? appLocalizations.male
+        : info.gendar == 2
+            ? appLocalizations.female
+            : appLocalizations.confidential;
+    final metadata = '${appLocalizations.gender}: $gender'
+        '${StringUtil.isNotEmpty(info.ipLocation) ? '${appLocalizations.ipSuffix}${info.ipLocation}' : ''}';
+    return SizedBox(
+      height: 80,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          ItemBuilder.buildAvatar(
+            context: context,
+            size: StringUtil.isNotEmpty(getAvatarBoxImage()) ? 54 : 80,
+            showBorder: false,
+            showDetailMode: ShowDetailMode.avatar,
+            imageUrl: Utils.removeImageParam(info.bigAvaImg),
+            avatarBoxImageUrl: getAvatarBoxImage(),
+            title: appLocalizations.personalAvatar,
+            caption: '「${info.blogNickName}」',
+            tagPrefix: 'user-profile-${info.blogId}',
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ItemBuilder.buildCopyable(
+                  context,
+                  child: Text(
+                    info.blogNickName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  text: info.blogNickName,
+                  toastText: appLocalizations.haveCopiedNickName,
+                ),
+                const SizedBox(height: 3),
+                ItemBuilder.buildCopyable(
+                  context,
+                  child: Text(
+                    idLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelMedium
+                        ?.copyWith(color: Colors.white70),
+                  ),
+                  text: info.blogName,
+                  toastText: appLocalizations.haveCopiedLofterID,
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        metadata,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelMedium
+                            ?.copyWith(color: Colors.white70),
+                      ),
+                    ),
+                    if (hasDescription) ...[
+                      const SizedBox(width: 4),
+                      _buildDescriptionButton(),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+          if (ResponsiveUtil.isLandscapeLayout()) ...[
+            const SizedBox(width: 6),
+            CircleIconButton(
+              onTap: () => BottomSheetBuilder.showContextMenu(
+                context,
+                _buildMoreButtons(),
+              ),
+              icon: const Icon(
+                Icons.more_vert_rounded,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDescriptionButton() {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () {
+          DialogBuilder.showInfoDialog(
+            context,
+            title: appLocalizations.descriptionTitle(
+              _fullBlogData!.blogInfo.blogNickName,
+            ),
+            message: _fullBlogData!.blogInfo.selfIntro,
+            onTapDismiss: () {},
+            customDialogType: CustomDialogType.normal,
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                appLocalizations.moreInfo,
+                style: Theme.of(context)
+                    .textTheme
+                    .labelMedium
+                    ?.copyWith(color: Colors.white),
+              ),
+              const Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 16,
+                color: Colors.white,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatisticsCard() {
+    final info = _fullBlogData!.blogInfo;
+    return ProfileOverviewCard(
+      backgroundColor: Colors.black.withValues(alpha: 0.22),
+      foregroundColor: Colors.white,
+      statistics: [
+        ProfileStatisticData(
+          title: appLocalizations.following,
+          count: info.blogStat.followingCount,
+          onTap: _openFollowing,
+        ),
+        ProfileStatisticData(
+          title: appLocalizations.follower,
+          count: info.blogStat.followedCount,
+          onTap: _openFollowers,
+        ),
+        ProfileStatisticData(
+          title: appLocalizations.hotCount,
+          count: info.hot.hotCount,
+          onTap: _showHotDetails,
+        ),
+        ProfileStatisticData(
+          title: appLocalizations.supporter,
+          count: info.blogStat.supporterCount,
+          onTap: _openSupporters,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileAction() {
+    final isOwnProfile = infoMode == InfoMode.me;
+    return RoundIconTextButton(
+      onPressed: isOwnProfile
+          ? () => UriUtil.openExternal(_fullBlogData!.blogInfo.homePageUrl)
+          : _processFollow,
+      text: isOwnProfile
+          ? appLocalizations.openWithBrowser
+          : _followButtonText.trim(),
+      icon: Icon(
+        isOwnProfile
+            ? Icons.open_in_browser_rounded
+            : _fullBlogData!.isBlackBlog
+                ? Icons.block_rounded
+                : _fullBlogData!.following
+                    ? Icons.person_rounded
+                    : Icons.person_add_alt_1_rounded,
+        size: 18,
+        color: Colors.white,
+      ),
+      width: double.infinity,
+      height: 42,
+      minHeight: 42,
+      radius: 12,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      background: isOwnProfile
+          ? Colors.black.withValues(alpha: 0.22)
+          : _followButtonColor,
+      fontSizeDelta: 0,
+    );
+  }
+
+  void _openFollowing() {
+    if (_fullBlogData!.showFollow == 1 || infoMode == InfoMode.me) {
+      RouteUtil.pushPanelCupertinoRoute(
+        context,
+        FollowingFollowerScreen(
+          infoMode: infoMode,
+          followingMode: infoMode == InfoMode.me
+              ? FollowingMode.following
+              : FollowingMode.timeline,
+          blogId: _fullBlogData!.blogInfo.blogId,
+          blogName: _fullBlogData!.blogInfo.blogName,
+          total: _fullBlogData!.blogInfo.blogStat.followingCount,
+        ),
+      );
+    } else {
+      IToast.showTop(appLocalizations.cannotViewFollowingList);
+    }
+  }
+
+  void _openFollowers() {
+    if (_fullBlogData!.showFans == 1 || infoMode == InfoMode.me) {
+      RouteUtil.pushPanelCupertinoRoute(
+        context,
+        FollowingFollowerScreen(
+          infoMode: infoMode,
+          followingMode: FollowingMode.follower,
+          blogId: _fullBlogData!.blogInfo.blogId,
+          blogName: _fullBlogData!.blogInfo.blogName,
+          total: _fullBlogData!.blogInfo.blogStat.followedCount,
+        ),
+      );
+    } else {
+      IToast.showTop(appLocalizations.cannotViewFollowerList);
+    }
+  }
+
+  void _openSupporters() {
+    if (_fullBlogData!.showSupport == 1 || infoMode == InfoMode.me) {
+      RouteUtil.pushPanelCupertinoRoute(
+        context,
+        SupporterScreen(
+          infoMode: infoMode,
+          blogId: _fullBlogData!.blogInfo.blogId,
+        ),
+      );
+    } else {
+      IToast.showTop(appLocalizations.cannotViewSupporterList);
+    }
+  }
+
+  void _showHotDetails() {
+    final hot = _fullBlogData!.blogInfo.hot;
+    DialogBuilder.showInfoDialog(
+      context,
+      title: '${appLocalizations.totalHotCount}${hot.hotCount}',
+      messageChild: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _buildHotItem(
+            icon: Icons.favorite_rounded,
+            title: appLocalizations.postLikes,
+            count: hot.favoriteCount,
+          ),
+          _buildHotItem(
+            icon: Icons.thumb_up_rounded,
+            title: appLocalizations.postRecommends,
+            count: hot.shareCount,
+          ),
+          _buildHotItem(
+            icon: Icons.bookmark_rounded,
+            title: appLocalizations.postFavorites,
+            count: hot.subscribeCount,
+          ),
+          _buildHotItem(
+            icon: Icons.mode_comment_rounded,
+            title: appLocalizations.commentLikes,
+            count: hot.tagChatFavoriteCount,
+          ),
+        ],
+      ),
+      buttonText: appLocalizations.comeOn,
+      onTapDismiss: () {},
+      customDialogType: CustomDialogType.custom,
+    );
+  }
+
+  void updateFollowStatus({bool rebuild = true}) {
     if (_fullBlogData!.following) {
       _followButtonText = _fullBlogData!.specialfollowing
           ? appLocalizations.specialFollowed
           : appLocalizations.followed;
-      _followButtonColor = Colors.white.withOpacity(0.4);
+      _followButtonColor = Colors.white.withValues(alpha: 0.4);
     } else {
       _followButtonText = " ${appLocalizations.follow} ";
-      _followButtonColor = Colors.white.withOpacity(0.2);
+      _followButtonColor = Colors.white.withValues(alpha: 0.2);
     }
     if (_fullBlogData!.isBlackBlog) {
       _followButtonText = appLocalizations.blacklisted;
-      _followButtonColor = Colors.red.withOpacity(0.4);
+      _followButtonColor = Colors.red.withValues(alpha: 0.4);
     }
-    setState(() {});
+    if (rebuild && mounted) setState(() {});
   }
 
-  _buildHotItem({
+  Widget _buildHotItem({
     Color? color,
     required IconData icon,
     required String title,
@@ -777,17 +891,17 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
     );
   }
 
-  _doFollow({required bool isFollow}) {
+  void _doFollow({required bool isFollow}) {
     UserApi.followOrUnfollow(
       isFollow: isFollow,
       blogId: _fullBlogData!.blogInfo.blogId,
       blogName: _fullBlogData!.blogInfo.blogName,
     ).then((value) {
+      if (!mounted) return;
       if (value['meta']['status'] != 200) {
         IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
       } else {
         _fullBlogData!.following = !_fullBlogData!.following;
-        setState(() {});
         updateFollowStatus();
       }
     });
@@ -801,6 +915,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
       isBlock: isBlock,
       blogId: _fullBlogData!.blogInfo.blogId,
     ).then((value) {
+      if (!mounted) return;
       if (value['meta']['status'] != 200) {
         IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
       } else {
@@ -814,23 +929,23 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
     });
   }
 
-  _doSpecialFollow({required bool isSpecialFollow}) {
+  void _doSpecialFollow({required bool isSpecialFollow}) {
     UserApi.specialFollowOrSpecialUnfollow(
       isSpecialFollow: isSpecialFollow,
       blogId: _fullBlogData!.blogInfo.blogId,
       blogName: _fullBlogData!.blogInfo.blogName,
     ).then((value) {
+      if (!mounted) return;
       if (value['meta']['status'] != 200) {
         IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
       } else {
         _fullBlogData!.specialfollowing = !_fullBlogData!.specialfollowing;
-        setState(() {});
         updateFollowStatus();
       }
     });
   }
 
-  _processFollow() {
+  void _processFollow() {
     if (_fullBlogData!.isBlackBlog) {
       DialogBuilder.showConfirmDialog(
         context,
@@ -843,7 +958,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
           _doBlockUser(
               isBlock: !_fullBlogData!.isBlackBlog,
               onSuccess: () {
-                setState(() {});
+                if (!mounted) return;
                 updateFollowStatus();
               });
         },
@@ -860,7 +975,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
     }
   }
 
-  _buildFollowButtons() {
+  FlutterContextMenu _buildFollowButtons() {
     return FlutterContextMenu(entries: [
       FlutterContextMenuItem(
           _fullBlogData!.specialfollowing
@@ -877,7 +992,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
     ]);
   }
 
-  _buildTabView() {
+  Widget _buildTabView() {
     List<Widget> children = [];
     children.add(
       PostScreen(
@@ -935,15 +1050,15 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
     );
   }
 
-  _buildShowCases() {
-    return Container(
-      margin: const EdgeInsets.only(left: 12, right: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(10),
-      ),
+  Widget _buildShowCases() {
+    return ContainerItem(
+      backgroundColor: Colors.black.withValues(alpha: 0.22),
+      radius: 14,
+      roundTop: true,
+      roundBottom: true,
+      padding: const EdgeInsets.all(10),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -952,28 +1067,29 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
                 size: 16,
                 color: Colors.white,
               ),
-              const SizedBox(width: 3),
+              const SizedBox(width: 5),
               Expanded(
                 child: Text(
                   appLocalizations.masterpiece,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleSmall
-                      ?.apply(fontSizeDelta: -1, color: Colors.white),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           SizedBox(
             height: 100,
             child: ListView.builder(
               physics: const BouncingScrollPhysics(),
               scrollDirection: Axis.horizontal,
               itemCount: showCases.length,
-              itemBuilder: (context, index) {
-                return _buildShowCaseItem(showCases[index]);
-              },
+              itemBuilder: (context, index) =>
+                  _buildShowCaseItem(showCases[index]),
             ),
           ),
         ],
@@ -981,7 +1097,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
     );
   }
 
-  _buildShowCaseItem(ShowCaseItem item) {
+  Widget _buildShowCaseItem(ShowCaseItem item) {
     late String title;
     late String backgroundUrl;
     late String hotCount;
@@ -1023,110 +1139,117 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
     } else {
       ILogger.info("Loftify", item.toJson());
     }
-    return ClickableGestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 100,
-        width: 100,
-        margin: const EdgeInsets.only(right: 10),
-        decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.only(right: 10),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(12),
-        ),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: StringUtil.isNotEmpty(backgroundUrl)
-                  ? ChewieItemBuilder.buildCachedImage(
-                      context: context,
-                      imageUrl: backgroundUrl,
-                      height: 100,
-                      width: 100,
-                      fit: BoxFit.cover,
-                      showLoading: false,
-                      placeholderBackground: Colors.transparent,
-                    )
-                  : AssetUtil.loadDouble(
-                      context,
-                      AssetUtil.lofterDarkIllust,
-                      AssetUtil.lofterDarkIllust,
-                      size: 100,
-                      fit: BoxFit.cover,
-                    ),
-            ),
-            Container(
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.1),
-                    Colors.black.withOpacity(0.4),
-                  ],
-                ),
-              ),
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
-                  const Spacer(),
-                  Center(
-                    child: Text(
-                      title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall?.apply(
-                            color: Colors.white,
-                          ),
+          child: SizedBox(
+            height: 100,
+            width: 100,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                StringUtil.isNotEmpty(backgroundUrl)
+                    ? ChewieItemBuilder.buildCachedImage(
+                        context: context,
+                        imageUrl: backgroundUrl,
+                        height: 100,
+                        width: 100,
+                        fit: BoxFit.cover,
+                        showLoading: false,
+                        placeholderBackground: Colors.transparent,
+                      )
+                    : AssetUtil.loadDouble(
+                        context,
+                        AssetUtil.lofterDarkIllust,
+                        AssetUtil.lofterDarkIllust,
+                        size: 100,
+                        fit: BoxFit.cover,
+                      ),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.08),
+                        Colors.black.withValues(alpha: 0.58),
+                      ],
                     ),
                   ),
-                  const Spacer(),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.local_fire_department_rounded,
-                        size: 12,
-                        color: Colors.white,
-                      ),
-                      const SizedBox(width: 3),
-                      Expanded(
-                        child: Text(
-                          hotCount,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
-                              ?.apply(fontSizeDelta: -1, color: Colors.white),
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 18),
+                        const Spacer(),
+                        Text(
+                          title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style:
+                              Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                         ),
-                      ),
-                    ],
+                        const Spacer(),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.local_fire_department_rounded,
+                              size: 12,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 3),
+                            Expanded(
+                              child: Text(
+                                hotCount,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelSmall
+                                    ?.copyWith(color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
-            ),
-            Positioned(
-              top: -4,
-              right: -6,
-              child: ChewieItemBuilder.buildCachedImage(
-                context: context,
-                imageUrl: item.icon,
-                width: 40,
-                height: 40,
-                showLoading: false,
-                placeholderBackground: Colors.transparent,
-              ),
-            ),
-            if (item.postCollection != null)
-              Positioned(
-                top: 6,
-                left: 6,
-                child: AssetUtil.load(
-                  AssetUtil.collectionWhiteIcon,
-                  size: 12,
                 ),
-              ),
-          ],
+                Positioned(
+                  top: 2,
+                  right: 2,
+                  child: ChewieItemBuilder.buildCachedImage(
+                    context: context,
+                    imageUrl: item.icon,
+                    width: 36,
+                    height: 36,
+                    fit: BoxFit.contain,
+                    showLoading: false,
+                    placeholderBackground: Colors.transparent,
+                  ),
+                ),
+                if (item.postCollection != null)
+                  Positioned(
+                    top: 6,
+                    left: 6,
+                    child: AssetUtil.load(
+                      AssetUtil.collectionWhiteIcon,
+                      size: 12,
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -1135,23 +1258,38 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
   String get backgroudUrl =>
       _fullBlogData!.blogcover.customBlogCover ?? _fullBlogData!.blogcover.url;
 
-  Widget _buildBackground({
-    double blurRadius = 10,
-    double? height,
-  }) {
-    return Blur(
-      blur: blurRadius,
-      blurColor: Colors.black12,
-      child: ChewieItemBuilder.buildCachedImage(
-        context: context,
-        imageUrl: Utils.removeImageParam(backgroudUrl),
-        fit: BoxFit.cover,
-        width: MediaQuery.sizeOf(context).width * 2,
-        height: height ?? 600,
-        placeholderBackground: Theme.of(context).textTheme.labelSmall?.color,
-        bottomPadding: 50,
-        showLoading: false,
-      ),
+  Widget _buildHeaderBackground() {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Blur(
+          blur: 10,
+          blurColor: Colors.black12,
+          child: SizedBox.expand(
+            child: ChewieItemBuilder.buildCachedImage(
+              context: context,
+              imageUrl: Utils.removeImageParam(backgroudUrl),
+              fit: BoxFit.cover,
+              placeholderBackground:
+                  Theme.of(context).colorScheme.surfaceContainerHighest,
+              bottomPadding: 50,
+              showLoading: false,
+            ),
+          ),
+        ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black.withValues(alpha: 0.18),
+                Colors.black.withValues(alpha: 0.52),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

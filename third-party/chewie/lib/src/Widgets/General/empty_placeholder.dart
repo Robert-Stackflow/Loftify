@@ -58,3 +58,43 @@ class EmptyPlaceholder extends StatelessWidget {
     );
   }
 }
+
+/// Empty state for a [CustomScrollView] that keeps a single scroll chain.
+///
+/// [EmptyPlaceholder] is backed by a [ListView], so placing it directly in a
+/// non-scrolling [SliverFillRemaining] asks a viewport for intrinsic dimensions
+/// and can break the complete sliver layout. This wrapper gives it a finite
+/// viewport and disables the inner gesture handler.
+class SliverEmptyPlaceholder extends StatelessWidget {
+  final String text;
+  final double height;
+  final double topPadding;
+  final double size;
+  final IconData? icon;
+
+  const SliverEmptyPlaceholder({
+    super.key,
+    required this.text,
+    this.height = 220,
+    this.topPadding = 64,
+    this.size = 30,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverToBoxAdapter(
+      child: SizedBox(
+        height: height,
+        child: EmptyPlaceholder(
+          text: text,
+          icon: icon,
+          size: size,
+          physics: const NeverScrollableScrollPhysics(),
+          shrinkWrap: false,
+          topPadding: topPadding,
+        ),
+      ),
+    );
+  }
+}

@@ -31,6 +31,8 @@ class ChewieItemBuilder {
     bool showBorder = true,
     Function()? onTapBack,
     Widget? overrideBody,
+    List<Widget> landscapeActions = const [],
+    @Deprecated('Use landscapeActions instead.')
     List<Widget> desktopActions = const [],
     List<Widget> actions = const [],
   }) {
@@ -44,6 +46,7 @@ class ChewieItemBuilder {
               showBorder: showBorder,
               onTapBack: onTapBack,
               actions: actions,
+              landscapeActions: landscapeActions,
               desktopActions: desktopActions,
             )
           : null,
@@ -75,6 +78,8 @@ class ChewieItemBuilder {
     bool showLoading = true,
     double? width,
     double? height,
+    int? memCacheWidth,
+    int? memCacheHeight,
     double? placeholderHeight,
     Color? placeholderBackground,
     double topPadding = 0,
@@ -88,6 +93,8 @@ class ChewieItemBuilder {
       width: width,
       simpleError: simpleError,
       height: height,
+      memCacheWidth: memCacheWidth,
+      memCacheHeight: memCacheHeight,
       placeholderHeight: placeholderHeight,
       placeholderBackground: placeholderBackground,
       topPadding: topPadding,
@@ -104,6 +111,8 @@ class ChewieItemBuilder {
     bool showLoading = true,
     double? width,
     double? height,
+    int? memCacheWidth,
+    int? memCacheHeight,
     Color? placeholderBackground,
     double topPadding = 0,
     double bottomPadding = 0,
@@ -120,6 +129,7 @@ class ChewieItemBuilder {
           showClose: false,
           fullScreen: true,
           useFade: true,
+          opaque: false,
           HeroPhotoViewScreen(
             tagPrefix: tagPrefix,
             tagSuffix: tagSuffix,
@@ -139,6 +149,8 @@ class ChewieItemBuilder {
           imageUrl: imageUrl,
           width: width,
           height: height,
+          memCacheWidth: memCacheWidth,
+          memCacheHeight: memCacheHeight,
           showLoading: showLoading,
           bottomPadding: bottomPadding,
           topPadding: topPadding,
@@ -256,8 +268,10 @@ class ChewieItemBuilder {
       controller: controller,
       buttons: buttons,
       buttonBuilder: (selected, label, context, onTap, __) {
-        return SizedBox(
-          width: constraintWidth ? 80 : null,
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+            minWidth: constraintWidth ? 80 : 0,
+          ),
           child: RoundIconTextButton(
             height: 36,
             text: label,

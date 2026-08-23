@@ -88,7 +88,7 @@ class InputItemLeadingTailingConfig {
     this.show = true,
     this.type = InputItemLeadingTailingType.none,
     this.onTap,
-    this.enable=true,
+    this.enable = true,
   });
 }
 
@@ -402,7 +402,6 @@ class InputItemState extends State<InputItem> {
         break;
       case InputItemLeadingTailingType.clear:
         res = RoundIconTextButton(
-          height: 36,
           background: theme.canvasColor,
           border: ChewieTheme.borderWithWidth(1),
           padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -418,7 +417,6 @@ class InputItemState extends State<InputItem> {
         break;
       case InputItemLeadingTailingType.copy:
         res = RoundIconTextButton(
-          height: 36,
           background: theme.canvasColor,
           border: ChewieTheme.borderWithWidth(1),
           padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -435,7 +433,6 @@ class InputItemState extends State<InputItem> {
       case InputItemLeadingTailingType.openExternal:
         res = RoundIconTextButton(
           background: theme.canvasColor,
-          height: 36,
           border: ChewieTheme.borderWithWidth(1),
           padding: const EdgeInsets.symmetric(horizontal: 10),
           icon: Icon(
@@ -450,7 +447,6 @@ class InputItemState extends State<InputItem> {
         break;
       case InputItemLeadingTailingType.addSelection:
         res = RoundIconTextButton(
-          height: 36,
           background: theme.canvasColor,
           border: ChewieTheme.borderWithWidth(1),
           padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -480,7 +476,6 @@ class InputItemState extends State<InputItem> {
         break;
       case InputItemLeadingTailingType.text:
         res = RoundIconTextButton(
-          height: 36,
           disabled: !config.enable,
           background: theme.canvasColor,
           border: ChewieTheme.borderWithWidth(1),

@@ -1,4 +1,3 @@
-
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/user_api.dart';
@@ -20,6 +19,8 @@ class ShareScreen extends StatefulWidgetForNested {
     this.blogId,
     this.blogName,
     super.nested = false,
+    super.refreshListenable,
+    super.refreshId = 'recommend',
   }) {
     if (infoMode == InfoMode.other) {
       assert(blogName != null);
@@ -37,7 +38,10 @@ class ShareScreen extends StatefulWidgetForNested {
 }
 
 class _ShareScreenState extends BaseDynamicState<ShareScreen>
-    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+    with
+        TickerProviderStateMixin,
+        AutomaticKeepAliveClientMixin,
+        NestedRefreshSignalMixin<ShareScreen> {
   @override
   bool get wantKeepAlive => true;
   final List<PostDetailData> _shareList = [];
@@ -51,14 +55,27 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
   @override
   void initState() {
     super.initState();
+    bindNestedRefreshSignal(() {
+      _refreshController.callRefresh(
+        overOffset: 28,
+        duration: const Duration(milliseconds: 140),
+      );
+    });
     if (widget.nested) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Future.delayed(const Duration(milliseconds: 300), () => _onRefresh());
+        if (mounted) _onRefresh();
       });
     } else {
       _initPhase = InitPhase.successful;
       setState(() {});
     }
+  }
+
+  @override
+  void dispose() {
+    unbindNestedRefreshSignal();
+    _refreshController.dispose();
+    super.dispose();
   }
 
   _fetchShare({bool refresh = false}) async {
@@ -94,7 +111,7 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
                   if (item > 0) {
                     int month = e.monthCount.indexOf(item);
                     _archiveDataList.add(ArchiveData(
-                      desc: appLocalizations.yearAndMonth(e.year, month + 1),
+                      desc: appLocalizations.yearAndMonth(month + 1, e.year),
                       count: item,
                       endTime: 0,
                       startTime: 0,
@@ -113,8 +130,8 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
             }
             if (mounted) setState(() {});
             _initPhase = InitPhase.successful;
-            if (_shareList.length >= _total && !refresh) {
-              _noMore = true;
+            _noMore = _shareList.length >= _total;
+            if (_noMore && !refresh) {
               return IndicatorResult.noMore;
             } else {
               return IndicatorResult.success;
@@ -165,16 +182,20 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
         return Stack(
           children: [
             EasyRefresh.builder(
-              refreshOnStart: true,
+              header: widget.nested ? buildNestedRefreshHeader() : null,
+              refreshOnStart: !widget.nested,
               controller: _refreshController,
               onRefresh: _onRefresh,
-              onLoad: _onLoad,
+              onLoad: _noMore ? null : _onLoad,
               triggerAxis: Axis.vertical,
               childBuilder: (context, physics) {
                 return _archiveDataList.isNotEmpty
                     ? _buildNineGridGroup(physics)
                     : EmptyPlaceholder(
-                        text: appLocalizations.noRecommend, physics: physics);
+                        text: appLocalizations.noRecommend,
+                        physics: physics,
+                        shrinkWrap: false,
+                      );
               },
             ),
             Positioned(
@@ -203,21 +224,19 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
       }
       widgets.add(ItemBuilder.buildTitle(
         context,
-        title: appLocalizations.descriptionWithPostCount(e.desc, e.count.toString()),
+        title: appLocalizations.descriptionWithPostCount(
+            e.desc, e.count.toString()),
         topMargin: 16,
         bottomMargin: 0,
       ));
       widgets.add(_buildNineGrid(startIndex, count));
       startIndex += e.count;
     }
-    return LoadMoreNotification(
-      noMore: _noMore,
-      onLoad: _onLoad,
-      child: ListView(
-        physics: physics,
-        padding: const EdgeInsets.only(bottom: 20),
-        children: widgets,
-      ),
+    return ListView(
+      controller: widget.scrollController,
+      physics: physics,
+      padding: const EdgeInsets.only(bottom: 20),
+      children: widgets,
     );
   }
 

@@ -4,8 +4,10 @@ import 'package:loftify/Api/tag_api.dart';
 import 'package:loftify/Models/tag_response.dart';
 import 'package:loftify/Screens/Post/collection_detail_screen.dart';
 import 'package:loftify/Utils/asset_util.dart';
+
 import '../../Utils/enums.dart';
-import '../../Utils/utils.dart';
+import '../../Utils/hive_util.dart';
+import '../../Utils/tab_state_util.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../l10n/l10n.dart';
 import 'grain_detail_screen.dart';
@@ -28,16 +30,27 @@ class _TagCollectionGrainScreenState
   @override
   bool get wantKeepAlive => true;
   late TabController _tabController;
+  late final LazyTabLoadState _tabLoadState;
 
   List<String> _tabLabelList = [];
   final GlobalKey _collectionKey = GlobalKey();
   final GlobalKey _grainKey = GlobalKey();
   int _currentTabIndex = 0;
+  static const List<String> _tabIdList = ['collection', 'grain'];
 
   @override
   void initState() {
     super.initState();
     initTab();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _ensureTabLoaded(_currentTabIndex);
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -52,7 +65,62 @@ class _TagCollectionGrainScreenState
 
   initTab() {
     _tabLabelList = [appLocalizations.collection, appLocalizations.grain];
-    _tabController = TabController(length: _tabLabelList.length, vsync: this);
+    final restored = PersistentTabState.restore(
+      idKey: HiveUtil.tagCollectionGrainTabIdKey,
+      legacyIndexKey: HiveUtil.tagCollectionGrainTabIndexKey,
+      itemIds: _tabIdList,
+    );
+    _tabLoadState = LazyTabLoadState(
+      itemIds: _tabIdList,
+      savedId: restored.id,
+    );
+    _currentTabIndex = _tabLoadState.currentIndex;
+    _tabController = TabController(
+      length: _tabLabelList.length,
+      initialIndex: _currentTabIndex,
+      vsync: this,
+    );
+    _tabController.addListener(() {
+      final index =
+          (_tabController.animation?.value ?? _tabController.index).round();
+      if (index != _currentTabIndex) _setCurrentTab(index);
+    });
+  }
+
+  void _setCurrentTab(int index) {
+    final safeIndex = TabStatePreference.restoreIndex(index, _tabIdList.length);
+    if (safeIndex != _currentTabIndex && mounted) {
+      setState(() => _currentTabIndex = safeIndex);
+    }
+    PersistentTabState.save(
+      idKey: HiveUtil.tagCollectionGrainTabIdKey,
+      legacyIndexKey: HiveUtil.tagCollectionGrainTabIndexKey,
+      itemIds: _tabIdList,
+      index: safeIndex,
+    );
+    _ensureTabLoaded(safeIndex);
+  }
+
+  void _ensureTabLoaded(int index) {
+    if (!_tabLoadState.selectAndShouldLoad(index)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (index == 0) {
+        final state = _collectionKey.currentState as CollectionTabState?;
+        if (state == null) {
+          _tabLoadState.markLoadFailed(index);
+        } else {
+          state.callRefresh();
+        }
+      } else {
+        final state = _grainKey.currentState as GrainTabState?;
+        if (state == null) {
+          _tabLoadState.markLoadFailed(index);
+        } else {
+          state.callRefresh();
+        }
+      }
+    });
   }
 
   Widget _buildTabView() {
@@ -90,14 +158,14 @@ class _TagCollectionGrainScreenState
               (entry) => ItemBuilder.buildAnimatedTab(context,
                   selected: entry.key == _currentTabIndex,
                   text: entry.value,
+                  controller: _tabController,
+                  tabIndex: entry.key,
                   normalUserBold: true,
                   sameFontSize: true),
             )
             .toList(),
         onTap: (index) {
-          setState(() {
-            _currentTabIndex = index;
-          });
+          _setCurrentTab(index);
         },
         width: MediaQuery.sizeOf(context).width,
         background: ChewieTheme.getBackground(context),
@@ -208,7 +276,7 @@ class CollectionTabState extends BaseDynamicState<CollectionTab>
 
   Widget _buildCollectionResultTab() {
     return EasyRefresh.builder(
-      refreshOnStart: true,
+      refreshOnStart: false,
       controller: _collectionRefreshController,
       onRefresh: () async {
         return await _fetchCollectionResult(refresh: true);
@@ -586,7 +654,7 @@ class GrainTabState extends BaseDynamicState<GrainTab>
 
   Widget _buildGrainResultTab() {
     return EasyRefresh.builder(
-      refreshOnStart: true,
+      refreshOnStart: false,
       controller: _grainRefreshController,
       onRefresh: () async {
         return await _fetchGrainResult(refresh: true);

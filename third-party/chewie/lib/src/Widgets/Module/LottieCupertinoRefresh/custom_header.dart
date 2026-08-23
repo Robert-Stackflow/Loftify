@@ -21,13 +21,13 @@ class LottieCupertinoHeader extends Header {
 
   const LottieCupertinoHeader({
     this.key,
-    super.triggerOffset = 60,
+    super.triggerOffset = 64,
     super.clamping = false,
-    super.position = IndicatorPosition.behind,
-    super.processedDuration = Duration.zero,
+    super.position = IndicatorPosition.above,
+    super.processedDuration = const Duration(milliseconds: 180),
     super.spring,
     super.readySpringBuilder,
-    super.springRebound = false,
+    super.springRebound = true,
     FrictionFactor? frictionFactor,
     super.safeArea,
     super.infiniteOffset,
@@ -35,12 +35,12 @@ class LottieCupertinoHeader extends Header {
     super.infiniteHitOver,
     super.hapticFeedback,
     super.triggerWhenRelease,
-    super.maxOverOffset,
+    super.maxOverOffset = 96,
     this.foregroundColor,
     this.backgroundColor,
     this.emptyWidget,
     required this.indicator,
-    this.radius,
+    this.radius = 18,
   }) : super(
           frictionFactor: frictionFactor ??
               (infiniteOffset == null ? kCustomCupertinoFrictionFactor : null),

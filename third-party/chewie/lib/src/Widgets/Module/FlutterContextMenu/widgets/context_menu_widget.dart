@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import 'context_menu_provider.dart';
@@ -71,6 +73,12 @@ class ContextMenuWidget extends StatelessWidget {
       borderRadius: state.borderRadius ?? BorderRadius.circular(8.0),
     );
 
+    final mediaQuery = MediaQuery.of(context);
+    final safeWidth = max(
+      0.0,
+      mediaQuery.size.width - mediaQuery.padding.horizontal - 16,
+    );
+
     return TweenAnimationBuilder<double>(
       tween: Tween(
         begin: 0.8,
@@ -83,7 +91,9 @@ class ContextMenuWidget extends StatelessWidget {
           scale: value,
           child: Container(
             padding: state.padding,
-            // constraints: BoxConstraints(maxWidth: state.maxWidth),
+            constraints: BoxConstraints(
+              maxWidth: min(state.maxWidth, safeWidth),
+            ),
             clipBehavior: state.clipBehavior,
             decoration: state.boxDecoration ?? boxDecoration,
             child: Material(

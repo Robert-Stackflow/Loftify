@@ -143,9 +143,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                   titleLeftMargin: ResponsiveUtil.isLandscapeLayout() ? 15 : 10,
                 )
               : null
-          : PreferredSize(
-              preferredSize: const Size.fromHeight(56),
-              child: SafeArea(child: _buildAppBar())),
+          : _buildAppBar(),
       body: _buildMainBody(),
     );
   }
@@ -171,7 +169,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 10),
         child: ListView(
-          cacheExtent: 9999,
+          cacheExtent: MediaQuery.sizeOf(context).height,
           controller: _scrollController,
           children: [
             const SizedBox(height: 10),
@@ -198,7 +196,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 10),
               child: ListView(
-                cacheExtent: 9999,
+                cacheExtent: MediaQuery.sizeOf(context).height,
                 children: [
                   const SizedBox(height: 20),
                   _buildUserCard(),
@@ -227,7 +225,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
               behavior:
                   ScrollConfiguration.of(context).copyWith(scrollbars: false),
               child: ListView(
-                cacheExtent: 9999,
+                cacheExtent: MediaQuery.sizeOf(context).height,
                 children: [
                   const SizedBox(height: 10),
                   if (meInfoData != null) _buildFollowingCard(),
@@ -480,9 +478,9 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                 ],
               ),
               const Spacer(),
-              const Icon(
+              Icon(
                 Icons.keyboard_arrow_right_rounded,
-                color: Colors.grey,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ],
           ),
@@ -613,7 +611,6 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
 
   List<Widget> _buildCreation() {
     return [
-      const SizedBox(height: 10),
       CaptionItem(
         title: appLocalizations.myCreative,
         children: [

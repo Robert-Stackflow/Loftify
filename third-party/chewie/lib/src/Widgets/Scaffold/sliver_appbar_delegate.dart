@@ -28,22 +28,15 @@ class SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
         color: background ?? ChewieTheme.getBackground(context),
         borderRadius: BorderRadius.vertical(top: Radius.circular(radius)),
       ),
-      child: Theme(
-        data: ThemeData(
-          splashColor: Colors.transparent,
-          highlightColor: Colors.transparent,
-          tabBarTheme: const TabBarTheme(
-            splashFactory: NoSplash.splashFactory,
-          ),
-        ),
-        child: tabBar,
-      ),
+      child: tabBar,
     );
   }
 
   @override
   bool shouldRebuild(SliverAppBarDelegate oldDelegate) {
-    return false;
+    return oldDelegate.tabBar != tabBar ||
+        oldDelegate.radius != radius ||
+        oldDelegate.background != background;
   }
 }
 

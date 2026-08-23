@@ -15,13 +15,11 @@ class SelectionItemModel<T> with DropdownMixin {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
 
-    return other is SelectionItemModel<T> &&
-        other.key == key &&
-        other.value == value;
+    return other is SelectionItemModel<T> && other.value == value;
   }
 
   @override
-  int get hashCode => super.hashCode + key.hashCode + value.hashCode;
+  int get hashCode => value?.hashCode ?? 0;
 
   @override
   String get display => key;

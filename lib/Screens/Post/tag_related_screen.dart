@@ -106,7 +106,7 @@ class _TagRelatedScreenState extends BaseDynamicState<TagRelatedScreen>
           return await _fetchResult();
         },
         child: WaterfallFlow.builder(
-          cacheExtent: 9999,
+          cacheExtent: MediaQuery.sizeOf(context).height,
           physics: physics,
           padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
           gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
@@ -133,8 +133,8 @@ class _TagRelatedScreenState extends BaseDynamicState<TagRelatedScreen>
     return ResponsiveAppBar(
       backgroundColor: ChewieTheme.getBackground(context),
       showBack: true,
-      titleWidget: ClickableWrapper(child:
-        ItemBuilder.buildTagItem(
+      titleWidget: ClickableWrapper(
+        child: ItemBuilder.buildTagItem(
           context,
           widget.tag,
           TagType.normal,

@@ -2,7 +2,7 @@ part of 'lottie_cupertino_refresh.dart';
 
 const double _kDefaultIndicatorRadius = 10.0;
 
-class _CustomActivityIndicator extends StatefulWidget {
+class _CustomActivityIndicator extends StatelessWidget {
   const _CustomActivityIndicator({
     super.key,
     this.color,
@@ -48,50 +48,11 @@ class _CustomActivityIndicator extends StatefulWidget {
   final Widget indicator;
 
   @override
-  State<_CustomActivityIndicator> createState() =>
-      _CustomActivityIndicatorState();
-}
-
-class _CustomActivityIndicatorState extends State<_CustomActivityIndicator>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(seconds: 1),
-      vsync: this,
-    );
-
-    if (widget.animating) {
-      _controller.repeat();
-    }
-  }
-
-  @override
-  void didUpdateWidget(_CustomActivityIndicator oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.animating != oldWidget.animating) {
-      if (widget.animating) {
-        _controller.repeat();
-      } else {
-        _controller.stop();
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return SizedBox(
-        height: widget.radius * 2,
-        width: widget.radius * 2,
-        child: widget.indicator);
+      height: radius * 2,
+      width: radius * 2,
+      child: indicator,
+    );
   }
 }

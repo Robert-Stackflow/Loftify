@@ -163,7 +163,7 @@ class RankItem {
   factory RankItem.fromJson(Map<String, dynamic> json) {
     return RankItem(
       blogId: json['blogId'],
-      icon: json['icon'],
+      icon: json['icon']?.toString() ?? "",
       img: json['img'],
       interactionCount: json['interactionCount'],
       isAuth: json['isAuth'],

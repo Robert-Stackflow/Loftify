@@ -47,7 +47,7 @@ class DropdownWrapper<T extends DropdownMixin> extends StatelessWidget {
           closedBorder: ChewieTheme.borderWithWidth(1),
           closedBorderRadius: ChewieDimens.borderRadius8,
           listItemDecoration: ListItemDecoration(
-            selectedIconColor: ChewieTheme.successColor,
+            selectedIconColor: ChewieTheme.primaryColor,
             splashColor: ChewieTheme.splashColor,
             highlightColor: ChewieTheme.highlightColor,
             selectedColor: ChewieTheme.hoverColor,

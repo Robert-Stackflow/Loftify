@@ -39,7 +39,7 @@ class PanelScreen extends StatefulWidget {
   State<PanelScreen> createState() => PanelScreenState();
 }
 
-class PanelScreenState extends BaseDynamicState<PanelScreen>
+class PanelScreenState extends BasePanelScreenState<PanelScreen>
     with
         TickerProviderStateMixin,
         AutomaticKeepAliveClientMixin,
@@ -62,8 +62,8 @@ class PanelScreenState extends BaseDynamicState<PanelScreen>
 
   @override
   void initState() {
-    updateStatusBar();
     super.initState();
+    updateStatusBar();
     darkModeController = AnimationController(vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       initPage();
@@ -132,11 +132,14 @@ class PanelScreenState extends BaseDynamicState<PanelScreen>
     if (mounted) setState(() {});
   }
 
-  updateStatusBar() {
-    SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Brightness.dark,
+  @override
+  void updateStatusBar() {
+    final brightness = appProvider.getBrightness() ??
+        WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    final systemUiOverlayStyle =
+        AppBarWrapper.systemUiOverlayStyleForBrightness(
+      brightness,
+      includeNavigationBar: true,
     );
     SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
   }
@@ -233,7 +236,10 @@ class PanelScreenState extends BaseDynamicState<PanelScreen>
             child: Navigator(
               key: panelNavigatorKey,
               onGenerateRoute: (settings) {
-                return MaterialPageRoute(builder: (context) => emptyWidget);
+                return RouteUtil.getFadeRoute(
+                  emptyWidget,
+                  duration: Duration.zero,
+                );
               },
             ),
           ),
@@ -262,10 +268,11 @@ class PanelScreenState extends BaseDynamicState<PanelScreen>
           ),
         ),
         child: MyBottomNavigationBar(
+          backgroundColor: ChewieTheme.scaffoldBackgroundColor,
           currentIndex: _currentIndex,
           selectedItemColor: Theme.of(context).primaryColor,
           showSelectedLabels: false,
-          unselectedItemColor: Colors.grey,
+          unselectedItemColor: Theme.of(context).colorScheme.onSurfaceVariant,
           showUnselectedLabels: false,
           type: BottomNavigationBarType.fixed,
           elevation: 0,
@@ -283,7 +290,7 @@ class PanelScreenState extends BaseDynamicState<PanelScreen>
             BottomNavigationBarItem(
               icon: const Icon(Icons.favorite_border_rounded, size: 28),
               activeIcon: const Icon(Icons.favorite_rounded, size: 28),
-              label: appLocalizations.dynamic,
+              label: appLocalizations.dynamicTab,
             ),
             BottomNavigationBarItem(
               icon: const Icon(Icons.person_outline_rounded, size: 28),

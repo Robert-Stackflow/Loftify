@@ -1,4 +1,3 @@
-
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:blur/blur.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +6,7 @@ import 'package:loftify/Models/suit_response.dart';
 import 'package:loftify/Widgets/BottomSheet/custom_bg_avatar_detail_bottom_sheet.dart';
 
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Suit/dress_preview_card.dart';
 import '../../l10n/l10n.dart';
 
 class CustomBgAvatarListScreen extends StatefulWidget {
@@ -14,11 +14,13 @@ class CustomBgAvatarListScreen extends StatefulWidget {
     super.key,
     this.tags = const [],
     this.blogId,
+    this.refreshOnStart = true,
   });
 
   final List<String> tags;
 
   final int? blogId;
+  final bool refreshOnStart;
 
   static const String routeName = "/info/customBgAvatarList";
 
@@ -27,7 +29,8 @@ class CustomBgAvatarListScreen extends StatefulWidget {
       CustomBgAvatarListScreenState();
 }
 
-class CustomBgAvatarListScreenState extends BaseDynamicState<CustomBgAvatarListScreen>
+class CustomBgAvatarListScreenState
+    extends BaseDynamicState<CustomBgAvatarListScreen>
     with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
@@ -37,6 +40,8 @@ class CustomBgAvatarListScreenState extends BaseDynamicState<CustomBgAvatarListS
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
   String? tag;
+
+  void callRefresh() => _refreshController.callRefresh();
 
   static buildTagBar(BuildContext context, List<String> tags, String? selected,
       Function(String? tag) onSelectedTag) {
@@ -62,9 +67,8 @@ class CustomBgAvatarListScreenState extends BaseDynamicState<CustomBgAvatarListS
           } else {
             check = selected == tags[index - 1];
           }
-          Color bg = check
-              ? Theme.of(context).primaryColor
-              : ChewieTheme.canvasColor;
+          Color bg =
+              check ? Theme.of(context).primaryColor : ChewieTheme.canvasColor;
           Color? textColor = check ? Colors.white : null;
           return Container(
             margin: const EdgeInsets.only(right: 10),
@@ -214,7 +218,7 @@ class CustomBgAvatarListScreenState extends BaseDynamicState<CustomBgAvatarListS
           }),
         Expanded(
           child: EasyRefresh.builder(
-            refreshOnStart: true,
+            refreshOnStart: widget.refreshOnStart,
             controller: _refreshController,
             onRefresh: _onRefresh,
             onLoad: _onLoad,
@@ -224,7 +228,9 @@ class CustomBgAvatarListScreenState extends BaseDynamicState<CustomBgAvatarListS
                   ? _buildBody(physics)
                   : EmptyPlaceholder(
                       text: appLocalizations.noBgAvatar,
-                      physics: physics);
+                      physics: physics,
+                      shrinkWrap: false,
+                    );
             },
           ),
         ),
@@ -238,7 +244,7 @@ class CustomBgAvatarListScreenState extends BaseDynamicState<CustomBgAvatarListS
       onLoad: _onLoad,
       child: WaterfallFlow.builder(
         physics: physics,
-        cacheExtent: 9999,
+        cacheExtent: MediaQuery.sizeOf(context).height,
         padding: const EdgeInsets.all(10),
         itemCount: _productList.length,
         gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
@@ -254,66 +260,27 @@ class CustomBgAvatarListScreenState extends BaseDynamicState<CustomBgAvatarListS
   }
 
   _buildProductItem(ProductItem item) {
-    return ClickableWrapper(child:
-      GestureDetector(
-        onTap: () {
-          BottomSheetBuilder.showBottomSheet(
-            context,
-            (_) => CustomBgAvatarDetailBottomSheet(item: item),
-            responsive: true,
-          );
-        },
-        child: Container(
-          decoration: BoxDecoration(
-            color: ChewieTheme.canvasColor,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(width: 15),
-              _buildProductBg(item),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Text(
-                  item.type == 0 ? item.product!.name : item.lootBox!.name,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.apply(fontWeightDelta: 2, fontSizeDelta: -1),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(height: 5),
-              SizedBox(
-                height: 16,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: item.tags.length,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  itemBuilder: (context, index) => Container(
-                    margin: const EdgeInsets.only(right: 5),
-                    child: RoundIconTextButton(
-                      text: "#${item.tags[index].tag}",
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 4, vertical: 0),
-                      radius: 5,
-                      textStyle: Theme.of(context).textTheme.labelSmall,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
-          ),
-        ),
-      ),
+    final title = item.type == 0 ? item.product!.name : item.lootBox!.name;
+    final tags = item.tags.take(3).map((e) => '#${e.tag}').join('  ');
+    return DressPreviewCard(
+      title: title,
+      subtitle: tags,
+      badge: item.type == 0
+          ? appLocalizations.singleSuit
+          : appLocalizations.cardPool,
+      previewPadding: EdgeInsets.zero,
+      preview: _buildProductBg(item, height: 210),
+      onTap: () {
+        BottomSheetBuilder.showBottomSheet(
+          context,
+          (_) => CustomBgAvatarDetailBottomSheet(item: item),
+          responsive: true,
+        );
+      },
     );
   }
 
-  _buildProductBg(ProductItem item) {
+  _buildProductBg(ProductItem item, {double height = 240}) {
     String bgUrl = "";
     bool isAvatar = false;
     if (item.type == 0) {
@@ -331,7 +298,10 @@ class CustomBgAvatarListScreenState extends BaseDynamicState<CustomBgAvatarListS
       }
     }
     return buildProductBg(context, bgUrl, isAvatar,
-        tag: item.type == 0 ? appLocalizations.singleSuit : appLocalizations.cardPool,
+        height: height,
+        tag: item.type == 0
+            ? appLocalizations.singleSuit
+            : appLocalizations.cardPool,
         isHero: false);
   }
 
@@ -428,13 +398,15 @@ class CustomBgAvatarListScreenState extends BaseDynamicState<CustomBgAvatarListS
       height: height,
     );
     image = isHero
-        ? ClickableWrapper(child:GestureDetector(
+        ? ClickableWrapper(
+            child: GestureDetector(
             onTap: () {
               RouteUtil.pushDialogRoute(
                 context,
                 showClose: false,
                 fullScreen: true,
                 useFade: true,
+                opaque: false,
                 HeroPhotoViewScreen(
                   imageUrls: urls ?? [url],
                   initIndex: urls != null ? urls.indexOf(url) : 0,
@@ -508,13 +480,15 @@ class CustomBgAvatarListScreenState extends BaseDynamicState<CustomBgAvatarListS
       height: height,
     );
     image = isHero
-        ? ClickableWrapper(child:GestureDetector(
+        ? ClickableWrapper(
+            child: GestureDetector(
             onTap: () {
               RouteUtil.pushDialogRoute(
                 context,
                 showClose: false,
                 fullScreen: true,
                 useFade: true,
+                opaque: false,
                 HeroPhotoViewScreen(
                   imageUrls: urls ?? [url],
                   initIndex: urls != null ? urls.indexOf(url) : 0,

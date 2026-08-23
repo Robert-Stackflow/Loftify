@@ -30,22 +30,24 @@ class BottomSheetBuilder {
     Color? backgroundColor,
     double? preferMinWidth,
   }) {
+    final navigatorContext = chewieProvider.navigatorContextOf(context);
     bool isLandScape = ResponsiveUtil.isWideDevice();
     preferMinWidth ??= responsive && isLandScape ? 450 : null;
     if (responsive && isLandScape) {
       return showGeneralDialog(
-        context: context,
+        context: navigatorContext,
         barrierDismissible: true,
         barrierColor: ChewieTheme.barrierColor,
         barrierLabel:
-            MaterialLocalizations.of(context).modalBarrierDismissLabel,
-        transitionDuration: const Duration(milliseconds: 300),
+            MaterialLocalizations.of(navigatorContext).modalBarrierDismissLabel,
+        transitionDuration: ChewieTheme.animationDuration,
         pageBuilder: (context, anim1, anim2) => const SizedBox.shrink(),
         transitionBuilder: (context, animation, secondaryAnimation, child) {
           return DialogAnimation(
             animation: animation,
             child: BottomSheetWrapperWidget(
               preferMinWidth: preferMinWidth,
+              useVerticalMargin: true,
               child: builder(context),
             ),
           );
@@ -53,13 +55,14 @@ class BottomSheetBuilder {
       );
     } else {
       return showCustomModalBottomSheet(
-        context: context,
+        context: navigatorContext,
         elevation: 0,
         enableDrag: enableDrag,
         barrierColor: ChewieTheme.barrierColor,
+        duration: ChewieTheme.animationDuration,
         backgroundColor: backgroundColor ?? ChewieTheme.canvasColor,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: BorderRadius.vertical(top: ChewieDimens.defaultRadius),
         ),
         builder: builder,
         containerWidget: (_, animation, child) => BottomSheetWrapperWidget(
@@ -68,5 +71,26 @@ class BottomSheetBuilder {
         ),
       );
     }
+  }
+
+  static Future showListBottomSheet(
+    BuildContext context,
+    WidgetBuilder builder, {
+    Color? backgroundColor,
+    ShapeBorder shape = const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: ChewieDimens.defaultRadius),
+    ),
+  }) {
+    final navigatorContext = chewieProvider.navigatorContextOf(context);
+    return showCustomModalBottomSheet(
+      context: navigatorContext,
+      elevation: 0,
+      backgroundColor:
+          backgroundColor ?? Theme.of(navigatorContext).canvasColor,
+      shape: shape,
+      builder: builder,
+      containerWidget: (_, animation, child) =>
+          BottomSheetWrapperWidget(child: child),
+    );
   }
 }

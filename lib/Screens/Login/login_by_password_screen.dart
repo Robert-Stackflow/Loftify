@@ -11,6 +11,7 @@ import 'package:loftify/Utils/hive_util.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/request_util.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Item/login_input_item.dart';
 import '../../l10n/l10n.dart';
 
 class LoginByPasswordScreen extends StatefulWidget {
@@ -25,10 +26,13 @@ class LoginByPasswordScreen extends StatefulWidget {
   State<LoginByPasswordScreen> createState() => _LoginByPasswordScreenState();
 }
 
-class _LoginByPasswordScreenState extends BaseDynamicState<LoginByPasswordScreen>
+class _LoginByPasswordScreenState
+    extends BaseDynamicState<LoginByPasswordScreen>
     with TickerProviderStateMixin {
   late TextEditingController _mobileController;
   late TextEditingController _passwordController;
+  final FocusNode _mobileFocusNode = FocusNode();
+  final FocusNode _passwordFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -39,7 +43,17 @@ class _LoginByPasswordScreenState extends BaseDynamicState<LoginByPasswordScreen
     _passwordController.text = widget.initPassword ?? defaultPassword;
   }
 
+  @override
+  void dispose() {
+    _mobileController.dispose();
+    _passwordController.dispose();
+    _mobileFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    super.dispose();
+  }
+
   void _login() {
+    FocusManager.instance.primaryFocus?.unfocus();
     String mobile = _mobileController.text;
     String password = _passwordController.text;
     if (mobile.isEmpty || password.isEmpty) {
@@ -57,8 +71,10 @@ class _LoginByPasswordScreenState extends BaseDynamicState<LoginByPasswordScreen
           await RequestUtil.clearCookie();
           await ChewieHiveUtil.put(HiveUtil.userIdKey, loginResponse.userid);
           await ChewieHiveUtil.put(HiveUtil.tokenKey, loginResponse.token);
-          await ChewieHiveUtil.put(HiveUtil.deviceIdKey, loginResponse.deviceid);
-          await ChewieHiveUtil.put(HiveUtil.tokenTypeKey, TokenType.password.index);
+          await ChewieHiveUtil.put(
+              HiveUtil.deviceIdKey, loginResponse.deviceid);
+          await ChewieHiveUtil.put(
+              HiveUtil.tokenTypeKey, TokenType.password.index);
           mainScreenState?.login();
         }
       } catch (e, t) {
@@ -72,10 +88,14 @@ class _LoginByPasswordScreenState extends BaseDynamicState<LoginByPasswordScreen
     return Container(
       color: Colors.transparent,
       child: Scaffold(
-        resizeToAvoidBottomInset: false,
+        resizeToAvoidBottomInset: true,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: ResponsiveAppBar(
           title: appLocalizations.loginByPassword,
+          showBack: !ResponsiveUtil.isLandscapeLayout(),
+          leadingIcon: Icons.close_rounded,
+          onTapBack: () => Navigator.maybeOf(context)?.maybePop(),
+          showBorder: false,
           titleLeftMargin: ResponsiveUtil.isLandscapeLayout() ? 15 : 5,
         ),
         body: Container(
@@ -87,10 +107,13 @@ class _LoginByPasswordScreenState extends BaseDynamicState<LoginByPasswordScreen
                 child: ListView(
                   children: [
                     const SizedBox(height: 50),
-                    InputItem(
+                    LoginInputItem(
                       hint: appLocalizations.inputPhone,
                       textInputAction: TextInputAction.next,
                       controller: _mobileController,
+                      focusNode: _mobileFocusNode,
+                      autofillHints: const [AutofillHints.telephoneNumber],
+                      onSubmitted: (_) => _passwordFocusNode.requestFocus(),
                       leadingConfig: InputItemLeadingTailingConfig(
                         type: InputItemLeadingTailingType.icon,
                         icon: Icons.phone_android_rounded,
@@ -100,9 +123,12 @@ class _LoginByPasswordScreenState extends BaseDynamicState<LoginByPasswordScreen
                       ),
                       keyboardType: TextInputType.number,
                     ),
-                    InputItem(
+                    LoginInputItem(
                       hint: appLocalizations.inputPassword,
-                      textInputAction: TextInputAction.next,
+                      textInputAction: TextInputAction.done,
+                      focusNode: _passwordFocusNode,
+                      autofillHints: const [AutofillHints.password],
+                      onSubmitted: (_) => _login(),
                       leadingConfig: InputItemLeadingTailingConfig(
                         type: InputItemLeadingTailingType.icon,
                         icon: Icons.verified_outlined,

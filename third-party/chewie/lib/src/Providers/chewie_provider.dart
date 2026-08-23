@@ -9,7 +9,7 @@ bool haveMigratedToSupportDirectory = false;
 
 class ChewieProvider with ChangeNotifier {
   static const Size defaultWindowSize = Size(1280, 720);
-  static const Size minimumWindowSize = Size(1280, 640);
+  static const Size minimumWindowSize = Size(800, 640);
 
   RouteObserver routeObserver = RouteObserver();
 
@@ -18,6 +18,11 @@ class ChewieProvider with ChangeNotifier {
   NavigatorState? get globalNavigatorState => globalNavigatorKey.currentState;
 
   BuildContext get globalNavigatorContext => globalNavigatorKey.currentContext!;
+
+  BuildContext navigatorContextOf(BuildContext context) {
+    if (Navigator.maybeOf(context) != null) return context;
+    return globalNavigatorState?.context ?? context;
+  }
 
   late BuildContext _rootContext;
 
@@ -117,11 +122,11 @@ class ChewieProvider with ChangeNotifier {
     ];
   }
 
-  int? _fontSize = ChewieHiveUtil.getFontSize();
+  int _fontSize = ChewieHiveUtil.getFontSize();
 
-  int? get fontSize => _fontSize;
+  int get fontSize => _fontSize;
 
-  set fontSize(int? value) {
+  set fontSize(int value) {
     if (value != _fontSize) {
       _fontSize = value;
       notifyListeners();

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,7 +18,7 @@ import '../../Screens/Login/login_by_captcha_screen.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/asset_util.dart';
 import '../../Utils/enums.dart';
-import '../../Utils/utils.dart';
+import '../PostDetail/comment_item.dart';
 import '../../l10n/l10n.dart';
 import 'item_builder.dart';
 
@@ -37,234 +39,77 @@ class LoftifyItemBuilder {
     EdgeInsets? l2Padding,
     required int writerId,
   }) {
-    String richContent = comment.content;
-    for (var e in comment.emotes) {
-      String img =
-          '<img src="${e.url}" style="height:50px;width:50px;" alt=""/>';
-      richContent = richContent.replaceAll(e.name, img);
-    }
-    return GestureDetector(
+    final remainingReplies =
+        max(0, comment.l2Count - comment.l2Comments.length);
+    return CommentItem(
+      margin: padding,
       onTap: onTap,
-      child: Container(
-        padding:
-            padding ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClickableGestureDetector(
-              onTap: () {
-                panelScreenState?.pushPage(
-                  UserDetailScreen(
-                      blogId: comment.publisherBlogInfo.blogId,
-                      blogName: comment.publisherBlogInfo.blogName),
-                );
-              },
-              child: ItemBuilder.buildAvatar(
-                context: context,
-                imageUrl: comment.publisherBlogInfo.bigAvaImg,
-                showBorder: true,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ClickableGestureDetector(
-                              onTap: () {
-                                panelScreenState?.pushPage(
-                                  UserDetailScreen(
-                                      blogId: comment.publisherBlogInfo.blogId,
-                                      blogName:
-                                          comment.publisherBlogInfo.blogName),
-                                );
-                              },
-                              child: Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      comment.publisherBlogInfo.blogNickName,
-                                      style:
-                                          Theme.of(context).textTheme.bodySmall,
-                                    ),
-                                  ),
-                                  if (writerId ==
-                                      comment.publisherBlogInfo.blogId)
-                                    const SizedBox(width: 3),
-                                  if (writerId ==
-                                      comment.publisherBlogInfo.blogId)
-                                    RoundIconTextButton(
-                                      text: appLocalizations.author,
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 3, vertical: 2),
-                                      radius: 3,
-                                      color: Theme.of(context).primaryColor,
-                                      fontSizeDelta: -2,
-                                    ),
-                                  if (comment.top == 1)
-                                    const SizedBox(width: 3),
-                                  if (comment.top == 1)
-                                    RoundIconTextButton(
-                                      text: appLocalizations.pin,
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 3, vertical: 2),
-                                      radius: 3,
-                                      color: ChewieColors.likeButtonColor,
-                                      fontSizeDelta: -2,
-                                    ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            ItemBuilder.buildCopyable(
-                              context,
-                              text: comment.content,
-                              toastText: appLocalizations.haveCopiedComment(
-                                  comment.publisherBlogInfo.blogNickName),
-                              child: CustomHtmlWidget(
-                                content: richContent,
-                                parseImage: false,
-                                showLoading: false,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            Row(
-                              children: [
-                                Text(
-                                  TimeUtil.formatTimestamp(comment.publishTime),
-                                  style:
-                                      Theme.of(context).textTheme.labelMedium,
-                                ),
-                                if (StringUtil.isNotEmpty(comment.ipLocation))
-                                  LoftifyItemBuilder.buildDot(
-                                    context,
-                                    style:
-                                        Theme.of(context).textTheme.labelMedium,
-                                  ),
-                                if (StringUtil.isNotEmpty(comment.ipLocation))
-                                  Text(
-                                    comment.ipLocation,
-                                    style:
-                                        Theme.of(context).textTheme.labelMedium,
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      LoftifyItemBuilder.buildLikedButton(
-                        context,
-                        isLiked: comment.liked,
-                        size: 20,
-                        iconSize: 16,
-                        defaultColor:
-                            Theme.of(context).textTheme.labelMedium?.color,
-                        countStyle: Theme.of(context).textTheme.labelSmall,
-                        position: CountPostion.bottom,
-                        showCount: true,
-                        likeCount: comment.likeCount,
-                        zeroPlaceHolder: "",
-                        onTap: (_) async {
-                          HapticFeedback.mediumImpact();
-                          await PostApi.likeOrUnlikeComment(
-                            isLike: !comment.liked,
-                            postId: comment.postId,
-                            blogId: comment.blogId,
-                            commentId: comment.id,
-                          ).then((value) {
-                            if (value['meta']['status'] != 200) {
-                              IToast.showTop(value['meta']['desc'] ??
-                                  value['meta']['msg']);
-                            } else {
-                              comment.liked = !comment.liked;
-                              comment.likeCount += comment.liked ? 1 : -1;
-                            }
-                          });
-                          return Future.sync(() => comment.liked);
-                        },
-                      ),
-                    ],
-                  ),
-                  if (comment.l2Comments.isNotEmpty)
-                    ...List.generate(
-                      comment.l2Comments.length,
-                      (l2Index) => buildL2CommentRow(
-                        context,
-                        padding: l2Padding,
-                        comment.l2Comments[l2Index],
-                        writerId: writerId,
-                      ),
+      avatar: _buildCommentAvatar(context, comment, size: 38),
+      header: _buildCommentHeader(context, comment, writerId: writerId),
+      content: _buildCommentContent(context, comment),
+      metadata: _buildCommentMetadata(context, comment),
+      trailing: _buildCommentLikeButton(context, comment),
+      replies: [
+        for (final reply in comment.l2Comments)
+          buildL2CommentRow(
+            context,
+            reply,
+            padding: l2Padding,
+            writerId: writerId,
+          ),
+      ],
+      footer: remainingReplies == 0
+          ? null
+          : comment.l2CommentLoading
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: chewieProvider.loadingWidgetBuilder(16, false),
                     ),
-                  if (comment.l2Count - comment.l2Comments.length > 0)
-                    const SizedBox(height: 5),
-                  if (comment.l2Count - comment.l2Comments.length > 0 &&
-                      comment.l2CommentLoading)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Container(
-                          alignment: Alignment.center,
-                          width: 12,
-                          height: 12,
-                          child: CircularProgressIndicator(
+                    const SizedBox(width: 6),
+                    Text(
+                      appLocalizations.loading,
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                  ],
+                )
+              : Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  child: InkWell(
+                    onTap: () => onL2CommentTap?.call(comment),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 7,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              appLocalizations.moreComments(remainingReplies),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.labelMedium,
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            size: 17,
                             color:
                                 Theme.of(context).textTheme.labelMedium?.color,
-                            strokeWidth: 1.2,
                           ),
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          appLocalizations.loading,
-                          style: Theme.of(context).textTheme.labelMedium,
-                        ),
-                      ],
-                    ),
-                  if (comment.l2Count - comment.l2Comments.length > 0 &&
-                      !comment.l2CommentLoading)
-                    GestureDetector(
-                      onTap: () => onL2CommentTap?.call(comment),
-                      child: ClickableWrapper(
-                        child: Text.rich(
-                          style: Theme.of(context).textTheme.labelMedium,
-                          TextSpan(
-                            style: Theme.of(context).textTheme.labelMedium,
-                            children: [
-                              TextSpan(
-                                text: appLocalizations.moreComments(comment.l2Count -
-                                    comment.l2Comments.length),
-                                style: Theme.of(context).textTheme.labelMedium,
-                              ),
-                              WidgetSpan(
-                                child: Icon(
-                                  Icons.keyboard_arrow_down_rounded,
-                                  size: 16,
-                                  color: Theme.of(context)
-                                      .textTheme
-                                      .labelMedium
-                                      ?.color,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        ],
                       ),
                     ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+                  ),
+                ),
     );
   }
 
@@ -275,136 +120,201 @@ class LoftifyItemBuilder {
     EdgeInsets? padding,
     required int writerId,
   }) {
-    String richContent = comment.content;
-    for (var e in comment.emotes) {
-      String img =
-          '<img src="${e.url}" style="height:50px;width:50px;" alt=""/>';
-      richContent = richContent.replaceAll(e.name, img);
-    }
-    return GestureDetector(
+    return CommentItem(
+      nested: true,
+      margin: padding,
       onTap: onTap,
-      child: Container(
-        padding: padding ?? const EdgeInsets.only(top: 12, right: 4),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ClickableGestureDetector(
-                    onTap: () {
-                      panelScreenState?.pushPage(
-                        UserDetailScreen(
-                            blogId: comment.publisherBlogInfo.blogId,
-                            blogName: comment.publisherBlogInfo.blogName),
-                      );
-                    },
-                    child: Row(
-                      children: [
-                        ItemBuilder.buildAvatar(
-                          context: context,
-                          imageUrl: comment.publisherBlogInfo.bigAvaImg,
-                          showBorder: true,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          comment.publisherBlogInfo.blogNickName,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        if (writerId == comment.publisherBlogInfo.blogId)
-                          const SizedBox(width: 3),
-                        if (writerId == comment.publisherBlogInfo.blogId)
-                          RoundIconTextButton(
-                            text: appLocalizations.author,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 3, vertical: 2),
-                            radius: 3,
-                            color: Theme.of(context).primaryColor,
-                            fontSizeDelta: -2,
-                          ),
-                        if (comment.top == 1) const SizedBox(width: 3),
-                        if (comment.top == 1)
-                          RoundIconTextButton(
-                            text: appLocalizations.pin,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 3, vertical: 2),
-                            radius: 3,
-                            color: ChewieColors.likeButtonColor,
-                            fontSizeDelta: -2,
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  ItemBuilder.buildCopyable(
-                    context,
-                    text: comment.content,
-                    toastText: appLocalizations.haveCopiedComment(
-                        comment.publisherBlogInfo.blogNickName),
-                    child: CustomHtmlWidget(
-                      content: richContent,
-                      showLoading: false,
-                      parseImage: false,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Row(
-                    children: [
-                      Text(
-                        TimeUtil.formatTimestamp(comment.publishTime),
-                        style: Theme.of(context).textTheme.labelMedium,
+      avatar: _buildCommentAvatar(context, comment, size: 28),
+      header: _buildCommentHeader(context, comment, writerId: writerId),
+      content: _buildCommentContent(context, comment),
+      metadata: _buildCommentMetadata(context, comment),
+      trailing: _buildCommentLikeButton(context, comment),
+    );
+  }
+
+  static Widget _buildCommentAvatar(
+    BuildContext context,
+    Comment comment, {
+    required double size,
+  }) {
+    return ClickableGestureDetector(
+      onTap: () => _openCommentAuthor(comment),
+      child: ItemBuilder.buildAvatar(
+        context: context,
+        imageUrl: comment.publisherBlogInfo.bigAvaImg,
+        showBorder: true,
+        size: size,
+      ),
+    );
+  }
+
+  static Widget _buildCommentHeader(
+    BuildContext context,
+    Comment comment, {
+    required int writerId,
+  }) {
+    final replyName = comment.replyBlogInfo?.blogNickName;
+    return ClickableGestureDetector(
+      onTap: () => _openCommentAuthor(comment),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  comment.publisherBlogInfo.blogNickName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.78),
                       ),
-                      if (StringUtil.isNotEmpty(comment.ipLocation))
-                        LoftifyItemBuilder.buildDot(
-                          context,
-                          style: Theme.of(context).textTheme.labelMedium,
-                        ),
-                      if (StringUtil.isNotEmpty(comment.ipLocation))
-                        Text(
-                          comment.ipLocation,
-                          style: Theme.of(context).textTheme.labelMedium,
-                        ),
-                    ],
-                  ),
-                ],
+                ),
               ),
-            ),
-            const SizedBox(width: 16),
-            LoftifyItemBuilder.buildLikedButton(
-              context,
-              isLiked: comment.liked,
-              size: 20,
-              iconSize: 16,
-              defaultColor: Theme.of(context).textTheme.labelMedium?.color,
-              countStyle: Theme.of(context).textTheme.labelSmall,
-              position: CountPostion.bottom,
-              showCount: true,
-              likeCount: comment.likeCount,
-              zeroPlaceHolder: "",
-              onTap: (_) async {
-                HapticFeedback.mediumImpact();
-                await PostApi.likeOrUnlikeComment(
-                  isLike: !comment.liked,
-                  postId: comment.postId,
-                  blogId: comment.blogId,
-                  commentId: comment.id,
-                ).then((value) {
-                  if (value['meta']['status'] != 200) {
-                    IToast.showTop(
-                        value['meta']['desc'] ?? value['meta']['msg']);
-                  } else {
-                    comment.liked = !comment.liked;
-                    comment.likeCount += comment.liked ? 1 : -1;
-                  }
-                });
-                return Future.sync(() => comment.liked);
-              },
+              if (writerId == comment.publisherBlogInfo.blogId) ...[
+                const SizedBox(width: 4),
+                _buildCommentBadge(
+                  context,
+                  appLocalizations.author,
+                  Theme.of(context).primaryColor,
+                ),
+              ],
+              if (comment.top == 1) ...[
+                const SizedBox(width: 4),
+                _buildCommentBadge(
+                  context,
+                  appLocalizations.pin,
+                  ChewieColors.likeButtonColor,
+                ),
+              ],
+            ],
+          ),
+          if (StringUtil.isNotEmpty(replyName)) ...[
+            const SizedBox(height: 2),
+            Text(
+              appLocalizations.replyTo(replyName!),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.52),
+                  ),
             ),
           ],
-        ),
+        ],
+      ),
+    );
+  }
+
+  static Widget _buildCommentBadge(
+    BuildContext context,
+    String text,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Text(
+        text,
+        maxLines: 1,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
+              fontSize: 10,
+            ),
+      ),
+    );
+  }
+
+  static Widget _buildCommentContent(BuildContext context, Comment comment) {
+    var richContent = comment.content;
+    for (final emote in comment.emotes) {
+      final image =
+          '<img src="${emote.url}" style="height:38px;width:38px;" alt=""/>';
+      richContent = richContent.replaceAll(emote.name, image);
+    }
+    return ItemBuilder.buildCopyable(
+      context,
+      text: comment.content,
+      toastText: appLocalizations.haveCopiedComment(
+        comment.publisherBlogInfo.blogNickName,
+      ),
+      child: CustomHtmlWidget(
+        content: richContent,
+        parseImage: false,
+        showLoading: false,
+        style: Theme.of(context).textTheme.bodyMedium,
+      ),
+    );
+  }
+
+  static Widget _buildCommentMetadata(BuildContext context, Comment comment) {
+    final style = Theme.of(context).textTheme.labelSmall?.copyWith(
+          color:
+              Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.56),
+        );
+    return Wrap(
+      spacing: 5,
+      runSpacing: 3,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(TimeUtil.formatTimestamp(comment.publishTime), style: style),
+        if (StringUtil.isNotEmpty(comment.ipLocation)) Text('·', style: style),
+        if (StringUtil.isNotEmpty(comment.ipLocation))
+          Text(comment.ipLocation, style: style),
+      ],
+    );
+  }
+
+  static Widget _buildCommentLikeButton(
+    BuildContext context,
+    Comment comment,
+  ) {
+    return LoftifyItemBuilder.buildLikedButton(
+      context,
+      isLiked: comment.liked,
+      size: 22,
+      iconSize: 17,
+      defaultColor: Theme.of(context).textTheme.labelMedium?.color,
+      countStyle: Theme.of(context).textTheme.labelSmall,
+      position: CountPostion.bottom,
+      showCount: true,
+      likeCount: comment.likeCount,
+      zeroPlaceHolder: '',
+      onTap: (_) async {
+        HapticFeedback.mediumImpact();
+        final value = await PostApi.likeOrUnlikeComment(
+          isLike: !comment.liked,
+          postId: comment.postId,
+          blogId: comment.blogId,
+          commentId: comment.id,
+        );
+        if (value['meta']['status'] != 200) {
+          IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+        } else {
+          comment.liked = !comment.liked;
+          comment.likeCount += comment.liked ? 1 : -1;
+        }
+        return comment.liked;
+      },
+    );
+  }
+
+  static void _openCommentAuthor(Comment comment) {
+    panelScreenState?.pushPage(
+      UserDetailScreen(
+        blogId: comment.publisherBlogInfo.blogId,
+        blogName: comment.publisherBlogInfo.blogName,
       ),
     );
   }
@@ -415,82 +325,101 @@ class LoftifyItemBuilder {
     FollowingUserItem item, {
     Function()? onFollowOrUnFollow,
   }) {
-    return ClickableGestureDetector(
-      onTap: () {
-        panelScreenState?.pushPage(
-          UserDetailScreen(
-            blogId: item.blogInfo.blogId,
-            blogName: item.blogInfo.blogName,
-          ),
-        );
-      },
-      child: Container(
-        color: Colors.transparent,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-        child: Row(
-          children: [
-            ItemBuilder.buildAvatar(
-              context: context,
-              size: 40,
-              imageUrl: item.blogInfo.bigAvaImg,
-              tagPrefix: "$index",
-              showDetailMode: ShowDetailMode.not,
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: theme.dividerColor.withValues(alpha: 0.65),
+          width: 0.6,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
+          panelScreenState?.pushPage(
+            UserDetailScreen(
+              blogId: item.blogInfo.blogId,
+              blogName: item.blogInfo.blogName,
             ),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.blogInfo.blogNickName,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  if (item.blogInfo.selfIntro.isNotEmpty)
-                    const SizedBox(height: 5),
-                  if (item.blogInfo.selfIntro.isNotEmpty)
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          child: Row(
+            children: [
+              ItemBuilder.buildAvatar(
+                context: context,
+                size: 48,
+                imageUrl: item.blogInfo.bigAvaImg,
+                tagPrefix: "relation-${item.blogInfo.blogId}",
+                showDetailMode: ShowDetailMode.not,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      item.blogInfo.selfIntro,
-                      style: Theme.of(context).textTheme.labelMedium,
+                      item.blogInfo.blogNickName,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                ],
-              ),
-            ),
-            if (item.follower)
-              Container(
-                margin: const EdgeInsets.only(right: 10),
-                child: Icon(
-                  Icons.star_rate_rounded,
-                  size: 22,
-                  color: ChewieColors.getHotTagTextColor(context),
+                    const SizedBox(height: 3),
+                    Text(
+                      'ID: ${item.blogInfo.blogName}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (item.blogInfo.selfIntro.isNotEmpty)
+                      const SizedBox(height: 3),
+                    if (item.blogInfo.selfIntro.isNotEmpty)
+                      Text(
+                        item.blogInfo.selfIntro,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
                 ),
               ),
-            LoftifyItemBuilder.buildFramedDoubleButton(
-              context: context,
-              isFollowed: item.following,
-              positiveText:
-                  item.follower ? appLocalizations.followEach : appLocalizations.followed,
-              onTap: () {
-                UserApi.followOrUnfollow(
-                  isFollow: !item.following,
-                  blogId: item.blogInfo.blogId,
-                  blogName: item.blogInfo.blogName,
-                ).then((value) {
-                  if (value['meta']['status'] != 200) {
-                    IToast.showTop(
-                        value['meta']['desc'] ?? value['meta']['msg']);
-                  } else {
-                    item.following = !item.following;
-                    IToast.showTop(item.following
-                        ? appLocalizations.followed
-                        : appLocalizations.followEach);
-                    onFollowOrUnFollow?.call();
-                  }
-                });
-              },
-            ),
-          ],
+              const SizedBox(width: 8),
+              LoftifyItemBuilder.buildFramedDoubleButton(
+                context: context,
+                isFollowed: item.following,
+                positiveText: item.follower
+                    ? appLocalizations.followEach
+                    : appLocalizations.followed,
+                onTap: () {
+                  UserApi.followOrUnfollow(
+                    isFollow: !item.following,
+                    blogId: item.blogInfo.blogId,
+                    blogName: item.blogInfo.blogName,
+                  ).then((value) {
+                    if (value['meta']['status'] != 200) {
+                      IToast.showTop(
+                          value['meta']['desc'] ?? value['meta']['msg']);
+                    } else {
+                      item.following = !item.following;
+                      IToast.showTop(item.following
+                          ? appLocalizations.followed
+                          : appLocalizations.followEach);
+                      onFollowOrUnFollow?.call();
+                    }
+                  });
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -753,12 +682,11 @@ class LoftifyItemBuilder {
                   isFollowed
                       ? positiveText ?? appLocalizations.followed
                       : negtiveText ?? appLocalizations.follow,
-                  style: TextStyle(
-                    color: isFollowed
-                        ? Theme.of(context).textTheme.labelSmall?.color
-                        : Theme.of(context).primaryColor,
-                    fontSize: 12,
-                  ),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: isFollowed
+                            ? Theme.of(context).colorScheme.onSurfaceVariant
+                            : Theme.of(context).primaryColor,
+                      ),
                 ),
               ],
             ),
@@ -1126,38 +1054,56 @@ class LoftifyItemBuilder {
 
   static buildUserRow(BuildContext context, SearchBlogData blog,
       {Function()? onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        color: Colors.transparent,
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        child: Row(
-          children: [
-            ItemBuilder.buildAvatar(
-              context: context,
-              imageUrl: blog.blogInfo.bigAvaImg,
-              showLoading: false,
-              size: 40,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    blog.blogInfo.blogNickName,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  Text(
-                    "ID: ${blog.blogInfo.blogName}${blog.blogCount != null && blog.blogCount!.publicPostCount > 0 ? "   ${appLocalizations.article}: ${blog.blogCount!.publicPostCount}" : ""}${blog.blogCount != null && blog.blogCount!.followerCount > 0 ? "   ${appLocalizations.follower}: ${blog.blogCount!.followerCount}" : ""}",
-                    style: Theme.of(context).textTheme.bodySmall,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: theme.dividerColor.withValues(alpha: 0.65),
+          width: 0.6,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+          child: Row(
+            children: [
+              ItemBuilder.buildAvatar(
+                context: context,
+                imageUrl: blog.blogInfo.bigAvaImg,
+                showLoading: false,
+                size: 48,
               ),
-            ),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      blog.blogInfo.blogNickName,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "ID: ${blog.blogInfo.blogName}${blog.blogCount != null && blog.blogCount!.publicPostCount > 0 ? "   ${appLocalizations.article}: ${blog.blogCount!.publicPostCount}" : ""}${blog.blogCount != null && blog.blogCount!.followerCount > 0 ? "   ${appLocalizations.follower}: ${blog.blogCount!.followerCount}" : ""}",
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -39,7 +39,8 @@ class PinVerifyScreenState extends BaseWindowState<PinVerifyScreen>
   late final bool _isUseBiometric =
       ChewieHiveUtil.getBool(HiveUtil.enableBiometricKey);
   late final GestureNotifier _notifier = GestureNotifier(
-      status: GestureStatus.verify, gestureText: appLocalizations.verifyGestureLock);
+      status: GestureStatus.verify,
+      gestureText: appLocalizations.verifyGestureLock);
   final GlobalKey<GestureState> _gestureUnlockView = GlobalKey();
 
   @override
@@ -127,10 +128,13 @@ class PinVerifyScreenState extends BaseWindowState<PinVerifyScreen>
                   size: min(MediaQuery.sizeOf(context).width, 400),
                   padding: 60,
                   roundSpace: 40,
-                  defaultColor: Colors.grey.withOpacity(0.5),
+                  defaultColor: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant
+                      .withValues(alpha: 0.5),
                   selectedColor: Theme.of(context).primaryColor,
-                  failedColor: Colors.redAccent,
-                  disableColor: Colors.grey,
+                  failedColor: Theme.of(context).colorScheme.error,
+                  disableColor: Theme.of(context).colorScheme.onSurfaceVariant,
                   solidRadiusRatio: 0.3,
                   lineWidth: 2,
                   touchRadiusRatio: 0.3,

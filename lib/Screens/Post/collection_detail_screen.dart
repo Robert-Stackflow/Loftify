@@ -14,6 +14,7 @@ import '../../Models/recommend_response.dart';
 import '../../Utils/asset_util.dart';
 import '../../Utils/enums.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
+import '../../Widgets/PostDetail/detail_bottom_bar.dart';
 import '../../l10n/l10n.dart';
 
 class CollectionDetailScreen extends StatefulWidget {
@@ -73,9 +74,10 @@ class CollectionDetailScreenState
   }
 
   _fetchData({bool refresh = false, bool showLoading = false}) async {
-    if (loading) return;
+    if (loading || (!refresh && noMore)) return IndicatorResult.none;
     if (refresh) noMore = false;
-    if (showLoading) CustomLoadingDialog.showLoading(title: appLocalizations.loading);
+    if (showLoading)
+      CustomLoadingDialog.showLoading(title: appLocalizations.loading);
     loading = true;
     int offset = refresh ? 0 : posts.length;
     return await CollectionApi.getCollectionDetail(
@@ -112,7 +114,7 @@ class CollectionDetailScreenState
           posts.addAll(newPosts);
           Map<String, int> monthCount = {};
           for (var e in posts) {
-            String yearMonth = TimeUtil.formatYearMonth(e.post!.publishTime);
+            String yearMonth = formatLocalizedYearMonth(e.post!.publishTime);
             monthCount.putIfAbsent(yearMonth, () => 0);
             monthCount[yearMonth] = monthCount[yearMonth]! + 1;
           }
@@ -126,8 +128,9 @@ class CollectionDetailScreenState
             ));
           }
           if (mounted) setState(() {});
-          if (posts.length >= postCollection!.postCount || newPosts.isEmpty) {
-            noMore = true;
+          noMore =
+              posts.length >= postCollection!.postCount || newPosts.isEmpty;
+          if (noMore && !refresh) {
             return IndicatorResult.noMore;
           } else {
             return IndicatorResult.success;
@@ -146,7 +149,7 @@ class CollectionDetailScreenState
   }
 
   _onRefresh() async {
-    await _fetchData(refresh: true);
+    return await _fetchData(refresh: true);
   }
 
   _onLoad() async {
@@ -161,23 +164,44 @@ class CollectionDetailScreenState
   }
 
   @override
+  void dispose() {
+    _refreshController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ChewieTheme.getBackground(context),
       appBar: ResponsiveUtil.isLandscapeLayout()
-          ? ResponsiveAppBar(showBack: true, title: appLocalizations.collectionDetail)
+          ? ResponsiveAppBar(
+              showBack: true, title: appLocalizations.collectionDetail)
           : null,
       bottomNavigationBar:
           blogInfo != null && postCollection != null ? _buildFooter() : null,
       body: blogInfo != null && postCollection != null
-          ? NestedScrollView(
-              headerSliverBuilder: (_, __) => _buildHeaderSlivers(),
-              body: _buildNineGridGroup())
+          ? _buildScrollableBody()
           : const LoadingWidget(background: Colors.transparent),
     );
   }
 
-  _buildHeaderSlivers() {
+  Widget _buildScrollableBody() {
+    return EasyRefresh.builder(
+      controller: _refreshController,
+      onRefresh: _onRefresh,
+      onLoad: noMore ? null : _onLoad,
+      triggerAxis: Axis.vertical,
+      childBuilder: (context, physics) => CustomScrollView(
+        physics: physics,
+        slivers: [
+          ..._buildHeaderSlivers(),
+          ..._buildPostSlivers(),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildHeaderSlivers() {
     if (!ResponsiveUtil.isLandscapeLayout()) {
       return <Widget>[
         SliverAppBarWrapper(
@@ -240,7 +264,7 @@ class CollectionDetailScreenState
           ),
         ),
         SliverPersistentHeader(
-          key: ValueKey(StringUtil.getRandomString()),
+          key: const ValueKey('collection-detail-fixed-header'),
           pinned: true,
           delegate: SliverAppBarDelegate(
             radius: 0,
@@ -290,7 +314,9 @@ class CollectionDetailScreenState
                 const SizedBox(width: 5),
                 ItemBuilder.buildIconTextButton(
                   context,
-                  text: isOldest ? appLocalizations.order : appLocalizations.reverseOrder,
+                  text: isOldest
+                      ? appLocalizations.order
+                      : appLocalizations.reverseOrder,
                   icon: AssetUtil.load(
                     isOldest
                         ? AssetUtil.orderDownDarkIcon
@@ -322,68 +348,54 @@ class CollectionDetailScreenState
   }
 
   Widget _buildFooter() {
-    return Container(
-      height: 65,
-      width: MediaQuery.sizeOf(context).width,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.max,
-        children: [
-          Expanded(
-            child: RoundIconTextButton(
-              text: subscribed
-                  ? appLocalizations.unsubscribe
-                  : appLocalizations.subscribeCollection,
-              background: Theme.of(context).primaryColor.withAlpha(40),
-              padding: const EdgeInsets.symmetric(vertical: 15),
-              color: Theme.of(context).primaryColor,
-              onPressed: () {
-                HapticFeedback.mediumImpact();
-                CollectionApi.subscribeOrUnSubscribe(
-                  collectionId: widget.collectionId,
-                  isSubscribe: !subscribed,
-                ).then((value) {
-                  if (value['meta']['status'] != 200) {
-                    IToast.showTop(
-                        value['meta']['desc'] ?? value['meta']['msg']);
-                  } else {
-                    subscribed = !subscribed;
-                    setState(() {});
-                  }
-                });
-              },
-              fontSizeDelta: 2,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: RoundIconTextButton(
-              text: appLocalizations.continueRead,
-              background: Theme.of(context).primaryColor,
-              padding: const EdgeInsets.symmetric(vertical: 15),
-              onPressed: () {
-                if (posts.isNotEmpty) {
-                  RouteUtil.pushPanelCupertinoRoute(
-                    context,
-                    PostDetailScreen(
-                      postDetailData: posts[0],
-                      isArticle: CommonInfoItemBuilder.getPostType(posts[0]) ==
-                          PostType.article,
-                    ),
-                  );
-                } else {
-                  IToast.showTop(appLocalizations.noPostInCollection);
-                }
-              },
-              fontSizeDelta: 2,
-            ),
-          ),
-        ],
-      ),
+    return DetailBottomBar(
+      horizontalPadding: 12,
+      spacing: 10,
+      children: [
+        RoundIconTextButton(
+          text: subscribed
+              ? appLocalizations.unsubscribe
+              : appLocalizations.subscribeCollection,
+          background: Theme.of(context).primaryColor.withAlpha(40),
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          color: Theme.of(context).primaryColor,
+          onPressed: () {
+            HapticFeedback.mediumImpact();
+            CollectionApi.subscribeOrUnSubscribe(
+              collectionId: widget.collectionId,
+              isSubscribe: !subscribed,
+            ).then((value) {
+              if (value['meta']['status'] != 200) {
+                IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+              } else {
+                subscribed = !subscribed;
+                setState(() {});
+              }
+            });
+          },
+          fontSizeDelta: 2,
+        ),
+        RoundIconTextButton(
+          text: appLocalizations.continueRead,
+          background: Theme.of(context).primaryColor,
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          onPressed: () {
+            if (posts.isNotEmpty) {
+              RouteUtil.pushPanelCupertinoRoute(
+                context,
+                PostDetailScreen(
+                  postDetailData: posts[0],
+                  isArticle: CommonInfoItemBuilder.getPostType(posts[0]) ==
+                      PostType.article,
+                ),
+              );
+            } else {
+              IToast.showTop(appLocalizations.noPostInCollection);
+            }
+          },
+          fontSizeDelta: 2,
+        ),
+      ],
     );
   }
 
@@ -516,7 +528,7 @@ class CollectionDetailScreenState
     );
   }
 
-  Widget _buildNineGridGroup() {
+  List<Widget> _buildPostSlivers() {
     List<Widget> widgets = [];
     int startIndex = 0;
     for (var e in _archiveDataList) {
@@ -530,34 +542,25 @@ class CollectionDetailScreenState
       }
       widgets.add(ItemBuilder.buildTitle(
         context,
-        title: appLocalizations.descriptionWithPostCount(e.desc, e.count.toString()),
+        title: appLocalizations.descriptionWithPostCount(
+            e.desc, e.count.toString()),
         topMargin: 16,
         bottomMargin: 0,
       ));
       widgets.add(_buildNineGrid(startIndex, count));
       startIndex += e.count;
     }
-    return EasyRefresh.builder(
-      controller: _refreshController,
-      onRefresh: _onRefresh,
-      onLoad: _onLoad,
-      childBuilder: (context, physics) {
-        return Container(
-          height: MediaQuery.sizeOf(context).height,
-          color: ChewieTheme.getBackground(context),
-          child: LoadMoreNotification(
-            child: ListView(
-              physics: physics,
-              shrinkWrap: true,
-              padding: const EdgeInsets.only(left: 10, right: 10, bottom: 20),
-              children: widgets,
-            ),
-            noMore: noMore,
-            onLoad: _onLoad,
-          ),
-        );
-      },
-    );
+    if (widgets.isEmpty) {
+      return [
+        SliverEmptyPlaceholder(text: appLocalizations.noArticle),
+      ];
+    }
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.only(left: 10, right: 10, bottom: 20),
+        sliver: SliverList.list(children: widgets),
+      ),
+    ];
   }
 
   Widget _buildNineGrid(int startIndex, int count) {

@@ -1,3 +1,4 @@
+import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 
 import '../../Models/post_detail_response.dart';

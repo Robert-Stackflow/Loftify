@@ -13,9 +13,11 @@ class RouteUtil {
     Function(dynamic)? onThen,
     bool popAll = false,
   }) {
-    return Navigator.push(
-            context, MaterialPageRoute(builder: (context) => page))
-        .then(onThen ?? (_) => {});
+    final route = MaterialPageRoute(builder: (context) => page);
+    final future = popAll
+        ? Navigator.pushAndRemoveUntil(context, route, (_) => false)
+        : Navigator.push(context, route);
+    return future.then(onThen ?? (_) => {});
   }
 
   static pushCupertinoRoute(
@@ -43,14 +45,21 @@ class RouteUtil {
   }
 
   static pushPanelCupertinoRoute(BuildContext context, Widget page) {
-    chewieProvider.panelScreenState?.pushPage(page);
+    final panelScreenState = chewieProvider.panelScreenState;
+    if (panelScreenState != null) {
+      return panelScreenState.pushPage(page);
+    }
+    return pushCupertinoRoute(context, page);
   }
 
   static getFadeRoute(
     Widget page, {
     Duration? duration,
+    bool opaque = true,
   }) {
     return PageRouteBuilder(
+      opaque: opaque,
+      barrierColor: opaque ? null : Colors.transparent,
       transitionDuration: duration ?? const Duration(milliseconds: 300),
       pageBuilder: (BuildContext context, Animation<double> animation,
           Animation secondaryAnimation) {
@@ -70,11 +79,13 @@ class RouteUtil {
     Widget page, {
     Function(dynamic)? onThen,
     bool popAll = false,
+    bool opaque = true,
   }) {
-    return Navigator.push(
-      context,
-      getFadeRoute(page),
-    ).then(onThen ?? (_) => {});
+    final route = getFadeRoute(page, opaque: opaque);
+    final future = popAll
+        ? Navigator.pushAndRemoveUntil(context, route, (_) => false)
+        : Navigator.push(context, route);
+    return future.then(onThen ?? (_) => {});
   }
 
   static pushDialogRoute(
@@ -89,6 +100,7 @@ class RouteUtil {
     bool useFade = false,
     bool popAll = false,
     bool animation = true,
+    bool opaque = true,
   }) {
     if (ResponsiveUtil.isLandscapeLayout()) {
       if (DialogNavigatorHelper.isMounted()) {
@@ -108,7 +120,13 @@ class RouteUtil {
       }
     } else {
       if (useFade) {
-        pushFadeRoute(context, page, onThen: onThen, popAll: popAll);
+        pushFadeRoute(
+          context,
+          page,
+          onThen: onThen,
+          popAll: popAll,
+          opaque: opaque,
+        );
       } else {
         pushCupertinoRoute(context, page, onThen: onThen, popAll: popAll);
       }

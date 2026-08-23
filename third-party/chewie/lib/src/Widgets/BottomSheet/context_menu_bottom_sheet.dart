@@ -13,6 +13,8 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
@@ -39,120 +41,175 @@ class ContextMenuBottomSheetState extends State<ContextMenuBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      runAlignment: WrapAlignment.center,
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: ChewieTheme.scaffoldBackgroundColor,
-            borderRadius: BorderRadius.vertical(
-              top: radius,
-              bottom: ResponsiveUtil.isWideDevice() ? radius : Radius.zero,
-            ),
-            border: ChewieTheme.border,
-            boxShadow: ChewieTheme.defaultBoxShadow,
+    final mediaQuery = MediaQuery.of(context);
+    final obscuredBottom = max(
+      mediaQuery.viewPadding.bottom,
+      mediaQuery.viewInsets.bottom,
+    );
+    final availableHeight =
+        mediaQuery.size.height - mediaQuery.padding.top - obscuredBottom - 24;
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: max(0, availableHeight)),
+      child: Container(
+        decoration: BoxDecoration(
+          color: ChewieTheme.scaffoldBackgroundColor,
+          borderRadius: BorderRadius.vertical(
+            top: radius,
+            bottom: ResponsiveUtil.isWideDevice() ? radius : Radius.zero,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (!ResponsiveUtil.isWideDevice())
-                Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    const SizedBox(height: 40),
-                    Container(
-                      width: 50,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: ChewieTheme.dividerColor,
-                        borderRadius: BorderRadius.circular(2.5),
-                      ),
+          border: ChewieTheme.responsiveBorder,
+          boxShadow: ChewieTheme.defaultBoxShadow,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (!ResponsiveUtil.isWideDevice())
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  const SizedBox(height: 36),
+                  Container(
+                    width: 50,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: ChewieTheme.dividerColor,
+                      borderRadius: BorderRadius.circular(2.5),
                     ),
+                  ),
+                ],
+              ),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                    14, ResponsiveUtil.isWideDevice() ? 14 : 0, 14, 14),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (var config in widget.menu.entries)
+                      _buildConfigItem(config),
                   ],
                 ),
-              for (var config in widget.menu.entries)
-                _buildConfigItem(
-                  config as FlutterContextMenuItem,
-                  config == widget.menu.entries.first,
-                  config == widget.menu.entries.last,
-                ),
-            ],
-          ),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
-  _buildConfigItem(
-    FlutterContextMenuItem? config, [
-    bool isFirst = false,
-    bool isLast = false,
-  ]) {
-    Color? textColor;
-    if (config == null || config.type == MenuItemType.divider) {
-      return const MyDivider(width: 1.5, vertical: 12, horizontal: 16);
-    } else {
-      switch (config.status) {
-        case MenuItemStatus.success:
-          textColor = ChewieTheme.successColor;
-          break;
-        case MenuItemStatus.warning:
-          textColor = ChewieTheme.warningColor;
-          break;
-        case MenuItemStatus.error:
-          textColor = ChewieTheme.errorColor;
-          break;
-        default:
-          textColor = null;
-          break;
-      }
-      var borderRadius = BorderRadius.vertical(
-        top: isFirst
-            ? ResponsiveUtil.isWideDevice()
-                ? radius
-                : Radius.zero
-            : Radius.zero,
-        bottom: isLast
-            ? ResponsiveUtil.isWideDevice()
-                ? radius
-                : Radius.zero
-            : Radius.zero,
-      );
-      return Material(
-        color: ChewieTheme.scaffoldBackgroundColor,
-        borderRadius: borderRadius,
-        child: InkWell(
-          borderRadius: borderRadius,
-          onTap: () {
-            Navigator.of(context).pop();
-            config.onPressed?.call();
-          },
-          child: Container(
-            decoration: BoxDecoration(borderRadius: borderRadius),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            child: Row(
-              children: [
-                if (config.type != MenuItemType.checkbox &&
-                    config.iconData != null) ...[
-                  Icon(config.iconData, size: 24, color: textColor),
-                  const SizedBox(width: 10),
-                ],
-                if (config.type == MenuItemType.checkbox && config.checked)
-                  Icon(Icons.check_rounded, size: 20, color: textColor),
-                if (config.type == MenuItemType.checkbox && !config.checked)
-                  const SizedBox(width: 20, height: 20),
-                if (config.iconData != null) const SizedBox(width: 10),
-                Text(
-                  config.label,
-                  style: ChewieTheme.bodyLarge.apply(color: textColor),
-                ),
-              ],
+  Widget _buildConfigItem(ContextMenuEntry config) {
+    if (config is MenuHeader) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
+        child: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Text(
+            config.disableUppercase ? config.text : config.text.toUpperCase(),
+            style: ChewieTheme.labelMedium.apply(
+              color: ChewieTheme.textLightGreyColor,
             ),
           ),
         ),
       );
     }
+    if (config is MenuDivider) {
+      final thickness = config.thickness ?? 0.6;
+      return Container(
+        height: config.height ?? 13,
+        margin: EdgeInsetsDirectional.only(
+          start: config.indent ?? 8,
+          end: config.endIndent ?? 8,
+        ),
+        alignment: Alignment.center,
+        child: Container(
+          height: thickness,
+          decoration: BoxDecoration(
+            color: config.color ?? ChewieTheme.dividerColor,
+            borderRadius: BorderRadius.circular(thickness),
+          ),
+        ),
+      );
+    }
+    if (config is! FlutterContextMenuItem) {
+      return const SizedBox.shrink();
+    }
+
+    Color? textColor;
+    if (config.type == MenuItemType.divider) {
+      return const MyDivider(width: 0.6, vertical: 6, horizontal: 8);
+    } else {
+      Color iconColor = ChewieTheme.primaryColor;
+      switch (config.status) {
+        case MenuItemStatus.success:
+          textColor = ChewieTheme.successColor;
+          iconColor = ChewieTheme.successColor;
+          break;
+        case MenuItemStatus.warning:
+          textColor = ChewieTheme.warningColor;
+          iconColor = ChewieTheme.warningColor;
+          break;
+        case MenuItemStatus.error:
+          textColor = ChewieTheme.errorColor;
+          iconColor = ChewieTheme.errorColor;
+          break;
+        default:
+          textColor = null;
+          iconColor = ChewieTheme.primaryColor;
+          break;
+      }
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Material(
+          color: ChewieTheme.canvasColor,
+          borderRadius: ChewieDimens.borderRadius12,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            borderRadius: ChewieDimens.borderRadius12,
+            onTap: () {
+              Navigator.of(context).pop();
+              config.onPressed?.call();
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              child: Row(
+                children: [
+                  if (config.type != MenuItemType.checkbox &&
+                      config.iconData != null) ...[
+                    _buildIcon(config.iconData!, iconColor),
+                    const SizedBox(width: 12),
+                  ],
+                  if (config.type == MenuItemType.checkbox) ...[
+                    config.checked
+                        ? _buildIcon(Icons.check_rounded, iconColor)
+                        : const SizedBox(width: 34, height: 34),
+                    const SizedBox(width: 12),
+                  ],
+                  Expanded(
+                    child: Text(
+                      config.label,
+                      style: ChewieTheme.bodyLarge.apply(color: textColor),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _buildIcon(IconData icon, Color color) {
+    return Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(
+        color: color.withAlpha(30),
+        borderRadius: BorderRadius.circular(9),
+      ),
+      child: Icon(icon, size: 17, color: color),
+    );
   }
 }

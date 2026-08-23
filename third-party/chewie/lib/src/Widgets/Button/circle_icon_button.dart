@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:awesome_chewie/awesome_chewie.dart';
 
 class CircleIconButton extends StatefulWidget {
+  final BuildContext? context;
   final dynamic icon;
   final Function()? onTap;
   final Function()? onLongPress;
@@ -13,6 +14,7 @@ class CircleIconButton extends StatefulWidget {
 
   const CircleIconButton({
     super.key,
+    this.context,
     required this.icon,
     required this.onTap,
     this.onLongPress,

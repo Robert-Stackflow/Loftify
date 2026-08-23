@@ -148,10 +148,10 @@ class DialogBuilder {
   }) {
     showGeneralDialog(
       barrierDismissible: barrierDismissible,
-      context: context,
+      context: chewieProvider.navigatorContextOf(context),
       barrierLabel: '',
       barrierColor: ChewieTheme.barrierColor,
-      transitionDuration: const Duration(milliseconds: 300),
+      transitionDuration: ChewieTheme.animationDuration,
       transitionBuilder: (context, animation, secondaryAnimation, _) {
         return DialogAnimation(
           animation: animation,

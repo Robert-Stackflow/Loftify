@@ -1,19 +1,20 @@
+import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Utils/app_provider.dart';
-import 'package:loftify/Utils/file_util.dart';
-import 'package:loftify/Utils/hive_util.dart';
-import 'package:loftify/Utils/itoast.dart';
-import 'package:loftify/Widgets/Dialog/dialog_builder.dart';
 
-import '../../Resources/fonts.dart';
-import '../../Utils/responsive_util.dart';
-import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../l10n/l10n.dart';
+import 'base_setting_screen.dart';
 
-class SelectFontScreen extends StatefulWidget {
-  const SelectFontScreen({super.key});
+class SelectFontScreen extends BaseSettingScreen {
+  const SelectFontScreen({
+    super.key,
+    super.padding,
+    super.showTitleBar,
+    super.searchConfig,
+    super.searchText,
+  });
 
   static const String routeName = "/setting/font";
 
@@ -24,61 +25,46 @@ class SelectFontScreen extends StatefulWidget {
 class _SelectFontScreenState extends BaseDynamicState<SelectFontScreen>
     with TickerProviderStateMixin {
   CustomFont _currentFont = CustomFont.getCurrentFont();
-  List<CustomFont> customFonts = HiveUtil.getCustomFonts();
+  List<CustomFont> customFonts = ChewieHiveUtil.getCustomFonts();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.transparent,
-      child: Scaffold(
-        appBar: ResponsiveAppBar(
-          showBack: true,
-          title: appLocalizations.chooseFontFamily,
+    return ChewieItemBuilder.buildSettingScreen(
+      context: context,
+      title: appLocalizations.chooseFontFamily,
+      showTitleBar: widget.showTitleBar,
+      showBack: !ResponsiveUtil.isLandscapeLayout(),
+      padding: widget.padding,
+      children: [
+        CaptionItem(
           context: context,
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        ),
-        body: EasyRefresh(
-          child: ListView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            children: [
-              if (ResponsiveUtil.isLandscapeLayout()) const SizedBox(height: 10),
-              CaptionItem(
-                  context: context, title: appLocalizations.defaultFontFamily),
-              ItemBuilder.buildContainerItem(
-                context: context,
-                child: Container(
-                  margin:
-                      const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-                  child: Wrap(
-                    runSpacing: 10,
-                    spacing: 10,
-                    children: _buildDefaultFontList(),
-                  ),
-                ),
-                bottomRadius: true,
+          title: appLocalizations.defaultFontFamily,
+          children: [
+            Container(
+              margin: const EdgeInsets.all(10),
+              child: Wrap(
+                runSpacing: 10,
+                spacing: 10,
+                children: _buildDefaultFontList(),
               ),
-              const SizedBox(height: 10),
-              CaptionItem(
-                  context: context, title: appLocalizations.customFontFamily),
-              ItemBuilder.buildContainerItem(
-                context: context,
-                child: Container(
-                  margin:
-                      const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-                  child: Wrap(
-                    runSpacing: 10,
-                    spacing: 10,
-                    children: _buildCustomFontList(),
-                  ),
-                ),
-                bottomRadius: true,
-              ),
-              const SizedBox(height: 30),
-            ],
-          ),
+            ),
+          ],
         ),
-      ),
+        CaptionItem(
+          context: context,
+          title: appLocalizations.customFontFamily,
+          children: [
+            Container(
+              margin: const EdgeInsets.all(10),
+              child: Wrap(
+                runSpacing: 10,
+                spacing: 10,
+                children: _buildCustomFontList(),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -89,12 +75,7 @@ class _SelectFontScreenState extends BaseDynamicState<SelectFontScreen>
         currentFont: _currentFont,
         font: CustomFont.defaultFonts[index],
         context: context,
-        onChanged: (_) {
-          _currentFont = CustomFont.defaultFonts[index];
-          appProvider.currentFont = _currentFont;
-          setState(() {});
-          CustomFont.loadFont(context, _currentFont, autoRestartApp: false);
-        },
+        onChanged: (_) => _applyFont(CustomFont.defaultFonts[index]),
       ),
     );
     return list;
@@ -108,30 +89,21 @@ class _SelectFontScreenState extends BaseDynamicState<SelectFontScreen>
         showDelete: true,
         font: customFonts[index],
         context: context,
-        onChanged: (_) {
-          _currentFont = customFonts[index];
-          appProvider.currentFont = _currentFont;
-          setState(() {});
-          CustomFont.loadFont(context, customFonts[index],
-              autoRestartApp: false);
-        },
+        onChanged: (_) => _applyFont(customFonts[index]),
         onDelete: (_) {
           DialogBuilder.showConfirmDialog(
             context,
             title: appLocalizations.deleteFont(customFonts[index].intlFontName),
-            message:
-                appLocalizations.deleteFontMessage(customFonts[index].intlFontName),
+            message: appLocalizations
+                .deleteFontMessage(customFonts[index].intlFontName),
             onTapConfirm: () async {
               if (customFonts[index] == _currentFont) {
-                _currentFont = CustomFont.Default;
-                appProvider.currentFont = _currentFont;
-                setState(() {});
-                CustomFont.loadFont(context, _currentFont,
-                    autoRestartApp: false);
+                final applied = await _applyFont(CustomFont.Default);
+                if (!applied) return;
               }
               await CustomFont.deleteFont(customFonts[index]);
               customFonts.removeAt(index);
-              HiveUtil.setCustomFonts(customFonts);
+              ChewieHiveUtil.setCustomFonts(customFonts);
               setState(() {});
             },
           );
@@ -153,11 +125,8 @@ class _SelectFontScreenState extends BaseDynamicState<SelectFontScreen>
                 await CustomFont.copyFont(filePath: result.files.single.path!);
             if (customFont != null) {
               customFonts.add(customFont);
-              HiveUtil.setCustomFonts(customFonts);
-              _currentFont = customFont;
-              appProvider.currentFont = _currentFont;
-              CustomFont.loadFont(context, _currentFont, autoRestartApp: false);
-              setState(() {});
+              ChewieHiveUtil.setCustomFonts(customFonts);
+              await _applyFont(customFont);
             } else {
               IToast.showTop(appLocalizations.fontFamlyLoadFailed);
             }
@@ -166,5 +135,17 @@ class _SelectFontScreenState extends BaseDynamicState<SelectFontScreen>
       ),
     );
     return list;
+  }
+
+  Future<bool> _applyFont(CustomFont font) async {
+    final applied = await CustomFont.loadFont(
+      context,
+      font,
+      autoRestartApp: false,
+    );
+    if (!mounted || !applied) return false;
+    setState(() => _currentFont = font);
+    appProvider.currentFont = font;
+    return true;
   }
 }

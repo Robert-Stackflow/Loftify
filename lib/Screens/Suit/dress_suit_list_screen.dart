@@ -1,13 +1,18 @@
-
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/gift_api.dart';
 
 import '../../Models/dress_response.dart';
+import '../../Widgets/Suit/dress_preview_card.dart';
 import '../../l10n/l10n.dart';
 
 class DressSuitListScreen extends StatefulWidget {
-  const DressSuitListScreen({super.key});
+  const DressSuitListScreen({
+    super.key,
+    this.refreshOnStart = true,
+  });
+
+  final bool refreshOnStart;
 
   static const String routeName = "/info/dressSuit";
 
@@ -24,6 +29,8 @@ class DressSuitListScreenState extends BaseDynamicState<DressSuitListScreen>
   int offset = 0;
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
+
+  void callRefresh() => _refreshController.callRefresh();
 
   _fetchList({bool refresh = false}) async {
     if (_loading) return;
@@ -79,7 +86,7 @@ class DressSuitListScreenState extends BaseDynamicState<DressSuitListScreen>
   Widget build(BuildContext context) {
     super.build(context);
     return EasyRefresh.builder(
-      refreshOnStart: true,
+      refreshOnStart: widget.refreshOnStart,
       controller: _refreshController,
       onRefresh: _onRefresh,
       onLoad: _onLoad,
@@ -94,7 +101,7 @@ class DressSuitListScreenState extends BaseDynamicState<DressSuitListScreen>
     return LoadMoreNotification(
       child: WaterfallFlow.builder(
         physics: physics,
-        cacheExtent: 9999,
+        cacheExtent: MediaQuery.sizeOf(context).height,
         padding: const EdgeInsets.all(10),
         itemCount: _dressSuitList.length,
         gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
@@ -112,63 +119,24 @@ class DressSuitListScreenState extends BaseDynamicState<DressSuitListScreen>
   }
 
   _buildDressItem(DressingItem item) {
-    return ClickableWrapper(child:
-      GestureDetector(
-        onTap: () {},
-        child: Stack(
-          alignment: Alignment.bottomLeft,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: ChewieItemBuilder.buildCachedImage(
-                imageUrl: item.img,
-                context: context,
-                height: 400,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                showLoading: false,
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    item.intro,
-                    style: const TextStyle(color: Colors.white54, fontSize: 16),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  // const SizedBox(height: 10),
-                  // Row(
-                  //   children: [
-                  //     Expanded(
-                  //       child: RoundIconTextButton(
-                  //         context,
-                  //         background: Colors.white24,
-                  //         color: Colors.white,
-                  //         text: appLocalizations.viewDetail,
-                  //         onTap: () {},
-                  //       ),
-                  //     ),
-                  //   ],
-                  // ),
-                  const SizedBox(height: 4),
-                ],
-              ),
-            ),
-          ],
-        ),
+    return DressPreviewCard(
+      title: item.name,
+      subtitle: item.intro,
+      badge: item.specialLabel.isNotEmpty
+          ? item.specialLabel
+          : item.showPrice.isNotEmpty
+              ? item.showPrice
+              : null,
+      previewHeight: 260,
+      previewPadding: EdgeInsets.zero,
+      onTap: null,
+      preview: ChewieItemBuilder.buildCachedImage(
+        imageUrl: item.img,
+        context: context,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        showLoading: false,
       ),
     );
   }

@@ -1,37 +1,131 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:awesome_chewie/awesome_chewie.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/login_api.dart';
 
 import '../../Utils/app_provider.dart';
 import '../../l10n/l10n.dart';
 
+typedef SlideCaptchaChallengeLoader = Future<dynamic> Function();
+typedef SlideCaptchaChallengeVerifier = Future<dynamic> Function({
+  required String id,
+  required double offset,
+  required String rawKey,
+  required String rawIv,
+});
+
+@immutable
+class SlideCaptchaGeometry {
+  const SlideCaptchaGeometry._({
+    required this.panelWidth,
+    required this.contentWidth,
+    required this.imageHeight,
+    required this.sourceScale,
+    required this.sourceTravel,
+    required this.puzzleTravel,
+    required this.handleTravel,
+    required this.puzzleWidth,
+  });
+
+  static const double outerPadding = 16;
+  static const double contentPadding = 16;
+  static const double handleWidth = 40;
+
+  factory SlideCaptchaGeometry.calculate({
+    required double availableWidth,
+    required Size sourceSize,
+    required double puzzleSourceWidth,
+  }) {
+    final safeSourceWidth = math.max(1.0, sourceSize.width);
+    final safeSourceHeight = math.max(1.0, sourceSize.height);
+    final safeAvailableWidth = availableWidth.isFinite
+        ? math.max(1.0, availableWidth)
+        : safeSourceWidth + outerPadding * 2;
+    final panelWidth = math.min(
+      safeSourceWidth,
+      math.max(1.0, safeAvailableWidth - outerPadding * 2),
+    );
+    final contentWidth = math.max(
+      1.0,
+      panelWidth - contentPadding * 2,
+    );
+    final sourceScale = safeSourceWidth / contentWidth;
+    final safePuzzleSourceWidth =
+        puzzleSourceWidth.clamp(1.0, safeSourceWidth).toDouble();
+    final puzzleWidth = safePuzzleSourceWidth / sourceScale;
+
+    return SlideCaptchaGeometry._(
+      panelWidth: panelWidth,
+      contentWidth: contentWidth,
+      imageHeight: safeSourceHeight / sourceScale,
+      sourceScale: sourceScale,
+      sourceTravel: math.max(0.0, safeSourceWidth - safePuzzleSourceWidth),
+      puzzleTravel: math.max(0.0, contentWidth - puzzleWidth),
+      handleTravel: math.max(0.0, contentWidth - handleWidth),
+      puzzleWidth: puzzleWidth,
+    );
+  }
+
+  final double panelWidth;
+  final double contentWidth;
+  final double imageHeight;
+  final double sourceScale;
+  final double sourceTravel;
+  final double puzzleTravel;
+  final double handleTravel;
+  final double puzzleWidth;
+
+  double clampProgress(double progress) => progress.clamp(0.0, 1.0);
+
+  double progressAfterDelta(double progress, double logicalDelta) {
+    if (handleTravel <= 0) return 0;
+    return clampProgress(progress + logicalDelta / handleTravel);
+  }
+
+  double handleOffset(double progress) =>
+      handleTravel * clampProgress(progress);
+
+  double puzzleOffset(double progress) =>
+      puzzleTravel * clampProgress(progress);
+
+  double sourceOffset(double progress) =>
+      sourceTravel * clampProgress(progress);
+}
+
 class SlideCaptchaBottomSheet extends StatefulWidget {
   const SlideCaptchaBottomSheet({
     super.key,
+    this.challengeLoader,
+    this.challengeVerifier,
   });
+
+  final SlideCaptchaChallengeLoader? challengeLoader;
+  final SlideCaptchaChallengeVerifier? challengeVerifier;
 
   @override
   SlideCaptchaBottomSheetState createState() => SlideCaptchaBottomSheetState();
 }
 
 class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
-  String? bg;
-  String? front;
   String? id;
-  double frontLeftOffset = 0;
-  double scale = 1.1;
+  double _dragProgress = 0;
   Uint8List? bg64;
   Uint8List? front64;
-  String secret =
-      "KrHL6WUUlI9mKt+4JApPjwjhn+2UNa8tbe+NzFF31msY94ZXTYjj2trGN3MQMv6yXON9fgpGkesyKgCQ1lBf0hzviueHHjQYNEtEE9tvK8PkrXBOgmChlgFF/khdqpVvPxuEUc9wFu+nx8CX/M9V9RkLG7/x6jO4tuZMs3gscXyFEOSy8htUclnY8Msu6GipKGrAJZGU/Qc18HeHBKRj3cbPvzhBD/p1HOG8d51faoEYHri98dsl/30aXd3BkAIlnNDvlJ8cqKncXP1LDFwZ8VrEZtSaLV8IShZy25/ncHVBQjRxOvojUqY/DQzti/rrQmWSPNLmNDkiR2QiEVZfCQ==";
   String status = "";
   Color statusBackground = Colors.green;
   bool showStatus = false;
-  ImageInfo? bgInfo;
+  bool _isLoading = true;
+  bool _isVerifying = false;
+  Size? _backgroundSize;
+  Size? _puzzleSize;
+  int _requestGeneration = 0;
+  Timer? _statusTimer;
 
   @override
   void initState() {
@@ -39,74 +133,155 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
     _fetchCaptcha();
   }
 
-  _fetchCaptcha() async {
-    await LoginApi.getSlideCaptcha().then((value) {
-      try {
-        if (value['code'] != 0) {
-          IToast.showTop(value['msg']);
-        } else {
-          frontLeftOffset = 0;
-          bg = value['data']['bg'];
-          front = value['data']['front'];
-          id = value['data']['id'];
-          bg64 = base64Decode(bg!);
-          front64 = base64Decode(front!);
-          getImageInfo(Image.memory(bg64!));
-        }
-      } catch (e, t) {
-        ILogger.error("Failed to load captcha", e, t);
-        IToast.showTop(appLocalizations.getSlideCaptchaFailed);
-      } finally {
-        if (mounted) setState(() {});
-      }
-    });
+  @override
+  void dispose() {
+    _requestGeneration++;
+    _statusTimer?.cancel();
+    super.dispose();
   }
 
-  double get preferWidth =>
-      bgInfo != null ? bgInfo!.image.width.toDouble() : 320;
+  Future<void> _fetchCaptcha() async {
+    final generation = ++_requestGeneration;
+    _statusTimer?.cancel();
+    if (mounted) {
+      setState(() {
+        _dragProgress = 0;
+        _isLoading = true;
+        _isVerifying = false;
+        showStatus = false;
+        id = null;
+        bg64 = null;
+        front64 = null;
+        _backgroundSize = null;
+        _puzzleSize = null;
+      });
+    }
+
+    try {
+      final value =
+          await (widget.challengeLoader?.call() ?? LoginApi.getSlideCaptcha());
+      if (!mounted || generation != _requestGeneration) return;
+      if (value['code'] != 0) {
+        IToast.showTop(
+            value['msg']?.toString() ?? appLocalizations.getSlideCaptchaFailed);
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      final data = value['data'];
+      final backgroundBytes = base64Decode(data['bg'] as String);
+      final puzzleBytes = base64Decode(data['front'] as String);
+      final sizes = await Future.wait([
+        _decodeImageSize(backgroundBytes),
+        _decodeImageSize(puzzleBytes),
+      ]);
+      if (!mounted || generation != _requestGeneration) return;
+
+      setState(() {
+        id = data['id']?.toString();
+        bg64 = backgroundBytes;
+        front64 = puzzleBytes;
+        _backgroundSize = sizes[0];
+        _puzzleSize = sizes[1];
+        _isLoading = false;
+      });
+    } catch (error, stackTrace) {
+      ILogger.error("Failed to load captcha", error, stackTrace);
+      if (!mounted || generation != _requestGeneration) return;
+      setState(() => _isLoading = false);
+      IToast.showTop(appLocalizations.getSlideCaptchaFailed);
+    }
+  }
+
+  Future<Size> _decodeImageSize(Uint8List bytes) async {
+    final codec = await ui.instantiateImageCodec(bytes);
+    try {
+      final frame = await codec.getNextFrame();
+      final size = Size(
+        frame.image.width.toDouble(),
+        frame.image.height.toDouble(),
+      );
+      frame.image.dispose();
+      return size;
+    } finally {
+      codec.dispose();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: preferWidth,
-        margin: const EdgeInsets.symmetric(horizontal: 30),
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: Theme.of(context).canvasColor,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _buildHeader(),
-            const MyDivider(horizontal: 12, vertical: 0),
-            Stack(
-              children: [
-                LoadingWidget(
-                  text: appLocalizations.loading,
-                  background: Colors.transparent,
-                  size: 40,
-                  topPadding: 77,
-                  bottomPadding: 77,
+    return SafeArea(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final backgroundSize = _backgroundSize ?? const Size(352, 160);
+          final puzzleSourceWidth = _puzzleSize?.width ?? 44;
+          final geometry = SlideCaptchaGeometry.calculate(
+            availableWidth: constraints.maxWidth,
+            sourceSize: backgroundSize,
+            puzzleSourceWidth: puzzleSourceWidth,
+          );
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(SlideCaptchaGeometry.outerPadding),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: math.max(
+                  0,
+                  constraints.maxHeight - SlideCaptchaGeometry.outerPadding * 2,
                 ),
-                Column(
-                  children: [
-                    if (bg64 != null && front64 != null) _buildCaptcha(),
-                    if (bg64 != null && front64 != null) _buildDragHandle(),
-                  ],
+              ),
+              child: Center(
+                child: Container(
+                  key: const ValueKey('slideCaptchaPanel'),
+                  width: geometry.panelWidth,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).canvasColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      _buildHeader(),
+                      const MyDivider(horizontal: 12, vertical: 0),
+                      if (_isLoading)
+                        SizedBox(
+                          height: math.max(180, geometry.imageHeight + 64),
+                          child: LoadingWidget(
+                            text: appLocalizations.loading,
+                            background: Colors.transparent,
+                            size: 40,
+                          ),
+                        )
+                      else if (bg64 != null && front64 != null)
+                        Column(
+                          children: [
+                            _buildCaptcha(geometry),
+                            _buildDragHandle(geometry),
+                          ],
+                        )
+                      else
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: TextButton.icon(
+                            onPressed: _fetchCaptcha,
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: Text(appLocalizations.retry),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  _buildHeader() {
+  Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.only(left: 16, right: 16, bottom: 4),
       alignment: Alignment.centerLeft,
@@ -133,182 +308,263 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
     );
   }
 
-  updateState(bool success) {
-    if (success) {
-      statusBackground = Colors.green;
-      status = appLocalizations.validSuccess;
+  void _showVerificationStatus(bool success) {
+    if (!mounted) return;
+    _statusTimer?.cancel();
+    setState(() {
+      _isVerifying = false;
+      statusBackground = success ? Colors.green : Colors.redAccent;
+      status = success
+          ? appLocalizations.validSuccess
+          : appLocalizations.validFailed;
       showStatus = true;
-      setState(() {});
-      Future.delayed(const Duration(milliseconds: 500), () {
-        Navigator.pop(context);
-      });
-    } else {
-      statusBackground = Colors.redAccent;
-      status = appLocalizations.validFailed;
-      showStatus = true;
-      setState(() {});
-      Future.delayed(const Duration(milliseconds: 1000), () {
-        showStatus = false;
-        if (mounted) setState(() {});
-      });
+    });
+    _statusTimer = Timer(
+      Duration(milliseconds: success ? 500 : 900),
+      () {
+        if (!mounted) return;
+        if (success) {
+          Navigator.maybePop(context);
+        } else {
+          _fetchCaptcha();
+        }
+      },
+    );
+  }
+
+  Future<void> _verifyCaptcha(SlideCaptchaGeometry geometry) async {
+    final captchaId = id;
+    if (captchaId == null || _isVerifying) return;
+    setState(() => _isVerifying = true);
+
+    final rawKey = StringUtil.getRandomString(length: 16);
+    final rawIv = StringUtil.getRandomString(length: 16);
+    try {
+      final sourceOffset = geometry.sourceOffset(_dragProgress);
+      final value = await (widget.challengeVerifier?.call(
+            id: captchaId,
+            offset: sourceOffset,
+            rawKey: rawKey,
+            rawIv: rawIv,
+          ) ??
+          LoginApi.verifySlideCaptcha(
+            id: captchaId,
+            offset: sourceOffset,
+            rawKey: rawKey,
+            rawIv: rawIv,
+          ));
+      if (!mounted) return;
+      if (value == null) {
+        IToast.showTop(appLocalizations.sendValidationFailed);
+        _showVerificationStatus(false);
+        return;
+      }
+
+      final decrypted = CryptUtil.decryptDataByAES(value, rawKey, rawIv);
+      final response = json.decode(decrypted);
+      if (response['code'] != 0) {
+        IToast.showTop(
+            response['msg']?.toString() ?? appLocalizations.validFailed);
+        _showVerificationStatus(false);
+      } else if (response['data']['success'] == true) {
+        appProvider.captchaToken = response['data']['token'];
+        _showVerificationStatus(true);
+      } else {
+        _showVerificationStatus(false);
+      }
+    } catch (error, stackTrace) {
+      ILogger.error("Failed to verify captcha", error, stackTrace);
+      if (!mounted) return;
+      IToast.showTop(appLocalizations.sendValidationFailed);
+      _showVerificationStatus(false);
     }
   }
 
-  getImageInfo(Image image) async {
-    var completer = Completer<ImageInfo>();
-    image.image
-        .resolve(const ImageConfiguration())
-        .addListener(ImageStreamListener((imageInfo, _) {
-      completer.complete(imageInfo);
-    }));
-    bgInfo = await completer.future;
-    setState(() {});
-  }
+  Widget _buildCaptcha(SlideCaptchaGeometry geometry) {
+    final puzzleSize = _puzzleSize ?? const Size(44, 44);
+    final puzzleHeight = puzzleSize.height / geometry.sourceScale;
 
-  _buildCaptcha() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Stack(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.memory(bg64!),
-          ),
-          Positioned(
-            left: frontLeftOffset,
-            top: 0,
-            child: Image.memory(front64!, scale: scale),
-          ),
-          Positioned(
-            right: 5,
-            top: 5,
-            child: GestureDetector(
-              child: const Icon(
-                Icons.refresh_rounded,
-                color: Colors.white,
-              ),
-              onTap: () {
-                _fetchCaptcha();
-              },
-            ),
-          ),
-          Positioned(
-            bottom: 0,
-            child: Visibility(
-              visible: showStatus,
-              child: Container(
-                height: 40,
-                alignment: Alignment.center,
-                width: preferWidth - 32,
-                decoration: BoxDecoration(
-                    color: statusBackground,
-                    borderRadius: const BorderRadius.vertical(
-                        bottom: Radius.circular(8))),
-                child: Text(
-                  status,
-                  style: Theme.of(context).textTheme.labelMedium?.apply(
-                        color: Colors.white,
-                        fontSizeDelta: 1,
-                        fontWeightDelta: 2,
-                      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: SlideCaptchaGeometry.contentPadding,
+        vertical: 8,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          width: geometry.contentWidth,
+          height: geometry.imageHeight,
+          child: Stack(
+            clipBehavior: Clip.hardEdge,
+            children: [
+              Positioned.fill(
+                child: Image.memory(
+                  bg64!,
+                  key: const ValueKey('slideCaptchaBackground'),
+                  fit: BoxFit.fill,
+                  gaplessPlayback: true,
+                  filterQuality: FilterQuality.medium,
                 ),
               ),
-            ),
+              Positioned(
+                left: geometry.puzzleOffset(_dragProgress),
+                top: 0,
+                child: Image.memory(
+                  front64!,
+                  key: const ValueKey('slideCaptchaPuzzle'),
+                  width: geometry.puzzleWidth,
+                  height: puzzleHeight,
+                  fit: BoxFit.fill,
+                  gaplessPlayback: true,
+                  filterQuality: FilterQuality.medium,
+                ),
+              ),
+              Positioned(
+                right: 6,
+                top: 6,
+                child: Material(
+                  color: Colors.black45,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: _isVerifying ? null : _fetchCaptcha,
+                    child: const Padding(
+                      padding: EdgeInsets.all(7),
+                      child: Icon(
+                        Icons.refresh_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: IgnorePointer(
+                  child: AnimatedOpacity(
+                    opacity: showStatus ? 1 : 0,
+                    duration: const Duration(milliseconds: 160),
+                    child: Container(
+                      height: 40,
+                      alignment: Alignment.center,
+                      color: statusBackground,
+                      child: Text(
+                        status,
+                        style: Theme.of(context).textTheme.labelMedium?.apply(
+                              color: Colors.white,
+                              fontSizeDelta: 1,
+                              fontWeightDelta: 2,
+                            ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  _buildDragHandle() {
-    return Container(
-      width: preferWidth,
-      margin: const EdgeInsets.only(left: 16, right: 16, top: 6, bottom: 6),
-      child: Stack(
-        children: [
-          Container(
-            height: 40,
-            width: preferWidth,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              color: Theme.of(context).dividerColor,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              appLocalizations.slideToComplete,
-              style: Theme.of(context).textTheme.labelLarge,
-            ),
-          ),
-          Container(
-            height: 40,
-            width: frontLeftOffset > 30 ? frontLeftOffset : 0,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              color: Theme.of(context).dividerColor,
-            ),
-            alignment: Alignment.center,
-          ),
-          Positioned(
-            left: frontLeftOffset,
-            child: GestureDetector(
-              onHorizontalDragUpdate: (details) {
-                setState(() {
-                  double newOffset = frontLeftOffset + details.delta.dx;
-                  double maxOffset = preferWidth - 72;
-                  if (newOffset >= 0 && newOffset <= maxOffset) {
-                    frontLeftOffset = newOffset;
-                  }
-                });
-              },
-              onHorizontalDragEnd: (details) {
-                String rawKey = StringUtil.getRandomString(length: 16);
-                String rawIv = StringUtil.getRandomString(length: 16);
-                LoginApi.verifySlideCaptcha(
-                  id: id!,
-                  offset: frontLeftOffset * scale,
-                  rawKey: rawKey,
-                  rawIv: rawIv,
-                ).then((value) {
-                  if (value == null) {
-                    IToast.showTop(appLocalizations.sendValidationFailed);
-                  } else {
-                    var res = CryptUtil.decryptDataByAES(value, rawKey, rawIv);
-                    res = json.decode(res);
-                    if (res['code'] != 0) {
-                      updateState(false);
-                      IToast.showTop(res['msg']);
-                      _fetchCaptcha();
-                    } else if (!res['data']['success']) {
-                      updateState(false);
-                      _fetchCaptcha();
-                    } else if (res['data']['success']) {
-                      appProvider.captchaToken = res['data']['token'];
-                      updateState(true);
-                    }
-                  }
-                });
-              },
-              child: ClickableWrapper(
-                child: Container(
-                  width: 40,
-                  height: 40,
+  Widget _buildDragHandle(SlideCaptchaGeometry geometry) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final handleOffset = geometry.handleOffset(_dragProgress);
+    final fillWidth = _dragProgress <= 0
+        ? 0.0
+        : handleOffset + SlideCaptchaGeometry.handleWidth;
+
+    return Semantics(
+      label: appLocalizations.slideToComplete,
+      value: '${(_dragProgress * 100).round()}%',
+      slider: true,
+      child: Padding(
+        padding: const EdgeInsets.only(
+          left: SlideCaptchaGeometry.contentPadding,
+          right: SlideCaptchaGeometry.contentPadding,
+          top: 6,
+          bottom: 6,
+        ),
+        child: SizedBox(
+          key: const ValueKey('slideCaptchaTrack'),
+          width: geometry.contentWidth,
+          height: SlideCaptchaGeometry.handleWidth,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: ChewieTheme.getBackground(context),
                     borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 5,
-                        spreadRadius: 1,
-                      ),
-                    ],
+                    color: Theme.of(context).dividerColor,
                   ),
-                  child: const Icon(Icons.keyboard_double_arrow_right_rounded),
+                  child: Center(
+                    child: Text(
+                      appLocalizations.slideToComplete,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                  ),
                 ),
               ),
-            ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  key: const ValueKey('slideCaptchaProgress'),
+                  width: fillWidth,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    color: colorScheme.primary.withValues(alpha: 0.14),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: handleOffset,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  dragStartBehavior: DragStartBehavior.down,
+                  onHorizontalDragUpdate: _isVerifying
+                      ? null
+                      : (details) {
+                          setState(() {
+                            _dragProgress = geometry.progressAfterDelta(
+                              _dragProgress,
+                              details.delta.dx,
+                            );
+                          });
+                        },
+                  onHorizontalDragEnd:
+                      _isVerifying ? null : (_) => _verifyCaptcha(geometry),
+                  child: Container(
+                    key: const ValueKey('slideCaptchaHandle'),
+                    width: SlideCaptchaGeometry.handleWidth,
+                    height: SlideCaptchaGeometry.handleWidth,
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 5,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      _isVerifying
+                          ? Icons.more_horiz_rounded
+                          : Icons.keyboard_double_arrow_right_rounded,
+                      color: colorScheme.onPrimary,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

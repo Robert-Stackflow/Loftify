@@ -10,7 +10,7 @@ const defaultFilenameFormat = "{original_name}";
 
 const defaultWindowSize = Size(1120, 740);
 
-const minimumSize = Size(630, 700);
+const postDetailTwoPaneMinWindowSize = Size(630, 700);
 
 String shareText = "Loftify - 简洁的LOFTER第三方APP\n$officialWebsite";
 const String feedbackEmail = "2014027378@qq.com";
@@ -21,4 +21,3 @@ const String qqGroupUrl = "https://qm.qq.com/q/2HJ8PC1XcQ";
 
 const String cloudControlUrl =
     "https://apps.cloudchewie.com/loftify/control.json";
-

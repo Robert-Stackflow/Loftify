@@ -476,6 +476,7 @@ class _EasyRefreshState extends State<EasyRefresh>
     Duration? duration,
     Curve curve = Curves.linear,
     ScrollController? scrollController,
+    bool jumpToEdge = true,
     bool force = false,
   }) {
     return _headerNotifier.callTask(
@@ -483,6 +484,7 @@ class _EasyRefreshState extends State<EasyRefresh>
       duration: duration,
       curve: curve,
       scrollController: scrollController ?? widget.scrollController,
+      jumpToEdge: jumpToEdge,
       force: force,
     );
   }

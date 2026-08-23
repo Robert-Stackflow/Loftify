@@ -39,6 +39,7 @@ class InputBottomSheet extends StatefulWidget {
     this.leadingConfig,
     this.tailingConfig,
     this.style,
+    this.buttonText,
   });
 
   final String? hint;
@@ -56,6 +57,7 @@ class InputBottomSheet extends StatefulWidget {
   final FocusNode? focusNode;
   final List<TextInputFormatter> inputFormatters;
   final bool preventPop;
+  final String? buttonText;
 
   final InputItemLeadingTailingConfig? leadingConfig;
   final InputItemLeadingTailingConfig? tailingConfig;
@@ -79,8 +81,8 @@ class InputBottomSheetState extends State<InputBottomSheet> {
     widget.validateAsyncController?.doPop = () {
       Navigator.of(context).pop();
     };
-    Future.delayed(const Duration(milliseconds: 200), () {
-      if (mounted) FocusScope.of(context).requestFocus(_focusNode);
+    Future.delayed(ChewieTheme.animationDuration, () {
+      if (mounted) _focusNode.requestFocus();
     });
   }
 
@@ -88,9 +90,8 @@ class InputBottomSheetState extends State<InputBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedPadding(
-      padding: MediaQuery.of(context).viewInsets,
-      duration: const Duration(milliseconds: 100),
+    return Padding(
+      padding: MediaQuery.viewInsetsOf(context),
       child: Wrap(
         runAlignment: WrapAlignment.center,
         children: [
@@ -101,7 +102,7 @@ class InputBottomSheetState extends State<InputBottomSheet> {
                   top: radius,
                   bottom: ResponsiveUtil.isWideDevice() ? radius : Radius.zero),
               color: ChewieTheme.scaffoldBackgroundColor,
-              border: ChewieTheme.border,
+              border: ChewieTheme.responsiveBorder,
               boxShadow: ChewieTheme.defaultBoxShadow,
             ),
             child: Column(
@@ -206,7 +207,7 @@ class InputBottomSheetState extends State<InputBottomSheet> {
               height: 48,
               background: ChewieTheme.primaryColor,
               color: ChewieTheme.primaryButtonColor,
-              text: chewieLocalizations.confirm,
+              text: widget.buttonText ?? chewieLocalizations.confirm,
               onPressed: processConfirm,
               fontSizeDelta: 2,
             ),

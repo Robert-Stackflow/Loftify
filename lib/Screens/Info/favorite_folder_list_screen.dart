@@ -161,10 +161,10 @@ class _FavoriteFolderListScreenState
                       context,
                       child: Text(
                         item.name ?? "",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       text: item.name ?? "",
                       toastText: appLocalizations.haveCopiedFolderName,
@@ -222,8 +222,8 @@ class _FavoriteFolderListScreenState
                   DialogBuilder.showConfirmDialog(
                     context,
                     title: appLocalizations.deleteFolder,
-                    message:
-                        appLocalizations.deleteFolderMessage(item.name.toString()),
+                    message: appLocalizations
+                        .deleteFolderMessage(item.name.toString()),
                     messageTextAlign: TextAlign.center,
                     onTapConfirm: () async {
                       UserApi.deleteFolder(folderId: item.id ?? 0)
@@ -280,8 +280,7 @@ class _FavoriteFolderListScreenState
         //     onTap: () {}),
         // const SizedBox(width: 5),
         CircleIconButton(
-          icon:
-              Icon(Icons.add_rounded, color: ChewieTheme.iconColor),
+          icon: Icon(Icons.add_rounded, color: ChewieTheme.iconColor),
           onTap: handleAdd,
         ),
       ],

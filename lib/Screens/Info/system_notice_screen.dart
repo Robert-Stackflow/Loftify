@@ -1,4 +1,3 @@
-
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/message_api.dart';
@@ -7,7 +6,7 @@ import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Utils/hive_util.dart';
 
-import '../../Utils/utils.dart';
+import '../../Utils/tab_state_util.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../l10n/l10n.dart';
 
@@ -32,17 +31,17 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
   final List<MessageItem> _subscribeMessages = [];
   final List<MessageItem> _collectionMessages = [];
   final List<MessageItem> _otherMessages = [];
-  bool _loading = false;
+  final Set<String> _loadingTabs = <String>{};
   final EasyRefreshController _allRefreshController = EasyRefreshController();
   final EasyRefreshController _likeRefreshController = EasyRefreshController();
   final EasyRefreshController _recommendRefreshController =
-  EasyRefreshController();
+      EasyRefreshController();
   final EasyRefreshController _giftRefreshController = EasyRefreshController();
   final EasyRefreshController _atRefreshController = EasyRefreshController();
   final EasyRefreshController _subscribeRefreshController =
-  EasyRefreshController();
+      EasyRefreshController();
   final EasyRefreshController _collectionRefreshController =
-  EasyRefreshController();
+      EasyRefreshController();
   final EasyRefreshController _otherRefreshController = EasyRefreshController();
   bool _allNoMore = false;
   bool _likeNoMore = false;
@@ -63,34 +62,101 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
     appLocalizations.other,
   ];
   late TabController _tabController;
+  late final LazyTabLoadState _tabLoadState;
   int _currentTabIndex = 0;
+  static const List<String> _tabIdList = [
+    'all',
+    'like',
+    'recommend',
+    'gift',
+    'at',
+    'subscribe',
+    'collection',
+    'other',
+  ];
+
+  List<EasyRefreshController> get _refreshControllers => [
+        _allRefreshController,
+        _likeRefreshController,
+        _recommendRefreshController,
+        _giftRefreshController,
+        _atRefreshController,
+        _subscribeRefreshController,
+        _collectionRefreshController,
+        _otherRefreshController,
+      ];
 
   @override
   void initState() {
     super.initState();
     initTab();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _ensureTabLoaded(_currentTabIndex);
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    for (final controller in _refreshControllers) {
+      controller.dispose();
+    }
+    super.dispose();
   }
 
   initTab() {
-    _tabController = TabController(length: _tabLabelList.length, vsync: this);
-    _tabController.animation?.addListener(() {
-      int indexChange =
-      _tabController.offset.abs() > 0.8 ? _tabController.offset.round() : 0;
-      int index = _tabController.index + indexChange;
-      if (index != _currentTabIndex) {
-        setState(() => _currentTabIndex = index);
-      }
+    final restored = PersistentTabState.restore(
+      idKey: HiveUtil.systemNoticeTabIdKey,
+      legacyIndexKey: HiveUtil.systemNoticeTabIndexKey,
+      itemIds: _tabIdList,
+    );
+    _tabLoadState = LazyTabLoadState(
+      itemIds: _tabIdList,
+      savedId: restored.id,
+    );
+    _currentTabIndex = _tabLoadState.currentIndex;
+    _tabController = TabController(
+      length: _tabLabelList.length,
+      initialIndex: _currentTabIndex,
+      vsync: this,
+    );
+    _tabController.addListener(() {
+      final index =
+          (_tabController.animation?.value ?? _tabController.index).round();
+      if (index != _currentTabIndex) _setCurrentTab(index);
+    });
+  }
+
+  void _setCurrentTab(int index) {
+    final safeIndex = TabStatePreference.restoreIndex(index, _tabIdList.length);
+    if (safeIndex != _currentTabIndex && mounted) {
+      setState(() => _currentTabIndex = safeIndex);
+    }
+    PersistentTabState.save(
+      idKey: HiveUtil.systemNoticeTabIdKey,
+      legacyIndexKey: HiveUtil.systemNoticeTabIndexKey,
+      itemIds: _tabIdList,
+      index: safeIndex,
+    );
+    _ensureTabLoaded(safeIndex);
+  }
+
+  void _ensureTabLoaded(int index) {
+    if (!_tabLoadState.selectAndShouldLoad(index)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || index < 0 || index >= _refreshControllers.length) return;
+      _refreshControllers[index].callRefresh();
     });
   }
 
   _fetchLikeMessages({bool refresh = false}) async {
-    if (_loading) return;
+    const loadingKey = 'like';
+    if (!_loadingTabs.add(loadingKey)) return IndicatorResult.none;
     if (refresh) _likeNoMore = false;
-    _loading = true;
     int offset = refresh ? 0 : _likeMessages.length;
     return await HiveUtil.getUserInfo().then((blogInfo) async {
       return await MessageApi.getLikeMessages(
-          blogId: blogInfo!.blogId, offset: offset)
+              blogId: blogInfo!.blogId, offset: offset)
           .then((value) {
         try {
           if (value['meta']['status'] != 200) {
@@ -117,22 +183,23 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
-          _loading = false;
+          _loadingTabs.remove(loadingKey);
         }
       });
     });
   }
 
-  _fetchSystemNotices(MessageType type,
-      List list, {
-        bool refresh = false,
-        Function()? resetNoMore,
-        Function()? onNoMore,
-      }) async {
-    if (_loading) return;
+  _fetchSystemNotices(
+    MessageType type,
+    List<MessageItem> list, {
+    bool refresh = false,
+    Function()? resetNoMore,
+    Function()? onNoMore,
+  }) async {
+    final loadingKey = type.name;
+    if (!_loadingTabs.add(loadingKey)) return IndicatorResult.none;
     if (refresh) resetNoMore?.call();
-    _loading = true;
-    int offset = refresh ? 0 : _allMessages.length;
+    int offset = refresh ? 0 : list.length;
     return await HiveUtil.getUserInfo().then((blogInfo) async {
       return await MessageApi.getSystemNoticeList(
         blogId: blogInfo!.blogId,
@@ -164,7 +231,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
           return IndicatorResult.fail;
         } finally {
           if (mounted) setState(() {});
-          _loading = false;
+          _loadingTabs.remove(loadingKey);
         }
       });
     });
@@ -208,7 +275,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
           onNoMore: () => _allNoMore = true,
         );
       },
-      refreshOnStart: true,
+      refreshOnStart: false,
       onLoad: () async {
         return await _fetchSystemNotices(
           MessageType.all,
@@ -221,19 +288,19 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       child: _allMessages.isEmpty
           ? EmptyPlaceholder(text: appLocalizations.noNotice)
           : LoadMoreNotification(
-        noMore: _allNoMore,
-        onLoad: () {
-          _fetchSystemNotices(MessageType.all, _allMessages,
-              resetNoMore: () => _allNoMore = false,
-              onNoMore: () => _allNoMore = true);
-        },
-        child: ListView.builder(
-          padding: const EdgeInsets.only(top: 10),
-          itemBuilder: (context, index) =>
-              _buildItem(_allMessages[index]),
-          itemCount: _allMessages.length,
-        ),
-      ),
+              noMore: _allNoMore,
+              onLoad: () {
+                _fetchSystemNotices(MessageType.all, _allMessages,
+                    resetNoMore: () => _allNoMore = false,
+                    onNoMore: () => _allNoMore = true);
+              },
+              child: ListView.builder(
+                padding: const EdgeInsets.only(top: 10),
+                itemBuilder: (context, index) =>
+                    _buildItem(_allMessages[index]),
+                itemCount: _allMessages.length,
+              ),
+            ),
     );
   }
 
@@ -243,7 +310,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       onRefresh: () async {
         return await _fetchLikeMessages(refresh: true);
       },
-      refreshOnStart: true,
+      refreshOnStart: false,
       onLoad: () async {
         return await _fetchLikeMessages();
       },
@@ -251,17 +318,17 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       child: _likeMessages.isEmpty
           ? EmptyPlaceholder(text: appLocalizations.noNotice)
           : LoadMoreNotification(
-        noMore: _likeNoMore,
-        onLoad: () {
-          _fetchLikeMessages();
-        },
-        child: ListView.builder(
-          padding: const EdgeInsets.only(top: 10),
-          itemBuilder: (context, index) =>
-              _buildItem(_likeMessages[index]),
-          itemCount: _likeMessages.length,
-        ),
-      ),
+              noMore: _likeNoMore,
+              onLoad: () {
+                _fetchLikeMessages();
+              },
+              child: ListView.builder(
+                padding: const EdgeInsets.only(top: 10),
+                itemBuilder: (context, index) =>
+                    _buildItem(_likeMessages[index]),
+                itemCount: _likeMessages.length,
+              ),
+            ),
     );
   }
 
@@ -277,7 +344,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
           onNoMore: () => _recommendNoMore = true,
         );
       },
-      refreshOnStart: true,
+      refreshOnStart: false,
       onLoad: () async {
         return await _fetchSystemNotices(
           MessageType.recommend,
@@ -290,19 +357,19 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       child: _recommendMessages.isEmpty
           ? EmptyPlaceholder(text: appLocalizations.noNotice)
           : LoadMoreNotification(
-        noMore: _recommendNoMore,
-        onLoad: () {
-          _fetchSystemNotices(MessageType.recommend, _recommendMessages,
-              resetNoMore: () => _recommendNoMore = false,
-              onNoMore: () => _recommendNoMore = true);
-        },
-        child: ListView.builder(
-          padding: const EdgeInsets.only(top: 10),
-          itemBuilder: (context, index) =>
-              _buildItem(_recommendMessages[index]),
-          itemCount: _recommendMessages.length,
-        ),
-      ),
+              noMore: _recommendNoMore,
+              onLoad: () {
+                _fetchSystemNotices(MessageType.recommend, _recommendMessages,
+                    resetNoMore: () => _recommendNoMore = false,
+                    onNoMore: () => _recommendNoMore = true);
+              },
+              child: ListView.builder(
+                padding: const EdgeInsets.only(top: 10),
+                itemBuilder: (context, index) =>
+                    _buildItem(_recommendMessages[index]),
+                itemCount: _recommendMessages.length,
+              ),
+            ),
     );
   }
 
@@ -318,7 +385,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
           onNoMore: () => _giftNoMore = true,
         );
       },
-      refreshOnStart: true,
+      refreshOnStart: false,
       onLoad: () async {
         return await _fetchSystemNotices(
           MessageType.gift,
@@ -331,19 +398,19 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       child: _giftMessages.isEmpty
           ? EmptyPlaceholder(text: appLocalizations.noNotice)
           : LoadMoreNotification(
-        noMore: _giftNoMore,
-        onLoad: () {
-          _fetchSystemNotices(MessageType.gift, _giftMessages,
-              resetNoMore: () => _giftNoMore = false,
-              onNoMore: () => _giftNoMore = true);
-        },
-        child: ListView.builder(
-          padding: const EdgeInsets.only(top: 10),
-          itemBuilder: (context, index) =>
-              _buildItem(_giftMessages[index]),
-          itemCount: _giftMessages.length,
-        ),
-      ),
+              noMore: _giftNoMore,
+              onLoad: () {
+                _fetchSystemNotices(MessageType.gift, _giftMessages,
+                    resetNoMore: () => _giftNoMore = false,
+                    onNoMore: () => _giftNoMore = true);
+              },
+              child: ListView.builder(
+                padding: const EdgeInsets.only(top: 10),
+                itemBuilder: (context, index) =>
+                    _buildItem(_giftMessages[index]),
+                itemCount: _giftMessages.length,
+              ),
+            ),
     );
   }
 
@@ -359,7 +426,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
           onNoMore: () => _atNoMore = true,
         );
       },
-      refreshOnStart: true,
+      refreshOnStart: false,
       onLoad: () async {
         return await _fetchSystemNotices(
           MessageType.at,
@@ -372,18 +439,18 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       child: _atMessages.isEmpty
           ? EmptyPlaceholder(text: appLocalizations.noNotice)
           : LoadMoreNotification(
-        noMore: _atNoMore,
-        onLoad: () {
-          _fetchSystemNotices(MessageType.at, _atMessages,
-              resetNoMore: () => _atNoMore = false,
-              onNoMore: () => _atNoMore = true);
-        },
-        child: ListView.builder(
-          padding: const EdgeInsets.only(top: 10),
-          itemBuilder: (context, index) => _buildItem(_atMessages[index]),
-          itemCount: _atMessages.length,
-        ),
-      ),
+              noMore: _atNoMore,
+              onLoad: () {
+                _fetchSystemNotices(MessageType.at, _atMessages,
+                    resetNoMore: () => _atNoMore = false,
+                    onNoMore: () => _atNoMore = true);
+              },
+              child: ListView.builder(
+                padding: const EdgeInsets.only(top: 10),
+                itemBuilder: (context, index) => _buildItem(_atMessages[index]),
+                itemCount: _atMessages.length,
+              ),
+            ),
     );
   }
 
@@ -399,7 +466,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
           onNoMore: () => _subscribeNoMore = true,
         );
       },
-      refreshOnStart: true,
+      refreshOnStart: false,
       onLoad: () async {
         return await _fetchSystemNotices(
           MessageType.subscribe,
@@ -412,19 +479,19 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       child: _subscribeMessages.isEmpty
           ? EmptyPlaceholder(text: appLocalizations.noNotice)
           : LoadMoreNotification(
-        noMore: _subscribeNoMore,
-        onLoad: () {
-          _fetchSystemNotices(MessageType.subscribe, _subscribeMessages,
-              resetNoMore: () => _subscribeNoMore = false,
-              onNoMore: () => _subscribeNoMore = true);
-        },
-        child: ListView.builder(
-          padding: const EdgeInsets.only(top: 10),
-          itemBuilder: (context, index) =>
-              _buildItem(_subscribeMessages[index]),
-          itemCount: _subscribeMessages.length,
-        ),
-      ),
+              noMore: _subscribeNoMore,
+              onLoad: () {
+                _fetchSystemNotices(MessageType.subscribe, _subscribeMessages,
+                    resetNoMore: () => _subscribeNoMore = false,
+                    onNoMore: () => _subscribeNoMore = true);
+              },
+              child: ListView.builder(
+                padding: const EdgeInsets.only(top: 10),
+                itemBuilder: (context, index) =>
+                    _buildItem(_subscribeMessages[index]),
+                itemCount: _subscribeMessages.length,
+              ),
+            ),
     );
   }
 
@@ -440,7 +507,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
           onNoMore: () => _collectionNoMore = true,
         );
       },
-      refreshOnStart: true,
+      refreshOnStart: false,
       onLoad: () async {
         return await _fetchSystemNotices(
           MessageType.collection,
@@ -453,19 +520,19 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       child: _collectionMessages.isEmpty
           ? EmptyPlaceholder(text: appLocalizations.noNotice)
           : LoadMoreNotification(
-        noMore: _collectionNoMore,
-        onLoad: () {
-          _fetchSystemNotices(MessageType.collection, _collectionMessages,
-              resetNoMore: () => _collectionNoMore = false,
-              onNoMore: () => _collectionNoMore = true);
-        },
-        child: ListView.builder(
-          padding: const EdgeInsets.only(top: 10),
-          itemBuilder: (context, index) =>
-              _buildItem(_collectionMessages[index]),
-          itemCount: _collectionMessages.length,
-        ),
-      ),
+              noMore: _collectionNoMore,
+              onLoad: () {
+                _fetchSystemNotices(MessageType.collection, _collectionMessages,
+                    resetNoMore: () => _collectionNoMore = false,
+                    onNoMore: () => _collectionNoMore = true);
+              },
+              child: ListView.builder(
+                padding: const EdgeInsets.only(top: 10),
+                itemBuilder: (context, index) =>
+                    _buildItem(_collectionMessages[index]),
+                itemCount: _collectionMessages.length,
+              ),
+            ),
     );
   }
 
@@ -481,7 +548,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
           onNoMore: () => _otherNoMore = true,
         );
       },
-      refreshOnStart: true,
+      refreshOnStart: false,
       onLoad: () async {
         return await _fetchSystemNotices(
           MessageType.other,
@@ -494,19 +561,19 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       child: _otherMessages.isEmpty
           ? EmptyPlaceholder(text: appLocalizations.noNotice)
           : LoadMoreNotification(
-        noMore: _otherNoMore,
-        onLoad: () {
-          _fetchSystemNotices(MessageType.other, _otherMessages,
-              resetNoMore: () => _otherNoMore = false,
-              onNoMore: () => _otherNoMore = true);
-        },
-        child: ListView.builder(
-          padding: const EdgeInsets.only(top: 10),
-          itemBuilder: (context, index) =>
-              _buildItem(_otherMessages[index]),
-          itemCount: _otherMessages.length,
-        ),
-      ),
+              noMore: _otherNoMore,
+              onLoad: () {
+                _fetchSystemNotices(MessageType.other, _otherMessages,
+                    resetNoMore: () => _otherNoMore = false,
+                    onNoMore: () => _otherNoMore = true);
+              },
+              child: ListView.builder(
+                padding: const EdgeInsets.only(top: 10),
+                itemBuilder: (context, index) =>
+                    _buildItem(_otherMessages[index]),
+                itemCount: _otherMessages.length,
+              ),
+            ),
     );
   }
 
@@ -549,9 +616,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
                 decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(
-                      color: Theme
-                          .of(context)
-                          .dividerColor,
+                      color: Theme.of(context).dividerColor,
                       width: 0.5,
                     ),
                   ),
@@ -568,29 +633,26 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
                               children: [
                                 TextSpan(
                                   text: item.actUserBlogInfo.blogNickName,
-                                  style: Theme
-                                      .of(context)
+                                  style: Theme.of(context)
                                       .textTheme
                                       .titleSmall
                                       ?.apply(
-                                    fontSizeDelta: 1,
-                                  ),
+                                        fontSizeDelta: 1,
+                                      ),
                                 ),
                                 TextSpan(
                                   text: item.defString.replaceFirst(
                                       item.actUserBlogInfo.blogNickName, ""),
-                                  style: Theme
-                                      .of(context)
+                                  style: Theme.of(context)
                                       .textTheme
                                       .titleSmall
                                       ?.apply(
-                                    fontSizeDelta: 1,
-                                    color: Theme
-                                        .of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.color,
-                                  ),
+                                        fontSizeDelta: 1,
+                                        color: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.color,
+                                      ),
                                 ),
                               ],
                             ),
@@ -598,13 +660,10 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
                           const SizedBox(height: 10),
                           Text(
                             TimeUtil.formatTimestamp(item.publishTime),
-                            style: Theme
-                                .of(context)
-                                .textTheme
-                                .labelMedium
-                                ?.apply(
-                              fontSizeDelta: 1,
-                            ),
+                            style:
+                                Theme.of(context).textTheme.labelMedium?.apply(
+                                      fontSizeDelta: 1,
+                                    ),
                           ),
                           const SizedBox(height: 10),
                         ],
@@ -644,22 +703,19 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
             .asMap()
             .entries
             .map(
-              (entry) =>
-              ItemBuilder.buildAnimatedTab(context,
+              (entry) => ItemBuilder.buildAnimatedTab(context,
                   selected: entry.key == _currentTabIndex,
                   text: entry.value,
+                  controller: _tabController,
+                  tabIndex: entry.key,
                   normalUserBold: true,
                   sameFontSize: true),
-        )
+            )
             .toList(),
         onTap: (index) {
-          setState(() {
-            _currentTabIndex = index;
-          });
+          _setCurrentTab(index);
         },
-        width: MediaQuery
-            .sizeOf(context)
-            .width,
+        width: MediaQuery.sizeOf(context).width,
         background: ChewieTheme.getBackground(context),
         showBorder: ResponsiveUtil.isLandscapeLayout(),
       ),

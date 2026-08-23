@@ -433,8 +433,9 @@ abstract class IndicatorNotifier extends ChangeNotifier {
     Duration? duration,
     Curve curve = Curves.linear,
     ScrollController? scrollController,
+    bool jumpToEdge = true,
     bool force = false,
-  }) {
+  }) async {
     if (!_mounted) {
       return Future.value();
     }
@@ -447,13 +448,23 @@ abstract class IndicatorNotifier extends ChangeNotifier {
       _mode = IndicatorMode.inactive;
       _processing = false;
     }
-    return animateToOffset(
+    await animateToOffset(
       offset: actualTriggerOffset + overOffset,
       mode: IndicatorMode.ready,
       duration: duration,
       curve: curve,
       scrollController: scrollController,
+      jumpToEdge: jumpToEdge,
     );
+    // With non-clamping nested positions there is no real pointer release to
+    // advance `ready` into `processing`. The controller call itself is that
+    // release, so start the task once the reveal animation has reached a
+    // visible overscroll. Guarding on offset keeps unattached controllers a
+    // harmless no-op.
+    if (_offset > 0 && !modeLocked && !noMoreLocked && _canProcess) {
+      _setMode(IndicatorMode.processing);
+      _onTask();
+    }
   }
 
   /// Animation listener for [clamping].
@@ -1031,7 +1042,13 @@ class HeaderNotifier extends IndicatorNotifier {
     ScrollController? scrollController,
   }) async {
     try {
-      if (scrollController == null && _position is! ScrollPosition) {
+      if (scrollController != null) {
+        if (!scrollController.hasClients) return;
+        // Nested scroll views can expose only ScrollMetrics to the indicator
+        // until the first user drag. A caller-provided controller is the
+        // authoritative position for programmatic refreshes in that case.
+        position = scrollController.positions.first;
+      } else if (_position is! ScrollPosition) {
         return;
       }
     } catch (_) {
@@ -1068,6 +1085,7 @@ class HeaderNotifier extends IndicatorNotifier {
           } else {
             (_position as ScrollPosition).jumpTo(scrollTo);
           }
+          _updateBySimulation(position, 0);
         } else {
           userOffsetNotifier.value = true;
           if (scrollController != null) {
@@ -1078,7 +1096,10 @@ class HeaderNotifier extends IndicatorNotifier {
                 .animateTo(scrollTo, duration: duration, curve: curve);
           }
           userOffsetNotifier.value = false;
-          notifyListeners();
+          // A programmatic overscroll has no pointer-up event. Finalize it as
+          // a released simulation so the ready indicator actually starts the
+          // refresh task instead of remaining animated forever.
+          _updateBySimulation(position, 0);
         }
       }
     }
@@ -1194,7 +1215,10 @@ class FooterNotifier extends IndicatorNotifier {
     ScrollController? scrollController,
   }) async {
     try {
-      if (scrollController == null && _position is! ScrollPosition) {
+      if (scrollController != null) {
+        if (!scrollController.hasClients) return;
+        position = scrollController.positions.first;
+      } else if (_position is! ScrollPosition) {
         return;
       }
     } catch (_) {
@@ -1231,6 +1255,7 @@ class FooterNotifier extends IndicatorNotifier {
           } else {
             (_position as ScrollPosition).jumpTo(scrollTo);
           }
+          _updateBySimulation(position, 0);
         } else {
           userOffsetNotifier.value = true;
           if (scrollController != null) {
@@ -1241,7 +1266,7 @@ class FooterNotifier extends IndicatorNotifier {
                 .animateTo(scrollTo, duration: duration, curve: curve);
           }
           userOffsetNotifier.value = false;
-          notifyListeners();
+          _updateBySimulation(position, 0);
         }
       }
     }

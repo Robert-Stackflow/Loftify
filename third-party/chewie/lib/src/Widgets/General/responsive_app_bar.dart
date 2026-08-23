@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 class ResponsiveAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final Widget? titleWidget;
   final bool showBack;
+  final IconData leadingIcon;
   final Function()? onTapBack;
   final bool? showBorder;
   final Widget? bottomWidget;
@@ -15,15 +18,21 @@ class ResponsiveAppBar extends StatelessWidget implements PreferredSizeWidget {
   final double titleLeftMargin;
   final double rightSpacing;
   final List<Widget> actions;
+  final List<Widget> landscapeActions;
+  @Deprecated('Use landscapeActions instead.')
   final List<Widget> desktopActions;
   final double height;
   final double? borderWidth;
+  final BuildContext? context;
+  final SystemUiOverlayStyle? systemOverlayStyle;
 
   const ResponsiveAppBar({
     super.key,
+    this.context,
     this.title = "",
     this.titleWidget,
     this.showBack = false,
+    this.leadingIcon = Icons.arrow_back_rounded,
     this.onTapBack,
     this.showBorder,
     this.bottomWidget,
@@ -32,15 +41,33 @@ class ResponsiveAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.centerTitle = false,
     this.titleLeftMargin = 5,
     this.rightSpacing = 8,
+    this.landscapeActions = const [],
     this.desktopActions = const [],
     this.actions = const [],
     this.height = 48,
     this.borderWidth,
+    this.systemOverlayStyle,
   });
 
   @override
   Widget build(BuildContext context) {
     final bool isLandscape = ResponsiveUtil.isLandscapeLayout();
+    void handleBack() {
+      if (onTapBack != null) {
+        onTapBack!();
+        return;
+      }
+      final panelScreenState = chewieProvider.panelScreenState;
+      if (panelScreenState != null) {
+        panelScreenState.popPage();
+        return;
+      }
+      final navigator = Navigator.maybeOf(context);
+      if (navigator?.canPop() ?? false) {
+        navigator!.pop();
+      }
+    }
+
     final Widget titleContent = Container(
       margin: EdgeInsets.only(left: titleLeftMargin),
       child: titleWidget ?? Text(title, style: ChewieTheme.titleLarge),
@@ -49,12 +76,10 @@ class ResponsiveAppBar extends StatelessWidget implements PreferredSizeWidget {
     final PreferredSize topWidget = PreferredSize(
       preferredSize: Size.fromHeight(height),
       child: Container(
+        key: const ValueKey('responsive-app-bar-surface'),
         height: height,
         decoration: BoxDecoration(
           color: backgroundColor ?? ChewieTheme.appBarBackgroundColor,
-          border: (showBorder ?? true)
-              ? ChewieTheme.bottomDividerWithWidth(borderWidth)
-              : null,
         ),
         child: isLandscape
             ? Stack(
@@ -70,18 +95,21 @@ class ResponsiveAppBar extends StatelessWidget implements PreferredSizeWidget {
                             margin: const EdgeInsets.only(left: 8),
                             child: ToolButton(
                               context: context,
-                              onPressed: onTapBack ??
-                                  () => chewieProvider.panelScreenState
-                                      ?.popPage(),
-                              iconBuilder: (_) => const Icon(
-                                  Icons.arrow_back_rounded,
-                                  size: 22),
+                              onPressed: handleBack,
+                              buttonSize: const Size(32, 32),
+                              iconBuilder: (_) => Icon(
+                                leadingIcon == Icons.arrow_back_rounded
+                                    ? LucideIcons.arrowLeft
+                                    : leadingIcon,
+                                size: 20,
+                              ),
                             ),
                           ),
                         titleContent,
                         const Spacer(),
                         ...[
                           ...desktopActions,
+                          ...landscapeActions,
                           const SizedBox(width: 44),
                         ],
                       ],
@@ -90,12 +118,13 @@ class ResponsiveAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ],
               )
             : AppBarWrapper(
+                primary: false,
                 centerTitle: centerTitle,
-                leadingIcon: showBack ? Icons.arrow_back_rounded : null,
-                onLeadingTap: onTapBack ??
-                    () => chewieProvider.panelScreenState?.popPage(),
+                leadingIcon: showBack ? leadingIcon : null,
+                onLeadingTap: handleBack,
                 backgroundColor:
                     backgroundColor ?? ChewieTheme.scaffoldBackgroundColor,
+                systemOverlayStyle: systemOverlayStyle,
                 titleLeftMargin: titleLeftMargin,
                 rightSpacing: rightSpacing,
                 title: titleWidget != null
@@ -113,19 +142,34 @@ class ResponsiveAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
     );
 
-    return SafeArea(
-      top: !ResponsiveUtil.isLandscapeLayout(),
-      child: bottomWidget != null && bottomHeight != null
-          ? PreferredSize(
-              preferredSize: Size.fromHeight(height + bottomHeight!),
-              child: Column(
-                children: [
-                  topWidget,
-                  bottomWidget!,
-                ],
-              ),
-            )
-          : topWidget,
+    final effectiveBackgroundColor = backgroundColor ??
+        (isLandscape
+            ? ChewieTheme.appBarBackgroundColor
+            : ChewieTheme.scaffoldBackgroundColor);
+    final effectiveSystemOverlayStyle = systemOverlayStyle ??
+        AppBarWrapper.systemUiOverlayStyleForColor(
+          context,
+          effectiveBackgroundColor,
+        );
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: effectiveSystemOverlayStyle,
+      child: ColoredBox(
+        color: effectiveBackgroundColor,
+        child: SafeArea(
+          top: ResponsiveUtil.isMobile(),
+          child: bottomWidget != null && bottomHeight != null
+              ? PreferredSize(
+                  preferredSize: Size.fromHeight(height + bottomHeight!),
+                  child: Column(
+                    children: [
+                      topWidget,
+                      bottomWidget!,
+                    ],
+                  ),
+                )
+              : topWidget,
+        ),
+      ),
     );
   }
 
