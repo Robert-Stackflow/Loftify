@@ -671,6 +671,7 @@ abstract final class LoftifyTheme {
     final isDark = source.isDarkMode;
     final colors = _colors(source, isDark: isDark);
     final typography = _typography(base, colors);
+    final materialTextTheme = _materialTextTheme(base.textTheme, typography);
     final shadows = _shadows(isDark: isDark);
     final design = LoftifyDesignThemeData(
       colors: colors,
@@ -725,10 +726,14 @@ abstract final class LoftifyTheme {
         error: colors.danger,
       ),
       scaffoldBackgroundColor: colors.page,
-      canvasColor: colors.surface,
-      cardColor: colors.surfaceRaised,
+      canvasColor: source.canvasColor,
+      // Legacy content controls intentionally use the theme card color as a
+      // soft grey information surface. Mapping this role to raised white made
+      // post-detail collection, grain and tag controls disappear on the white
+      // page background.
+      cardColor: source.cardColor,
       dividerColor: colors.outline,
-      textTheme: _materialTextTheme(base.textTheme, typography),
+      textTheme: materialTextTheme,
       iconTheme: IconThemeData(color: colors.textSecondary, size: icons.large),
       appBarTheme: base.appBarTheme.copyWith(
         backgroundColor: colors.page,
@@ -737,7 +742,7 @@ abstract final class LoftifyTheme {
         shadowColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        titleTextStyle: typography.pageTitle,
+        titleTextStyle: materialTextTheme.titleLarge,
       ),
       bottomNavigationBarTheme: base.bottomNavigationBarTheme.copyWith(
         backgroundColor: colors.page,
@@ -752,7 +757,7 @@ abstract final class LoftifyTheme {
         indicatorColor: colors.accentContainer,
       ),
       cardTheme: CardThemeData(
-        color: colors.surfaceRaised,
+        color: source.cardColor,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         margin: EdgeInsets.zero,
@@ -1061,17 +1066,32 @@ abstract final class LoftifyTheme {
     TextTheme base,
     LoftifyTypographyTokens type,
   ) {
+    TextStyle? primary(TextStyle? style) =>
+        style?.copyWith(color: type.body.color);
+    TextStyle? secondary(TextStyle? style) =>
+        style?.copyWith(color: type.metadata.color);
+
+    // Preserve the original app scale for legacy pages. Many of those pages
+    // intentionally apply small local font deltas; remapping the Material
+    // roles to larger design-token sizes compounded those deltas and made only
+    // some controls unexpectedly oversized. New components opt into [type]
+    // directly, while existing screens retain their established hierarchy.
     return base.copyWith(
-      headlineMedium: type.display,
-      titleLarge: type.pageTitle,
-      titleMedium: type.sectionTitle,
-      titleSmall: type.cardTitle,
-      bodyLarge: type.readingBody,
-      bodyMedium: type.body,
-      bodySmall: type.metadata,
-      labelLarge: type.label,
-      labelMedium: type.label.copyWith(fontSize: 12),
-      labelSmall: type.metadata.copyWith(fontWeight: FontWeight.w500),
+      displayLarge: primary(base.displayLarge),
+      displayMedium: primary(base.displayMedium),
+      displaySmall: primary(base.displaySmall),
+      headlineLarge: primary(base.headlineLarge),
+      headlineMedium: primary(base.headlineMedium),
+      headlineSmall: primary(base.headlineSmall),
+      titleLarge: primary(base.titleLarge),
+      titleMedium: primary(base.titleMedium),
+      titleSmall: primary(base.titleSmall),
+      bodyLarge: primary(base.bodyLarge),
+      bodyMedium: primary(base.bodyMedium),
+      bodySmall: secondary(base.bodySmall),
+      labelLarge: secondary(base.labelLarge),
+      labelMedium: secondary(base.labelMedium),
+      labelSmall: secondary(base.labelSmall),
     );
   }
 }

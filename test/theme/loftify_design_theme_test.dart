@@ -37,6 +37,11 @@ void main() {
       expect(darkDesign.colors.textPrimary, const Color(0xFFF2F5F3));
       expect(light.scaffoldBackgroundColor, Colors.white);
       expect(light.navigationBarTheme.backgroundColor, Colors.white);
+      expect(
+        light.cardColor,
+        ChewieThemeColorData.defaultLightThemes.first.cardColor,
+      );
+      expect(light.cardColor, isNot(Colors.white));
       expect(light.appBarTheme.scrolledUnderElevation, 0);
       expect(light.appBarTheme.shadowColor, Colors.transparent);
     });
@@ -87,6 +92,17 @@ void main() {
       expect(design.icons.minimumTapTarget, 48);
       expect(design.motion.press, const Duration(milliseconds: 90));
       expect(design.motion.panel, const Duration(milliseconds: 260));
+
+      // Design roles are opt-in. Legacy Material roles keep the original app
+      // scale so screens that apply local font deltas are not enlarged twice.
+      final theme = LoftifyTheme.build(
+        ChewieThemeColorData.defaultLightThemes.first,
+      );
+      expect(theme.textTheme.titleLarge!.fontSize, 18);
+      expect(theme.textTheme.titleMedium!.fontSize, 16);
+      expect(theme.textTheme.titleSmall!.fontSize, 14);
+      expect(theme.textTheme.bodyLarge!.fontSize, 16);
+      expect(theme.textTheme.bodyMedium!.fontSize, 14);
     });
 
     test('supports copyWith and interpolates theme changes', () {
