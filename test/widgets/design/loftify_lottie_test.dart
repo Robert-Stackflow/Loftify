@@ -65,6 +65,74 @@ void main() {
     }
   });
 
+  test('navigation assets morph from outline to a stable filled end frame', () {
+    for (final asset in <String>[
+      LottieFiles.navCompass,
+      LottieFiles.navSearch,
+      LottieFiles.navHeart,
+      LottieFiles.navUser,
+    ]) {
+      final json =
+          jsonDecode(File(asset).readAsStringSync()) as Map<String, dynamic>;
+      final layers = (json['layers'] as List).cast<Map<String, dynamic>>();
+      final byName = <String, Map<String, dynamic>>{
+        for (final layer in layers) layer['nm'] as String: layer,
+      };
+
+      expect(json['w'], 48, reason: asset);
+      expect(json['h'], 48, reason: asset);
+      expect(json['fr'], 30, reason: asset);
+      expect(json['op'], inInclusiveRange(21, 27), reason: asset);
+      expect(
+          byName.keys,
+          containsAll(<String>[
+            'Outline',
+            'Selected Fill',
+            'Selection Spark',
+          ]),
+          reason: asset);
+
+      final fillShapes =
+          (byName['Selected Fill']!['shapes'] as List).cast<Map>();
+      expect(
+        fillShapes.any(
+          (shape) => shape['ty'] == 'fl' && shape['nm'] == 'Selected Fill',
+        ),
+        isTrue,
+        reason: asset,
+      );
+
+      List<dynamic> opacityFrames(String layerName) {
+        final transform = byName[layerName]!['ks'] as Map<String, dynamic>;
+        final opacity = transform['o'] as Map<String, dynamic>;
+        return opacity['k'] as List;
+      }
+
+      final outlineOpacity = opacityFrames('Outline');
+      final fillOpacity = opacityFrames('Selected Fill');
+      expect(
+        ((outlineOpacity.first as Map)['s'] as List).first,
+        100,
+        reason: asset,
+      );
+      expect(
+        ((outlineOpacity.last as Map)['s'] as List).first,
+        0,
+        reason: asset,
+      );
+      expect(
+        ((fillOpacity.first as Map)['s'] as List).first,
+        0,
+        reason: asset,
+      );
+      expect(
+        ((fillOpacity.last as Map)['s'] as List).first,
+        100,
+        reason: asset,
+      );
+    }
+  });
+
   testWidgets(
       'icon assets expose one exact optical canvas at any requested size',
       (tester) async {
