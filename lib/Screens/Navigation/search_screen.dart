@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:card_swiper/card_swiper.dart';
@@ -20,8 +19,10 @@ import '../../Utils/hive_util.dart';
 import '../../Utils/tab_state_util.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
+import '../../Theme/loftify_design_theme.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
+import '../../Widgets/Navigation/loftify_floating_navigation_header.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
@@ -55,19 +56,21 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
   final List<String> _tabIdList = [];
   int _currentTabIndex = 0;
   final FocusNode _focusNode = FocusNode();
+  bool _searchExpanded = false;
 
   bool get hasSearchFocus => _focusNode.hasFocus;
 
-  void focusSearch() => FocusScope.of(context).requestFocus(_focusNode);
+  void focusSearch() => _expandSearch();
 
   @override
   FutureOr onTapBottomNavigation() {
-    FocusScope.of(context).requestFocus(_focusNode);
+    _expandSearch();
   }
 
   @override
   void initState() {
     super.initState();
+    _focusNode.addListener(_handleSearchFocusChanged);
     fetchGuessList();
     fetchRankList();
     _searchController.addListener(() {
@@ -137,6 +140,28 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
     super.dispose();
   }
 
+  void _handleSearchFocusChanged() {
+    if (!mounted) return;
+    if (!_focusNode.hasFocus && _searchController.text.isEmpty) {
+      setState(() => _searchExpanded = false);
+    }
+  }
+
+  void _expandSearch() {
+    if (!mounted) return;
+    if (!_searchExpanded) setState(() => _searchExpanded = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) FocusScope.of(context).requestFocus(_focusNode);
+    });
+  }
+
+  void _collapseSearch() {
+    _searchController.clear();
+    _sugList.clear();
+    _focusNode.unfocus();
+    if (mounted) setState(() => _searchExpanded = false);
+  }
+
   fetchGuessList() {
     SearchApi.getGuessList().then((value) {
       if (value['code'] != 0) {
@@ -178,15 +203,11 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
     super.build(context);
     return Scaffold(
       backgroundColor: ChewieTheme.getBackground(context),
-      appBar: ResponsiveAppBar(
-        titleWidget: _buildSearchBar(),
-        titleLeftMargin: 0,
-        rightSpacing: 0,
-      ),
       body: Stack(
         children: [
           _buildMainBody(),
           if (_sugList.isNotEmpty) _buildSuggestList(),
+          _buildFloatingHeader(),
         ],
       ),
       extendBody: true,
@@ -227,7 +248,9 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
   _buildSuggestList() {
     return Container(
       color: ChewieTheme.getBackground(context),
-      padding: const EdgeInsets.only(top: 8),
+      padding: EdgeInsets.only(
+        top: LoftifyFloatingNavigationHeader.contentTopInset(context),
+      ),
       child: ListView.builder(
         itemCount: _sugList.length,
         itemBuilder: (context, index) {
@@ -280,6 +303,11 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
     return CustomScrollView(
       controller: _scrollController,
       slivers: [
+        SliverToBoxAdapter(
+          child: SizedBox(
+            height: LoftifyFloatingNavigationHeader.contentTopInset(context),
+          ),
+        ),
         SliverToBoxAdapter(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -679,26 +707,92 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
     );
   }
 
-  Widget _buildSearchBar() {
-    double width = ResponsiveUtil.isLandscapeLayout()
-        ? searchBarWidth - 80
-        : min(MediaQuery.of(context).size.width, searchBarWidth);
-    return Container(
-      margin: const EdgeInsets.all(10),
-      constraints:
-          BoxConstraints(maxWidth: width, minWidth: width, maxHeight: 56),
-      child: ItemBuilder.buildSearchBar(
-        context: context,
-        borderRadius: 8,
-        bottomMargin: 18,
-        hintFontSizeDelta: 1,
-        focusNode: _focusNode,
-        controller: _searchController,
-        hintText: appLocalizations.searchHint,
-        onSubmitted: (text) async {
-          _performSearch(text);
-        },
+  Widget _buildFloatingHeader() {
+    return LoftifyFloatingNavigationHeader(
+      child: Selector<AppProvider, bool>(
+        selector: (_, provider) => provider.reduceTransparency,
+        builder: (context, reduceTransparency, _) => LayoutBuilder(
+          builder: (context, _) {
+            const avatarWidth = LoftifyFloatingNavigationHeader.height;
+            const gap = 8.0;
+            return Stack(
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: LoftifyNavigationAvatarButton(
+                    semanticLabel: appLocalizations.mine,
+                    enableBlur: !reduceTransparency,
+                    onPressed: _openMine,
+                  ),
+                ),
+                AnimatedPositioned(
+                  duration: context.design.motion.effective(
+                    context,
+                    context.design.motion.state,
+                  ),
+                  curve: context.design.motion.enterCurve,
+                  left: _searchExpanded ? avatarWidth + gap : null,
+                  right: 0,
+                  width: _searchExpanded ? null : avatarWidth,
+                  top: 0,
+                  bottom: 0,
+                  child: AnimatedSwitcher(
+                    duration: context.design.motion.effective(
+                      context,
+                      context.design.motion.press,
+                    ),
+                    child: _searchExpanded
+                        ? LoftifyFloatingCapsule(
+                            key: const ValueKey('expanded-search-capsule'),
+                            enableBlur: !reduceTransparency,
+                            padding: const EdgeInsets.only(left: 4),
+                            child: Row(
+                              children: [
+                                Expanded(child: _buildSearchBar()),
+                                ChewieIconButton(
+                                  icon: LoftifyIcons.close,
+                                  tooltip: MaterialLocalizations.of(context)
+                                      .closeButtonTooltip,
+                                  tapTargetSize: 44,
+                                  onPressed: _collapseSearch,
+                                ),
+                              ],
+                            ),
+                          )
+                        : LoftifyFloatingHeaderAction(
+                            key: const ValueKey('collapsed-search-capsule'),
+                            icon: LoftifyIcons.search,
+                            tooltip: appLocalizations.searchHint,
+                            enableBlur: !reduceTransparency,
+                            onPressed: _expandSearch,
+                          ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
+    );
+  }
+
+  void _openMine() {
+    appProvider.sidebarChoice = SideBarChoice.Mine;
+    panelScreenState?.popAll(false);
+  }
+
+  Widget _buildSearchBar() {
+    return ItemBuilder.buildSearchBar(
+      context: context,
+      background: Colors.transparent,
+      borderRadius: context.design.radii.full,
+      hintFontSizeDelta: 0,
+      focusNode: _focusNode,
+      controller: _searchController,
+      hintText: appLocalizations.searchHint,
+      onSubmitted: (text) async {
+        _performSearch(text);
+      },
     );
   }
 

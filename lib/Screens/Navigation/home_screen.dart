@@ -4,10 +4,13 @@ import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/recommend_api.dart';
 import 'package:loftify/Widgets/PostItem/recommend_flow_item_builder.dart';
+import 'package:provider/provider.dart';
 
 import '../../Models/recommend_response.dart';
 import '../../Utils/app_provider.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/paged_data_controller.dart';
+import '../../Widgets/Navigation/loftify_floating_navigation_header.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
@@ -152,10 +155,6 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
     super.build(context);
     return Scaffold(
       backgroundColor: ChewieTheme.getBackground(context),
-      appBar: ResponsiveAppBar(
-        title: appLocalizations.home,
-        titleLeftMargin: 15,
-      ),
       body: Stack(
         children: [
           EasyRefresh(
@@ -166,7 +165,11 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
             child: WaterfallFlow.builder(
               controller: _scrollController,
               cacheExtent: MediaQuery.sizeOf(context).height,
-              padding: const EdgeInsets.only(top: 8, left: 8, right: 8),
+              padding: EdgeInsets.only(
+                top: LoftifyFloatingNavigationHeader.contentTopInset(context),
+                left: 8,
+                right: 8,
+              ),
               gridDelegate:
                   const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
                 mainAxisSpacing: 6,
@@ -211,9 +214,28 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
               child: _buildFloatingButtons(),
             ),
           ),
+          LoftifyFloatingNavigationHeader(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Selector<AppProvider, bool>(
+                selector: (_, provider) => provider.reduceTransparency,
+                builder: (context, reduceTransparency, _) =>
+                    LoftifyNavigationAvatarButton(
+                  semanticLabel: appLocalizations.mine,
+                  enableBlur: !reduceTransparency,
+                  onPressed: _openMine,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  void _openMine() {
+    appProvider.sidebarChoice = SideBarChoice.Mine;
+    panelScreenState?.popAll(false);
   }
 
   void scrollToTopAndRefresh() {

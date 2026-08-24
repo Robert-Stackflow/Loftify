@@ -589,9 +589,14 @@ class ItemBuilder {
                         fontSizeDelta: hintFontSizeDelta,
                       ),
                   decoration: InputDecoration(
+                    filled: false,
                     contentPadding: const EdgeInsets.only(left: 8),
-                    border:
-                        const OutlineInputBorder(borderSide: BorderSide.none),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    errorBorder: InputBorder.none,
+                    focusedErrorBorder: InputBorder.none,
                     hintText: hintText,
                     hintStyle: Theme.of(context).textTheme.titleSmall?.apply(
                           color: Theme.of(context).textTheme.labelSmall?.color,
