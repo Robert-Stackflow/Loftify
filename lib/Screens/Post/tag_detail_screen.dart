@@ -12,6 +12,7 @@ import 'package:loftify/Screens/Post/tag_collection_grain_screen.dart';
 import 'package:loftify/Screens/Post/tag_insearch_screen.dart';
 import 'package:loftify/Screens/Post/tag_related_screen.dart';
 import 'package:loftify/Screens/Suit/dress_screen.dart';
+import 'package:loftify/Theme/loftify_design_theme.dart';
 import 'package:loftify/Utils/asset_util.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
@@ -21,9 +22,10 @@ import '../../Utils/cloud_control_provider.dart';
 import '../../Utils/tab_state_util.dart';
 import '../../Utils/uri_util.dart';
 import '../../Widgets/BottomSheet/newest_filter_bottom_sheet.dart';
+import '../../Widgets/Design/loftify_controls.dart';
 import '../../Widgets/Item/item_builder.dart';
-import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
+import '../../Widgets/Tag/tag_detail_components.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
@@ -140,12 +142,13 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final design = context.design;
     return Scaffold(
       appBar: _buildAppBar(),
-      backgroundColor: ChewieTheme.getBackground(context),
+      backgroundColor: design.colors.page,
       body: _tagDetailData != null
           ? _buildMainBody()
-          : LoadingWidget(background: ChewieTheme.getBackground(context)),
+          : LoadingWidget(background: design.colors.page),
     );
   }
 
@@ -246,7 +249,7 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
     return false;
   }
 
-  _fetchTagDetail() async {
+  Future<void> _fetchTagDetail() async {
     TagApi.getTagDetail(tag: widget.tag).then((value) {
       try {
         if (value['meta']['status'] != 200) {
@@ -267,121 +270,16 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
     });
   }
 
-  _buildMainBody() {
-    return Container(
-      decoration: BoxDecoration(
-        color: ChewieTheme.getBackground(context),
-      ),
+  Widget _buildMainBody() {
+    final design = context.design;
+    return ColoredBox(
+      color: design.colors.page,
       child: ExtendedNestedScrollView(
         controller: _scrollController,
         onlyOneScrollInBody: true,
         headerSliverBuilder: (_, __) => [
-          SliverToBoxAdapter(
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              margin: const EdgeInsets.only(top: 5),
-                              child: const ChewieIcon(
-                                LoftifyIcons.tag,
-                                size: 16,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                _tagDetailData!.tag,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
-                                    ?.apply(
-                                      fontSizeDelta: 4,
-                                    ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      LoftifyItemBuilder.buildFramedDoubleButton(
-                        context: context,
-                        isFollowed: _tagDetailData!.favorited,
-                        positiveText: appLocalizations.subscribed,
-                        negtiveText: appLocalizations.subscribe,
-                        onTap: () {
-                          HapticFeedback.mediumImpact();
-                          TagApi.subscribeOrUnSubscribe(
-                            tag: widget.tag,
-                            isSubscribe: !_tagDetailData!.favorited,
-                            id: NumberUtil.parseToInt(
-                                _tagDetailData!.favoritedTagId),
-                          ).then((value) {
-                            if (value['meta']['status'] != 200) {
-                              IToast.showTop(value['meta']['desc'] ??
-                                  value['meta']['msg']);
-                            } else {
-                              _tagDetailData!.favorited =
-                                  !_tagDetailData!.favorited;
-                              setState(() {});
-                            }
-                          });
-                        },
-                      ),
-                      if (ResponsiveUtil.isLandscapeLayout())
-                        ..._buildButtons(true),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 5,
-                    alignment: WrapAlignment.start,
-                    children: [
-                      if (_tagDetailData!.tagRanksNew.isNotEmpty)
-                        ItemBuilder.buildTagItem(
-                          context,
-                          _tagDetailData!.tagRanksNew[0].name ?? "",
-                          TagType.hot,
-                          showIcon: false,
-                          jumpToTag: false,
-                        ),
-                      ItemBuilder.buildTagItem(
-                        context,
-                        "${StringUtil.formatCount(_tagDetailData!.tagViewCount)}${appLocalizations.viewCount}",
-                        TagType.normal,
-                        showTagLabel: false,
-                        showIcon: false,
-                        jumpToTag: false,
-                      ),
-                      ItemBuilder.buildTagItem(
-                        context,
-                        showTagLabel: false,
-                        "${StringUtil.formatCount(_tagDetailData!.postAllCount)}${appLocalizations.participateCount}",
-                        TagType.normal,
-                        showIcon: false,
-                        jumpToTag: false,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  MyDivider(horizontal: 0, vertical: 0),
-                ],
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: _buildEntries(),
-          ),
+          SliverToBoxAdapter(child: _buildTagHero()),
+          SliverToBoxAdapter(child: _buildEntries()),
           if (_tabLabelList.isNotEmpty) _buildTabBar(),
           if (_currentTabIndex == 1) _buildNewestFilterBar(),
           if (_currentTabIndex == 2) _buildHottestFilterBar(),
@@ -391,39 +289,125 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
     );
   }
 
+  Widget _buildTagHero() {
+    final data = _tagDetailData!;
+    return _buildContentFrame(
+      LoftifyTagHero(
+        tag: data.tag,
+        subscribed: data.favorited,
+        subscribeLabel: appLocalizations.subscribe,
+        subscribedLabel: appLocalizations.subscribed,
+        metrics: [
+          if (data.tagRanksNew.isNotEmpty &&
+              StringUtil.isNotEmpty(data.tagRanksNew.first.name))
+            LoftifyTagMetric(
+              data.tagRanksNew.first.name ?? '',
+              emphasized: true,
+            ),
+          LoftifyTagMetric(
+            '${StringUtil.formatCount(data.tagViewCount)}${appLocalizations.viewCount}',
+          ),
+          LoftifyTagMetric(
+            '${StringUtil.formatCount(data.postAllCount)}${appLocalizations.participateCount}',
+          ),
+        ],
+        onSubscriptionPressed: _toggleSubscription,
+        trailing:
+            ResponsiveUtil.isLandscapeLayout() ? _buildButtons(true) : const [],
+      ),
+    );
+  }
+
+  void _toggleSubscription() {
+    HapticFeedback.mediumImpact();
+    TagApi.subscribeOrUnSubscribe(
+      tag: widget.tag,
+      isSubscribe: !_tagDetailData!.favorited,
+      id: NumberUtil.parseToInt(_tagDetailData!.favoritedTagId),
+    ).then((value) {
+      if (value['meta']['status'] != 200) {
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+      } else {
+        _tagDetailData!.favorited = !_tagDetailData!.favorited;
+        if (mounted) setState(() {});
+      }
+    });
+  }
+
+  Widget _buildContentFrame(
+    Widget child, {
+    double top = 0,
+    double bottom = 0,
+  }) {
+    final design = context.design;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final centeredInset = ((width - design.grid.maximumContentWidth) / 2)
+            .clamp(0.0, double.infinity);
+        final pageInset = design.grid.pagePaddingFor(width);
+        return Padding(
+          padding: EdgeInsets.only(
+            left: centeredInset + pageInset,
+            right: centeredInset + pageInset,
+            top: top,
+            bottom: bottom,
+          ),
+          child: child,
+        );
+      },
+    );
+  }
+
+  double _contentInsetFor(double width) {
+    final design = context.design;
+    final centeredInset = ((width - design.grid.maximumContentWidth) / 2)
+        .clamp(0.0, double.infinity);
+    return centeredInset + design.grid.pagePaddingFor(width);
+  }
+
   Widget _buildTabBar() {
+    final design = context.design;
+    final tabBar = TabBarWrapper(
+      tabController: _tabController,
+      tabBarPadding: EdgeInsets.zero,
+      labelPadding: EdgeInsets.zero,
+      background: design.colors.page,
+      tabs: _tabLabelList
+          .asMap()
+          .entries
+          .map((entry) => ItemBuilder.buildAnimatedTab(
+                context,
+                selected: entry.key == _currentTabIndex,
+                text: entry.value,
+                controller: _tabController,
+                tabIndex: entry.key,
+                sameFontSize: true,
+                fontSizeDelta: -1,
+              ))
+          .toList(),
+      onTap: (index) {
+        if (_currentTabIndex == index) {
+          _refreshTabData(index);
+        }
+        _setCurrentTab(index);
+      },
+    );
     return SliverPersistentHeader(
       pinned: true,
       key: ValueKey('tag-detail-tabs-${widget.tag}'),
       delegate: SliverAppBarDelegate(
         radius: 0,
-        background: ChewieTheme.getBackground(context),
-        tabBar: TabBarWrapper(
-          tabController: _tabController,
-          tabBarPadding: const EdgeInsets.symmetric(horizontal: 4),
-          labelPadding: EdgeInsets.zero,
-          background: ChewieTheme.getBackground(context),
-          tabs: _tabLabelList
-              .asMap()
-              .entries
-              .map((entry) => ItemBuilder.buildAnimatedTab(context,
-                  selected: entry.key == _currentTabIndex,
-                  text: entry.value,
-                  controller: _tabController,
-                  tabIndex: entry.key))
-              .toList(),
-          onTap: (index) {
-            if (_currentTabIndex == index) {
-              _refreshTabData(index);
-            }
-            _setCurrentTab(index);
-          },
+        background: design.colors.page,
+        tabBar: PreferredSize(
+          preferredSize: tabBar.preferredSize,
+          child: _buildContentFrame(tabBar),
         ),
       ),
     );
   }
 
-  scrollToTop() {
+  void scrollToTop() {
     _scrollController.animateTo(0,
         duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
   }
@@ -481,53 +465,75 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
   }
 
   Widget _buildEntries() {
+    final design = context.design;
+    final entryHeight = LoftifyTagDiscoveryCard.preferredHeight(context);
     bool showTagDress = controlProvider.globalControl.showTagDress;
     bool showEntries = _tagDetailData!.collectionRank != null ||
         (_tagDetailData!.propGiftTagConfig != null && showTagDress) ||
         StringUtil.isNotEmpty(_tagDetailData!.relatedTags);
     return showEntries
-        ? Container(
-            height: 70,
+        ? SizedBox(
+            height: entryHeight + design.spacing.xxl,
             width: MediaQuery.sizeOf(context).width,
-            margin: const EdgeInsets.only(top: 10),
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              scrollDirection: Axis.horizontal,
-              children: [
-                if (_tagDetailData!.collectionRank != null)
-                  _buildEntryItem(
-                      darkBg: AssetUtil.collectionDarkIllust,
-                      lightBg: AssetUtil.collectionLightIllust,
-                      title: appLocalizations.collectionGrain,
-                      desc: appLocalizations.collectionGrainDetail(
-                          _tagDetailData!.collectionRank!.title),
-                      onTap: () {
-                        RouteUtil.pushPanelCupertinoRoute(
-                            context, TagCollectionGrainScreen(tag: widget.tag));
-                      }),
-                if (StringUtil.isNotEmpty(_tagDetailData!.relatedTags))
-                  _buildEntryItem(
-                      darkBg: AssetUtil.tagDarkIllust,
-                      lightBg: AssetUtil.tagLightIllust,
-                      title: appLocalizations.relatedTag,
-                      desc: _tagDetailData!.relatedTags,
-                      onTap: () {
-                        RouteUtil.pushPanelCupertinoRoute(
-                            context, TagRelatedScreen(tag: widget.tag));
-                      }),
-                if (_tagDetailData!.propGiftTagConfig != null && showTagDress)
-                  _buildEntryItem(
-                    darkBg: AssetUtil.dressDarkIllust,
-                    lightBg: AssetUtil.dressLightIllust,
-                    title: appLocalizations.relatedDressShort,
-                    desc: appLocalizations.relatedDressShortDetail(
-                        _tagDetailData!.propGiftTagConfig!.slotCount),
-                    onTap: () {
-                      RouteUtil.pushPanelCupertinoRoute(
-                          context, DressScreen(tag: widget.tag));
-                    },
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final inset = _contentInsetFor(constraints.maxWidth);
+                return ListView(
+                  padding: EdgeInsets.only(
+                    left: inset,
+                    right: inset,
+                    bottom: design.spacing.xxl,
                   ),
-              ],
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  children: [
+                    if (_tagDetailData!.collectionRank != null)
+                      _buildEntryItem(
+                        darkBg: AssetUtil.collectionDarkIllust,
+                        lightBg: AssetUtil.collectionLightIllust,
+                        title: appLocalizations.collectionGrain,
+                        desc: appLocalizations.collectionGrainDetail(
+                          _tagDetailData!.collectionRank!.title,
+                        ),
+                        onTap: () {
+                          RouteUtil.pushPanelCupertinoRoute(
+                            context,
+                            TagCollectionGrainScreen(tag: widget.tag),
+                          );
+                        },
+                      ),
+                    if (StringUtil.isNotEmpty(_tagDetailData!.relatedTags))
+                      _buildEntryItem(
+                        darkBg: AssetUtil.tagDarkIllust,
+                        lightBg: AssetUtil.tagLightIllust,
+                        title: appLocalizations.relatedTag,
+                        desc: _tagDetailData!.relatedTags,
+                        onTap: () {
+                          RouteUtil.pushPanelCupertinoRoute(
+                            context,
+                            TagRelatedScreen(tag: widget.tag),
+                          );
+                        },
+                      ),
+                    if (_tagDetailData!.propGiftTagConfig != null &&
+                        showTagDress)
+                      _buildEntryItem(
+                        darkBg: AssetUtil.dressDarkIllust,
+                        lightBg: AssetUtil.dressLightIllust,
+                        title: appLocalizations.relatedDressShort,
+                        desc: appLocalizations.relatedDressShortDetail(
+                          _tagDetailData!.propGiftTagConfig!.slotCount,
+                        ),
+                        onTap: () {
+                          RouteUtil.pushPanelCupertinoRoute(
+                            context,
+                            DressScreen(tag: widget.tag),
+                          );
+                        },
+                      ),
+                  ],
+                );
+              },
             ),
           )
         : emptyWidget;
@@ -538,139 +544,74 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
     required String darkBg,
     required String title,
     required String desc,
-    Function()? onTap,
+    required VoidCallback onTap,
   }) {
-    return ClickableWrapper(
-      child: GestureDetector(
+    final design = context.design;
+    return Padding(
+      padding: EdgeInsets.only(right: design.spacing.lg),
+      child: LoftifyTagDiscoveryCard(
+        title: title,
+        description: desc,
         onTap: onTap,
-        child: Container(
-          margin: const EdgeInsets.only(right: 12),
-          width: 170,
-          height: 65,
-          child: Stack(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: AssetUtil.loadDouble(
-                  context,
-                  lightBg,
-                  darkBg,
-                  width: 170,
-                  height: 65,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelMedium
-                          ?.apply(fontSizeDelta: -1),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      desc,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+        illustration: AssetUtil.loadDouble(
+          context,
+          lightBg,
+          darkBg,
+          width: 220,
+          height: LoftifyTagDiscoveryCard.preferredHeight(context),
+          fit: BoxFit.cover,
         ),
       ),
     );
   }
 
   Widget _buildNewestFilterBar() {
+    final design = context.design;
     return SliverPersistentHeader(
-      key: ValueKey("$_currentTabIndex"),
+      key: ValueKey('tag-detail-newest-filter-$_currentTabIndex'),
       pinned: true,
       delegate: SliverHeaderDelegate.fixedHeight(
-        height: 50,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: ChewieTheme.getBackground(context),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              Expanded(
-                child: CustomSlidingSegmentedControl(
-                  isStretch: true,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(50),
-                  ),
-                  thumbDecoration: BoxDecoration(
-                    color: Theme.of(context).canvasColor,
-                    borderRadius: BorderRadius.circular(50),
-                  ),
-                  height: 50,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                  children: <int, Widget>{
-                    0: Text(appLocalizations.releaseRecently),
-                    1: Text(appLocalizations.commentRecently),
-                  },
-                  initialValue: _currentNewestIndex,
-                  onValueChanged: (index) {
-                    setState(() {
-                      _currentNewestIndex = index;
-                      switch (_currentNewestIndex) {
-                        case 0:
-                          _newestParams = _newestParams.copyWith(
-                            tagPostResultType: TagPostResultType.newPost,
-                          );
-                          break;
-                        case 1:
-                          _newestParams = _newestParams.copyWith(
-                            tagPostResultType: TagPostResultType.newComment,
-                          );
-                          break;
-                      }
-                    });
-                    _persistFilter(
-                      HiveUtil.tagNewestFilterKey,
-                      _newestParams,
-                    );
-                    _refreshTabData(1);
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              ItemBuilder.buildIconTextButton(
-                context,
-                icon: const ChewieIcon(LoftifyIcons.filter, size: 16),
-                text: appLocalizations.filter,
-                onTap: () {
-                  BottomSheetBuilder.showBottomSheet(
-                    context,
-                    (context) => NewestFilterBottomSheet(
-                      params: _newestParams.clone(),
-                      onConfirm: (params) {
-                        _newestParams = params;
-                        _persistFilter(
-                          HiveUtil.tagNewestFilterKey,
-                          _newestParams,
-                        );
-                        _refreshTabData(1);
-                      },
-                    ),
+        height: 64,
+        child: ColoredBox(
+          color: design.colors.page,
+          child: _buildContentFrame(
+            _buildFilterStrip(
+              selectedIndex: _currentNewestIndex,
+              labels: [
+                appLocalizations.releaseRecently,
+                appLocalizations.commentRecently,
+              ],
+              onSelected: (index) {
+                setState(() {
+                  _currentNewestIndex = index;
+                  _newestParams = _newestParams.copyWith(
+                    tagPostResultType: index == 0
+                        ? TagPostResultType.newPost
+                        : TagPostResultType.newComment,
                   );
-                },
-              ),
-            ],
+                });
+                _persistFilter(HiveUtil.tagNewestFilterKey, _newestParams);
+                _refreshTabData(1);
+              },
+              onFilter: () {
+                BottomSheetBuilder.showBottomSheet(
+                  context,
+                  (context) => NewestFilterBottomSheet(
+                    params: _newestParams.clone(),
+                    onConfirm: (params) {
+                      _newestParams = params;
+                      _persistFilter(
+                        HiveUtil.tagNewestFilterKey,
+                        _newestParams,
+                      );
+                      _refreshTabData(1);
+                    },
+                  ),
+                );
+              },
+            ),
+            top: design.spacing.md,
+            bottom: design.spacing.md,
           ),
         ),
       ),
@@ -678,100 +619,118 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
   }
 
   Widget _buildHottestFilterBar() {
+    final design = context.design;
     return SliverPersistentHeader(
-      key: ValueKey("$_currentTabIndex"),
+      key: ValueKey('tag-detail-hottest-filter-$_currentTabIndex'),
       pinned: true,
       delegate: SliverHeaderDelegate.fixedHeight(
-        height: 50,
-        child: Container(
-          height: 50,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: ChewieTheme.getBackground(context),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: CustomSlidingSegmentedControl(
-                  isStretch: true,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(50),
-                  ),
-                  height: 50,
-                  thumbDecoration: BoxDecoration(
-                    color: Theme.of(context).canvasColor,
-                    borderRadius: BorderRadius.circular(50),
-                  ),
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                  children: <int, Widget>{
-                    0: Text(appLocalizations.all),
-                    1: Text(appLocalizations.dayRank),
-                    2: Text(appLocalizations.weekRank),
-                    3: Text(appLocalizations.monthRank),
-                  },
-                  initialValue: _currentHottestIndex,
-                  onValueChanged: (index) {
-                    setState(() {
-                      _currentHottestIndex = index;
-                      switch (_currentHottestIndex) {
-                        case 0:
-                          _hottestParams = _hottestParams.copyWith(
-                            tagPostResultType: TagPostResultType.total,
-                          );
-                          break;
-                        case 1:
-                          _hottestParams = _hottestParams.copyWith(
-                            tagPostResultType: TagPostResultType.date,
-                          );
-                          break;
-                        case 2:
-                          _hottestParams = _hottestParams.copyWith(
-                            tagPostResultType: TagPostResultType.week,
-                          );
-                          break;
-                        case 3:
-                          _hottestParams = _hottestParams.copyWith(
-                            tagPostResultType: TagPostResultType.month,
-                          );
-                          break;
-                      }
-                    });
-                    _persistFilter(
-                      HiveUtil.tagHottestFilterKey,
-                      _hottestParams,
-                    );
-                    _refreshTabData(2);
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              ItemBuilder.buildIconTextButton(
-                context,
-                icon: const ChewieIcon(LoftifyIcons.filter, size: 16),
-                text: appLocalizations.filter,
-                onTap: () {
-                  BottomSheetBuilder.showBottomSheet(
-                    context,
-                    (context) => NewestFilterBottomSheet(
-                      params: _hottestParams.clone(),
-                      onConfirm: (params) {
-                        _hottestParams = params;
-                        _persistFilter(
-                          HiveUtil.tagHottestFilterKey,
-                          _hottestParams,
-                        );
-                        _refreshTabData(2);
-                      },
-                    ),
+        height: 64,
+        child: ColoredBox(
+          color: design.colors.page,
+          child: _buildContentFrame(
+            _buildFilterStrip(
+              selectedIndex: _currentHottestIndex,
+              labels: [
+                appLocalizations.all,
+                appLocalizations.dayRank,
+                appLocalizations.weekRank,
+                appLocalizations.monthRank,
+              ],
+              onSelected: (index) {
+                setState(() {
+                  _currentHottestIndex = index;
+                  _hottestParams = _hottestParams.copyWith(
+                    tagPostResultType: switch (index) {
+                      0 => TagPostResultType.total,
+                      1 => TagPostResultType.date,
+                      2 => TagPostResultType.week,
+                      _ => TagPostResultType.month,
+                    },
                   );
-                },
-              ),
-            ],
+                });
+                _persistFilter(HiveUtil.tagHottestFilterKey, _hottestParams);
+                _refreshTabData(2);
+              },
+              onFilter: () {
+                BottomSheetBuilder.showBottomSheet(
+                  context,
+                  (context) => NewestFilterBottomSheet(
+                    params: _hottestParams.clone(),
+                    onConfirm: (params) {
+                      _hottestParams = params;
+                      _persistFilter(
+                        HiveUtil.tagHottestFilterKey,
+                        _hottestParams,
+                      );
+                      _refreshTabData(2);
+                    },
+                  ),
+                );
+              },
+            ),
+            top: design.spacing.md,
+            bottom: design.spacing.md,
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildFilterStrip({
+    required int selectedIndex,
+    required List<String> labels,
+    required ValueChanged<int> onSelected,
+    required VoidCallback onFilter,
+  }) {
+    final design = context.design;
+    final segmentTextStyle = design.typography.label.copyWith(
+      color: design.colors.textPrimary,
+    );
+    return Row(
+      children: [
+        Expanded(
+          child: CustomSlidingSegmentedControl<int>(
+            isStretch: true,
+            innerPadding: EdgeInsets.all(design.spacing.xxs),
+            padding: design.spacing.md,
+            height: 40,
+            decoration: BoxDecoration(
+              color: design.colors.surfaceMuted,
+              borderRadius: BorderRadius.circular(design.radii.full),
+            ),
+            thumbDecoration: BoxDecoration(
+              color: design.colors.surfaceRaised,
+              borderRadius: BorderRadius.circular(design.radii.full),
+              border: Border.all(
+                color: design.colors.outline,
+                width: design.borders.hairline,
+              ),
+            ),
+            duration: design.motion.effective(context, design.motion.state),
+            curve: design.motion.enterCurve,
+            children: {
+              for (var index = 0; index < labels.length; index++)
+                index: Text(
+                  labels[index],
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.fade,
+                  style: segmentTextStyle,
+                ),
+            },
+            initialValue: selectedIndex,
+            onValueChanged: onSelected,
+          ),
+        ),
+        SizedBox(width: design.spacing.md),
+        LoftifyButton(
+          label: appLocalizations.filter,
+          icon: LoftifyIcons.filter,
+          variant: LoftifyButtonVariant.ghost,
+          size: LoftifyButtonSize.compact,
+          onPressed: onFilter,
+        ),
+      ],
     );
   }
 
@@ -830,7 +789,7 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
     ];
   }
 
-  _buildMoreButtons() {
+  FlutterContextMenu _buildMoreButtons() {
     String url = LoftifyUriUtil.getTagUrlByTagName(widget.tag);
     return FlutterContextMenu(
       entries: [
@@ -852,6 +811,13 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
       ],
     );
   }
+}
+
+double _tagResultContentInset(BuildContext context, double viewportWidth) {
+  final design = context.design;
+  final centeredInset = ((viewportWidth - design.grid.maximumContentWidth) / 2)
+      .clamp(0.0, double.infinity);
+  return centeredInset + design.grid.pagePaddingFor(viewportWidth);
 }
 
 class RecommendTab extends StatefulWidget {
@@ -951,6 +917,10 @@ class RecommendTabState extends BaseDynamicState<RecommendTab>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final design = context.design;
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final horizontalInset = _tagResultContentInset(context, viewportWidth);
+    final gutter = design.grid.gutterFor(viewportWidth);
     return EasyRefresh.builder(
       controller: _recommendResultRefreshController,
       refreshOnStart: false,
@@ -964,12 +934,15 @@ class RecommendTabState extends BaseDynamicState<RecommendTab>
               controller: widget.scrollController,
               cacheExtent: MediaQuery.sizeOf(context).height,
               physics: physics,
-              padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-              gridDelegate:
-                  const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-                mainAxisSpacing: 6,
-                crossAxisSpacing: 6,
-                maxCrossAxisExtent: 300,
+              padding: EdgeInsets.only(
+                top: design.spacing.sectionTop,
+                left: horizontalInset,
+                right: horizontalInset,
+              ),
+              gridDelegate: SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                mainAxisSpacing: gutter,
+                crossAxisSpacing: gutter,
+                maxCrossAxisExtent: design.grid.maximumDenseCardExtent,
               ),
               itemBuilder: (BuildContext context, int index) {
                 return RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
@@ -982,19 +955,26 @@ class RecommendTabState extends BaseDynamicState<RecommendTab>
             )
           : GridView.builder(
               controller: widget.scrollController,
-              padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+              padding: EdgeInsets.only(
+                top: design.spacing.sectionTop,
+                left: horizontalInset,
+                right: horizontalInset,
+              ),
               physics: physics,
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 160,
-                mainAxisSpacing: 6,
-                crossAxisSpacing: 6,
+              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: design.grid.maximumDenseCardExtent,
+                mainAxisSpacing: gutter,
+                crossAxisSpacing: gutter,
               ),
               itemCount: _recommendList.length,
               itemBuilder: (context, index) {
-                return RecommendFlowItemBuilder.buildNineGridPostItem(
-                  context,
-                  _recommendList[index],
-                  wh: 160,
+                return LayoutBuilder(
+                  builder: (context, constraints) =>
+                      RecommendFlowItemBuilder.buildNineGridPostItem(
+                    context,
+                    _recommendList[index],
+                    wh: constraints.maxWidth,
+                  ),
                 );
               },
             ),
@@ -1111,6 +1091,10 @@ class HottestTabState extends BaseDynamicState<HottestTab>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final design = context.design;
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final horizontalInset = _tagResultContentInset(context, viewportWidth);
+    final gutter = design.grid.gutterFor(viewportWidth);
     return EasyRefresh.builder(
       controller: _hottestResultRefreshController,
       refreshOnStart: false,
@@ -1124,12 +1108,15 @@ class HottestTabState extends BaseDynamicState<HottestTab>
               controller: widget.scrollController,
               cacheExtent: MediaQuery.sizeOf(context).height,
               physics: physics,
-              padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-              gridDelegate:
-                  const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-                mainAxisSpacing: 6,
-                crossAxisSpacing: 6,
-                maxCrossAxisExtent: 300,
+              padding: EdgeInsets.only(
+                top: design.spacing.sectionTop,
+                left: horizontalInset,
+                right: horizontalInset,
+              ),
+              gridDelegate: SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                mainAxisSpacing: gutter,
+                crossAxisSpacing: gutter,
+                maxCrossAxisExtent: design.grid.maximumDenseCardExtent,
               ),
               itemBuilder: (BuildContext context, int index) {
                 return RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
@@ -1142,19 +1129,26 @@ class HottestTabState extends BaseDynamicState<HottestTab>
             )
           : GridView.builder(
               controller: widget.scrollController,
-              padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+              padding: EdgeInsets.only(
+                top: design.spacing.sectionTop,
+                left: horizontalInset,
+                right: horizontalInset,
+              ),
               physics: physics,
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 160,
-                mainAxisSpacing: 6,
-                crossAxisSpacing: 6,
+              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: design.grid.maximumDenseCardExtent,
+                mainAxisSpacing: gutter,
+                crossAxisSpacing: gutter,
               ),
               itemCount: _hottestList.length,
               itemBuilder: (context, index) {
-                return RecommendFlowItemBuilder.buildNineGridPostItem(
-                  context,
-                  _hottestList[index],
-                  wh: 160,
+                return LayoutBuilder(
+                  builder: (context, constraints) =>
+                      RecommendFlowItemBuilder.buildNineGridPostItem(
+                    context,
+                    _hottestList[index],
+                    wh: constraints.maxWidth,
+                  ),
                 );
               },
             ),
@@ -1272,6 +1266,10 @@ class NewestTabState extends BaseDynamicState<NewestTab>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final design = context.design;
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final horizontalInset = _tagResultContentInset(context, viewportWidth);
+    final gutter = design.grid.gutterFor(viewportWidth);
     return EasyRefresh.builder(
       controller: _newestResultRefreshController,
       refreshOnStart: false,
@@ -1285,12 +1283,15 @@ class NewestTabState extends BaseDynamicState<NewestTab>
               controller: widget.scrollController,
               cacheExtent: MediaQuery.sizeOf(context).height,
               physics: physics,
-              padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
-              gridDelegate:
-                  const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-                mainAxisSpacing: 6,
-                crossAxisSpacing: 6,
-                maxCrossAxisExtent: 300,
+              padding: EdgeInsets.only(
+                top: design.spacing.sectionTop,
+                left: horizontalInset,
+                right: horizontalInset,
+              ),
+              gridDelegate: SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                mainAxisSpacing: gutter,
+                crossAxisSpacing: gutter,
+                maxCrossAxisExtent: design.grid.maximumDenseCardExtent,
               ),
               itemBuilder: (BuildContext context, int index) {
                 return RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
@@ -1303,19 +1304,26 @@ class NewestTabState extends BaseDynamicState<NewestTab>
             )
           : GridView.builder(
               controller: widget.scrollController,
-              padding: const EdgeInsets.only(top: 10, left: 8, right: 8),
+              padding: EdgeInsets.only(
+                top: design.spacing.sectionTop,
+                left: horizontalInset,
+                right: horizontalInset,
+              ),
               physics: physics,
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 160,
-                mainAxisSpacing: 6,
-                crossAxisSpacing: 6,
+              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: design.grid.maximumDenseCardExtent,
+                mainAxisSpacing: gutter,
+                crossAxisSpacing: gutter,
               ),
               itemCount: _newestList.length,
               itemBuilder: (context, index) {
-                return RecommendFlowItemBuilder.buildNineGridPostItem(
-                  context,
-                  _newestList[index],
-                  wh: 160,
+                return LayoutBuilder(
+                  builder: (context, constraints) =>
+                      RecommendFlowItemBuilder.buildNineGridPostItem(
+                    context,
+                    _newestList[index],
+                    wh: constraints.maxWidth,
+                  ),
                 );
               },
             ),
