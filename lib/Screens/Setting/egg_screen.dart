@@ -31,7 +31,7 @@ class _EggScreenState extends BaseDynamicState<EggScreen>
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
       _celebrateController = AnimationController(
           duration: const Duration(seconds: 5), vsync: this);
-      celebrateWidget = LottieUtil.load(
+      celebrateWidget = LottieFiles.buildAnimation(
         LottieFiles.celebrate,
         size: MediaQuery.sizeOf(context).width * 2,
         controller: _celebrateController,

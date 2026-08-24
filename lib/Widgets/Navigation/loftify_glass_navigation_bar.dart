@@ -5,16 +5,20 @@ import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../Utils/lottie_files.dart';
+
 @immutable
 class LoftifyNavigationDestination {
   const LoftifyNavigationDestination({
     required this.icon,
     required this.label,
+    this.lottieAsset,
     this.badgeCount = 0,
   });
 
   final IconData icon;
   final String label;
+  final String? lottieAsset;
   final int badgeCount;
 }
 
@@ -269,6 +273,8 @@ class _LoftifyNavigationItemState extends State<_LoftifyNavigationItem> {
                 children: [
                   _NavigationIcon(
                     icon: widget.destination.icon,
+                    lottieAsset: widget.destination.lottieAsset,
+                    selected: widget.selected,
                     badgeCount: widget.destination.badgeCount,
                     color: foregroundColor,
                   ),
@@ -303,11 +309,15 @@ class _LoftifyNavigationItemState extends State<_LoftifyNavigationItem> {
 class _NavigationIcon extends StatelessWidget {
   const _NavigationIcon({
     required this.icon,
+    required this.lottieAsset,
+    required this.selected,
     required this.badgeCount,
     required this.color,
   });
 
   final IconData icon;
+  final String? lottieAsset;
+  final bool selected;
   final int badgeCount;
   final Color color;
 
@@ -320,7 +330,14 @@ class _NavigationIcon extends StatelessWidget {
         clipBehavior: Clip.none,
         alignment: Alignment.center,
         children: [
-          ChewieIcon(icon, size: 22, color: color),
+          if (lottieAsset == null)
+            ChewieIcon(icon, size: 22, color: color)
+          else
+            LoftifyNavigationLottieIcon(
+              asset: lottieAsset!,
+              selected: selected,
+              color: color,
+            ),
           if (badgeCount > 0)
             Positioned(
               top: -3,
@@ -355,6 +372,93 @@ class _NavigationIcon extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+class LoftifyNavigationLottieIcon extends StatefulWidget {
+  const LoftifyNavigationLottieIcon({
+    super.key,
+    required this.asset,
+    required this.selected,
+    required this.color,
+    this.size = 22,
+  });
+
+  final String asset;
+  final bool selected;
+  final Color color;
+  final double size;
+
+  @override
+  State<LoftifyNavigationLottieIcon> createState() =>
+      _LoftifyNavigationLottieIconState();
+}
+
+class _LoftifyNavigationLottieIconState
+    extends State<LoftifyNavigationLottieIcon>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  bool _loaded = false;
+  bool _animateWhenLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this)
+      ..value = widget.selected ? 1 : 0;
+  }
+
+  @override
+  void didUpdateWidget(covariant LoftifyNavigationLottieIcon oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.asset != widget.asset) {
+      _loaded = false;
+      _animateWhenLoaded = widget.selected;
+      _controller.value = widget.selected ? 1 : 0;
+      return;
+    }
+    if (oldWidget.selected == widget.selected) return;
+    if (!widget.selected) {
+      _animateWhenLoaded = false;
+      _controller.value = 0;
+      return;
+    }
+    if (LoftifyGlassNavigationBar.shouldReduceMotion(MediaQuery.of(context))) {
+      _controller.value = 1;
+    } else if (_loaded) {
+      _controller.forward(from: 0);
+    } else {
+      _animateWhenLoaded = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LottieFiles.buildAnimation(
+      widget.asset,
+      key: ValueKey(widget.asset),
+      size: widget.size,
+      controller: _controller,
+      tint: widget.color,
+      onLoaded: () {
+        _loaded = true;
+        if (!_animateWhenLoaded || !widget.selected) return;
+        _animateWhenLoaded = false;
+        if (LoftifyGlassNavigationBar.shouldReduceMotion(
+          MediaQuery.of(context),
+        )) {
+          _controller.value = 1;
+        } else {
+          _controller.forward(from: 0);
+        }
+      },
     );
   }
 }

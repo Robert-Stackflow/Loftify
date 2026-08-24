@@ -69,7 +69,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     super.initState();
     darkModeController = AnimationController(vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      darkModeWidget = LottieUtil.load(
+      darkModeWidget = LottieFiles.buildAnimation(
         LottieFiles.sunLight,
         size: 25,
         autoForward: !ColorUtil.isDark(context),

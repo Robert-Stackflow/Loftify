@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Utils/lottie_files.dart';
+import 'package:loftify/Widgets/Design/loftify_lottie.dart';
 import 'package:lottie/lottie.dart';
 
 void main() {
@@ -39,9 +40,19 @@ void main() {
         ),
       );
       await tester.pump();
+      final normalized = tester.widget<LoftifyLottie>(
+        find.byType(LoftifyLottie),
+      );
       final lottie = tester.widget<LottieBuilder>(find.byType(LottieBuilder));
-      expect(lottie.width, 42);
-      expect(lottie.height, 42);
+      expect(normalized.size, 42);
+      expect(
+        tester.getSize(
+          find.byKey(
+            ValueKey('loftify-lottie-icon-${normalized.spec.asset}'),
+          ),
+        ),
+        const Size.square(42),
+      );
       return (lottie.lottie as AssetLottie).assetName;
     }
 

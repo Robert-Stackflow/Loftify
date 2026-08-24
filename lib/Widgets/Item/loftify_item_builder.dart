@@ -501,12 +501,11 @@ class LoftifyItemBuilder {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            LottieUtil.load(
+            LottieFiles.buildAnimation(
               ColorUtil.isDark(context)
                   ? LottieFiles.likeMediumDark
                   : LottieFiles.likeMediumLight,
               size: iconSize,
-              fit: BoxFit.cover,
               controller: animationController,
               onLoaded: () {
                 animationController?.value = isLiked! ? 1 : 0;
@@ -549,12 +548,11 @@ class LoftifyItemBuilder {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            LottieUtil.load(
+            LottieFiles.buildAnimation(
               ColorUtil.isDark(context)
                   ? LottieFiles.recommendMediumFocusDark
                   : LottieFiles.recommendMediumFocusLight,
               size: iconSize,
-              fit: BoxFit.fill,
               controller: animationController,
             ),
             if (showCount)

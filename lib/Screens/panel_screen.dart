@@ -71,7 +71,7 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
     darkModeController = AnimationController(vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       initPage();
-      darkModeWidget = LottieUtil.load(
+      darkModeWidget = LottieFiles.buildAnimation(
         LottieFiles.sunLight,
         size: 25,
         autoForward: !ColorUtil.isDark(context),
@@ -295,18 +295,22 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
           destinations: [
             LoftifyNavigationDestination(
               icon: LoftifyIcons.home,
+              lottieAsset: LottieFiles.navCompass,
               label: appLocalizations.home,
             ),
             LoftifyNavigationDestination(
               icon: LoftifyIcons.search,
+              lottieAsset: LottieFiles.navSearch,
               label: appLocalizations.search,
             ),
             LoftifyNavigationDestination(
               icon: LoftifyIcons.activity,
+              lottieAsset: LottieFiles.navHeart,
               label: appLocalizations.dynamicTab,
             ),
             LoftifyNavigationDestination(
               icon: LoftifyIcons.profile,
+              lottieAsset: LottieFiles.navUser,
               label: appLocalizations.mine,
             ),
           ],

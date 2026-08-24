@@ -200,7 +200,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
   initLottie() {
     _doubleTapLikeController =
         AnimationController(duration: const Duration(seconds: 3), vsync: this);
-    doubleTapLikeWidget = LottieUtil.load(
+    doubleTapLikeWidget = LottieFiles.buildAnimation(
       LottieFiles.likeDoubleClickLight,
       size: doubleTapLikeSize,
       controller: _doubleTapLikeController,

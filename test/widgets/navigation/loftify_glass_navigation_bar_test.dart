@@ -4,18 +4,32 @@ import 'dart:io';
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loftify/Utils/lottie_files.dart';
 import 'package:loftify/Widgets/Navigation/loftify_glass_navigation_bar.dart';
 import 'package:loftify/Widgets/loftify_icons.dart';
 
 const _destinations = <LoftifyNavigationDestination>[
-  LoftifyNavigationDestination(icon: LoftifyIcons.home, label: 'Home'),
-  LoftifyNavigationDestination(icon: LoftifyIcons.search, label: 'Search'),
+  LoftifyNavigationDestination(
+    icon: LoftifyIcons.home,
+    lottieAsset: LottieFiles.navCompass,
+    label: 'Home',
+  ),
+  LoftifyNavigationDestination(
+    icon: LoftifyIcons.search,
+    lottieAsset: LottieFiles.navSearch,
+    label: 'Search',
+  ),
   LoftifyNavigationDestination(
     icon: LoftifyIcons.activity,
+    lottieAsset: LottieFiles.navHeart,
     label: 'Activity',
     badgeCount: 120,
   ),
-  LoftifyNavigationDestination(icon: LoftifyIcons.profile, label: 'Mine'),
+  LoftifyNavigationDestination(
+    icon: LoftifyIcons.profile,
+    lottieAsset: LottieFiles.navUser,
+    label: 'Mine',
+  ),
 ];
 
 ThemeData _themeForVariant(ChewieThemeColorData variant) {
@@ -172,8 +186,8 @@ void main() {
         closeTo(variant.isDarkMode ? 0.78 : 0.72, 0.01),
         reason: variant.id,
       );
-      final selectedIcon = tester.widget<ChewieIcon>(
-        find.byType(ChewieIcon).first,
+      final selectedIcon = tester.widget<LoftifyNavigationLottieIcon>(
+        find.byType(LoftifyNavigationLottieIcon).first,
       );
       expect(selectedIcon.color, variant.primaryColor, reason: variant.id);
       expect(tester.takeException(), isNull, reason: variant.id);
@@ -251,7 +265,11 @@ void main() {
     await tester.pump();
 
     expect(tester.widget<AnimatedScale>(scaleFinder).scale, 0.94);
-    expect(find.byType(ChewieIcon), findsNWidgets(_destinations.length));
+    expect(
+      find.byType(LoftifyNavigationLottieIcon),
+      findsNWidgets(_destinations.length),
+    );
+    expect(find.byType(ChewieIcon), findsNothing);
 
     await gesture.up();
     await tester.pump();

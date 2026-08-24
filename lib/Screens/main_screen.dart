@@ -140,7 +140,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       showQQGroupDialog();
       jumpToLogin();
-      darkModeWidget = LottieUtil.load(
+      darkModeWidget = LottieFiles.buildAnimation(
         LottieFiles.sunLight,
         size: 25,
         autoForward: !ColorUtil.isDark(context),
