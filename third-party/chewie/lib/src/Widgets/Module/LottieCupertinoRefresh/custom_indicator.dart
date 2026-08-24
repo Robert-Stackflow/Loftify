@@ -79,16 +79,19 @@ class _CustomIndicatorState extends State<_CustomIndicator>
   Widget _buildIndicator() {
     final progress =
         (_offset / math.max(1, _actualTriggerOffset)).clamp(0.0, 1.0);
-    final scale = Curves.easeOutCubic.transform(progress).clamp(0.0, 1.0);
+    final easedScale = Curves.easeOutCubic.transform(progress).clamp(0.0, 1.0);
+    final availableExtent = math.max(0.0, _offset - 2);
+    final fittedScale =
+        (availableExtent / math.max(1, _radius * 2)).clamp(0.0, 1.0);
+    // Never let the painted indicator become larger than the revealed gap.
+    // Otherwise its lower edge is clipped by the returning list and looks as
+    // if the content is covering the refresh animation.
+    final scale = math.min(easedScale, fittedScale);
     Widget indicator;
     switch (_mode) {
       case IndicatorMode.drag:
       case IndicatorMode.armed:
-        const Curve opacityCurve = Interval(
-          0.0,
-          0.8,
-          curve: Curves.easeInOut,
-        );
+        const Curve opacityCurve = Interval(0.04, 0.72, curve: Curves.easeOut);
         indicator = Opacity(
           key: const ValueKey('indicatorArmed'),
           opacity: opacityCurve.transform(progress),
@@ -131,8 +134,8 @@ class _CustomIndicatorState extends State<_CustomIndicator>
         break;
     }
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 300),
-      reverseDuration: const Duration(milliseconds: 100),
+      duration: const Duration(milliseconds: 180),
+      reverseDuration: const Duration(milliseconds: 120),
       child: widget.state.result == IndicatorResult.noMore
           ? widget.emptyWidget != null
               ? SizedBox(
@@ -158,7 +161,9 @@ class _CustomIndicatorState extends State<_CustomIndicator>
       offset = _actualTriggerOffset;
     }
     return Stack(
+      key: const ValueKey('refresh-indicator-viewport'),
       alignment: Alignment.center,
+      clipBehavior: Clip.hardEdge,
       children: [
         SizedBox(
           height: _axis == Axis.vertical ? offset : double.infinity,

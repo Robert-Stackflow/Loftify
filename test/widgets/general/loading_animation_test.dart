@@ -6,6 +6,7 @@ import 'package:awesome_chewie/src/Widgets/Module/PhotoView/src/photo_view_defau
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
+import 'package:loftify/Screens/Info/nested_mixin.dart';
 import 'package:loftify/Utils/lottie_files.dart';
 import 'package:loftify/Widgets/Design/loftify_lottie.dart';
 import 'package:lottie/lottie.dart';
@@ -122,15 +123,24 @@ void main() {
     const footer = LottieCupertinoFooter(indicator: indicator);
 
     expect(header.position, IndicatorPosition.above);
-    expect(header.triggerOffset, 64);
-    expect(header.maxOverOffset, 96);
+    expect(header.triggerOffset, 48);
+    expect(header.maxOverOffset, 72);
     expect(header.springRebound, isTrue);
-    expect(header.radius, 18);
+    expect(header.radius, 15);
     expect(footer.position, IndicatorPosition.above);
-    expect(footer.triggerOffset, 56);
-    expect(footer.maxOverOffset, 84);
+    expect(footer.triggerOffset, 44);
+    expect(footer.maxOverOffset, 64);
     expect(footer.infiniteOffset, 240);
-    expect(footer.radius, 16);
+    expect(footer.radius, 14);
+  });
+
+  test('nested refresh keeps a compact indicator without a short trigger', () {
+    final header = buildNestedRefreshHeader() as LottieCupertinoHeader;
+
+    expect(header.position, IndicatorPosition.above);
+    expect(header.triggerOffset, 44);
+    expect(header.maxOverOffset, 64);
+    expect(header.radius, 14);
   });
 
   testWidgets('pulling reveals Lottie while the list follows the gesture',
@@ -174,11 +184,17 @@ void main() {
         .transform
         .storage[0];
     final firstScale = indicatorScale();
+    final firstGap =
+        tester.getTopLeft(find.byKey(firstItemKey)).dy - initialTop;
+    expect(30 * firstScale, lessThanOrEqualTo(firstGap + 0.01));
     await gesture.moveBy(const Offset(0, 32));
     await tester.pump();
     final secondScale = indicatorScale();
+    final secondGap =
+        tester.getTopLeft(find.byKey(firstItemKey)).dy - initialTop;
     expect(firstScale, lessThan(secondScale));
     expect(secondScale, lessThanOrEqualTo(1));
+    expect(30 * secondScale, lessThanOrEqualTo(secondGap + 0.01));
     expect(tester.getTopLeft(find.byKey(firstItemKey)).dy,
         greaterThan(initialTop));
     expect(tester.takeException(), isNull);

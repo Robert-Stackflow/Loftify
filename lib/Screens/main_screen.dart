@@ -214,22 +214,22 @@ class MainScreenState extends BaseWindowState<MainScreen>
     );
   }
 
-  initEasyRefresh() {
+  void initEasyRefresh() {
     EasyRefresh.defaultHeaderBuilder = () => LottieCupertinoHeader(
           backgroundColor: Colors.transparent,
-          indicator: LottieFiles.buildLoadingAnimation(36, false),
+          indicator: LottieFiles.buildLoadingAnimation(30, false),
           hapticFeedback: true,
-          triggerOffset: 52,
-          maxOverOffset: 76,
-          radius: 18,
+          triggerOffset: 48,
+          maxOverOffset: 72,
+          radius: 15,
         );
     EasyRefresh.defaultFooterBuilder = () => LottieCupertinoFooter(
           backgroundColor: Colors.transparent,
-          indicator: LottieFiles.buildLoadingAnimation(32, false),
-          triggerOffset: 48,
-          maxOverOffset: 68,
+          indicator: LottieFiles.buildLoadingAnimation(28, false),
+          triggerOffset: 44,
+          maxOverOffset: 64,
           infiniteOffset: 240,
-          radius: 16,
+          radius: 14,
         );
     chewieProvider.loadingWidgetBuilder = LottieFiles.buildLoadingAnimation;
   }

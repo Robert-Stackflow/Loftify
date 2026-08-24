@@ -4,11 +4,11 @@ import 'package:loftify/Utils/lottie_files.dart';
 
 Header buildNestedRefreshHeader() => LottieCupertinoHeader(
       backgroundColor: const Color(0x00000000),
-      indicator: LottieFiles.buildLoadingAnimation(30, false),
+      indicator: LottieFiles.buildLoadingAnimation(28, false),
       hapticFeedback: true,
-      triggerOffset: 34,
-      maxOverOffset: 58,
-      radius: 15,
+      triggerOffset: 44,
+      maxOverOffset: 64,
+      radius: 14,
     );
 
 class NestedRefreshRequest {
