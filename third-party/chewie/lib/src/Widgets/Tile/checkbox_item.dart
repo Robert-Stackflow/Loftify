@@ -102,8 +102,8 @@ class CheckboxItemState extends SearchableState<CheckboxItem> {
         padding: EdgeInsets.only(
           top: _effectivePadding,
           bottom: _effectivePadding,
-          left: 6,
-          right: 4,
+          left: 10,
+          right: 10,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,

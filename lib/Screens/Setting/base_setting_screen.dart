@@ -2,10 +2,14 @@ import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 
 abstract class BaseSettingScreen extends StatefulWidget {
+  static const double sectionTopMargin = 10;
+  static const EdgeInsets defaultPagePadding =
+      EdgeInsets.symmetric(horizontal: 10);
+
   const BaseSettingScreen({
     super.key,
     this.showTitleBar = true,
-    this.padding = const EdgeInsets.symmetric(horizontal: 10),
+    this.padding = defaultPagePadding,
     this.searchText = "",
     this.searchConfig,
   });

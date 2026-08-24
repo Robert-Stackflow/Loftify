@@ -2,6 +2,53 @@ import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
+const double _settingSectionTopSpacing = 10;
+
+BorderRadius _settingSectionBorderRadius(BuildContext context) {
+  final shape = Theme.of(context).cardTheme.shape;
+  if (shape is RoundedRectangleBorder) {
+    return shape.borderRadius.resolve(Directionality.of(context));
+  }
+  return BorderRadius.circular(14);
+}
+
+TextStyle _settingSectionTitleStyle(BuildContext context) {
+  final theme = Theme.of(context);
+  return (theme.textTheme.titleMedium ?? const TextStyle()).copyWith(
+    fontSize: 16,
+    height: 1.35,
+    fontWeight: FontWeight.w600,
+    color: theme.colorScheme.onSurface,
+    letterSpacing: 0,
+  );
+}
+
+Widget _settingSectionDivider(BuildContext context) {
+  return Divider(
+    height: 0.6,
+    thickness: 0.6,
+    indent: 16,
+    endIndent: 16,
+    color: Theme.of(context).dividerColor,
+  );
+}
+
+WidgetStateProperty<Color?> _settingSectionOverlay(BuildContext context) {
+  final color = Theme.of(context).colorScheme.primary;
+  return WidgetStateProperty.resolveWith((states) {
+    if (states.contains(WidgetState.pressed)) {
+      return color.withValues(alpha: 0.08);
+    }
+    if (states.contains(WidgetState.focused)) {
+      return color.withValues(alpha: 0.06);
+    }
+    if (states.contains(WidgetState.hovered)) {
+      return color.withValues(alpha: 0.04);
+    }
+    return Colors.transparent;
+  });
+}
+
 class EntryItem extends SearchableStatefulWidget {
   // Retained for source compatibility with Loftify's existing item builders.
   final BuildContext? context;
@@ -110,7 +157,7 @@ class EntryItemState extends SearchableState<EntryItem> {
   double get _paddingVertical => widget.paddingVertical ?? widget.padding ?? 14;
 
   double get _paddingHorizontal =>
-      widget.paddingHorizontal ?? widget.padding ?? 6;
+      widget.paddingHorizontal ?? widget.padding ?? 10;
 
   Color get _leadingColor => widget.titleColor ?? ChewieTheme.primaryColor;
 
@@ -348,10 +395,10 @@ class SearchableCaptionItemState extends SearchableState<SearchableCaptionItem>
   Widget build(BuildContext context) {
     if (!shouldShow) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.only(top: _settingSectionTopSpacing),
       child: Material(
         color: ChewieTheme.canvasColor,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: _settingSectionBorderRadius(context),
         clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -371,35 +418,40 @@ class SearchableCaptionItemState extends SearchableState<SearchableCaptionItem>
   }
 
   Widget _buildHeader() {
+    final radius = _settingSectionBorderRadius(context);
     return InkWell(
       onTap: _toggleExpansion,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-      child: Padding(
-        padding: widget.padding ??
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text(
-                widget.title,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: ChewieTheme.textDarkGreyColor,
-                  letterSpacing: 0.5,
+      borderRadius: BorderRadius.only(
+        topLeft: radius.topLeft,
+        topRight: radius.topRight,
+      ),
+      splashFactory: NoSplash.splashFactory,
+      overlayColor: _settingSectionOverlay(context),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
+        child: Padding(
+          padding: widget.padding ??
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  widget.title,
+                  style: _settingSectionTitleStyle(context),
                 ),
               ),
-            ),
-            RotationTransition(
-              turns: _arrowAnimation,
-              child: Icon(
-                LucideIcons.chevronDown,
-                size: 18,
-                color: ChewieTheme.textDarkGreyColor,
+              const SizedBox(width: 8),
+              RotationTransition(
+                turns: _arrowAnimation,
+                child: Icon(
+                  LucideIcons.chevronDown,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -408,20 +460,10 @@ class SearchableCaptionItemState extends SearchableState<SearchableCaptionItem>
   List<Widget> _buildChildren() {
     final children =
         widget.children.map((child) => _withUpdatedSearchText(child)).toList();
-    final result = <Widget>[
-      Container(
-        height: 0.5,
-        margin: const EdgeInsets.symmetric(horizontal: 12),
-        color: ChewieTheme.dividerColor,
-      ),
-    ];
+    final result = <Widget>[];
     for (int i = 0; i < children.length; i++) {
-      if (i > 0) {
-        result.add(Container(
-          height: 0.5,
-          margin: const EdgeInsets.symmetric(horizontal: 12),
-          color: ChewieTheme.dividerColor,
-        ));
+      if (widget.showDivider) {
+        result.add(_settingSectionDivider(context));
       }
       result.add(children[i]);
     }
@@ -507,23 +549,23 @@ class CaptionItemState extends BaseDynamicState<CaptionItem>
     if (widget.children.isEmpty) {
       return Padding(
         padding: widget.padding ??
-            const EdgeInsets.only(left: 12, right: 12, top: 20, bottom: 10),
+            const EdgeInsets.fromLTRB(
+              16,
+              _settingSectionTopSpacing,
+              16,
+              8,
+            ),
         child: Text(
           widget.title,
-          style: ChewieTheme.labelSmall.copyWith(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: ChewieTheme.textDarkGreyColor,
-            letterSpacing: 0.5,
-          ),
+          style: _settingSectionTitleStyle(context),
         ),
       );
     }
     return Padding(
-      padding: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.only(top: _settingSectionTopSpacing),
       child: Material(
         color: ChewieTheme.canvasColor,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: _settingSectionBorderRadius(context),
         clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -546,55 +588,50 @@ class CaptionItemState extends BaseDynamicState<CaptionItem>
   }
 
   Widget _buildHeader() {
+    final radius = _settingSectionBorderRadius(context);
     return InkWell(
       onTap: _toggleExpansion,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-      child: Padding(
-        padding: widget.padding ??
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text(
-                widget.title,
-                style: ChewieTheme.labelSmall.copyWith(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: ChewieTheme.textDarkGreyColor,
-                  letterSpacing: 0.5,
+      borderRadius: BorderRadius.only(
+        topLeft: radius.topLeft,
+        topRight: radius.topRight,
+      ),
+      splashFactory: NoSplash.splashFactory,
+      overlayColor: _settingSectionOverlay(context),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
+        child: Padding(
+          padding: widget.padding ??
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  widget.title,
+                  style: _settingSectionTitleStyle(context),
                 ),
               ),
-            ),
-            RotationTransition(
-              turns: _arrowAnimation,
-              child: Icon(
-                LucideIcons.chevronDown,
-                size: 20,
-                color: ChewieTheme.textDarkGreyColor,
+              const SizedBox(width: 8),
+              RotationTransition(
+                turns: _arrowAnimation,
+                child: Icon(
+                  LucideIcons.chevronDown,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   List<Widget> _buildChildren() {
-    final result = <Widget>[
-      Container(
-        height: 0.5,
-        margin: const EdgeInsets.symmetric(horizontal: 12),
-        color: ChewieTheme.dividerColor,
-      ),
-    ];
+    final result = <Widget>[];
     for (int i = 0; i < widget.children.length; i++) {
-      if (i > 0) {
-        result.add(Container(
-          height: 0.5,
-          margin: const EdgeInsets.symmetric(horizontal: 12),
-          color: ChewieTheme.dividerColor,
-        ));
+      if (widget.showDivider) {
+        result.add(_settingSectionDivider(context));
       }
       result.add(widget.children[i]);
     }

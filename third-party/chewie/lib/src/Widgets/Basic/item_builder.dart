@@ -28,7 +28,7 @@ class ChewieItemBuilder {
     bool showBack = true,
     Color? backgroundColor,
     double titleLeftMargin = 5,
-    bool showBorder = true,
+    bool showBorder = false,
     Function()? onTapBack,
     Widget? overrideBody,
     List<Widget> landscapeActions = const [],

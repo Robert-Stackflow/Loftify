@@ -176,7 +176,7 @@ class InlineSelectionItemState<T extends DropdownMixin>
   Widget build(BuildContext context) {
     if (!shouldShow) return const SizedBox.shrink();
     final vertical = widget.paddingVertical ?? 12;
-    final horizontal = widget.paddingHorizontal ?? 6;
+    final horizontal = widget.paddingHorizontal ?? 10;
 
     return InkAnimation(
       ink: widget.ink,
@@ -188,7 +188,9 @@ class InlineSelectionItemState<T extends DropdownMixin>
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final useStackedLayout = constraints.maxWidth < 380;
+          final textScale = MediaQuery.textScalerOf(context).scale(1);
+          final useStackedLayout =
+              constraints.maxWidth < 380 || textScale > 1.35;
           final title = Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -321,6 +323,9 @@ class InlineSelectionItemState<T extends DropdownMixin>
   }
 
   CustomDropdownDecoration _dropdownDecoration() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final radius = BorderRadius.circular(10);
     return CustomDropdownDecoration(
       overlayScrollbarThemeData: ChewieTheme.scrollbarTheme,
       showSelectStyle:
@@ -329,14 +334,14 @@ class InlineSelectionItemState<T extends DropdownMixin>
       hintStyle: ChewieTheme.bodySmall,
       expandedShadow: ChewieTheme.defaultBoxShadow,
       expandedBorder: ChewieTheme.border,
-      expandedBorderRadius: ChewieDimens.borderRadius8,
+      expandedBorderRadius: radius,
       closedBorder: ChewieTheme.border,
-      closedBorderRadius: ChewieDimens.borderRadius8,
+      closedBorderRadius: radius,
       listItemDecoration: ListItemDecoration(
-        splashColor: ChewieTheme.splashColor,
-        highlightColor: ChewieTheme.highlightColor,
-        selectedColor: ChewieTheme.hoverColor,
-        selectedIconColor: ChewieTheme.primaryColor,
+        splashColor: Colors.transparent,
+        highlightColor: colorScheme.primary.withValues(alpha: 0.06),
+        selectedColor: colorScheme.primaryContainer,
+        selectedIconColor: colorScheme.primary,
       ),
       closedFillColor: ChewieTheme.scaffoldBackgroundColor,
       expandedFillColor: ChewieTheme.scaffoldBackgroundColor,
