@@ -2,6 +2,7 @@ import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/user_api.dart';
 import 'package:loftify/Models/account_response.dart';
+import 'package:loftify/Screens/Download/download_management_screen.dart';
 import 'package:loftify/Screens/Info/collection_screen.dart';
 import 'package:loftify/Screens/Info/favorite_folder_list_screen.dart';
 import 'package:loftify/Screens/Info/grain_screen.dart';
@@ -82,7 +83,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     }
   }
 
-  _fetchUserInfo() async {
+  Future<IndicatorResult> _fetchUserInfo() async {
     if (appProvider.token.isNotEmpty) {
       return await UserApi.getUserInfo().then((value) async {
         try {
@@ -125,7 +126,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     return IndicatorResult.success;
   }
 
-  _onRefresh() async {
+  Future<IndicatorResult> _onRefresh() async {
     return await _fetchUserInfo();
   }
 
@@ -148,7 +149,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     );
   }
 
-  _buildMainBody() {
+  Widget _buildMainBody() {
     return appProvider.token.isNotEmpty
         ? ScreenTypeLayout.builder(
             breakpoints: const ScreenBreakpoints(
@@ -162,7 +163,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
         : LoftifyItemBuilder.buildUnLoginMainBody(context);
   }
 
-  _buildMobileMainBody() {
+  Widget _buildMobileMainBody() {
     return EasyRefresh(
       controller: _refreshController,
       onRefresh: _onRefresh,
@@ -185,7 +186,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     );
   }
 
-  _buildTabletMainBody() {
+  Widget _buildTabletMainBody() {
     return Row(
       children: [
         Expanded(
@@ -241,7 +242,11 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     );
   }
 
-  _processResult(value, FollowingMode followingMode, {bool refresh = false}) {
+  IndicatorResult _processResult(
+    dynamic value,
+    FollowingMode followingMode, {
+    bool refresh = false,
+  }) {
     try {
       if (value['meta']['status'] != 200) {
         IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
@@ -287,7 +292,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     }
   }
 
-  _fetchFollowingOrFolllowerList(
+  Future<IndicatorResult> _fetchFollowingOrFolllowerList(
     FollowingMode followingMode, {
     bool refresh = false,
   }) async {
@@ -391,7 +396,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     );
   }
 
-  getAvatarBoxImage() {
+  String getAvatarBoxImage() {
     String url = ChewieHiveUtil.getString(HiveUtil.customAvatarBoxKey) ?? "";
     return url.isNotEmpty ? url : blogInfo?.avatarBoxImage ?? "";
   }
@@ -489,7 +494,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     );
   }
 
-  _buildStatsticRow() {
+  Widget _buildStatsticRow() {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -601,8 +606,19 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                 const HistoryScreen(),
               );
             },
-            roundBottom: true,
             leading: LoftifyIcons.history,
+          ),
+          EntryItem(
+            title: appLocalizations.downloadManagement,
+            showLeading: true,
+            onTap: () {
+              RouteUtil.pushPanelCupertinoRoute(
+                context,
+                const DownloadManagementScreen(),
+              );
+            },
+            roundBottom: true,
+            leading: LoftifyIcons.download,
           ),
         ],
       ),
@@ -653,7 +669,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     ];
   }
 
-  changeMode() {
+  void changeMode() {
     if (ColorUtil.isDark(context)) {
       appProvider.themeMode = ActiveThemeMode.light;
       darkModeController.forward();
