@@ -23,6 +23,7 @@ import '../../Utils/app_provider.dart';
 import '../../Utils/cloud_control_provider.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
+import '../../Widgets/Design/loftify_section.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import '../Info/following_follower_screen.dart';
@@ -561,10 +562,10 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
   List<Widget> _buildContent() {
     return [
       const SizedBox(height: 10),
-      CaptionItem(
+      LoftifySection(
         title: appLocalizations.contentCenter,
         children: [
-          EntryItem(
+          LoftifyEntryItem(
             title: appLocalizations.myLikes,
             showLeading: true,
             onTap: () {
@@ -575,7 +576,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
             },
             leading: LoftifyIcons.favorite,
           ),
-          EntryItem(
+          LoftifyEntryItem(
             title: appLocalizations.myRecommends,
             showLeading: true,
             onTap: () {
@@ -586,7 +587,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
             },
             leading: LoftifyIcons.recommend,
           ),
-          EntryItem(
+          LoftifyEntryItem(
             title: appLocalizations.myFavorites,
             showLeading: true,
             onTap: () {
@@ -597,7 +598,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
             },
             leading: LoftifyIcons.bookmark,
           ),
-          EntryItem(
+          LoftifyEntryItem(
             title: appLocalizations.myHistory,
             showLeading: true,
             onTap: () {
@@ -608,7 +609,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
             },
             leading: LoftifyIcons.history,
           ),
-          EntryItem(
+          LoftifyEntryItem(
             title: appLocalizations.downloadManagement,
             showLeading: true,
             onTap: () {
@@ -617,7 +618,6 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                 const DownloadManagementScreen(),
               );
             },
-            roundBottom: true,
             leading: LoftifyIcons.download,
           ),
         ],
@@ -627,10 +627,10 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
 
   List<Widget> _buildCreation() {
     return [
-      CaptionItem(
+      LoftifySection(
         title: appLocalizations.myCreative,
         children: [
-          EntryItem(
+          LoftifyEntryItem(
             title: appLocalizations.myPosts,
             showLeading: true,
             onTap: () {
@@ -641,7 +641,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
             },
             leading: LoftifyIcons.article,
           ),
-          EntryItem(
+          LoftifyEntryItem(
             title: appLocalizations.myCollections,
             showLeading: true,
             onTap: () {
@@ -652,10 +652,9 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
             },
             leading: LoftifyIcons.collection,
           ),
-          EntryItem(
+          LoftifyEntryItem(
             title: appLocalizations.myGrains,
             showLeading: true,
-            roundBottom: true,
             onTap: () {
               RouteUtil.pushPanelCupertinoRoute(
                 context,

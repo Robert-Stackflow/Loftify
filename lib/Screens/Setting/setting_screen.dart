@@ -8,6 +8,7 @@ import 'package:loftify/Screens/Setting/lofter_basic_setting_screen.dart';
 import 'package:loftify/Screens/Setting/tagshield_setting_screen.dart';
 import 'package:loftify/Screens/Setting/userdynamicshield_setting_screen.dart';
 import 'package:loftify/Utils/app_provider.dart';
+import 'package:loftify/Widgets/Design/loftify_section.dart';
 import 'package:loftify/Widgets/loftify_icons.dart';
 
 import '../../l10n/l10n.dart';
@@ -46,12 +47,10 @@ class _SettingScreenState extends BaseDynamicState<SettingScreen>
       showBack: !ResponsiveUtil.isLandscapeLayout(),
       padding: widget.padding,
       children: [
-        CaptionItem(
-          context: context,
+        LoftifySection(
           title: appLocalizations.basicSetting,
           children: [
-            EntryItem(
-              context: context,
+            LoftifyEntryItem(
               title: appLocalizations.generalSetting,
               showLeading: true,
               onTap: () {
@@ -60,8 +59,7 @@ class _SettingScreenState extends BaseDynamicState<SettingScreen>
               },
               leading: LoftifyIcons.generalSettings,
             ),
-            EntryItem(
-              context: context,
+            LoftifyEntryItem(
               title: appLocalizations.appearanceSetting,
               showLeading: true,
               onTap: () {
@@ -70,8 +68,7 @@ class _SettingScreenState extends BaseDynamicState<SettingScreen>
               },
               leading: LoftifyIcons.appearance,
             ),
-            EntryItem(
-              context: context,
+            LoftifyEntryItem(
               title: appLocalizations.imageSetting,
               showLeading: true,
               onTap: () {
@@ -80,8 +77,7 @@ class _SettingScreenState extends BaseDynamicState<SettingScreen>
               },
               leading: LoftifyIcons.image,
             ),
-            EntryItem(
-              context: context,
+            LoftifyEntryItem(
               title: appLocalizations.experimentSetting,
               showLeading: true,
               onTap: () {
@@ -99,12 +95,10 @@ class _SettingScreenState extends BaseDynamicState<SettingScreen>
   }
 
   Widget _buildAbout() {
-    return CaptionItem(
-      context: context,
+    return LoftifySection(
       title: appLocalizations.other,
       children: [
-        EntryItem(
-          context: context,
+        LoftifyEntryItem(
           title: appLocalizations.about,
           showLeading: true,
           onTap: () {
@@ -118,12 +112,10 @@ class _SettingScreenState extends BaseDynamicState<SettingScreen>
   }
 
   Widget _buildLofter() {
-    return CaptionItem(
-      context: context,
+    return LoftifySection(
       title: appLocalizations.lofterSetting,
       children: [
-        EntryItem(
-          context: context,
+        LoftifyEntryItem(
           showLeading: true,
           title: appLocalizations.lofterBasicSetting,
           onTap: () {
@@ -132,8 +124,7 @@ class _SettingScreenState extends BaseDynamicState<SettingScreen>
           },
           leading: LoftifyIcons.copyright,
         ),
-        EntryItem(
-          context: context,
+        LoftifyEntryItem(
           showLeading: true,
           title: appLocalizations.blacklistSetting,
           onTap: () {
@@ -142,8 +133,7 @@ class _SettingScreenState extends BaseDynamicState<SettingScreen>
           },
           leading: LoftifyIcons.block,
         ),
-        EntryItem(
-          context: context,
+        LoftifyEntryItem(
           showLeading: true,
           title: appLocalizations.tagShieldSetting,
           onTap: () {
@@ -152,8 +142,7 @@ class _SettingScreenState extends BaseDynamicState<SettingScreen>
           },
           leading: LoftifyIcons.tag,
         ),
-        EntryItem(
-          context: context,
+        LoftifyEntryItem(
           showLeading: true,
           title: appLocalizations.userDynamicShieldSetting,
           onTap: () {

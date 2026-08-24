@@ -32,8 +32,9 @@ void main() {
       allOf(
         contains('const DownloadManagementScreen()'),
         contains('leading: LoftifyIcons.download'),
-        contains('roundBottom: true'),
       ),
     );
+    expect(contentSource, contains('LoftifySection('));
+    expect(contentSource, contains('LoftifyEntryItem('));
   });
 }

@@ -25,6 +25,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path/path.dart';
 import 'package:protocol_handler/protocol_handler.dart';
 import 'package:provider/provider.dart';
+import 'package:loftify/Theme/loftify_design_theme.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'Screens/Lock/pin_verify_screen.dart';
@@ -214,8 +215,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           navigatorObservers: [chewieProvider.routeObserver],
           title: widget.title,
           themeMode: appProvider.themeMode.themeMode,
-          theme: appProvider.lightTheme.toThemeData(),
-          darkTheme: appProvider.darkTheme.toThemeData(),
+          theme: LoftifyTheme.build(appProvider.lightTheme),
+          darkTheme: LoftifyTheme.build(appProvider.darkTheme),
           debugShowCheckedModeBanner: false,
           localizationsDelegates: const [
             AppLocalizations.delegate,
