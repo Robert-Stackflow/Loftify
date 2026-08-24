@@ -320,18 +320,105 @@ void main() {
         ),
       ),
     );
-    final opacityFinder = find.ancestor(
+    final transitionFinder = find.ancestor(
       of: find.byType(LoftifyGlassNavigationBar),
-      matching: find.byType(AnimatedOpacity),
+      matching: find.byKey(const ValueKey('scroll-to-hide-transition')),
+    );
+    final opacityFinder = find.byKey(
+      const ValueKey('scroll-to-hide-opacity'),
     );
 
     await tester.drag(find.byType(ListView), const Offset(0, -420));
     await tester.pumpAndSettle();
-    expect(tester.widget<AnimatedOpacity>(opacityFinder).opacity, 0);
+    var opacity = tester.widget<Opacity>(opacityFinder);
+    expect(opacity.opacity, 0);
+    expect(tester.getSize(transitionFinder).height, 0);
 
     await tester.drag(find.byType(ListView), const Offset(0, 260));
     await tester.pumpAndSettle();
-    expect(tester.widget<AnimatedOpacity>(opacityFinder).opacity, 1);
+    opacity = tester.widget<Opacity>(opacityFinder);
+    expect(opacity.opacity, 1);
+    expect(tester.getSize(transitionFinder).height, greaterThan(0));
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+  });
+
+  testWidgets('rapid reverse scroll continues from the current smooth state', (
+    tester,
+  ) async {
+    final controller = ScrollController();
+    final visibility = ScrollToHideController();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ListView.builder(
+            controller: controller,
+            itemExtent: 64,
+            itemCount: 80,
+            itemBuilder: (context, index) => Text('Item $index'),
+          ),
+          bottomNavigationBar: ScrollToHide.multi(
+            scrollControllers: [controller],
+            hideDirection: Axis.vertical,
+            controller: visibility,
+            child: LoftifyGlassNavigationBar(
+              destinations: _destinations,
+              currentIndex: 0,
+              onSelect: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+    final opacityFinder = find.byKey(
+      const ValueKey('scroll-to-hide-opacity'),
+    );
+
+    visibility.hide();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 110));
+    final hidingOpacity = tester.widget<Opacity>(opacityFinder).opacity;
+    expect(hidingOpacity, allOf(greaterThan(0), lessThan(1)));
+
+    visibility.show();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+    final returningOpacity = tester.widget<Opacity>(opacityFinder).opacity;
+    expect(returningOpacity, greaterThan(hidingOpacity));
+    await tester.pumpAndSettle();
+    expect(tester.widget<Opacity>(opacityFinder).opacity, 1);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+  });
+
+  testWidgets('reduced motion applies scroll visibility without animation', (
+    tester,
+  ) async {
+    final controller = ScrollController();
+    final visibility = ScrollToHideController();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: ScrollToHide(
+            scrollController: controller,
+            hideDirection: Axis.vertical,
+            controller: visibility,
+            child: const SizedBox(width: 100, height: 64),
+          ),
+        ),
+      ),
+    );
+
+    visibility.hide();
+    await tester.pump();
+    final opacity = tester.widget<Opacity>(
+      find.byKey(const ValueKey('scroll-to-hide-opacity')),
+    );
+    expect(opacity.opacity, 0);
+    expect(tester.binding.transientCallbackCount, 0);
+
     await tester.pumpWidget(const SizedBox.shrink());
     controller.dispose();
   });
