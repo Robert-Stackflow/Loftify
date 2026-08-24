@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Models/post_detail_response.dart';
+import 'package:loftify/Theme/loftify_design_theme.dart';
+import 'package:loftify/Widgets/Design/loftify_reading.dart';
 import 'package:loftify/Widgets/Item/loftify_item_builder.dart';
 import 'package:loftify/Widgets/PostDetail/comment_item.dart';
 import 'package:loftify/Widgets/PostDetail/detail_bottom_bar.dart';
@@ -23,8 +25,14 @@ void main() {
     }
   });
 
-  Widget buildApp(Widget home) {
+  Widget buildApp(Widget home, {bool dark = false}) {
     return MaterialApp(
+      key: ValueKey(dark),
+      theme: LoftifyTheme.build(
+        dark
+            ? ChewieThemeColorData.defaultDarkThemes.first
+            : ChewieThemeColorData.defaultLightThemes.first,
+      ),
       locale: const Locale('en'),
       localizationsDelegates: const [
         ChewieLocalizations.delegate,
@@ -142,6 +150,129 @@ void main() {
     await tester.tap(find.text('Favorites with a very long label'));
     await tester.pump();
     expect(taps, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('reading content keeps a comfortable measure on every width',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      buildApp(
+        Scaffold(
+          body: Builder(
+            builder: (context) => PostContentSection(
+              title: 'A deliberately long article title',
+              content: '<p>Reading body</p>',
+              style: context.design.typography.readingBody,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(LoftifyReadingFrame), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const ValueKey('loftify-reading-frame'))).width,
+      768,
+    );
+    expect(
+      tester
+          .getSize(find.byKey(const ValueKey('loftify-reading-content')))
+          .width,
+      720,
+    );
+    final html = tester.widget<CustomHtmlWidget>(find.byType(CustomHtmlWidget));
+    expect(html.style?.fontSize, 17);
+    expect(html.style?.height, 1.8);
+    expect(html.heightDelta, 0);
+    expect(html.letterSpacingDelta, 0);
+
+    await tester.binding.setSurfaceSize(const Size(320, 568));
+    await tester.pump();
+    expect(
+      tester.getSize(find.byKey(const ValueKey('loftify-reading-frame'))).width,
+      320,
+    );
+    expect(
+      tester
+          .getSize(find.byKey(const ValueKey('loftify-reading-content')))
+          .width,
+      296,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('floating detail actions use the raised token surface',
+      (tester) async {
+    await tester.pumpWidget(
+      buildApp(
+        const Scaffold(
+          body: Center(
+            child: DetailFloatingActionRail(
+              children: [
+                DetailActionButton(
+                  icon: Icon(Icons.favorite_outline_rounded),
+                  label: 'Like',
+                ),
+                DetailActionButton(
+                  icon: Icon(Icons.comment_outlined),
+                  label: 'Comment',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final surface = tester.widget<DecoratedBox>(
+      find.byKey(const ValueKey('detail-floating-action-rail')),
+    );
+    final decoration = surface.decoration as BoxDecoration;
+    final design = LoftifyTheme.build(
+      ChewieThemeColorData.defaultLightThemes.first,
+    ).extension<LoftifyDesignThemeData>()!;
+    expect(decoration.color, design.colors.surfaceRaised);
+    expect(decoration.borderRadius, BorderRadius.circular(design.radii.panel));
+    expect(decoration.border!.top.color, design.colors.outline);
+    expect(decoration.border!.top.width, design.borders.hairline);
+    expect(decoration.boxShadow, design.shadows.floating);
+    expect(find.byType(DetailActionButton), findsNWidgets(2));
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(
+      buildApp(
+        const Scaffold(
+          body: Center(
+            child: DetailFloatingActionRail(
+              children: [
+                DetailActionButton(
+                  icon: Icon(Icons.favorite_outline_rounded),
+                  label: 'Like',
+                ),
+              ],
+            ),
+          ),
+        ),
+        dark: true,
+      ),
+    );
+    await tester.pump();
+    final darkDecoration = tester
+        .widget<DecoratedBox>(
+          find.byKey(const ValueKey('detail-floating-action-rail')),
+        )
+        .decoration as BoxDecoration;
+    final darkDesign = LoftifyTheme.build(
+      ChewieThemeColorData.defaultDarkThemes.first,
+    ).extension<LoftifyDesignThemeData>()!;
+    expect(darkDecoration.color, darkDesign.colors.surfaceRaised);
+    expect(darkDecoration.border!.top.color, darkDesign.colors.outline);
+    expect(darkDecoration.boxShadow, darkDesign.shadows.floating);
     expect(tester.takeException(), isNull);
   });
 

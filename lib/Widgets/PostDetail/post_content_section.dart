@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 
-import '../loftify_icons.dart';
+import '../../Theme/loftify_design_theme.dart';
+import '../Design/loftify_reading.dart';
+import '../Design/loftify_state_view.dart';
 
 class PostContentSection extends StatefulWidget {
   const PostContentSection({
@@ -30,6 +32,7 @@ class _PostContentSectionState extends State<PostContentSection> {
   Widget? _renderedContent;
   Object? _renderError;
   StackTrace? _renderStackTrace;
+  bool _contentIsEmpty = false;
 
   @override
   void initState() {
@@ -55,27 +58,29 @@ class _PostContentSectionState extends State<PostContentSection> {
       final plainTitle = widget.title.trim();
       final plainContent = extractor(widget.content).trim();
       if (plainTitle.isEmpty && plainContent.isEmpty) {
+        _contentIsEmpty = true;
         _renderedContent = const SizedBox.shrink();
       } else {
+        _contentIsEmpty = false;
         final escapedTitle = const HtmlEscape().convert(plainTitle);
         final htmlTitle = escapedTitle.isEmpty
             ? ''
             : "<p id='title'><strong>$escapedTitle</strong></p>";
-        _renderedContent = Padding(
+        _renderedContent = RepaintBoundary(
           key: ValueKey(_revision),
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: RepaintBoundary(
-            child: CustomHtmlWidget(
-              content: '$htmlTitle${widget.content}',
-              style: widget.style,
-              onDownloadSuccess: widget.onDownloadSuccess,
-            ),
+          child: CustomHtmlWidget(
+            content: '$htmlTitle${widget.content}',
+            style: widget.style,
+            heightDelta: 0,
+            letterSpacingDelta: 0,
+            onDownloadSuccess: widget.onDownloadSuccess,
           ),
         );
       }
       _renderError = null;
       _renderStackTrace = null;
     } catch (error, stackTrace) {
+      _contentIsEmpty = false;
       _renderedContent = null;
       _renderError = error;
       _renderStackTrace = stackTrace;
@@ -85,44 +90,30 @@ class _PostContentSectionState extends State<PostContentSection> {
 
   @override
   Widget build(BuildContext context) {
-    if (_renderedContent != null) return _renderedContent!;
+    final design = context.design;
+    if (_contentIsEmpty) return const SizedBox.shrink();
+    if (_renderedContent != null) {
+      return LoftifyReadingFrame(
+        topPadding: design.spacing.xl,
+        bottomPadding: design.spacing.md,
+        child: _renderedContent!,
+      );
+    }
     assert(_renderError != null && _renderStackTrace != null);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: ContainerItem(
-        radius: 14,
-        roundTop: true,
-        roundBottom: true,
-        backgroundColor: Theme.of(context).cardColor,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ChewieIcon(
-                LoftifyIcons.article,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                chewieLocalizations.loadFailed,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 10),
-              RoundIconTextButton(
-                text: chewieLocalizations.retry,
-                icon: const ChewieIcon(LoftifyIcons.retry, size: 18),
-                onPressed: () {
-                  setState(() {
-                    _revision++;
-                    _prepareContent();
-                  });
-                },
-              ),
-            ],
-          ),
-        ),
+    return LoftifyReadingFrame(
+      topPadding: design.spacing.xl,
+      bottomPadding: design.spacing.md,
+      child: LoftifyStateView(
+        visual: LoftifyStateVisual.error,
+        title: chewieLocalizations.loadFailed,
+        actionLabel: chewieLocalizations.retry,
+        padding: EdgeInsets.all(design.spacing.xl),
+        onAction: () {
+          setState(() {
+            _revision++;
+            _prepareContent();
+          });
+        },
       ),
     );
   }

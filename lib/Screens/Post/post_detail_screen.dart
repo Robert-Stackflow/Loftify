@@ -36,6 +36,8 @@ import '../../Utils/post_sequence_source.dart';
 import '../../Utils/post_swipe_gesture.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
+import '../../Theme/loftify_design_theme.dart';
+import '../../Widgets/Design/loftify_reading.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
@@ -944,9 +946,10 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final design = context.design;
     return Scaffold(
       appBar: _buildAppBar(),
-      backgroundColor: ChewieTheme.getBackground(context),
+      backgroundColor: design.colors.page,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -1550,17 +1553,19 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
 
   _buildCommonContent(bool isTablet) {
     return <Widget>[
-      GestureDetector(
-        onTap: () {
-          RouteUtil.pushPanelCupertinoRoute(
-            context,
-            UserDetailScreen(
-              blogId: _postDetailData!.post!.blogId,
-              blogName: _postDetailData!.post!.blogInfo!.blogName,
-            ),
-          );
-        },
-        child: _buildUserRow(),
+      _buildReadingRail(
+        GestureDetector(
+          onTap: () {
+            RouteUtil.pushPanelCupertinoRoute(
+              context,
+              UserDetailScreen(
+                blogId: _postDetailData!.post!.blogId,
+                blogName: _postDetailData!.post!.blogInfo!.blogName,
+              ),
+            );
+          },
+          child: _buildUserRow(),
+        ),
       ),
       if (_hasImage()) _buildImageList(),
       GestureDetector(
@@ -1568,89 +1573,117 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
         onDoubleTap: _handleDoubleTap,
         child: _buildPostContent(),
       ),
-      GestureDetector(
-        onDoubleTapDown: _handleDoubleTapDown,
-        onDoubleTap: _handleDoubleTap,
-        child: _buildEggContent(),
-      ),
-      if (hasCollection()) _buildCollectionItem(key: _collectionViewportKey),
-      if (hasGrain()) _buildGrainItem(key: _grainViewportKey),
-      GestureDetector(
-        key: _tagViewportKey,
-        onDoubleTapDown: _handleDoubleTapDown,
-        onDoubleTap: _handleDoubleTap,
-        child: _buildTagList(),
-      ),
-      _buildMarkInfo(),
-      Stack(
-        key: _operationViewportKey,
-        children: [
-          MyDivider(),
-          _buildOperationRow(),
-        ],
-      ),
-      Container(
-        key: commentKey,
-        child: ItemBuilder.buildTitle(
-          context,
-          title: hotComments.isNotEmpty
-              ? appLocalizations.hotComment
-              : appLocalizations.latestComment,
-          bottomMargin: 12,
-          topMargin: 24,
+      _buildReadingRail(
+        GestureDetector(
+          onDoubleTapDown: _handleDoubleTapDown,
+          onDoubleTap: _handleDoubleTap,
+          child: _buildEggContent(),
         ),
       ),
-      _buildComments(
-        hotComments.isNotEmpty ? hotComments : newComments,
-        key: _commentListViewportKey,
+      if (hasCollection())
+        _buildReadingRail(
+          _buildCollectionItem(key: _collectionViewportKey),
+        ),
+      if (hasGrain())
+        _buildReadingRail(_buildGrainItem(key: _grainViewportKey)),
+      _buildReadingRail(
+        GestureDetector(
+          key: _tagViewportKey,
+          onDoubleTapDown: _handleDoubleTapDown,
+          onDoubleTap: _handleDoubleTap,
+          child: _buildTagList(),
+        ),
+      ),
+      _buildReadingRail(_buildMarkInfo()),
+      _buildReadingRail(
+        Stack(
+          key: _operationViewportKey,
+          children: [
+            MyDivider(),
+            _buildOperationRow(),
+          ],
+        ),
+      ),
+      _buildReadingRail(
+        Container(
+          key: commentKey,
+          child: ItemBuilder.buildTitle(
+            context,
+            title: hotComments.isNotEmpty
+                ? appLocalizations.hotComment
+                : appLocalizations.latestComment,
+            bottomMargin: 12,
+            topMargin: 24,
+          ),
+        ),
+      ),
+      _buildReadingRail(
+        _buildComments(
+          hotComments.isNotEmpty ? hotComments : newComments,
+          key: _commentListViewportKey,
+        ),
       ),
       if (totalHotOrNewComments <= 0)
-        Container(
-          key: _commentEndViewportKey,
-          alignment: Alignment.center,
-          margin: const EdgeInsets.symmetric(vertical: 24),
-          child: EmptyPlaceholder(
-            text: appLocalizations.noComment,
-            topPadding: 0,
+        _buildReadingRail(
+          Container(
+            key: _commentEndViewportKey,
+            alignment: Alignment.center,
+            margin: const EdgeInsets.symmetric(vertical: 24),
+            child: EmptyPlaceholder(
+              text: appLocalizations.noComment,
+              topPadding: 0,
+            ),
           ),
         ),
       if (totalHotOrNewComments > 0)
-        Center(
-          key: _commentEndViewportKey,
-          child: Container(
-            margin: EdgeInsets.only(
-              left: isTablet ? 0 : MediaQuery.sizeOf(context).width / 5,
-              right: isTablet ? 0 : MediaQuery.sizeOf(context).width / 5,
-              top: 12,
-              bottom: isTablet ? 20 : 0,
-            ),
-            width: isTablet ? 240 : null,
-            child: RoundIconTextButton(
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-              text: appLocalizations.viewAllComments,
-              onPressed: () {
-                BottomSheetBuilder.showBottomSheet(
-                  context,
-                  (context) => CommentBottomSheet(
-                    postId: postId,
-                    blogId: blogId,
-                    publishTime: _postDetailData!.post!.publishTime,
-                  ),
-                  enableDrag: false,
-                  backgroundColor: ChewieTheme.getBackground(context),
-                );
-              },
+        _buildReadingRail(
+          Center(
+            key: _commentEndViewportKey,
+            child: Container(
+              margin: EdgeInsets.only(
+                left: isTablet ? 0 : MediaQuery.sizeOf(context).width / 5,
+                right: isTablet ? 0 : MediaQuery.sizeOf(context).width / 5,
+                top: 12,
+                bottom: isTablet ? 20 : 0,
+              ),
+              width: isTablet ? 240 : null,
+              child: RoundIconTextButton(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                text: appLocalizations.viewAllComments,
+                onPressed: () {
+                  BottomSheetBuilder.showBottomSheet(
+                    context,
+                    (context) => CommentBottomSheet(
+                      postId: postId,
+                      blogId: blogId,
+                      publishTime: _postDetailData!.post!.publishTime,
+                    ),
+                    enableDrag: false,
+                    backgroundColor: ChewieTheme.getBackground(context),
+                  );
+                },
+              ),
             ),
           ),
         ),
       if (!isTablet)
-        ItemBuilder.buildTitle(
-          context,
-          title: appLocalizations.moreRecommend,
-          bottomMargin: 12,
-          topMargin: 24,
+        _buildReadingRail(
+          ItemBuilder.buildTitle(
+            context,
+            title: appLocalizations.moreRecommend,
+            bottomMargin: 12,
+            topMargin: 24,
+          ),
         ),
     ];
+  }
+
+  Widget _buildReadingRail(Widget child) {
+    return LoftifyReadingFrame(
+      applyHorizontalPadding: false,
+      child: child,
+    );
   }
 
   Future<void> jumpToComment() async {
@@ -1948,16 +1981,20 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
   }
 
   _buildUserRow() {
+    final design = context.design;
     bool hasAvatarBox =
         (_postDetailData!.post?.blogInfo!.bigAvaImg ?? "").isNotEmpty;
     return ClickableWrapper(
       child: Container(
         color: Colors.transparent,
-        padding: EdgeInsets.only(
-            left: 16,
-            right: ResponsiveUtil.isLandscapeLayout() ? 10 : 16,
-            top: 10,
-            bottom: 10),
+        padding: EdgeInsetsDirectional.fromSTEB(
+          design.spacing.xl,
+          design.spacing.lg,
+          ResponsiveUtil.isLandscapeLayout()
+              ? design.spacing.md
+              : design.spacing.xl,
+          design.spacing.lg,
+        ),
         child: Row(
           children: [
             ItemBuilder.buildAvatar(
@@ -1967,7 +2004,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
               imageUrl: _postDetailData!.post?.blogInfo!.bigAvaImg ?? "",
               tagPrefix: "postDetailScreen${_postDetailData!.post!.id}",
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: design.spacing.lg),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1981,24 +2018,24 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
                     text: _postDetailData!.post?.blogInfo!.blogNickName,
                     child: Text(
                       _postDetailData!.post?.blogInfo!.blogNickName ?? "",
-                      style: Theme.of(context).textTheme.titleSmall?.apply(
-                            fontWeightDelta: 2,
-                          ),
+                      style: design.typography.cardTitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (hasAvatarBox) const SizedBox(height: 3),
+                  if (hasAvatarBox) SizedBox(height: design.spacing.xs),
                   Text(
                     "${TimeUtil.formatTimestamp(_postDetailData!.post?.publishTime ?? 0)} · ${StringUtil.isNotEmpty(_postDetailData!.post?.ipLocation) ? _postDetailData!.post?.ipLocation : ""} · ${_postDetailData!.post?.postCount?.postHot ?? 0}${appLocalizations.hotCount}",
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: design.typography.metadata.copyWith(
+                      color: design.colors.textSecondary,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 40),
+            SizedBox(width: design.spacing.xxl),
             if (_myBlogId != _postDetailData!.post!.blogId)
               LoftifyItemBuilder.buildFramedDoubleButton(
                 context: context,
@@ -2354,10 +2391,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
     return PostContentSection(
       title: _postDetailData!.post!.title,
       content: _postDetailData!.post!.content,
-      style: Theme.of(context)
-          .textTheme
-          .bodyMedium
-          ?.apply(fontSizeDelta: 3, heightDelta: 0.3),
+      style: context.design.typography.readingBody,
       onDownloadSuccess: _handleDownloadSuccessAction,
     );
   }
@@ -2805,127 +2839,88 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
   }
 
   Widget _buildFloatingOperationBar() {
-    final isDark = ColorUtil.isDark(context);
-    final backgroundColor =
-        isDark ? Theme.of(context).colorScheme.surface : Colors.white;
-    return Material(
-      color: backgroundColor,
-      elevation: 10,
-      shadowColor: Colors.black.withValues(alpha: isDark ? 0.34 : 0.18),
-      borderRadius: BorderRadius.circular(18),
-      clipBehavior: Clip.antiAlias,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 5),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.14)
-                : Colors.black.withValues(alpha: 0.09),
-            width: 0.8,
+    return DetailFloatingActionRail(
+      children: [
+        DetailActionButton(
+          label: _postDetailData!.post!.postCount!.favoriteCount > 0
+              ? StringUtil.formatCount(
+                  _postDetailData!.post!.postCount!.favoriteCount,
+                )
+              : appLocalizations.like,
+          onTap: _handleLike,
+          icon: IgnorePointer(
+            child: SizedBox.square(
+              dimension: 28,
+              child: OverflowBox(
+                maxWidth: 40,
+                maxHeight: 40,
+                child: LoftifyItemBuilder.buildLikedLottieButton(
+                  context,
+                  showCount: false,
+                  iconSize: 40,
+                  animationController: _likeController,
+                  isLiked: _postDetailData!.liked,
+                ),
+              ),
+            ),
           ),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 54,
-              height: 52,
-              child: DetailActionButton(
-                label: _postDetailData!.post!.postCount!.favoriteCount > 0
-                    ? StringUtil.formatCount(
-                        _postDetailData!.post!.postCount!.favoriteCount,
-                      )
-                    : appLocalizations.like,
-                onTap: _handleLike,
-                icon: IgnorePointer(
-                  child: SizedBox.square(
-                    dimension: 28,
-                    child: OverflowBox(
-                      maxWidth: 40,
-                      maxHeight: 40,
-                      child: LoftifyItemBuilder.buildLikedLottieButton(
-                        context,
-                        showCount: false,
-                        iconSize: 40,
-                        animationController: _likeController,
-                        isLiked: _postDetailData!.liked,
-                      ),
-                    ),
-                  ),
+        DetailActionButton(
+          label: _postDetailData!.post!.postCount!.shareCount > 0
+              ? StringUtil.formatCount(
+                  _postDetailData!.post!.postCount!.shareCount,
+                )
+              : appLocalizations.recommend,
+          onTap: _handleRecommend,
+          icon: IgnorePointer(
+            child: SizedBox.square(
+              dimension: 28,
+              child: OverflowBox(
+                maxWidth: 40,
+                maxHeight: 40,
+                child: LoftifyItemBuilder.buildLottieSharedButton(
+                  context,
+                  showCount: false,
+                  iconSize: 40,
+                  isShared: _postDetailData!.shared,
+                  animationController: _shareController,
                 ),
               ),
             ),
-            SizedBox(
-              width: 54,
-              height: 52,
-              child: DetailActionButton(
-                label: _postDetailData!.post!.postCount!.shareCount > 0
-                    ? StringUtil.formatCount(
-                        _postDetailData!.post!.postCount!.shareCount,
-                      )
-                    : appLocalizations.recommend,
-                onTap: _handleRecommend,
-                icon: IgnorePointer(
-                  child: SizedBox.square(
-                    dimension: 28,
-                    child: OverflowBox(
-                      maxWidth: 40,
-                      maxHeight: 40,
-                      child: LoftifyItemBuilder.buildLottieSharedButton(
-                        context,
-                        showCount: false,
-                        iconSize: 40,
-                        isShared: _postDetailData!.shared,
-                        animationController: _shareController,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(
-              width: 54,
-              height: 52,
-              child: DetailActionButton(
-                label: _postDetailData!.post!.postCount!.responseCount > 0
-                    ? StringUtil.formatCount(
-                        _postDetailData!.post!.postCount!.responseCount,
-                      )
-                    : appLocalizations.comment,
-                icon: const ChewieIcon(LoftifyIcons.comment),
-                onTap: jumpToComment,
-              ),
-            ),
-            SizedBox(
-              width: 54,
-              height: 52,
-              child: DetailActionButton(
-                label: _postDetailData!.subscribedNotNull
-                    ? appLocalizations.favorited
-                    : appLocalizations.favorite,
-                icon: ChewieIcon(
-                  LoftifyIcons.bookmark,
-                  color: _postDetailData!.subscribedNotNull
-                      ? Theme.of(context).primaryColor
-                      : null,
-                ),
-                onTap: () {
-                  BottomSheetBuilder.showBottomSheet(
-                    context,
-                    enableDrag: false,
-                    (context) => SubscribePostBottomSheet(
-                      postId: postId,
-                      blogId: blogId,
-                      onConfirm: _handleSubscribe,
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+        DetailActionButton(
+          label: _postDetailData!.post!.postCount!.responseCount > 0
+              ? StringUtil.formatCount(
+                  _postDetailData!.post!.postCount!.responseCount,
+                )
+              : appLocalizations.comment,
+          icon: const ChewieIcon(LoftifyIcons.comment),
+          onTap: jumpToComment,
+        ),
+        DetailActionButton(
+          label: _postDetailData!.subscribedNotNull
+              ? appLocalizations.favorited
+              : appLocalizations.favorite,
+          icon: ChewieIcon(
+            LoftifyIcons.bookmark,
+            color: _postDetailData!.subscribedNotNull
+                ? Theme.of(context).primaryColor
+                : null,
+          ),
+          onTap: () {
+            BottomSheetBuilder.showBottomSheet(
+              context,
+              enableDrag: false,
+              (context) => SubscribePostBottomSheet(
+                postId: postId,
+                blogId: blogId,
+                onConfirm: _handleSubscribe,
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 

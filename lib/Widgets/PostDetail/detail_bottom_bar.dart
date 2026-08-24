@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../Theme/loftify_design_theme.dart';
+
 class DetailBottomBar extends StatelessWidget {
   const DetailBottomBar({
     super.key,
@@ -60,23 +62,23 @@ class DetailActionSlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final design = context.design;
     return Semantics(
       button: onTap != null,
       label: semanticLabel,
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(design.radii.control),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(design.radii.control),
           splashFactory: NoSplash.splashFactory,
           overlayColor: WidgetStateProperty.resolveWith(
             (states) => states.contains(WidgetState.pressed)
-                ? Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.05)
+                ? design.colors.accent.withValues(
+                    alpha: design.icons.pressedOpacity,
+                  )
                 : Colors.transparent,
           ),
           child: Center(child: child),
@@ -102,12 +104,16 @@ class DetailActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = foregroundColor ?? Theme.of(context).iconTheme.color;
+    final design = context.design;
+    final color = foregroundColor ?? design.colors.textPrimary;
     return DetailActionSlot(
       semanticLabel: label,
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 3),
+        padding: EdgeInsets.symmetric(
+          horizontal: design.spacing.xxs,
+          vertical: design.spacing.xxs,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -116,18 +122,74 @@ class DetailActionButton extends StatelessWidget {
               data: IconTheme.of(context).copyWith(color: color, size: 24),
               child: icon,
             ),
-            const SizedBox(height: 2),
+            SizedBox(height: design.spacing.xxs),
             Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: design.typography.metadata.copyWith(
+                color: color,
+                fontWeight: FontWeight.w600,
+                height: 1.2,
+              ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Token-driven vertical action rail used by reading and image detail pages.
+class DetailFloatingActionRail extends StatelessWidget {
+  const DetailFloatingActionRail({
+    super.key,
+    required this.children,
+    this.slotWidth = 54,
+    this.slotHeight = 52,
+  });
+
+  final List<Widget> children;
+  final double slotWidth;
+  final double slotHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final design = context.design;
+    return Semantics(
+      container: true,
+      explicitChildNodes: true,
+      child: DecoratedBox(
+        key: const ValueKey('detail-floating-action-rail'),
+        decoration: BoxDecoration(
+          color: design.colors.surfaceRaised,
+          borderRadius: BorderRadius.circular(design.radii.panel),
+          border: Border.all(
+            color: design.colors.outline,
+            width: design.borders.hairline,
+          ),
+          boxShadow: design.shadows.floating,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(design.radii.panel),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: design.spacing.xs,
+              vertical: design.spacing.sm,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final child in children)
+                  SizedBox(
+                    width: slotWidth,
+                    height: slotHeight,
+                    child: child,
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );
