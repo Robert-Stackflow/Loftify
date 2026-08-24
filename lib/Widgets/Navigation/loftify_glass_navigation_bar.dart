@@ -43,6 +43,33 @@ class LoftifyGlassNavigationBar extends StatelessWidget {
   static const double barHeight = 64;
   static const double horizontalMargin = 10;
   static const double blurSigma = 18;
+  static const Duration standardPageTransitionDuration = Duration(
+    milliseconds: 220,
+  );
+
+  static bool shouldReduceMotion(
+    MediaQueryData mediaQuery, {
+    bool? platformReduceMotion,
+  }) {
+    final reduceMotion = platformReduceMotion ??
+        WidgetsBinding
+            .instance.platformDispatcher.accessibilityFeatures.reduceMotion;
+    return reduceMotion ||
+        mediaQuery.disableAnimations ||
+        mediaQuery.accessibleNavigation;
+  }
+
+  static Duration pageTransitionDuration(
+    MediaQueryData mediaQuery, {
+    bool? platformReduceMotion,
+  }) {
+    return shouldReduceMotion(
+      mediaQuery,
+      platformReduceMotion: platformReduceMotion,
+    )
+        ? Duration.zero
+        : standardPageTransitionDuration;
+  }
 
   static bool shouldUseBlur(
     MediaQueryData mediaQuery, {
@@ -50,14 +77,12 @@ class LoftifyGlassNavigationBar extends StatelessWidget {
     bool isWeb = kIsWeb,
     bool? platformReduceMotion,
   }) {
-    final reduceMotion = platformReduceMotion ??
-        WidgetsBinding
-            .instance.platformDispatcher.accessibilityFeatures.reduceMotion;
     return enabled &&
         !isWeb &&
-        !reduceMotion &&
-        !mediaQuery.disableAnimations &&
-        !mediaQuery.accessibleNavigation &&
+        !shouldReduceMotion(
+          mediaQuery,
+          platformReduceMotion: platformReduceMotion,
+        ) &&
         !mediaQuery.highContrast;
   }
 

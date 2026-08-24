@@ -13,6 +13,8 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+import 'dart:async';
+
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -182,7 +184,20 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
     } else {
       _currentIndex = index;
       if (_pageController.hasClients) {
-        _pageController.jumpToPage(index);
+        final duration = LoftifyGlassNavigationBar.pageTransitionDuration(
+          MediaQuery.of(context),
+        );
+        if (duration == Duration.zero) {
+          _pageController.jumpToPage(index);
+        } else {
+          unawaited(
+            _pageController.animateToPage(
+              index,
+              duration: duration,
+              curve: Curves.easeOutCubic,
+            ),
+          );
+        }
       }
     }
     if (mounted) setState(() {});

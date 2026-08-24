@@ -222,14 +222,35 @@ void main() {
 
     expect(find.byType(InkWell), findsNothing);
     await tester.tap(find.text('Search'));
-    await tester.pumpAndSettle();
     expect(selected, 1);
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Mine'));
     await tester.pump(const Duration(milliseconds: 50));
     await tester.tap(find.text('Mine'));
     await tester.pumpAndSettle();
     expect(doubleTapped, 3);
+  });
+
+  testWidgets('press feedback scales immediately without changing glyphs', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_host());
+    final scaleFinder = find.ancestor(
+      of: find.text('Home'),
+      matching: find.byType(AnimatedScale),
+    );
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Home')),
+    );
+    await tester.pump();
+
+    expect(tester.widget<AnimatedScale>(scaleFinder).scale, 0.94);
+    expect(find.byType(ChewieIcon), findsNWidgets(_destinations.length));
+
+    await gesture.up();
+    await tester.pump();
+    expect(tester.widget<AnimatedScale>(scaleFinder).scale, 1);
   });
 
   test('blur policy rejects web and all accessibility fallbacks', () {
@@ -276,6 +297,27 @@ void main() {
       ),
       isFalse,
     );
+    expect(
+      LoftifyGlassNavigationBar.pageTransitionDuration(
+        normal,
+        platformReduceMotion: false,
+      ),
+      LoftifyGlassNavigationBar.standardPageTransitionDuration,
+    );
+    expect(
+      LoftifyGlassNavigationBar.pageTransitionDuration(
+        const MediaQueryData(disableAnimations: true),
+        platformReduceMotion: false,
+      ),
+      Duration.zero,
+    );
+    expect(
+      LoftifyGlassNavigationBar.pageTransitionDuration(
+        normal,
+        platformReduceMotion: true,
+      ),
+      Duration.zero,
+    );
   });
 
   test('phone panel extends content behind the reusable glass navigation', () {
@@ -285,6 +327,9 @@ void main() {
     expect(source, contains('portrait: _buildBottomNavigationBar()'));
     expect(source, contains('LoftifyGlassNavigationBar('));
     expect(source, contains('enableBlur: !reduceTransparency'));
+    expect(source, contains('_pageController.animateToPage('));
+    expect(source, contains('curve: Curves.easeOutCubic'));
+    expect(source, contains('if (duration == Duration.zero)'));
     expect(source, isNot(contains('MyBottomNavigationBar(')));
   });
 
