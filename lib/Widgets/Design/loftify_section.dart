@@ -82,6 +82,7 @@ class LoftifyEntryItem extends StatelessWidget {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
+            splashFactory: NoSplash.splashFactory,
             onTap: effectiveEnabled ? onTap : null,
             overlayColor: WidgetStateProperty.resolveWith((states) {
               if (states.contains(WidgetState.pressed)) {
@@ -336,9 +337,28 @@ class _LoftifySectionState extends State<LoftifySection> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
+          splashFactory: NoSplash.splashFactory,
           onTap: widget.collapsible
               ? () => setState(() => _expanded = !_expanded)
               : null,
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.pressed)) {
+              return design.colors.accent.withAlpha(
+                (design.icons.pressedOpacity * 255).round(),
+              );
+            }
+            if (states.contains(WidgetState.focused)) {
+              return design.colors.accent.withAlpha(
+                (design.icons.focusOpacity * 255).round(),
+              );
+            }
+            if (states.contains(WidgetState.hovered)) {
+              return design.colors.accent.withAlpha(
+                (design.icons.hoverOpacity * 255).round(),
+              );
+            }
+            return Colors.transparent;
+          }),
           child: ConstrainedBox(
             constraints: BoxConstraints(
               minHeight: design.icons.minimumTapTarget,

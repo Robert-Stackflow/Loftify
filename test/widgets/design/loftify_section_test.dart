@@ -66,6 +66,10 @@ void main() {
     final headerInkWell =
         tester.widgetList<InkWell>(find.byType(InkWell)).first;
     expect(headerInkWell.onTap, isNotNull);
+    expect(headerInkWell.splashFactory, NoSplash.splashFactory);
+
+    final entryInkWell = tester.widgetList<InkWell>(find.byType(InkWell)).last;
+    expect(entryInkWell.splashFactory, NoSplash.splashFactory);
 
     await tester.tap(find.text('内容中心'));
     await tester.pumpAndSettle();
