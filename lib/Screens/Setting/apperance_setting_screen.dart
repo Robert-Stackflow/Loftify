@@ -133,6 +133,19 @@ class _AppearanceSettingScreenState
                   });
                 },
               ),
+            Selector<AppProvider, bool>(
+              selector: (context, appProvider) =>
+                  appProvider.reduceTransparency,
+              builder: (context, reduceTransparency, child) => CheckboxItem(
+                value: reduceTransparency,
+                title: appLocalizations.reduceTransparency,
+                description: appLocalizations.reduceTransparencyDescription,
+                roundBottom: true,
+                onTap: () {
+                  appProvider.reduceTransparency = !reduceTransparency;
+                },
+              ),
+            ),
           ],
         ),
         CaptionItem(

@@ -306,6 +306,19 @@ class AppProvider with ChangeNotifier {
     }
   }
 
+  bool _reduceTransparency = ChewieHiveUtil.getBool(
+    HiveUtil.reduceTransparencyKey,
+  );
+
+  bool get reduceTransparency => _reduceTransparency;
+
+  set reduceTransparency(bool value) {
+    if (value == _reduceTransparency) return;
+    _reduceTransparency = value;
+    ChewieHiveUtil.put(HiveUtil.reduceTransparencyKey, value);
+    notifyListeners();
+  }
+
   List<String> _searchHistoryList =
       ChewieHiveUtil.getStringList(HiveUtil.searchHistoryKey)!;
 

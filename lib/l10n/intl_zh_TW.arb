@@ -215,6 +215,8 @@
   "autoMemoryWindowPositionAndSize": "記憶視窗位置與大小",
   "autoMemoryWindowPositionAndSizeTip": "關閉後，每次開啟Loftify都會居中顯示且具有預設視窗大小",
   "mobileSetting": "行動端設定",
+  "reduceTransparency": "降低透明效果",
+  "reduceTransparencyDescription": "使用實色導覽列以提升對比度，並改善低效能裝置上的流暢度",
   "useDesktopLayoutWhenLandscape": "橫屏時啟用桌面端佈局",
   "haveToRestartWhenChange": "更改後需要重新啟動",
   "inAppBrowser": "內建瀏覽器",

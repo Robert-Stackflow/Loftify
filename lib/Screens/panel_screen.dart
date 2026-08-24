@@ -266,29 +266,34 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
       controller: _scrollToHideController,
       scrollControllers: getScrollControllers(),
       hideDirection: Axis.vertical,
-      child: LoftifyGlassNavigationBar(
-        currentIndex: _currentIndex,
-        destinations: [
-          LoftifyNavigationDestination(
-            icon: LoftifyIcons.home,
-            label: appLocalizations.home,
-          ),
-          LoftifyNavigationDestination(
-            icon: LoftifyIcons.search,
-            label: appLocalizations.search,
-          ),
-          LoftifyNavigationDestination(
-            icon: LoftifyIcons.activity,
-            label: appLocalizations.dynamicTab,
-          ),
-          LoftifyNavigationDestination(
-            icon: LoftifyIcons.profile,
-            label: appLocalizations.mine,
-          ),
-        ],
-        onSelect: (index) {
-          appProvider.sidebarChoice = SideBarChoice.fromInt(index);
-        },
+      child: Selector<AppProvider, bool>(
+        selector: (context, appProvider) => appProvider.reduceTransparency,
+        builder: (context, reduceTransparency, child) =>
+            LoftifyGlassNavigationBar(
+          currentIndex: _currentIndex,
+          enableBlur: !reduceTransparency,
+          destinations: [
+            LoftifyNavigationDestination(
+              icon: LoftifyIcons.home,
+              label: appLocalizations.home,
+            ),
+            LoftifyNavigationDestination(
+              icon: LoftifyIcons.search,
+              label: appLocalizations.search,
+            ),
+            LoftifyNavigationDestination(
+              icon: LoftifyIcons.activity,
+              label: appLocalizations.dynamicTab,
+            ),
+            LoftifyNavigationDestination(
+              icon: LoftifyIcons.profile,
+              label: appLocalizations.mine,
+            ),
+          ],
+          onSelect: (index) {
+            appProvider.sidebarChoice = SideBarChoice.fromInt(index);
+          },
+        ),
       ),
     );
   }

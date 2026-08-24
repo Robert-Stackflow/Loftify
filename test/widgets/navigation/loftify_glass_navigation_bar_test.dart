@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loftify/Widgets/Navigation/loftify_glass_navigation_bar.dart';
@@ -16,9 +18,30 @@ const _destinations = <LoftifyNavigationDestination>[
   LoftifyNavigationDestination(icon: LoftifyIcons.profile, label: 'Mine'),
 ];
 
+ThemeData _themeForVariant(ChewieThemeColorData variant) {
+  final brightness = variant.isDarkMode ? Brightness.dark : Brightness.light;
+  final colorScheme = ColorScheme.fromSeed(
+    seedColor: variant.primaryColor,
+    brightness: brightness,
+  ).copyWith(
+    primary: variant.primaryColor,
+    surface: variant.effectivePageBackgroundColor,
+    onSurface: variant.textColor,
+    error: variant.errorColor,
+  );
+  return ThemeData(
+    brightness: brightness,
+    colorScheme: colorScheme,
+    primaryColor: variant.primaryColor,
+    dividerColor: variant.dividerColor,
+    shadowColor: variant.shadowColor,
+  );
+}
+
 Widget _host({
   MediaQueryData mediaQuery = const MediaQueryData(size: Size(320, 640)),
   Brightness brightness = Brightness.light,
+  ThemeData? theme,
   bool enableBlur = true,
   int currentIndex = 0,
   ValueChanged<int>? onSelect,
@@ -29,7 +52,7 @@ Widget _host({
     brightness: brightness,
   );
   return MaterialApp(
-    theme: ThemeData(colorScheme: colorScheme, brightness: brightness),
+    theme: theme ?? ThemeData(colorScheme: colorScheme, brightness: brightness),
     home: MediaQuery(
       data: mediaQuery,
       child: Scaffold(
@@ -118,6 +141,40 @@ void main() {
     }
   });
 
+  testWidgets('adapts glass tint and selected color to every built-in theme', (
+    tester,
+  ) async {
+    final variants = <ChewieThemeColorData>[
+      ...ChewieThemeColorData.defaultLightThemes,
+      ...ChewieThemeColorData.defaultDarkThemes,
+    ];
+
+    for (final variant in variants) {
+      await tester.pumpWidget(_host(theme: _themeForVariant(variant)));
+      await tester.pumpAndSettle();
+
+      final surface = tester.widget<DecoratedBox>(
+        find.byKey(const ValueKey('loftify-glass-navigation-surface')),
+      );
+      final decoration = surface.decoration as BoxDecoration;
+      expect(
+        decoration.color!.withValues(alpha: 1),
+        variant.effectivePageBackgroundColor,
+        reason: variant.id,
+      );
+      expect(
+        decoration.color!.a,
+        closeTo(variant.isDarkMode ? 0.78 : 0.72, 0.01),
+        reason: variant.id,
+      );
+      final selectedIcon = tester.widget<ChewieIcon>(
+        find.byType(ChewieIcon).first,
+      );
+      expect(selectedIcon.color, variant.primaryColor, reason: variant.id);
+      expect(tester.takeException(), isNull, reason: variant.id);
+    }
+  });
+
   testWidgets('keeps four labels bounded and exposes selected semantics', (
     tester,
   ) async {
@@ -182,6 +239,7 @@ void main() {
         normal,
         enabled: true,
         isWeb: false,
+        platformReduceMotion: false,
       ),
       isTrue,
     );
@@ -190,17 +248,31 @@ void main() {
         normal,
         enabled: true,
         isWeb: true,
+        platformReduceMotion: false,
       ),
       isFalse,
     );
     expect(
-      LoftifyGlassNavigationBar.shouldUseBlur(normal, enabled: false),
+      LoftifyGlassNavigationBar.shouldUseBlur(
+        normal,
+        enabled: false,
+        platformReduceMotion: false,
+      ),
       isFalse,
     );
     expect(
       LoftifyGlassNavigationBar.shouldUseBlur(
         const MediaQueryData(accessibleNavigation: true),
         enabled: true,
+        platformReduceMotion: false,
+      ),
+      isFalse,
+    );
+    expect(
+      LoftifyGlassNavigationBar.shouldUseBlur(
+        normal,
+        enabled: true,
+        platformReduceMotion: true,
       ),
       isFalse,
     );
@@ -211,7 +283,51 @@ void main() {
 
     expect(source, contains('extendBody: true'));
     expect(source, contains('portrait: _buildBottomNavigationBar()'));
-    expect(source, contains('child: LoftifyGlassNavigationBar('));
+    expect(source, contains('LoftifyGlassNavigationBar('));
+    expect(source, contains('enableBlur: !reduceTransparency'));
     expect(source, isNot(contains('MyBottomNavigationBar(')));
+  });
+
+  test('reduce-transparency preference is persisted and localized', () {
+    final hiveSource = File('lib/Utils/hive_util.dart').readAsStringSync();
+    final providerSource = File(
+      'lib/Utils/app_provider.dart',
+    ).readAsStringSync();
+    final appearanceSource = File(
+      'lib/Screens/Setting/apperance_setting_screen.dart',
+    ).readAsStringSync();
+
+    expect(hiveSource, contains('reduceTransparencyKey'));
+    expect(
+      providerSource,
+      allOf(
+        contains('bool get reduceTransparency'),
+        contains('HiveUtil.reduceTransparencyKey'),
+        contains('notifyListeners()'),
+      ),
+    );
+    expect(
+      appearanceSource,
+      allOf(
+        contains('appProvider.reduceTransparency'),
+        contains('appLocalizations.reduceTransparency'),
+        contains('appLocalizations.reduceTransparencyDescription'),
+      ),
+    );
+
+    for (final path in <String>[
+      'lib/l10n/intl_en.arb',
+      'lib/l10n/intl_zh.arb',
+      'lib/l10n/intl_zh_CN.arb',
+      'lib/l10n/intl_zh_TW.arb',
+    ]) {
+      final messages = jsonDecode(File(path).readAsStringSync()) as Map;
+      expect(messages['reduceTransparency'], isNotEmpty, reason: path);
+      expect(
+        messages['reduceTransparencyDescription'],
+        isNotEmpty,
+        reason: path,
+      );
+    }
   });
 }

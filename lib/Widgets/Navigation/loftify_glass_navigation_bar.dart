@@ -48,9 +48,14 @@ class LoftifyGlassNavigationBar extends StatelessWidget {
     MediaQueryData mediaQuery, {
     required bool enabled,
     bool isWeb = kIsWeb,
+    bool? platformReduceMotion,
   }) {
+    final reduceMotion = platformReduceMotion ??
+        WidgetsBinding
+            .instance.platformDispatcher.accessibilityFeatures.reduceMotion;
     return enabled &&
         !isWeb &&
+        !reduceMotion &&
         !mediaQuery.disableAnimations &&
         !mediaQuery.accessibleNavigation &&
         !mediaQuery.highContrast;

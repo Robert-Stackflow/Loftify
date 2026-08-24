@@ -215,6 +215,8 @@
   "autoMemoryWindowPositionAndSize": "Remember window position and size",
   "autoMemoryWindowPositionAndSizeTip": "If disabled, Loftify opens centered at its default window size",
   "mobileSetting": "Mobile",
+  "reduceTransparency": "Reduce transparency effects",
+  "reduceTransparencyDescription": "Use a solid navigation surface for clearer contrast and smoother performance on lower-end devices",
   "useDesktopLayoutWhenLandscape": "Enable desktop layout in landscape mode",
   "haveToRestartWhenChange": "A restart is required after changes",
   "inAppBrowser": "In-app Browser",
