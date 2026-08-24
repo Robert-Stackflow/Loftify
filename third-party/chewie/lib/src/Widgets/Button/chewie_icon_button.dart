@@ -124,11 +124,11 @@ class ChewieIconButton extends StatelessWidget {
           BorderSide(color: effectiveBorder, width: highContrast ? 1.2 : 0.8),
         ),
         shape: WidgetStatePropertyAll(
-          RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(
-              cornerRadius ?? specification.cornerRadius,
-            ),
-          ),
+          cornerRadius == null
+              ? const CircleBorder()
+              : RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(cornerRadius!),
+                ),
         ),
       ),
       icon: ChewieIcon(

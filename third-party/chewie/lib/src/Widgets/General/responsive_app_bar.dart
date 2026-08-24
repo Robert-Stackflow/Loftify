@@ -92,14 +92,12 @@ class ResponsiveAppBar extends StatelessWidget implements PreferredSizeWidget {
                         if (showBack)
                           Container(
                             margin: const EdgeInsets.only(left: 8),
-                            child: ToolButton(
-                              context: context,
+                            child: ChewieIconButton(
+                              icon: leadingIcon,
                               onPressed: handleBack,
-                              buttonSize: const Size(44, 44),
-                              iconBuilder: (_) => ChewieIcon(
-                                leadingIcon,
-                                size: 20,
-                              ),
+                              iconSize: 20,
+                              tooltip: MaterialLocalizations.of(context)
+                                  .backButtonTooltip,
                             ),
                           ),
                         titleContent,

@@ -44,12 +44,31 @@ void main() {
     );
 
     final icon = tester.widget<Icon>(find.byIcon(LucideIcons.search));
+    final button = tester.widget<IconButton>(find.byType(IconButton));
     expect(icon.size, 20);
     expect(tester.getSize(find.byType(IconButton)), const Size.square(44));
+    expect(button.style!.shape!.resolve({}), isA<CircleBorder>());
     expect(find.bySemanticsLabel('Search'), findsOneWidget);
 
     await tester.tap(find.byType(IconButton));
     expect(taps, 1);
+  });
+
+  testWidgets('an explicit corner radius remains available for inline tools', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _host(
+        ChewieIconButton(
+          icon: LucideIcons.slidersHorizontal,
+          cornerRadius: 12,
+          onPressed: () {},
+        ),
+      ),
+    );
+
+    final button = tester.widget<IconButton>(find.byType(IconButton));
+    expect(button.style!.shape!.resolve({}), isA<RoundedRectangleBorder>());
   });
 
   testWidgets('custom specification controls all shared measurements',
