@@ -16,7 +16,9 @@ import 'package:loftify/Screens/Suit/user_market_screen.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
+import 'package:loftify/Widgets/Design/loftify_surfaces.dart';
 import 'package:loftify/Widgets/Profile/profile_overview_card.dart';
+import 'package:loftify/Widgets/Profile/profile_header_components.dart';
 import 'package:loftify/Widgets/loftify_icons.dart';
 
 import '../../Api/user_api.dart';
@@ -24,6 +26,7 @@ import '../../Models/user_response.dart';
 import '../../Utils/asset_util.dart';
 import '../../Utils/tab_state_util.dart';
 import '../../Utils/utils.dart';
+import '../../Theme/loftify_design_theme.dart';
 import '../../l10n/l10n.dart';
 import '../Post/collection_detail_screen.dart';
 
@@ -56,10 +59,28 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
   int _currentTabIndex = 0;
   List<ShowCaseItem> showCases = [];
   String _followButtonText = appLocalizations.follow;
-  Color? _followButtonColor;
-  double get _portraitExpandedHeight => showCases.isEmpty ? 350 : 510;
+  bool _usesWideHeaderLayout(BuildContext context) {
+    return LoftifyProfileHeaderLayout.usesSideBySide(
+      context,
+      hasShowcase: showCases.isNotEmpty,
+    );
+  }
 
-  double get _landscapeHeaderHeight => showCases.isEmpty ? 240 : 400;
+  double _profileHeaderHeight(
+    BuildContext context, {
+    required bool includesAppBar,
+  }) {
+    final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final wide = _usesWideHeaderLayout(context);
+    final base = showCases.isEmpty
+        ? (includesAppBar ? 350.0 : 240.0)
+        : wide
+            ? (includesAppBar ? 390.0 : 285.0)
+            : (includesAppBar ? 524.0 : 412.0);
+    final accessibilityGrowth =
+        ((scale - 1).clamp(0, 1.25) * 128) + (scale > 1.45 ? 96 : 0);
+    return base + accessibilityGrowth;
+  }
 
   InfoMode get infoMode => isMe == true ? InfoMode.me : InfoMode.other;
 
@@ -162,7 +183,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ChewieTheme.getBackground(context),
+      backgroundColor: context.design.colors.page,
       resizeToAvoidBottomInset: false,
       appBar: ResponsiveUtil.isLandscapeLayout()
           ? ResponsiveAppBar(
@@ -189,7 +210,10 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
         SliverAppBarWrapper(
           context: context,
           onBack: widget.onBack,
-          expandedHeight: _portraitExpandedHeight,
+          expandedHeight: _profileHeaderHeight(
+            context,
+            includesAppBar: true,
+          ),
           systemOverlayStyle: SystemUiOverlayStyle.light,
           collapsedHeight: 56,
           backgroundWidget: _buildHeaderBackground(),
@@ -212,7 +236,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
             ),
           ),
           bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(40),
+            preferredSize: const Size.fromHeight(56),
             child: ClipRRect(
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(20),
@@ -232,7 +256,10 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
       return [
         SliverToBoxAdapter(
           child: SizedBox(
-            height: _landscapeHeaderHeight,
+            height: _profileHeaderHeight(
+              context,
+              includesAppBar: false,
+            ),
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -247,7 +274,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
           pinned: true,
           delegate: SliverAppBarDelegate(
             radius: 0,
-            background: ChewieTheme.getBackground(context),
+            background: context.design.colors.page,
             tabBar: TabBarWrapper(
               tabController: _tabController,
               tabs: tabList,
@@ -264,9 +291,11 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
 
   Widget _mainContent() {
     return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(context.design.radii.panel),
+      ),
       child: ColoredBox(
-        color: ChewieTheme.getBackground(context),
+        color: context.design.colors.page,
         child: _buildTabView(),
       ),
     );
@@ -509,6 +538,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
   }
 
   Widget _buildInfo([double? topMargin]) {
+    final design = context.design;
     final hasRemarkName =
         StringUtil.isNotEmpty(_fullBlogData!.blogInfo.remarkName);
     final hasDescription = StringUtil.isNotEmpty(
@@ -516,27 +546,27 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
     );
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        16,
+        design.spacing.xl,
         topMargin ?? kToolbarHeight + MediaQuery.paddingOf(context).top + 8,
-        16,
-        12,
+        design.spacing.xl,
+        design.spacing.lg,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildIdentitySummary(
-            hasRemarkName: hasRemarkName,
-            hasDescription: hasDescription,
-          ),
-          const SizedBox(height: 12),
-          _buildStatisticsCard(),
-          const SizedBox(height: 10),
-          _buildProfileAction(),
-          if (showCases.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            _buildShowCases(),
+      child: LoftifyProfileHeaderLayout(
+        summary: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildIdentitySummary(
+              hasRemarkName: hasRemarkName,
+              hasDescription: hasDescription,
+            ),
+            SizedBox(height: design.spacing.lg),
+            _buildStatisticsCard(),
+            SizedBox(height: design.spacing.sectionTop),
+            _buildProfileAction(),
           ],
-        ],
+        ),
+        showcase: showCases.isNotEmpty ? _buildShowCases() : null,
       ),
     );
   }
@@ -555,83 +585,36 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
             : appLocalizations.confidential;
     final metadata = '${appLocalizations.gender}: $gender'
         '${StringUtil.isNotEmpty(info.ipLocation) ? '${appLocalizations.ipSuffix}${info.ipLocation}' : ''}';
-    return SizedBox(
-      height: 80,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          ItemBuilder.buildAvatar(
-            context: context,
-            size: StringUtil.isNotEmpty(getAvatarBoxImage()) ? 54 : 80,
-            showBorder: false,
-            showDetailMode: ShowDetailMode.avatar,
-            imageUrl: Utils.removeImageParam(info.bigAvaImg),
-            avatarBoxImageUrl: getAvatarBoxImage(),
-            title: appLocalizations.personalAvatar,
-            caption: '「${info.blogNickName}」',
-            tagPrefix: 'user-profile-${info.blogId}',
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ItemBuilder.buildCopyable(
-                  context,
-                  child: Text(
-                    info.blogNickName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-                  text: info.blogNickName,
-                  toastText: appLocalizations.haveCopiedNickName,
-                ),
-                const SizedBox(height: 3),
-                ItemBuilder.buildCopyable(
-                  context,
-                  child: Text(
-                    idLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context)
-                        .textTheme
-                        .labelMedium
-                        ?.copyWith(color: Colors.white70),
-                  ),
-                  text: info.blogName,
-                  toastText: appLocalizations.haveCopiedLofterID,
-                ),
-                const SizedBox(height: 3),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        metadata,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context)
-                            .textTheme
-                            .labelMedium
-                            ?.copyWith(color: Colors.white70),
-                      ),
-                    ),
-                    if (hasDescription) ...[
-                      const SizedBox(width: 4),
-                      _buildDescriptionButton(),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-          if (ResponsiveUtil.isLandscapeLayout()) ...[
-            const SizedBox(width: 6),
-            ChewieIconButton(
+    return LoftifyProfileIdentity(
+      key: const ValueKey('user-profile-identity'),
+      avatar: ItemBuilder.buildAvatar(
+        context: context,
+        size: StringUtil.isNotEmpty(getAvatarBoxImage()) ? 54 : 80,
+        showBorder: false,
+        showDetailMode: ShowDetailMode.avatar,
+        imageUrl: Utils.removeImageParam(info.bigAvaImg),
+        avatarBoxImageUrl: getAvatarBoxImage(),
+        title: appLocalizations.personalAvatar,
+        caption: '「${info.blogNickName}」',
+        tagPrefix: 'user-profile-${info.blogId}',
+      ),
+      displayName: info.blogNickName,
+      idLabel: idLabel,
+      metadata: metadata,
+      onDisplayNameLongPress: () => ChewieUtils.copy(
+        context,
+        info.blogNickName,
+        toastText: appLocalizations.haveCopiedNickName,
+      ),
+      onIdLongPress: () => ChewieUtils.copy(
+        context,
+        info.blogName,
+        toastText: appLocalizations.haveCopiedLofterID,
+      ),
+      descriptionLabel: hasDescription ? appLocalizations.moreInfo : null,
+      onDescriptionPressed: hasDescription ? _showDescription : null,
+      trailing: ResponsiveUtil.isLandscapeLayout()
+          ? ChewieIconButton(
               icon: LoftifyIcons.moreVertical,
               tooltip: appLocalizations.moreInfo,
               foregroundColor: Colors.white,
@@ -639,51 +622,20 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
                 context,
                 _buildMoreButtons(),
               ),
-            ),
-          ],
-        ],
-      ),
+            )
+          : null,
     );
   }
 
-  Widget _buildDescriptionButton() {
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: () {
-          DialogBuilder.showInfoDialog(
-            context,
-            title: appLocalizations.descriptionTitle(
-              _fullBlogData!.blogInfo.blogNickName,
-            ),
-            message: _fullBlogData!.blogInfo.selfIntro,
-            onTapDismiss: () {},
-            customDialogType: CustomDialogType.normal,
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                appLocalizations.moreInfo,
-                style: Theme.of(context)
-                    .textTheme
-                    .labelMedium
-                    ?.copyWith(color: Colors.white),
-              ),
-              const ChewieIcon(
-                LoftifyIcons.expand,
-                size: 16,
-                color: Colors.white,
-              ),
-            ],
-          ),
-        ),
+  void _showDescription() {
+    DialogBuilder.showInfoDialog(
+      context,
+      title: appLocalizations.descriptionTitle(
+        _fullBlogData!.blogInfo.blogNickName,
       ),
+      message: _fullBlogData!.blogInfo.selfIntro,
+      onTapDismiss: () {},
+      customDialogType: CustomDialogType.normal,
     );
   }
 
@@ -719,31 +671,22 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
 
   Widget _buildProfileAction() {
     final isOwnProfile = infoMode == InfoMode.me;
-    return RoundIconTextButton(
+    return LoftifyProfileAction(
       onPressed: isOwnProfile
           ? () => UriUtil.openExternal(_fullBlogData!.blogInfo.homePageUrl)
           : _processFollow,
-      text: isOwnProfile
+      label: isOwnProfile
           ? appLocalizations.openWithBrowser
           : _followButtonText.trim(),
-      icon: ChewieIcon(
-        isOwnProfile
-            ? LoftifyIcons.openExternal
-            : _fullBlogData!.isBlackBlog
-                ? LoftifyIcons.block
-                : LoftifyIcons.follow,
-        size: 18,
-        color: Colors.white,
-      ),
-      width: double.infinity,
-      height: 42,
-      minHeight: 42,
-      radius: 12,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      background: isOwnProfile
-          ? Colors.black.withValues(alpha: 0.22)
-          : _followButtonColor,
-      fontSizeDelta: 0,
+      icon: isOwnProfile
+          ? LoftifyIcons.openExternal
+          : _fullBlogData!.isBlackBlog
+              ? LoftifyIcons.block
+              : LoftifyIcons.follow,
+      emphasized: !isOwnProfile &&
+          !_fullBlogData!.following &&
+          !_fullBlogData!.isBlackBlog,
+      danger: _fullBlogData!.isBlackBlog,
     );
   }
 
@@ -838,14 +781,11 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
       _followButtonText = _fullBlogData!.specialfollowing
           ? appLocalizations.specialFollowed
           : appLocalizations.followed;
-      _followButtonColor = Colors.white.withValues(alpha: 0.4);
     } else {
       _followButtonText = " ${appLocalizations.follow} ";
-      _followButtonColor = Colors.white.withValues(alpha: 0.2);
     }
     if (_fullBlogData!.isBlackBlog) {
       _followButtonText = appLocalizations.blacklisted;
-      _followButtonColor = Colors.red.withValues(alpha: 0.4);
     }
     if (rebuild && mounted) setState(() {});
   }
@@ -1050,12 +990,13 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
   }
 
   Widget _buildShowCases() {
-    return ContainerItem(
+    final design = context.design;
+    final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final itemExtent = 112.0 + ((scale - 1).clamp(0, 1) * 24);
+    return LoftifyCard(
       backgroundColor: Colors.black.withValues(alpha: 0.22),
-      radius: 14,
-      roundTop: true,
-      roundBottom: true,
-      padding: const EdgeInsets.all(10),
+      radius: design.radii.card,
+      padding: EdgeInsets.all(design.spacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1066,7 +1007,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
                 size: 16,
                 color: Colors.white,
               ),
-              const SizedBox(width: 5),
+              SizedBox(width: design.spacing.sm),
               Expanded(
                 child: Text(
                   appLocalizations.masterpiece,
@@ -1080,15 +1021,15 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: design.spacing.md),
           SizedBox(
-            height: 100,
+            height: itemExtent,
             child: ListView.builder(
               physics: const BouncingScrollPhysics(),
               scrollDirection: Axis.horizontal,
               itemCount: showCases.length,
               itemBuilder: (context, index) =>
-                  _buildShowCaseItem(showCases[index]),
+                  _buildShowCaseItem(showCases[index], itemExtent),
             ),
           ),
         ],
@@ -1096,7 +1037,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
     );
   }
 
-  Widget _buildShowCaseItem(ShowCaseItem item) {
+  Widget _buildShowCaseItem(ShowCaseItem item, double extent) {
     late String title;
     late String backgroundUrl;
     late String hotCount;
@@ -1138,117 +1079,114 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
     } else {
       ILogger.info("Loftify", item.toJson());
     }
+    final design = context.design;
     return Padding(
-      padding: const EdgeInsets.only(right: 10),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
+      padding: EdgeInsets.only(right: design.spacing.md),
+      child: SizedBox(
+        height: extent,
+        width: extent,
+        child: LoftifyCard(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: SizedBox(
-            height: 100,
-            width: 100,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                StringUtil.isNotEmpty(backgroundUrl)
-                    ? ChewieItemBuilder.buildCachedImage(
-                        context: context,
-                        imageUrl: backgroundUrl,
-                        height: 100,
-                        width: 100,
-                        fit: BoxFit.cover,
-                        showLoading: false,
-                        placeholderBackground: Colors.transparent,
-                      )
-                    : AssetUtil.loadDouble(
-                        context,
-                        AssetUtil.lofterDarkIllust,
-                        AssetUtil.lofterDarkIllust,
-                        size: 100,
-                        fit: BoxFit.cover,
-                      ),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withValues(alpha: 0.08),
-                        Colors.black.withValues(alpha: 0.58),
-                      ],
+          semanticLabel: '$title, $hotCount',
+          radius: design.radii.control,
+          backgroundColor: Colors.black.withValues(alpha: 0.18),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              StringUtil.isNotEmpty(backgroundUrl)
+                  ? ChewieItemBuilder.buildCachedImage(
+                      context: context,
+                      imageUrl: backgroundUrl,
+                      height: extent,
+                      width: extent,
+                      fit: BoxFit.cover,
+                      showLoading: false,
+                      placeholderBackground: Colors.transparent,
+                    )
+                  : AssetUtil.loadDouble(
+                      context,
+                      AssetUtil.lofterDarkIllust,
+                      AssetUtil.lofterDarkIllust,
+                      size: extent,
+                      fit: BoxFit.cover,
                     ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.05),
+                      Colors.black.withValues(alpha: 0.68),
+                    ],
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(6),
-                    child: Column(
-                      children: [
-                        const SizedBox(height: 18),
-                        const Spacer(),
-                        Text(
-                          title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style:
-                              Theme.of(context).textTheme.titleSmall?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(design.spacing.sm),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: design.spacing.xxl),
+                      const Spacer(),
+                      Text(
+                        title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.start,
+                        style: design.typography.cardTitle.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
                         ),
-                        const Spacer(),
-                        Row(
-                          children: [
-                            const ChewieIcon(
-                              LoftifyIcons.hot,
-                              size: 12,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 3),
-                            Expanded(
-                              child: Text(
-                                hotCount,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelSmall
-                                    ?.copyWith(color: Colors.white),
+                      ),
+                      SizedBox(height: design.spacing.xs),
+                      Row(
+                        children: [
+                          const ChewieIcon(
+                            LoftifyIcons.hot,
+                            size: 12,
+                            color: Colors.white,
+                          ),
+                          SizedBox(width: design.spacing.xs),
+                          Expanded(
+                            child: Text(
+                              hotCount,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: design.typography.metadata.copyWith(
+                                color: Colors.white,
                               ),
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
+              ),
+              Positioned(
+                top: 2,
+                right: 2,
+                child: ChewieItemBuilder.buildCachedImage(
+                  context: context,
+                  imageUrl: item.icon,
+                  width: 36,
+                  height: 36,
+                  fit: BoxFit.contain,
+                  showLoading: false,
+                  placeholderBackground: Colors.transparent,
+                ),
+              ),
+              if (item.postCollection != null)
                 Positioned(
-                  top: 2,
-                  right: 2,
-                  child: ChewieItemBuilder.buildCachedImage(
-                    context: context,
-                    imageUrl: item.icon,
-                    width: 36,
-                    height: 36,
-                    fit: BoxFit.contain,
-                    showLoading: false,
-                    placeholderBackground: Colors.transparent,
+                  top: design.spacing.sm,
+                  left: design.spacing.sm,
+                  child: const ChewieIcon(
+                    LoftifyIcons.collection,
+                    size: 12,
+                    color: Colors.white,
                   ),
                 ),
-                if (item.postCollection != null)
-                  const Positioned(
-                    top: 6,
-                    left: 6,
-                    child: ChewieIcon(
-                      LoftifyIcons.collection,
-                      size: 12,
-                      color: Colors.white,
-                    ),
-                  ),
-              ],
-            ),
+            ],
           ),
         ),
       ),

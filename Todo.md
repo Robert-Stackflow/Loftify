@@ -8,8 +8,8 @@
 
 - 功能与体验任务：107 项；已完成 102 项，待完成 5 项。
 - 重复验收项：8 项；它们是每轮交付都要执行的流程，不计入功能任务完成率。
-- 当前焦点：视觉设计系统阶段 C 的首页、作品详情与标签详情代表页已完成；划线评论及其他依赖官方接口的能力继续暂缓。
-- 紧接处理：继续阶段 C，按作者主页、设置页的顺序完成其余代表页面试点与两轮自检。
+- 当前焦点：视觉设计系统阶段 C 的首页、作品详情、标签详情与作者主页代表页已完成；划线评论及其他依赖官方接口的能力继续暂缓。
+- 紧接处理：继续阶段 C，完成设置页代表页面试点后进入两轮跨页面一致性与内容沉浸自检。
 - 当前设备：MuMu Android 12（1080×1920，ADB `127.0.0.1:16384`）在线，Flutter 调试会话支持 Hot Reload / Hot Restart；独立 Android 真机当前未连接。
 
 ### 未完成任务分布
@@ -58,6 +58,7 @@
 | 本轮完成 | `REDESIGN-C1` | 首页内容栅格、瀑布流卡片与宽屏版心完成首轮代表页迁移，并通过真实数据和双端构建验收 |
 | 本轮完成 | `REDESIGN-C2` | 作品详情阅读版心、信息层级和右侧悬浮操作条完成代表页迁移，并通过真实长文与双端构建验收 |
 | 本轮完成 | `REDESIGN-C3` | 标签详情头部、发现入口、筛选与内容栅格完成代表页迁移，并通过真实标签、自动刷新和双端构建验收 |
+| 本轮完成 | `REDESIGN-C4` | 作者主页身份、统计、关注、代表作与响应式头部完成代表页迁移，并通过真实作者、Tab 刷新和双端构建验收 |
 
 ## 0. 使用规则
 
@@ -400,7 +401,7 @@
   - [x] `REDESIGN-C1` 完成首页代表页：统一响应式版心、瀑布流栅格、媒体裁切、文字卡片与元数据层级，并保留悬浮顶部胶囊、下拉刷新、分页和全部业务入口。
   - [x] `REDESIGN-C2` 完成作品详情代表页：建立响应式阅读版心与统一信息轴，保留媒体沉浸展示，重构右侧悬浮操作条并完整保留加载、上下篇、评论和合集 / 粮单业务逻辑。
   - [x] `REDESIGN-C3` 完成标签详情代表页：统一响应式标签头部、统计、发现入口、筛选条和内容栅格，保留原有丝滑 Tab、自动刷新、筛选记忆与嵌套滚动逻辑。
-  - [ ] `REDESIGN-C4` 完成作者主页代表页。
+  - [x] `REDESIGN-C4` 完成作者主页代表页：统一响应式身份、统计、关注与代表作层级，保留主题背景、正文顶部圆角、等宽 Tab、刷新和全部作者操作。
   - [ ] `REDESIGN-C5` 完成设置页代表页。
   - [ ] `REDESIGN-C6` 至少完成两轮跨页面一致性与内容沉浸自检。
 - [ ] `REDESIGN-D` 按页面族迁移全部剩余页面，删除旧样式和重复组件；每一族独立完成测试、截图、双端运行与提交。
@@ -421,6 +422,8 @@
 `REDESIGN-C2` 完成记录（2026-08-24）：新增响应式阅读版心，正文在手机使用 12 / 16px 分级留白、宽屏限制为 720px，并以 17px 字号和 1.8 行高提供稳定的长文阅读节奏；HTML 选择、下载、解析与局部重试逻辑保持不变。作者、正文、合集 / 粮单、标签、标记、互动、评论与相关推荐标题统一落在同一内容轴上，图片和视频仍以内容优先方式使用可用宽度。帖子操作区改为右侧竖向悬浮条：浅色使用白色抬升表面，深色使用深色抬升表面，并统一边界、阴影、圆角、触控和计数排版；原有滚动显隐、评论区 / 底部控件入屏隐藏、点赞、推荐、下载、评论跳转与上下篇状态均完整保留。AppBar 继续保留轻量合集胶囊，返回、更多等独立操作继续使用圆形点击面。新增阅读宽度、窄屏留白、正文排版及悬浮条深浅色回归；独立全量 247 项测试通过，目标静态检查无 error / warning（旧详情屏仅保留既有 info），Android Debug APK 与 Windows Profile 构建通过。MuMu Android 12 已在真实长文章中完成顶部布局、滚动显隐、评论跳转、Hot Reload 与 Hot Restart 验证，运行日志未发现断言、布局溢出或未处理异常；截图保存在 `build/screenshots/loftify_c2_detail_top2.png`、`build/screenshots/loftify_c2_detail_hidden.png`、`build/screenshots/loftify_c2_detail_shown.png` 与 `build/screenshots/loftify_c2_detail_comments.png`。独立 Android 真机当前未连接。
 
 `REDESIGN-C3` 完成记录（2026-08-24）：标签头部改为由设计 Token 驱动的响应式信息区，统一标签图标、标题、作品 / 参与统计及关注状态；窄屏和 2 倍字体会安全改为纵向排列，关注按钮使用克制的柔和 / 次级状态，不以大面积实色抢夺内容焦点。三个发现入口复用统一描边卡片与原有插画，正常字号保持紧凑，长本地化文案和大字体会按内容增长；页面内容以 1440px 最大版心居中。Tab 继续使用原有 `UnderlinedTabIndicator`、主题强调色、无水波纹与控制器进度驱动的字体动画，首次进入、重复点击及筛选变化仍会立即拉出自定义 Lottie 刷新动画，不改动既有懒加载时序。筛选吸顶区使用 64px 稳定高度容纳 40px 控件，修复文字裁切并保留 Tab / Segment / 筛选参数跨重启记忆；瀑布流与方格列表改用真实单元格宽度和响应式 300px 最大列宽，消除旧 160px 固定宽度导致的封面挤压。新增窄屏、大字体、关注状态和发现卡片回归；独立全量 250 项测试通过，目标静态检查无问题，Android Debug APK 与 Windows Profile 构建通过。MuMu Android 12 已在真实“原神”标签中验证两列内容栅格、Tab 自动刷新动画、周榜筛选记忆、筛选 Panel、吸顶状态、Hot Reload 与 Hot Restart，运行日志未发现断言、布局溢出或未处理异常；截图保存在 `build/screenshots/loftify_c3_tag_pass2.png`、`build/screenshots/loftify_c3_tag_refresh.png`、`build/screenshots/loftify_c3_tag_hottest_loaded.png`、`build/screenshots/loftify_c3_tag_filter_panel.png` 与 `build/screenshots/loftify_c3_tag_pinned.png`。独立 Android 真机当前未连接。
+
+`REDESIGN-C4` 完成记录（2026-08-24）：作者主页头部迁移为内容驱动的响应式布局，身份信息不再依赖 80px 固定高度，昵称、ID、性别 / IP、简介入口及横屏更多操作可随本地化文案和 2 倍字体自然增长；昵称与 ID 的长按复制、头像灯箱和简介弹窗保持不变。手机继续按身份、统计、关注和代表作纵向组织，820px 以上宽屏在正常字号下改为摘要与代表作双栏并限制 1180px 最大版心；大字体自动回退纵向。四项统计在极窄或 1.45 倍以上字号下重排为两行，计数继续使用本地化缩写；关注主操作使用清晰白色表面与主题强调色，已关注、本人和黑名单状态保持克制 / 危险语义。代表作使用真实 `BoxFit.cover`、内容驱动尺寸、渐变信息层和无水波纹卡片，并给 Tab 前保留稳定呼吸空间；正文仍以 20px 顶部圆角衔接主题背景，原等宽 `UnderlinedTabIndicator`、持久化、嵌套滚动和各子页刷新逻辑未改动。新增窄屏 2 倍字体、主操作、统计重排及 1200px 双栏几何回归；独立全量 254 项测试通过，目标静态检查无问题，Android Debug APK 与 Windows Profile 构建通过。MuMu Android 12 已在真实“梧岩”作者页验证顶部布局、代表作、正文圆角、Tab 吸顶、更多菜单、喜欢 Tab 的即时字体 / 指示器切换和自定义 Lottie 加载，并完成 Hot Reload 与 Hot Restart；运行日志未发现断言、布局溢出或未处理异常。截图保存在 `build/screenshots/loftify_c4_profile_pass2.png`、`build/screenshots/loftify_c4_profile_pinned.png`、`build/screenshots/loftify_c4_profile_menu.png`、`build/screenshots/loftify_c4_profile_tab_loading.png` 与 `build/screenshots/loftify_c4_profile_tab_loaded.png`。独立 Android 真机当前未连接。
 
 `REDESIGN-R01`～`REDESIGN-R03` 完成记录（2026-08-24）：确认视觉回归来自全局 Material 排版映射与内容表面映射，而不是帖子详情业务组件本身。旧页面的 `titleLarge / titleMedium / titleSmall` 已恢复 18 / 16 / 14，`bodyLarge / bodyMedium` 恢复 16 / 14；新设计 Token 仍保留独立排版角色，只由明确迁移的新组件使用，避免旧页面已有 `fontSizeDelta` 被二次放大。浅色页面和导航继续保持白色，`canvasColor` 与 `cardColor` 则恢复用户所选主题的原始浅灰层级，帖子详情 AppBar 合集胶囊、正文底部合集 / 粮单 / 标签以及其他旧控件不再白底叠白底。28 项主题、背景、详情和组件测试通过；MuMu Android 12 已现场确认首页与“我的”字号，以及帖子详情顶部合集、底部合集导航和标签背景，并完成 Hot Reload / Hot Restart。运行日志未发现 Loftify 断言、溢出或未处理异常；独立 Android 真机当前未连接。
 

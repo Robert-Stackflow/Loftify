@@ -36,28 +36,53 @@ class ProfileOverviewCard extends StatelessWidget {
     return LoftifyCard(
       backgroundColor: backgroundColor,
       radius: radius,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          for (var index = 0; index < statistics.length; index++) ...[
-            Expanded(
-              child: _ProfileStatisticItem(
-                data: statistics[index],
-                foregroundColor: effectiveForeground,
-                radius: radius,
-              ),
-            ),
-            if (index != statistics.length - 1)
-              SizedBox(
-                height: 42,
-                child: VerticalDivider(
-                  width: 1,
-                  thickness: 0.6,
-                  color: effectiveForeground.withValues(alpha: 0.22),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final textScale = MediaQuery.textScalerOf(context).scale(
+                  Theme.of(context).textTheme.labelSmall?.fontSize ?? 11) /
+              (Theme.of(context).textTheme.labelSmall?.fontSize ?? 11);
+          final useTwoRows = statistics.length > 2 &&
+              (constraints.maxWidth < 280 || textScale > 1.45);
+          if (useTwoRows) {
+            final itemWidth = constraints.maxWidth / 2;
+            return Wrap(
+              children: [
+                for (final statistic in statistics)
+                  SizedBox(
+                    width: itemWidth,
+                    child: _ProfileStatisticItem(
+                      data: statistic,
+                      foregroundColor: effectiveForeground,
+                      radius: radius,
+                    ),
+                  ),
+              ],
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              for (var index = 0; index < statistics.length; index++) ...[
+                Expanded(
+                  child: _ProfileStatisticItem(
+                    data: statistics[index],
+                    foregroundColor: effectiveForeground,
+                    radius: radius,
+                  ),
                 ),
-              ),
-          ],
-        ],
+                if (index != statistics.length - 1)
+                  SizedBox(
+                    height: 42,
+                    child: VerticalDivider(
+                      width: 1,
+                      thickness: 0.6,
+                      color: effectiveForeground.withValues(alpha: 0.22),
+                    ),
+                  ),
+              ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -119,7 +144,7 @@ class _ProfileStatisticItem extends StatelessWidget {
               const SizedBox(height: 3),
               Text(
                 data.title,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
