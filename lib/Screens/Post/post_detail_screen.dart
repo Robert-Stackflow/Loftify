@@ -41,6 +41,7 @@ import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
 import '../../Widgets/PostDetail/detail_bottom_bar.dart';
 import '../../Widgets/PostDetail/post_content_section.dart';
+import '../../Widgets/PostDetail/post_swipe_gesture_detector.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import '../Info/user_detail_screen.dart';
@@ -130,6 +131,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
   final GlobalKey _operationViewportKey = GlobalKey();
   final GlobalKey _commentListViewportKey = GlobalKey();
   final GlobalKey _commentEndViewportKey = GlobalKey();
+  final GlobalKey _imageSwiperViewportKey = GlobalKey();
   final ResizableController _resizableController = ResizableController();
   late dynamic downloadIcon;
   DownloadState downloadState = DownloadState.none;
@@ -983,8 +985,9 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
     final contentOpacity =
         (1 - min(0.16, _postSwipeOffset.abs() / max(width, 1) * 0.16))
             .toDouble();
-    return GestureDetector(
+    return PostSwipeGestureDetector(
       behavior: HitTestBehavior.translucent,
+      excludedRegions: [_imageSwiperViewportKey],
       onHorizontalDragStart: _handlePostSwipeStart,
       onHorizontalDragUpdate: _handlePostSwipeUpdate,
       onHorizontalDragEnd: _handlePostSwipeEnd,
@@ -2075,6 +2078,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
       alignment: Alignment.center,
       children: [
         SizedBox(
+          key: photoLinks.length > 1 ? _imageSwiperViewportKey : null,
           height: preferedHeight,
           child: Swiper(
             controller: _swiperController,
