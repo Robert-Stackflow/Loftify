@@ -1,6 +1,8 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 
+import '../../Theme/loftify_design_theme.dart';
+import '../Design/loftify_controls.dart';
 import '../loftify_icons.dart';
 
 /// 登录流程使用的一体式输入框。
@@ -63,49 +65,26 @@ class _LoginInputItemState extends State<LoginInputItem> {
   Widget build(BuildContext context) {
     final leading = _buildAccessory(widget.leadingConfig, isTrailing: false);
     final tailing = _buildAccessory(widget.tailingConfig, isTrailing: true);
-    return Container(
-      margin: const EdgeInsets.only(top: 10),
-      padding: const EdgeInsets.only(right: 10, top: 5, bottom: 5),
-      decoration: BoxDecoration(
-        color: widget.backgroundColor ?? Theme.of(context).canvasColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: TextField(
-              controller: widget.controller,
-              focusNode: widget.focusNode,
-              keyboardType: widget.keyboardType,
-              textInputAction: widget.textInputAction,
-              onSubmitted: widget.onSubmitted,
-              autofillHints: widget.autofillHints,
-              obscureText: _isPassword && _obscurePassword,
-              enableSuggestions: !_isPassword,
-              autocorrect: !_isPassword,
-              decoration: InputDecoration(
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                hintText: widget.hint,
-                contentPadding: EdgeInsets.only(
-                  top: leading != null ? 13 : 0,
-                  left: leading == null ? 10 : 0,
-                ),
-                hintStyle: Theme.of(context).textTheme.titleSmall,
-                prefixIcon: leading,
-              ),
-              contextMenuBuilder: (contextMenuContext, details) =>
-                  ChewieItemBuilder.editTextContextMenuBuilder(
-                contextMenuContext,
-                details,
-                context: context,
-              ),
-            ),
-          ),
-          if (tailing != null) tailing,
-        ],
+    return Padding(
+      padding: EdgeInsets.only(top: context.design.spacing.sectionTop),
+      child: LoftifyTextField(
+        controller: widget.controller,
+        focusNode: widget.focusNode,
+        keyboardType: widget.keyboardType,
+        textInputAction: widget.textInputAction,
+        onSubmitted: widget.onSubmitted,
+        autofillHints: widget.autofillHints,
+        obscureText: _isPassword && _obscurePassword,
+        hintText: widget.hint,
+        prefix: leading,
+        suffix: tailing,
+        backgroundColor: widget.backgroundColor,
+        contextMenuBuilder: (contextMenuContext, details) =>
+            ChewieItemBuilder.editTextContextMenuBuilder(
+          contextMenuContext,
+          details,
+          context: context,
+        ),
       ),
     );
   }
@@ -177,7 +156,7 @@ class _LoginInputItemState extends State<LoginInputItem> {
               ? SystemMouseCursors.click
               : SystemMouseCursors.basic,
           child: SizedBox.square(
-            dimension: ChewieIconThemeData.of(context).minimumTapTarget,
+            dimension: context.design.icons.minimumTapTarget,
             child: Center(child: child),
           ),
         ),

@@ -5,7 +5,7 @@ import 'package:loftify/Widgets/Item/login_input_item.dart';
 import 'package:loftify/Widgets/loftify_icons.dart';
 
 void main() {
-  testWidgets('login clear action uses Lucide and a 44px touch target',
+  testWidgets('login clear action uses Lucide and a 48px touch target',
       (tester) async {
     final controller = TextEditingController(text: 'content');
     addTearDown(controller.dispose);
@@ -27,7 +27,7 @@ void main() {
       of: icon,
       matching: find.byWidgetPredicate(
         (widget) =>
-            widget is SizedBox && widget.width == 44 && widget.height == 44,
+            widget is SizedBox && widget.width == 48 && widget.height == 48,
       ),
     );
     expect(touchTarget, findsOneWidget);

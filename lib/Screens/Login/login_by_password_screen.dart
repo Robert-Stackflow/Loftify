@@ -10,6 +10,7 @@ import 'package:loftify/Utils/hive_util.dart';
 
 import '../../Utils/app_provider.dart';
 import '../../Utils/request_util.dart';
+import '../../Widgets/Design/loftify_controls.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/login_input_item.dart';
 import '../../Widgets/loftify_icons.dart';
@@ -140,15 +141,13 @@ class _LoginByPasswordScreenState
                       ),
                     ),
                     const SizedBox(height: 30),
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 50),
-                      child: RoundIconTextButton(
-                        text: appLocalizations.login,
-                        background: Theme.of(context).primaryColor,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 50),
+                      child: LoftifyButton(
+                        label: appLocalizations.login,
                         onPressed: _login,
-                        color: Colors.white,
-                        fontSizeDelta: 2,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        size: LoftifyButtonSize.large,
+                        expand: true,
                       ),
                     ),
                   ],

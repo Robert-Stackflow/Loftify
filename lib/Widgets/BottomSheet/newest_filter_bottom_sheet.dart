@@ -1,10 +1,10 @@
-import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/tag_api.dart';
-import 'package:loftify/Widgets/Item/item_builder.dart';
 
+import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/enums.dart';
 import '../../l10n/l10n.dart';
+import '../Design/loftify_controls.dart';
 import '../loftify_icons.dart';
 
 class NewestFilterBottomSheet extends StatefulWidget {
@@ -22,195 +22,178 @@ class NewestFilterBottomSheet extends StatefulWidget {
 }
 
 class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
-  final GroupButtonController _rangeController = GroupButtonController();
-  final GroupButtonController _postTypeController = GroupButtonController();
-  final GroupButtonController _recentDayController = GroupButtonController();
-  final GroupButtonController _tagProtectedController = GroupButtonController();
   late GetTagPostListParams params;
 
   @override
   void initState() {
     super.initState();
     params = widget.params;
-    init();
   }
 
-  init() {
-    _rangeController.selectIndex(params.tagRangeType.index);
-    _postTypeController.selectIndex(params.postTypes.index);
-    _recentDayController.selectIndex(params.recentDayType.index);
-    _tagProtectedController.selectIndex(params.protectedFlag ? 0 : -1);
-  }
-
-  reset() {
-    params.tagRangeType = TagRangeType.noLimit;
-    params.postTypes = TagPostType.noLimit;
-    params.recentDayType = TagRecentDayType.noLimit;
-    params.protectedFlag = false;
-    init();
+  void reset() {
+    setState(() {
+      params.tagRangeType = TagRangeType.noLimit;
+      params.postTypes = TagPostType.noLimit;
+      params.recentDayType = TagRecentDayType.noLimit;
+      params.protectedFlag = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final design = context.design;
     return Container(
       decoration: BoxDecoration(
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(20),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(design.radii.panel),
         ),
-        color: Theme.of(context).canvasColor,
+        color: design.colors.surfaceRaised,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildHeader(),
-          MyDivider(horizontal: 0, vertical: 0),
-          _buildButtons(),
-          MyDivider(horizontal: 0, vertical: 0),
+          Divider(
+            height: design.borders.hairline,
+            thickness: design.borders.hairline,
+            color: design.colors.outline,
+          ),
+          Flexible(
+            child: SingleChildScrollView(
+              primary: false,
+              child: _buildButtons(),
+            ),
+          ),
+          Divider(
+            height: design.borders.hairline,
+            thickness: design.borders.hairline,
+            color: design.colors.outline,
+          ),
           _buildFooter(),
         ],
       ),
     );
   }
 
-  _buildHeader() {
+  Widget _buildHeader() {
+    final design = context.design;
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
+      padding: EdgeInsets.symmetric(vertical: design.spacing.xl),
       alignment: Alignment.center,
       child: Text(
         appLocalizations.filter,
-        style: Theme.of(context).textTheme.titleLarge,
+        style: design.typography.pageTitle,
       ),
     );
   }
 
-  _buildButtons() {
+  Widget _buildButtons() {
+    final design = context.design;
     return Container(
-      padding: const EdgeInsets.only(left: 16, right: 16, top: 10, bottom: 20),
+      width: double.infinity,
+      padding: EdgeInsets.only(
+        left: design.spacing.xl,
+        right: design.spacing.xl,
+        top: design.spacing.sectionTop,
+        bottom: design.spacing.xxl,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ItemBuilder.buildTitle(
-            context,
-            title: appLocalizations.contentRange,
-            left: 0,
-            bottomMargin: 12,
-            textStyle: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.apply(fontSizeDelta: -2),
-          ),
-          ChewieItemBuilder.buildGroupButtons(
-            buttons: [
-              appLocalizations.noLimit,
-              appLocalizations.followingUser,
-              appLocalizations.haveNotVisitRecentSevenDays
+          _buildTitle(appLocalizations.contentRange),
+          LoftifyChoiceGroup<TagRangeType>(
+            values: const [
+              TagRangeType.noLimit,
+              TagRangeType.follow,
+              TagRangeType.notViewInPastSevenDays,
             ],
-            controller: _rangeController,
-            constraintWidth: false,
-            onSelected: (value, index, selected) {
-              params.tagRangeType = TagRangeType.values[index];
-            },
+            selectedValue: params.tagRangeType,
+            labelBuilder: EnumsLabelGetter.getTagRangeTypeLabel,
+            onSelected: (value) => setState(() {
+              params.tagRangeType = value;
+            }),
           ),
-          ItemBuilder.buildTitle(
-            context,
-            title: appLocalizations.contentType,
-            left: 0,
-            topMargin: 20,
-            bottomMargin: 12,
-            textStyle: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.apply(fontSizeDelta: -2),
-          ),
-          ChewieItemBuilder.buildGroupButtons(
-            buttons: [
-              appLocalizations.noLimit,
-              appLocalizations.words,
-              appLocalizations.images
+          _buildTitle(appLocalizations.contentType, top: true),
+          LoftifyChoiceGroup<TagPostType>(
+            values: const [
+              TagPostType.noLimit,
+              TagPostType.article,
+              TagPostType.image,
             ],
-            controller: _postTypeController,
-            constraintWidth: false,
-            onSelected: (value, index, selected) {
-              params.postTypes = TagPostType.values[index];
-            },
+            selectedValue: params.postTypes,
+            labelBuilder: EnumsLabelGetter.getTagPostTypeLabel,
+            onSelected: (value) => setState(() {
+              params.postTypes = value;
+            }),
           ),
-          ItemBuilder.buildTitle(
-            context,
-            title: appLocalizations.releaseTime,
-            left: 0,
-            topMargin: 20,
-            bottomMargin: 12,
-            textStyle: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.apply(fontSizeDelta: -2),
-          ),
-          ChewieItemBuilder.buildGroupButtons(
-            buttons: [
-              appLocalizations.noLimit,
-              appLocalizations.inOneDay,
-              appLocalizations.inOneWeek,
-              appLocalizations.inOneMonth
+          _buildTitle(appLocalizations.releaseTime, top: true),
+          LoftifyChoiceGroup<TagRecentDayType>(
+            values: const [
+              TagRecentDayType.noLimit,
+              TagRecentDayType.oneDay,
+              TagRecentDayType.oneWeek,
+              TagRecentDayType.oneMonth,
             ],
-            controller: _recentDayController,
-            constraintWidth: false,
-            onSelected: (value, index, selected) {
-              params.recentDayType = TagRecentDayType.values[index];
-            },
+            selectedValue: params.recentDayType,
+            labelBuilder: EnumsLabelGetter.getTagRecentDayTypeLabel,
+            onSelected: (value) => setState(() {
+              params.recentDayType = value;
+            }),
           ),
-          ItemBuilder.buildTitle(
-            context,
-            title: appLocalizations.tagProtection,
-            left: 0,
-            topMargin: 20,
-            bottomMargin: 12,
-            textStyle: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.apply(fontSizeDelta: -2),
-          ),
-          ChewieItemBuilder.buildGroupButtons(
-            buttons: [appLocalizations.tagProtection],
-            controller: _tagProtectedController,
-            constraintWidth: false,
-            enableDeselect: true,
-            onSelected: (value, index, selected) {
-              params.protectedFlag = selected;
-            },
+          _buildTitle(appLocalizations.tagProtection, top: true),
+          LoftifyTag(
+            label: appLocalizations.tagProtection,
+            selected: params.protectedFlag,
+            onPressed: () => setState(() {
+              params.protectedFlag = !params.protectedFlag;
+            }),
           ),
         ],
       ),
     );
   }
 
-  _buildFooter() {
-    return Container(
-      height: 45,
-      margin: const EdgeInsets.symmetric(vertical: 16, horizontal: 28),
+  Widget _buildTitle(String title, {bool top = false}) {
+    final design = context.design;
+    return Padding(
+      padding: EdgeInsets.only(
+        top: top ? design.spacing.xxl : 0,
+        bottom: design.spacing.lg,
+      ),
+      child: Text(title, style: design.typography.sectionTitle),
+    );
+  }
+
+  Widget _buildFooter() {
+    final design = context.design;
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        vertical: design.spacing.xl,
+        horizontal: design.spacing.xxl,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Center(
-            child: ItemBuilder.buildIconTextButton(
-              context,
-              icon: const ChewieIcon(LoftifyIcons.reset, size: 24),
-              direction: Axis.vertical,
-              text: appLocalizations.reset,
-              fontSizeDelta: -2,
-              onTap: reset,
+          Expanded(
+            child: LoftifyButton(
+              label: appLocalizations.reset,
+              icon: LoftifyIcons.reset,
+              variant: LoftifyButtonVariant.secondary,
+              onPressed: reset,
+              expand: true,
             ),
           ),
-          const SizedBox(width: 20),
+          SizedBox(width: design.spacing.lg),
           Expanded(
-            child: RoundIconTextButton(
-              text: appLocalizations.confirm,
-              background: Theme.of(context).primaryColor,
-              color: Colors.white,
+            flex: 2,
+            child: LoftifyButton(
+              label: appLocalizations.confirm,
               onPressed: () {
                 widget.onConfirm?.call(params);
                 Navigator.pop(context, params);
               },
+              expand: true,
             ),
           ),
         ],
