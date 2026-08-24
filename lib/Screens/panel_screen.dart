@@ -277,6 +277,11 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
   }
 
   Widget _buildBottomNavigationBar() {
+    if (!LoftifyGlassNavigationBar.shouldShowForKeyboard(
+      MediaQuery.of(context),
+    )) {
+      return const SizedBox.shrink();
+    }
     return ScrollToHide.multi(
       controller: _scrollToHideController,
       scrollControllers: getScrollControllers(),

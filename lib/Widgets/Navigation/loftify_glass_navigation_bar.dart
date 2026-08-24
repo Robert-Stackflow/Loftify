@@ -47,6 +47,10 @@ class LoftifyGlassNavigationBar extends StatelessWidget {
     milliseconds: 220,
   );
 
+  static bool shouldShowForKeyboard(MediaQueryData mediaQuery) {
+    return mediaQuery.viewInsets.bottom <= 0;
+  }
+
   static bool shouldReduceMotion(
     MediaQueryData mediaQuery, {
     bool? platformReduceMotion,

@@ -46,6 +46,7 @@ Widget _host({
   int currentIndex = 0,
   ValueChanged<int>? onSelect,
   ValueChanged<int>? onDoubleTap,
+  VoidCallback? onBodyTap,
 }) {
   final colorScheme = ColorScheme.fromSeed(
     seedColor: const Color(0xFF14C2BB),
@@ -57,7 +58,11 @@ Widget _host({
       data: mediaQuery,
       child: Scaffold(
         extendBody: true,
-        body: const ColoredBox(color: Color(0xFFB9DAD7)),
+        body: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onBodyTap,
+          child: const ColoredBox(color: Color(0xFFB9DAD7)),
+        ),
         bottomNavigationBar: LoftifyGlassNavigationBar(
           destinations: _destinations,
           currentIndex: currentIndex,
@@ -253,6 +258,118 @@ void main() {
     expect(tester.widget<AnimatedScale>(scaleFinder).scale, 1);
   });
 
+  testWidgets('navigation consumes taps without activating content beneath', (
+    tester,
+  ) async {
+    var bodyTaps = 0;
+    var selected = -1;
+    await tester.pumpWidget(
+      _host(
+        onBodyTap: () => bodyTaps++,
+        onSelect: (index) => selected = index,
+      ),
+    );
+
+    await tester.tap(find.text('Home'));
+
+    expect(selected, 0);
+    expect(bodyTaps, 0);
+  });
+
+  testWidgets('long-list direction hides and restores the glass surface', (
+    tester,
+  ) async {
+    final controller = ScrollController();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          extendBody: true,
+          body: ListView.builder(
+            controller: controller,
+            itemExtent: 64,
+            itemCount: 80,
+            itemBuilder: (context, index) => Text('Item $index'),
+          ),
+          bottomNavigationBar: ScrollToHide.multi(
+            scrollControllers: [controller],
+            hideDirection: Axis.vertical,
+            child: LoftifyGlassNavigationBar(
+              destinations: _destinations,
+              currentIndex: 0,
+              onSelect: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+    final opacityFinder = find.ancestor(
+      of: find.byType(LoftifyGlassNavigationBar),
+      matching: find.byType(AnimatedOpacity),
+    );
+
+    await tester.drag(find.byType(ListView), const Offset(0, -420));
+    await tester.pumpAndSettle();
+    expect(tester.widget<AnimatedOpacity>(opacityFinder).opacity, 0);
+
+    await tester.drag(find.byType(ListView), const Offset(0, 260));
+    await tester.pumpAndSettle();
+    expect(tester.widget<AnimatedOpacity>(opacityFinder).opacity, 1);
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+  });
+
+  testWidgets('settled glass surface has no continuously scheduled frames', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_host());
+    await tester.pumpAndSettle();
+
+    expect(tester.binding.transientCallbackCount, 0);
+    await tester.pump(const Duration(seconds: 1));
+    expect(tester.binding.transientCallbackCount, 0);
+  });
+
+  testWidgets('selection animation settles equally at 60, 90 and 120Hz', (
+    tester,
+  ) async {
+    for (final refreshRate in <int>[60, 90, 120]) {
+      final selectedIndex = ValueNotifier<int>(0);
+      await tester.pumpWidget(
+        ValueListenableBuilder<int>(
+          valueListenable: selectedIndex,
+          builder: (context, currentIndex, child) => _host(
+            currentIndex: currentIndex,
+            onSelect: (index) => selectedIndex.value = index,
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Search'));
+      final frame = Duration(microseconds: 1000000 ~/ refreshRate);
+      var elapsed = Duration.zero;
+      while (elapsed < const Duration(milliseconds: 220)) {
+        await tester.pump(frame);
+        elapsed += frame;
+      }
+
+      final selectionFinder = find.ancestor(
+        of: find.text('Search'),
+        matching: find.byType(AnimatedContainer),
+      );
+      final selection = tester.widget<AnimatedContainer>(selectionFinder);
+      final decoration = selection.decoration as BoxDecoration;
+      expect(
+        decoration.color!.a,
+        closeTo(0.11, 0.01),
+        reason: '$refreshRate Hz',
+      );
+      expect(tester.takeException(), isNull, reason: '$refreshRate Hz');
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      selectedIndex.dispose();
+    }
+  });
+
   test('blur policy rejects web and all accessibility fallbacks', () {
     const normal = MediaQueryData();
     expect(
@@ -318,19 +435,34 @@ void main() {
       ),
       Duration.zero,
     );
+    expect(
+      LoftifyGlassNavigationBar.shouldShowForKeyboard(normal),
+      isTrue,
+    );
+    expect(
+      LoftifyGlassNavigationBar.shouldShowForKeyboard(
+        const MediaQueryData(viewInsets: EdgeInsets.only(bottom: 280)),
+      ),
+      isFalse,
+    );
   });
 
   test('phone panel extends content behind the reusable glass navigation', () {
     final source = File('lib/Screens/panel_screen.dart').readAsStringSync();
+    final mainSource = File('lib/Screens/main_screen.dart').readAsStringSync();
 
     expect(source, contains('extendBody: true'));
     expect(source, contains('portrait: _buildBottomNavigationBar()'));
+    expect(source, contains('landscape: null'));
     expect(source, contains('LoftifyGlassNavigationBar('));
     expect(source, contains('enableBlur: !reduceTransparency'));
+    expect(source, contains('shouldShowForKeyboard('));
     expect(source, contains('_pageController.animateToPage('));
     expect(source, contains('curve: Curves.easeOutCubic'));
     expect(source, contains('if (duration == Duration.zero)'));
     expect(source, isNot(contains('MyBottomNavigationBar(')));
+    expect(mainSource, contains('portrait: PanelScreen(key: panelScreenKey)'));
+    expect(mainSource, contains('_sideBar(leftPadding: 8, rightPadding: 8)'));
   });
 
   test('reduce-transparency preference is persisted and localized', () {
