@@ -20,6 +20,7 @@ import '../../Utils/app_provider.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/paged_data_controller.dart';
 import '../../Utils/tab_state_util.dart';
+import '../../Widgets/Dynamic/dynamic_collection_card_frame.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../Widgets/PostItem/grain_post_item_builder.dart';
@@ -1442,7 +1443,7 @@ class SubscribeCollectionTabState
 
   _buildSubscribeCollectionItem(TimelineCollection item) {
     bool hasLastRead = item.lastReadBlogId != 0 && item.lastReadPostId != 0;
-    return GestureDetector(
+    return DynamicCollectionCardFrame(
       onTap: () {
         RouteUtil.pushPanelCupertinoRoute(
           context,
@@ -1454,135 +1455,123 @@ class SubscribeCollectionTabState
           ),
         );
       },
-      child: Container(
-        height: 118,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        color: Colors.transparent,
-        child: Row(
-          children: [
-            Stack(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Theme.of(context).dividerColor,
-                      width: 0.8,
-                    ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: ChewieItemBuilder.buildCachedImage(
-                      imageUrl: item.coverUrl,
-                      context: context,
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
-                      showLoading: false,
-                    ),
-                  ),
-                ),
-                if (item.recentlyRead == 1)
-                  Positioned(
-                    top: 4,
-                    left: 4,
-                    child: ItemBuilder.buildTranslucentTag(
-                      context,
-                      text: appLocalizations.viewRecently,
-                      fontSizeDelta: -2,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          item.name,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.apply(fontWeightDelta: 2),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (item.unreadCount > 0) const SizedBox(width: 3),
-                      if (item.unreadCount > 0)
-                        ItemBuilder.buildTagItem(
-                          context,
-                          appLocalizations.updateCount(
-                              item.unreadCount > 100 ? 99 : item.unreadCount),
-                          showTagLabel: false,
-                          jumpToTag: false,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 1),
-                          TagType.normal,
-                          fontSizeDelta: -2,
-                          backgroundColor:
-                              Theme.of(context).primaryColor.withAlpha(30),
-                          color: Theme.of(context).primaryColor,
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  if (item.latestPosts != null)
-                    Text(
-                      item.latestPosts!.join("\n"),
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.apply(fontSizeDelta: 1),
-                      maxLines: 3,
-                    ),
-                  const SizedBox(height: 6),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const Spacer(),
-                      ItemBuilder.buildIconTextButton(
-                        context,
-                        text: hasLastRead
-                            ? appLocalizations.continueRead
-                            : appLocalizations.startRead,
-                        color: Theme.of(context).primaryColor,
-                        fontWeightDelta: 2,
-                        onTap: !hasLastRead
-                            ? null
-                            : () {
-                                RouteUtil.pushPanelCupertinoRoute(
-                                  context,
-                                  PostDetailScreen(
-                                    meta: {
-                                      "postId": NumberUtil.intToHex(
-                                          item.lastReadPostId),
-                                      "blogId": NumberUtil.intToHex(
-                                          item.lastReadBlogId),
-                                      "blogName": "",
-                                    },
-                                    isArticle: false,
-                                  ),
-                                );
-                              },
-                      ),
-                    ],
-                  ),
-                ],
+      cover: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Theme.of(context).dividerColor,
+                width: 0.8,
               ),
             ),
-          ],
-        ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: ChewieItemBuilder.buildCachedImage(
+                imageUrl: item.coverUrl,
+                context: context,
+                width: 100,
+                height: 100,
+                fit: BoxFit.cover,
+                showLoading: false,
+              ),
+            ),
+          ),
+          if (item.recentlyRead == 1)
+            Positioned(
+              top: 4,
+              left: 4,
+              child: ItemBuilder.buildTranslucentTag(
+                context,
+                text: appLocalizations.viewRecently,
+                fontSizeDelta: -2,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6,
+                  vertical: 2,
+                ),
+              ),
+            ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Flexible(
+                child: Text(
+                  item.name,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.apply(fontWeightDelta: 2),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (item.unreadCount > 0) const SizedBox(width: 3),
+              if (item.unreadCount > 0)
+                ItemBuilder.buildTagItem(
+                  context,
+                  appLocalizations.updateCount(
+                      item.unreadCount > 100 ? 99 : item.unreadCount),
+                  showTagLabel: false,
+                  jumpToTag: false,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  TagType.normal,
+                  fontSizeDelta: -2,
+                  backgroundColor: Theme.of(context).primaryColor.withAlpha(30),
+                  color: Theme.of(context).primaryColor,
+                ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          if (item.latestPosts != null)
+            Text(
+              item.latestPosts!.join("\n"),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.apply(fontSizeDelta: 1),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Spacer(),
+              ItemBuilder.buildIconTextButton(
+                context,
+                text: hasLastRead
+                    ? appLocalizations.continueRead
+                    : appLocalizations.startRead,
+                color: Theme.of(context).primaryColor,
+                fontWeightDelta: 2,
+                onTap: !hasLastRead
+                    ? null
+                    : () {
+                        RouteUtil.pushPanelCupertinoRoute(
+                          context,
+                          PostDetailScreen(
+                            meta: {
+                              "postId":
+                                  NumberUtil.intToHex(item.lastReadPostId),
+                              "blogId":
+                                  NumberUtil.intToHex(item.lastReadBlogId),
+                              "blogName": "",
+                            },
+                            isArticle: false,
+                          ),
+                        );
+                      },
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -1611,7 +1600,7 @@ class SubscribeCollectionTabState
   _buildGuessLikeCollectionItem(TimelineGuessCollection item) {
     List<String> tags = [];
     tags = item.tags.split(",");
-    return GestureDetector(
+    return DynamicCollectionCardFrame(
       onTap: () {
         RouteUtil.pushPanelCupertinoRoute(
           context,
@@ -1623,154 +1612,138 @@ class SubscribeCollectionTabState
           ),
         );
       },
-      child: Container(
-        height: 125,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        color: Colors.transparent,
-        child: Row(
-          children: [
-            Stack(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Theme.of(context).dividerColor,
-                      width: 0.8,
+      cover: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: Theme.of(context).dividerColor,
+            width: 0.8,
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: ChewieItemBuilder.buildCachedImage(
+            imageUrl: item.coverUrl,
+            context: context,
+            width: 100,
+            height: 100,
+            fit: BoxFit.cover,
+            showLoading: false,
+          ),
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Flexible(
+                child: Text(
+                  item.name,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.apply(fontWeightDelta: 2),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Row(
+                children: [
+                  const SizedBox(width: 3),
+                  if (StringUtil.isNotEmpty(item.reason))
+                    RoundIconTextButton(
+                      text: item.reason,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 3, vertical: 2),
+                      radius: 3,
+                      color: ChewieColors.likeButtonColor,
+                      fontSizeDelta: -2,
                     ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: ChewieItemBuilder.buildCachedImage(
-                      imageUrl: item.coverUrl,
-                      context: context,
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
-                      showLoading: false,
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          Text(
+            item.latestPost,
+            style: Theme.of(context).textTheme.bodySmall,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 6),
+          SizedBox(
+            height: 16,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                ...List.generate(
+                  tags.length,
+                  (index) => Container(
+                    margin: const EdgeInsets.only(right: 5),
+                    child: ItemBuilder.buildTagItem(
+                      context,
+                      tags[index],
+                      TagType.normal,
+                      showIcon: false,
+                      fontSizeDelta: -3,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 0,
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          item.name,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.apply(fontWeightDelta: 2),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          const SizedBox(width: 3),
-                          if (StringUtil.isNotEmpty(item.reason))
-                            RoundIconTextButton(
-                              text: item.reason,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 3, vertical: 2),
-                              radius: 3,
-                              color: ChewieColors.likeButtonColor,
-                              fontSizeDelta: -2,
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    item.latestPost,
-                    style: Theme.of(context).textTheme.bodySmall,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-                  SizedBox(
-                    height: 16,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        ...List.generate(
-                          tags.length,
-                          (index) => Container(
-                            margin: const EdgeInsets.only(right: 5),
-                            child: ItemBuilder.buildTagItem(
-                              context,
-                              tags[index],
-                              TagType.normal,
-                              showIcon: false,
-                              fontSizeDelta: -3,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 0,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        "${item.postCount}${appLocalizations.chapter} · ${StringUtil.formatCount(item.subscribeCount)}${appLocalizations.subscribe}",
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.apply(fontSizeDelta: -1),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const Spacer(),
-                      ItemBuilder.buildIconTextButton(
-                        context,
-                        text: item.subscribed
-                            ? appLocalizations.unsubscribe
-                            : appLocalizations.subscribe,
-                        icon: ChewieIcon(
-                          LoftifyIcons.bookmark,
-                          size: 15,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                        color: Theme.of(context).primaryColor,
-                        fontWeightDelta: 2,
-                        onTap: () {
-                          HapticFeedback.mediumImpact();
-                          CollectionApi.subscribeOrUnSubscribe(
-                            isSubscribe: !item.subscribed,
-                            collectionId: item.collectionId,
-                          ).then((value) {
-                            if (value['meta']['status'] != 200) {
-                              IToast.showTop(value['meta']['desc'] ??
-                                  value['meta']['msg']);
-                            } else {
-                              item.subscribed = !item.subscribed;
-                              setState(() {});
-                            }
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                "${item.postCount}${appLocalizations.chapter} · ${StringUtil.formatCount(item.subscribeCount)}${appLocalizations.subscribe}",
+                style: Theme.of(context)
+                    .textTheme
+                    .titleSmall
+                    ?.apply(fontSizeDelta: -1),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
-        ),
+              const Spacer(),
+              ItemBuilder.buildIconTextButton(
+                context,
+                text: item.subscribed
+                    ? appLocalizations.unsubscribe
+                    : appLocalizations.subscribe,
+                icon: ChewieIcon(
+                  LoftifyIcons.bookmark,
+                  size: 15,
+                  color: Theme.of(context).primaryColor,
+                ),
+                color: Theme.of(context).primaryColor,
+                fontWeightDelta: 2,
+                onTap: () {
+                  HapticFeedback.mediumImpact();
+                  CollectionApi.subscribeOrUnSubscribe(
+                    isSubscribe: !item.subscribed,
+                    collectionId: item.collectionId,
+                  ).then((value) {
+                    if (value['meta']['status'] != 200) {
+                      IToast.showTop(
+                          value['meta']['desc'] ?? value['meta']['msg']);
+                    } else {
+                      item.subscribed = !item.subscribed;
+                      setState(() {});
+                    }
+                  });
+                },
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
