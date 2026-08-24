@@ -56,21 +56,19 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
   final List<String> _tabIdList = [];
   int _currentTabIndex = 0;
   final FocusNode _focusNode = FocusNode();
-  bool _searchExpanded = false;
 
   bool get hasSearchFocus => _focusNode.hasFocus;
 
-  void focusSearch() => _expandSearch();
+  void focusSearch() => _focusSearch();
 
   @override
   FutureOr onTapBottomNavigation() {
-    _expandSearch();
+    _focusSearch();
   }
 
   @override
   void initState() {
     super.initState();
-    _focusNode.addListener(_handleSearchFocusChanged);
     fetchGuessList();
     fetchRankList();
     _searchController.addListener(() {
@@ -140,26 +138,11 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
     super.dispose();
   }
 
-  void _handleSearchFocusChanged() {
+  void _focusSearch() {
     if (!mounted) return;
-    if (!_focusNode.hasFocus && _searchController.text.isEmpty) {
-      setState(() => _searchExpanded = false);
-    }
-  }
-
-  void _expandSearch() {
-    if (!mounted) return;
-    if (!_searchExpanded) setState(() => _searchExpanded = true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) FocusScope.of(context).requestFocus(_focusNode);
     });
-  }
-
-  void _collapseSearch() {
-    _searchController.clear();
-    _sugList.clear();
-    _focusNode.unfocus();
-    if (mounted) setState(() => _searchExpanded = false);
   }
 
   fetchGuessList() {
@@ -713,59 +696,22 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
         selector: (_, provider) => provider.reduceTransparency,
         builder: (context, reduceTransparency, _) => LayoutBuilder(
           builder: (context, _) {
-            const avatarWidth = LoftifyFloatingNavigationHeader.height;
             const gap = 8.0;
-            return Stack(
+            return Row(
               children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: LoftifyNavigationAvatarButton(
-                    semanticLabel: appLocalizations.mine,
-                    enableBlur: !reduceTransparency,
-                    onPressed: _openMine,
-                  ),
+                LoftifyNavigationAvatarButton(
+                  key: const ValueKey('search-navigation-avatar'),
+                  semanticLabel: appLocalizations.mine,
+                  enableBlur: !reduceTransparency,
+                  onPressed: _openMine,
                 ),
-                AnimatedPositioned(
-                  duration: context.design.motion.effective(
-                    context,
-                    context.design.motion.state,
-                  ),
-                  curve: context.design.motion.enterCurve,
-                  left: _searchExpanded ? avatarWidth + gap : null,
-                  right: 0,
-                  width: _searchExpanded ? null : avatarWidth,
-                  top: 0,
-                  bottom: 0,
-                  child: AnimatedSwitcher(
-                    duration: context.design.motion.effective(
-                      context,
-                      context.design.motion.press,
-                    ),
-                    child: _searchExpanded
-                        ? LoftifyFloatingCapsule(
-                            key: const ValueKey('expanded-search-capsule'),
-                            enableBlur: !reduceTransparency,
-                            padding: const EdgeInsets.only(left: 4),
-                            child: Row(
-                              children: [
-                                Expanded(child: _buildSearchBar()),
-                                ChewieIconButton(
-                                  icon: LoftifyIcons.close,
-                                  tooltip: MaterialLocalizations.of(context)
-                                      .closeButtonTooltip,
-                                  tapTargetSize: 44,
-                                  onPressed: _collapseSearch,
-                                ),
-                              ],
-                            ),
-                          )
-                        : LoftifyFloatingHeaderAction(
-                            key: const ValueKey('collapsed-search-capsule'),
-                            icon: LoftifyIcons.search,
-                            tooltip: appLocalizations.searchHint,
-                            enableBlur: !reduceTransparency,
-                            onPressed: _expandSearch,
-                          ),
+                const SizedBox(width: gap),
+                Expanded(
+                  child: LoftifyFloatingCapsule(
+                    key: const ValueKey('expanded-search-capsule'),
+                    enableBlur: !reduceTransparency,
+                    padding: const EdgeInsets.only(left: 4),
+                    child: _buildSearchBar(),
                   ),
                 ),
               ],

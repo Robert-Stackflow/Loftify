@@ -209,3 +209,32 @@ class LoftifyFloatingHeaderAction extends StatelessWidget {
     );
   }
 }
+
+/// Compact title carried by the center slot of a primary navigation header.
+class LoftifyFloatingHeaderTitle extends StatelessWidget {
+  const LoftifyFloatingHeaderTitle({
+    super.key,
+    required this.title,
+    this.enableBlur = true,
+  });
+
+  final String title;
+  final bool enableBlur;
+
+  @override
+  Widget build(BuildContext context) {
+    final design = context.design;
+    return LoftifyFloatingCapsule(
+      enableBlur: enableBlur,
+      padding: EdgeInsets.symmetric(horizontal: design.spacing.xl),
+      child: Center(
+        child: Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: design.typography.sectionTitle,
+        ),
+      ),
+    );
+  }
+}

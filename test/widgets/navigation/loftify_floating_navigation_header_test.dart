@@ -149,4 +149,32 @@ void main() {
       expect((surface.decoration as BoxDecoration).color!.a, 1);
     }
   });
+
+  testWidgets('center title keeps a compact single-line capsule', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              height: LoftifyFloatingNavigationHeader.height,
+              child: LoftifyFloatingHeaderTitle(
+                title: 'A deliberately long Loftify title',
+                enableBlur: false,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final title = tester.widget<Text>(
+      find.text('A deliberately long Loftify title'),
+    );
+    expect(title.maxLines, 1);
+    expect(title.overflow, TextOverflow.ellipsis);
+    expect(find.byType(LoftifyFloatingCapsule), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

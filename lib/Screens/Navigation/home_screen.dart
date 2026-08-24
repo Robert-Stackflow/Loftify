@@ -7,6 +7,7 @@ import 'package:loftify/Widgets/PostItem/recommend_flow_item_builder.dart';
 import 'package:provider/provider.dart';
 
 import '../../Models/recommend_response.dart';
+import '../../Screens/Info/system_notice_screen.dart';
 import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/enums.dart';
@@ -219,16 +220,35 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
                 ),
               ),
               LoftifyFloatingNavigationHeader(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Selector<AppProvider, bool>(
-                    selector: (_, provider) => provider.reduceTransparency,
-                    builder: (context, reduceTransparency, _) =>
-                        LoftifyNavigationAvatarButton(
-                      semanticLabel: appLocalizations.mine,
-                      enableBlur: !reduceTransparency,
-                      onPressed: _openMine,
-                    ),
+                child: Selector<AppProvider, bool>(
+                  selector: (_, provider) => provider.reduceTransparency,
+                  builder: (context, reduceTransparency, _) => Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      LoftifyNavigationAvatarButton(
+                        key: const ValueKey('home-navigation-avatar'),
+                        semanticLabel: appLocalizations.mine,
+                        enableBlur: !reduceTransparency,
+                        onPressed: _openMine,
+                      ),
+                      LoftifyFloatingHeaderTitle(
+                        key: const ValueKey('home-navigation-title'),
+                        title: appLocalizations.appName,
+                        enableBlur: !reduceTransparency,
+                      ),
+                      LoftifyFloatingHeaderAction(
+                        key: const ValueKey('home-navigation-notice'),
+                        icon: LoftifyIcons.notifications,
+                        tooltip: appLocalizations.notice,
+                        enableBlur: !reduceTransparency,
+                        onPressed: () {
+                          RouteUtil.pushPanelCupertinoRoute(
+                            context,
+                            const SystemNoticeScreen(),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ),

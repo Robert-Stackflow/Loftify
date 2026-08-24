@@ -377,44 +377,60 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
     return LoftifyFloatingNavigationHeader(
       child: Selector<AppProvider, bool>(
         selector: (_, provider) => provider.reduceTransparency,
-        builder: (context, reduceTransparency, _) => Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: LoftifyFloatingCapsule(
+        builder: (context, reduceTransparency, _) => Row(
+          children: [
+            LoftifyNavigationAvatarButton(
+              key: const ValueKey('dynamic-navigation-avatar'),
+              semanticLabel: appLocalizations.mine,
               enableBlur: !reduceTransparency,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: TabBar(
-                controller: _tabController,
-                padding: EdgeInsets.zero,
-                labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-                isScrollable: false,
-                dividerHeight: 0,
-                physics: const BouncingScrollPhysics(),
-                overlayColor: WidgetStateProperty.all(Colors.transparent),
-                indicator: UnderlinedTabIndicator(
-                  borderColor: Theme.of(context).primaryColor,
+              onPressed: _openMine,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: LoftifyFloatingCapsule(
+                  enableBlur: !reduceTransparency,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: TabBar(
+                    controller: _tabController,
+                    padding: EdgeInsets.zero,
+                    labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                    isScrollable: false,
+                    dividerHeight: 0,
+                    physics: const BouncingScrollPhysics(),
+                    overlayColor: WidgetStateProperty.all(Colors.transparent),
+                    indicator: UnderlinedTabIndicator(
+                      borderColor: Theme.of(context).primaryColor,
+                    ),
+                    tabs: _tabLabelList
+                        .asMap()
+                        .entries
+                        .map(
+                          (entry) => ItemBuilder.buildAnimatedTab(
+                            context,
+                            selected: entry.key == _currentTabIndex,
+                            text: entry.value,
+                            controller: _tabController,
+                            tabIndex: entry.key,
+                            fontSizeDelta: -1,
+                          ),
+                        )
+                        .toList(),
+                    onTap: _setCurrentTab,
+                  ),
                 ),
-                tabs: _tabLabelList
-                    .asMap()
-                    .entries
-                    .map(
-                      (entry) => ItemBuilder.buildAnimatedTab(
-                        context,
-                        selected: entry.key == _currentTabIndex,
-                        text: entry.value,
-                        controller: _tabController,
-                        tabIndex: entry.key,
-                        fontSizeDelta: -1,
-                      ),
-                    )
-                    .toList(),
-                onTap: _setCurrentTab,
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
+  }
+
+  void _openMine() {
+    appProvider.sidebarChoice = SideBarChoice.Mine;
+    panelScreenState?.popAll(false);
   }
 }
 

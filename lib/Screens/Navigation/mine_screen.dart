@@ -28,7 +28,6 @@ import '../../Widgets/Navigation/loftify_floating_navigation_header.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import '../Info/following_follower_screen.dart';
-import '../Info/system_notice_screen.dart';
 import '../Setting/setting_screen.dart';
 import '../Suit/suit_screen.dart';
 
@@ -727,58 +726,46 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     return LoftifyFloatingNavigationHeader(
       child: Selector<AppProvider, bool>(
         selector: (_, provider) => provider.reduceTransparency,
-        builder: (context, reduceTransparency, _) => Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            LoftifyFloatingHeaderAction(
-              icon: LoftifyIcons.notifications,
-              tooltip: appLocalizations.notice,
-              enableBlur: !reduceTransparency,
-              onPressed: () {
-                RouteUtil.pushPanelCupertinoRoute(
-                  context,
-                  const SystemNoticeScreen(),
-                );
-              },
+        builder: (context, reduceTransparency, _) => Align(
+          alignment: Alignment.centerRight,
+          child: LoftifyFloatingCapsule(
+            key: const ValueKey('mine-navigation-actions'),
+            enableBlur: !reduceTransparency,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ItemBuilder.buildDynamicIconButton(
+                  context: context,
+                  icon: darkModeWidget ??
+                      const ChewieIcon(LoftifyIcons.appearance),
+                  onTap: changeMode,
+                  onChangemode: (context, themeMode, child) {
+                    if (darkModeController.duration == null) return;
+                    if (themeMode == ActiveThemeMode.light) {
+                      darkModeController.forward();
+                    } else if (themeMode == ActiveThemeMode.dark) {
+                      darkModeController.reverse();
+                    } else if (ColorUtil.isDark(context)) {
+                      darkModeController.reverse();
+                    } else {
+                      darkModeController.forward();
+                    }
+                  },
+                ),
+                ChewieIconButton(
+                  icon: LoftifyIcons.settings,
+                  tooltip: appLocalizations.setting,
+                  tapTargetSize: LoftifyFloatingNavigationHeader.height,
+                  onPressed: () {
+                    RouteUtil.pushPanelCupertinoRoute(
+                      context,
+                      const SettingScreen(),
+                    );
+                  },
+                ),
+              ],
             ),
-            LoftifyFloatingCapsule(
-              enableBlur: !reduceTransparency,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ItemBuilder.buildDynamicIconButton(
-                    context: context,
-                    icon: darkModeWidget ??
-                        const ChewieIcon(LoftifyIcons.appearance),
-                    onTap: changeMode,
-                    onChangemode: (context, themeMode, child) {
-                      if (darkModeController.duration == null) return;
-                      if (themeMode == ActiveThemeMode.light) {
-                        darkModeController.forward();
-                      } else if (themeMode == ActiveThemeMode.dark) {
-                        darkModeController.reverse();
-                      } else if (ColorUtil.isDark(context)) {
-                        darkModeController.reverse();
-                      } else {
-                        darkModeController.forward();
-                      }
-                    },
-                  ),
-                  ChewieIconButton(
-                    icon: LoftifyIcons.settings,
-                    tooltip: appLocalizations.setting,
-                    tapTargetSize: LoftifyFloatingNavigationHeader.height,
-                    onPressed: () {
-                      RouteUtil.pushPanelCupertinoRoute(
-                        context,
-                        const SettingScreen(),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
