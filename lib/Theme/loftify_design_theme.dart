@@ -508,6 +508,7 @@ class LoftifyGridTokens {
     this.mediumGutter = 12,
     this.wideGutter = 16,
     this.minimumCardWidth = 168,
+    this.maximumDenseCardExtent = 300,
     this.maximumContentWidth = 1440,
     this.maximumReadingWidth = 720,
   });
@@ -522,6 +523,7 @@ class LoftifyGridTokens {
   final double mediumGutter;
   final double wideGutter;
   final double minimumCardWidth;
+  final double maximumDenseCardExtent;
   final double maximumContentWidth;
   final double maximumReadingWidth;
 
@@ -575,6 +577,11 @@ class LoftifyGridTokens {
       mediumGutter: lerpDouble(a.mediumGutter, b.mediumGutter, t)!,
       wideGutter: lerpDouble(a.wideGutter, b.wideGutter, t)!,
       minimumCardWidth: lerpDouble(a.minimumCardWidth, b.minimumCardWidth, t)!,
+      maximumDenseCardExtent: lerpDouble(
+        a.maximumDenseCardExtent,
+        b.maximumDenseCardExtent,
+        t,
+      )!,
       maximumContentWidth:
           lerpDouble(a.maximumContentWidth, b.maximumContentWidth, t)!,
       maximumReadingWidth:
@@ -968,6 +975,7 @@ abstract final class LoftifyTheme {
         fontWeight: weight,
         color: color,
         letterSpacing: letterSpacing,
+        decoration: TextDecoration.none,
       );
     }
 

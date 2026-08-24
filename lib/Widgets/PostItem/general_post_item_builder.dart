@@ -12,6 +12,7 @@ import '../../Models/post_detail_response.dart';
 import '../../Screens/Info/user_detail_screen.dart';
 import '../../Screens/Post/post_detail_screen.dart';
 import '../../Screens/Post/video_detail_screen.dart';
+import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/uri_util.dart';
@@ -19,6 +20,7 @@ import '../../Utils/utils.dart';
 import '../../l10n/l10n.dart';
 import '../Item/item_builder.dart';
 import '../Item/loftify_item_builder.dart';
+import '../Design/loftify_surfaces.dart';
 import '../loftify_icons.dart';
 import 'image_grid.dart';
 
@@ -37,10 +39,11 @@ Widget _buildInvalidPostCard(
   double? width,
   double? height,
   double minHeight = 96,
+  double radius = _postCardRadius,
 }) {
   return ContainerItem(
     backgroundColor: ChewieTheme.canvasColor,
-    radius: _postCardRadius,
+    radius: radius,
     roundTop: true,
     roundBottom: true,
     border: Border.all(color: Theme.of(context).dividerColor, width: 0.8),
@@ -111,11 +114,18 @@ class WaterfallFlowPostItemWidgetState
 
   @override
   Widget build(BuildContext context) {
-    return buildWaterfallFlowPostItem();
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.hasBoundedWidth
+            ? constraints.maxWidth
+            : MediaQuery.sizeOf(context).width;
+        return buildWaterfallFlowPostItem(width: availableWidth);
+      },
+    );
   }
 
-  Widget buildWaterfallFlowPostItem() {
-    double width = (MediaQuery.sizeOf(context).width - 24) / 2;
+  Widget buildWaterfallFlowPostItem({required double width}) {
+    final radius = context.design.radii.card;
     PostType type = item.type;
     late Widget main;
     switch (type) {
@@ -128,6 +138,7 @@ class WaterfallFlowPostItemWidgetState
                     context,
                     width: width,
                     minHeight: 120,
+                    radius: radius,
                   );
       case PostType.article:
         main = item.showArticle ?? true
@@ -143,6 +154,7 @@ class WaterfallFlowPostItemWidgetState
                         context,
                         width: width,
                         minHeight: 120,
+                        radius: radius,
                       )
             : emptyWidget;
       case PostType.grain:
@@ -152,6 +164,7 @@ class WaterfallFlowPostItemWidgetState
           context,
           width: width,
           minHeight: 120,
+          radius: radius,
         );
     }
     return GestureDetector(
@@ -170,35 +183,36 @@ class WaterfallFlowPostItemWidgetState
   Widget buildWaterfallFlowArticleItem({
     required double width,
   }) {
+    final design = context.design;
     return Column(
       children: [
-        ContainerItem(
-          backgroundColor: Theme.of(context).cardColor,
-          radius: _postCardRadius,
-          roundTop: true,
-          roundBottom: true,
-          child: Container(
-            padding: const EdgeInsets.all(15),
+        LoftifyCard(
+          variant: LoftifyCardVariant.muted,
+          padding: EdgeInsets.all(design.spacing.lg),
+          child: SizedBox(
             width: width,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.title,
-                  style: Theme.of(context).textTheme.titleMedium?.apply(
-                        fontWeightDelta: 2,
-                        fontSizeDelta: -1,
-                      ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  HtmlUtil.extractTextFromHtml(item.digest),
-                  maxLines: 6,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+                if (StringUtil.isNotEmpty(item.title))
+                  Text(
+                    item.title,
+                    style: design.typography.cardTitle,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                if (StringUtil.isNotEmpty(item.title) &&
+                    StringUtil.isNotEmpty(item.digest))
+                  SizedBox(height: design.spacing.lg),
+                if (StringUtil.isNotEmpty(item.digest))
+                  Text(
+                    HtmlUtil.extractTextFromHtml(item.digest),
+                    maxLines: 6,
+                    overflow: TextOverflow.ellipsis,
+                    style: design.typography.metadata.copyWith(
+                      color: design.colors.textSecondary,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -212,35 +226,29 @@ class WaterfallFlowPostItemWidgetState
 
   Widget buildWaterfallFlowImageItem({
     required double width,
-    double maxHeight = 300,
+    double? maxHeight,
     double minHeight = 120,
   }) {
+    final design = context.design;
+    final radius = design.radii.card;
+    final effectiveMaxHeight = maxHeight ?? design.grid.maximumDenseCardExtent;
     return Column(
       children: [
         Stack(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(
-                    color: Theme.of(context).dividerColor, width: 0.3),
-                borderRadius: BorderRadius.circular(_postCardRadius),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(_postCardRadius),
-                child: SizedBox(
-                  height: (width / _safePhotoAspectRatio(item.photoLinks[0]))
-                      .clamp(minHeight, maxHeight),
-                  width: width,
-                  child: ChewieItemBuilder.buildCachedImage(
-                    context: context,
-                    fit: BoxFit.cover,
-                    showLoading: false,
-                    imageUrl: Utils.getUrlByQuality(
-                        item.photoLinks[0].middle,
-                        HiveUtil.getImageQuality(
-                            HiveUtil.waterfallFlowImageQualityKey)),
-                  ),
-                ),
+            _buildWaterfallMediaSurface(
+              width: width,
+              height: (width / _safePhotoAspectRatio(item.photoLinks[0]))
+                  .clamp(minHeight, effectiveMaxHeight),
+              radius: radius,
+              child: ChewieItemBuilder.buildCachedImage(
+                context: context,
+                fit: BoxFit.cover,
+                showLoading: false,
+                imageUrl: Utils.getUrlByQuality(
+                    item.photoLinks[0].middle,
+                    HiveUtil.getImageQuality(
+                        HiveUtil.waterfallFlowImageQualityKey)),
               ),
             ),
             if (Utils.isGIF(item.firstImageUrl))
@@ -271,36 +279,30 @@ class WaterfallFlowPostItemWidgetState
 
   Widget buildWaterfallFlowVideoItem({
     required double width,
-    double maxHeight = 300,
+    double? maxHeight,
     double minHeight = 120,
   }) {
+    final design = context.design;
+    final radius = design.radii.card;
+    final effectiveMaxHeight = maxHeight ?? design.grid.maximumDenseCardExtent;
     final height = (width / _safePhotoAspectRatio(item.photoLinks[0]))
-        .clamp(minHeight, maxHeight);
+        .clamp(minHeight, effectiveMaxHeight);
     return Column(
       children: [
         Stack(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(
-                    color: Theme.of(context).dividerColor, width: 0.3),
-                borderRadius: BorderRadius.circular(_postCardRadius),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(_postCardRadius),
-                child: SizedBox(
-                  height: height,
-                  width: width,
-                  child: ChewieItemBuilder.buildCachedImage(
-                    context: context,
-                    fit: BoxFit.cover,
-                    showLoading: false,
-                    imageUrl: Utils.getUrlByQuality(
-                        item.photoLinks[0].orign,
-                        HiveUtil.getImageQuality(
-                            HiveUtil.waterfallFlowImageQualityKey)),
-                  ),
-                ),
+            _buildWaterfallMediaSurface(
+              width: width,
+              height: height,
+              radius: radius,
+              child: ChewieItemBuilder.buildCachedImage(
+                context: context,
+                fit: BoxFit.cover,
+                showLoading: false,
+                imageUrl: Utils.getUrlByQuality(
+                    item.photoLinks[0].orign,
+                    HiveUtil.getImageQuality(
+                        HiveUtil.waterfallFlowImageQualityKey)),
               ),
             ),
             Positioned(
@@ -324,9 +326,44 @@ class WaterfallFlowPostItemWidgetState
     );
   }
 
+  Widget _buildWaterfallMediaSurface({
+    required double width,
+    required double height,
+    required double radius,
+    required Widget child,
+  }) {
+    final design = context.design;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: SizedBox(
+        key: ValueKey('waterfall-post-media-${item.postId}'),
+        width: width,
+        height: height,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            child,
+            IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: design.colors.outline,
+                    width: design.borders.hairline,
+                  ),
+                  borderRadius: BorderRadius.circular(radius),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget buildWaterfallFlowPostItemMeta({
     bool showTitle = true,
   }) {
+    final design = context.design;
     String tag = "";
     if (item.tags.isNotEmpty) {
       tag = item.tags[0];
@@ -339,7 +376,10 @@ class WaterfallFlowPostItemWidgetState
     String shownTitle = item.processedTitle;
     bool hasTitle = item.hasTitleOrContent;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
+      padding: EdgeInsets.symmetric(
+        horizontal: design.spacing.xs,
+        vertical: design.spacing.sm,
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
@@ -352,26 +392,24 @@ class WaterfallFlowPostItemWidgetState
                     showTitle && hasTitle
                         ? Container(
                             width: double.infinity,
-                            margin: const EdgeInsets.only(bottom: 3),
+                            margin: EdgeInsets.only(
+                              bottom: design.spacing.xxs,
+                            ),
                             child: Text(
                               shownTitle,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               textAlign: TextAlign.start,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.apply(
-                                    fontSizeDelta: -2,
-                                    fontWeightDelta: 2,
-                                  ),
+                              style: design.typography.cardTitle.copyWith(
+                                color: design.colors.textPrimary,
+                              ),
                             ),
                           )
-                        : const SizedBox(height: 3),
+                        : SizedBox(height: design.spacing.xxs),
                     if (tag.isNotEmpty)
                       Container(
                         width: double.infinity,
-                        margin: const EdgeInsets.only(bottom: 6),
+                        margin: EdgeInsets.only(bottom: design.spacing.sm),
                         alignment: Alignment.centerLeft,
                         child: ItemBuilder.buildSmallTagItem(context, tag),
                       ),
@@ -379,22 +417,34 @@ class WaterfallFlowPostItemWidgetState
                 ),
               ),
               if (item.showMoreButton)
-                GestureDetector(
-                  onTap: () {
-                    GeneralPostItemBuilder.showMoreSheet(context, item);
-                  },
-                  child: Container(
-                    margin: EdgeInsets.only(top: showTitle && hasTitle ? 3 : 5),
-                    child: const ChewieIcon(
-                      LoftifyIcons.moreVertical,
-                      size: 16,
+                Semantics(
+                  button: true,
+                  label: MaterialLocalizations.of(context).showMenuTooltip,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      GeneralPostItemBuilder.showMoreSheet(context, item);
+                    },
+                    child: Padding(
+                      padding: EdgeInsetsDirectional.only(
+                        start: design.spacing.md,
+                        top: showTitle && hasTitle
+                            ? design.spacing.xxs
+                            : design.spacing.xs,
+                        bottom: design.spacing.md,
+                      ),
+                      child: ChewieIcon(
+                        LoftifyIcons.moreVertical,
+                        size: design.icons.small,
+                        color: design.colors.textSecondary,
+                      ),
                     ),
                   ),
                 ),
             ],
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
+            padding: EdgeInsets.symmetric(horizontal: design.spacing.xxs),
             child: Row(
               children: [
                 GestureDetector(
@@ -408,7 +458,7 @@ class WaterfallFlowPostItemWidgetState
                     );
                   },
                   child: Container(
-                    margin: const EdgeInsets.only(right: 5),
+                    margin: EdgeInsets.only(right: design.spacing.sm),
                     child: ItemBuilder.buildAvatar(
                       context: context,
                       imageUrl: item.bigAvaImg,
@@ -430,12 +480,14 @@ class WaterfallFlowPostItemWidgetState
                     },
                     child: Text(
                       item.blogNickName,
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: design.typography.metadata.copyWith(
+                        color: design.colors.textSecondary,
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),
-                const SizedBox(width: 5),
+                SizedBox(width: design.spacing.sm),
                 if (item.showLikeButton == true)
                   LoftifyItemBuilder.buildLikedButton(
                     context,
@@ -446,8 +498,10 @@ class WaterfallFlowPostItemWidgetState
                     size: 16,
                     iconSize: 16,
                     likeCountPadding: const EdgeInsets.only(left: 3),
-                    defaultColor: Theme.of(context).textTheme.bodySmall?.color,
-                    countStyle: Theme.of(context).textTheme.bodySmall,
+                    defaultColor: design.colors.textSecondary,
+                    countStyle: design.typography.metadata.copyWith(
+                      color: design.colors.textSecondary,
+                    ),
                     onTap: (_) async {
                       HapticFeedback.mediumImpact();
                       int status = await PostApi.likeOrUnLike(

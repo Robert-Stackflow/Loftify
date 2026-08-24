@@ -7,6 +7,7 @@ import 'package:hive/hive.dart';
 import 'package:loftify/Models/post_detail_response.dart';
 import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Utils/enums.dart';
+import 'package:loftify/Widgets/Design/loftify_surfaces.dart';
 import 'package:loftify/Widgets/PostItem/general_post_item_builder.dart';
 import 'package:loftify/Widgets/PostItem/recommend_flow_item_builder.dart';
 import 'package:loftify/Widgets/loftify_icons.dart';
@@ -92,22 +93,29 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final card = tester.widget<ContainerItem>(find.byType(ContainerItem));
-    expect(card.roundTop, isTrue);
-    expect(card.roundBottom, isTrue);
-    expect(card.radius, 12);
+    final card = tester.widget<LoftifyCard>(find.byType(LoftifyCard));
+    expect(card.variant, LoftifyCardVariant.muted);
+    final decoration = tester
+        .widget<AnimatedContainer>(
+          find.descendant(
+            of: find.byType(LoftifyCard),
+            matching: find.byType(AnimatedContainer),
+          ),
+        )
+        .decoration! as BoxDecoration;
+    expect(decoration.borderRadius, BorderRadius.circular(14));
     expect(find.byType(InkWell), findsNothing);
     expect(
       find.ancestor(
         of: find.text('Title'),
-        matching: find.byType(ContainerItem),
+        matching: find.byType(LoftifyCard),
       ),
       findsOneWidget,
     );
     expect(
       find.ancestor(
         of: find.text('Tester'),
-        matching: find.byType(ContainerItem),
+        matching: find.byType(LoftifyCard),
       ),
       findsNothing,
     );
@@ -143,7 +151,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byType(ContainerItem), findsOneWidget);
+    expect(find.byType(LoftifyCard), findsOneWidget);
     expect(find.text('Title'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
@@ -162,7 +170,8 @@ void main() {
       TilePostItemWidget(item: invalidMedia),
     ];
 
-    for (final layout in layouts) {
+    for (var index = 0; index < layouts.length; index++) {
+      final layout = layouts[index];
       await tester.pumpWidget(buildHost(layout));
       await tester.pump();
 
@@ -177,7 +186,7 @@ void main() {
       final card = tester.widget<ContainerItem>(find.byType(ContainerItem));
       expect(card.roundTop, isTrue);
       expect(card.roundBottom, isTrue);
-      expect(card.radius, 12);
+      expect(card.radius, index == 0 ? 14 : 12);
       expect(tester.takeException(), isNull);
     }
   });
@@ -285,6 +294,37 @@ void main() {
       expect(size.height, greaterThan(0));
       expect(tester.takeException(), isNull);
     }
+  });
+
+  testWidgets('waterfall media geometry follows its real grid column width', (
+    tester,
+  ) async {
+    final mediaPost = buildArticle(
+      type: PostType.image,
+      photoLinks: [buildPhoto(width: 200, height: 200)],
+      title: 'Square work',
+    );
+
+    await tester.pumpWidget(
+      buildHost(
+        Align(
+          alignment: Alignment.topLeft,
+          child: SizedBox(
+            width: 220,
+            child: WaterfallFlowPostItemWidget(item: mediaPost),
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(
+      tester.getSize(
+        find.byKey(const ValueKey('waterfall-post-media-2')),
+      ),
+      const Size(220, 220),
+    );
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('card state follows replacement items during layout reuse',

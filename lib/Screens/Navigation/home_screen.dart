@@ -7,6 +7,7 @@ import 'package:loftify/Widgets/PostItem/recommend_flow_item_builder.dart';
 import 'package:provider/provider.dart';
 
 import '../../Models/recommend_response.dart';
+import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/paged_data_controller.dart';
@@ -153,82 +154,87 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final design = context.design;
     return Scaffold(
-      backgroundColor: ChewieTheme.getBackground(context),
-      body: Stack(
-        children: [
-          EasyRefresh(
-            refreshOnStart: true,
-            controller: _refreshController,
-            onRefresh: _onRefresh,
-            onLoad: _pagingController.noMore ? null : _onLoad,
-            child: WaterfallFlow.builder(
-              controller: _scrollController,
-              cacheExtent: MediaQuery.sizeOf(context).height,
-              padding: EdgeInsets.only(
-                top: LoftifyFloatingNavigationHeader.contentTopInset(context),
-                left: 8,
-                right: 8,
-              ),
-              gridDelegate:
-                  const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-                mainAxisSpacing: 6,
-                crossAxisSpacing: 6,
-                maxCrossAxisExtent: 300,
-              ),
-              itemBuilder: (BuildContext context, int index) {
-                final item = _pagingController.items[index];
-                return KeyedSubtree(
-                  key: ValueKey(
-                    'explore-${item.postData?.postView.id ?? item.itemId}',
+      backgroundColor: design.colors.page,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final viewportWidth = constraints.maxWidth;
+          final centeredInset =
+              ((viewportWidth - design.grid.maximumContentWidth) / 2)
+                  .clamp(0.0, double.infinity);
+          final pageInset = design.grid.pagePaddingFor(viewportWidth);
+          final horizontalInset = centeredInset + pageInset;
+          final gutter = design.grid.gutterFor(viewportWidth);
+
+          return Stack(
+            children: [
+              EasyRefresh(
+                refreshOnStart: true,
+                controller: _refreshController,
+                onRefresh: _onRefresh,
+                onLoad: _pagingController.noMore ? null : _onLoad,
+                child: WaterfallFlow.builder(
+                  controller: _scrollController,
+                  cacheExtent: MediaQuery.sizeOf(context).height,
+                  padding: EdgeInsets.only(
+                    top: LoftifyFloatingNavigationHeader.contentTopInset(
+                      context,
+                    ),
+                    left: horizontalInset,
+                    right: horizontalInset,
                   ),
-                  child: RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
-                    context,
-                    item,
-                    showMoreButton: true,
-                    // onShieldContent: () {
-                    //   _recommendPosts.remove(_recommendPosts[index]);
-                    //   setState(() {});
-                    // },
-                    // onShieldTag: (tag) {
-                    //   _recommendPosts.remove(_recommendPosts[index]);
-                    //   setState(() {});
-                    // },
-                    // onShieldUser: () {
-                    //   _recommendPosts.remove(_recommendPosts[index]);
-                    //   setState(() {});
-                    // },
+                  gridDelegate:
+                      SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                    mainAxisSpacing: gutter,
+                    crossAxisSpacing: gutter,
+                    maxCrossAxisExtent: design.grid.maximumDenseCardExtent,
                   ),
-                );
-              },
-              itemCount: _pagingController.items.length,
-            ),
-          ),
-          Positioned(
-            right: ResponsiveUtil.isLandscapeLayout() ? 16 : 12,
-            bottom: ResponsiveUtil.isLandscapeLayout() ? 16 : 76,
-            child: ScrollToHide.multi(
-              controller: _scrollToHideController,
-              scrollControllers: [_scrollController],
-              hideDirection: Axis.vertical,
-              child: _buildFloatingButtons(),
-            ),
-          ),
-          LoftifyFloatingNavigationHeader(
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Selector<AppProvider, bool>(
-                selector: (_, provider) => provider.reduceTransparency,
-                builder: (context, reduceTransparency, _) =>
-                    LoftifyNavigationAvatarButton(
-                  semanticLabel: appLocalizations.mine,
-                  enableBlur: !reduceTransparency,
-                  onPressed: _openMine,
+                  itemBuilder: (BuildContext context, int index) {
+                    final item = _pagingController.items[index];
+                    return KeyedSubtree(
+                      key: ValueKey(
+                        'explore-${item.postData?.postView.id ?? item.itemId}',
+                      ),
+                      child:
+                          RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
+                        context,
+                        item,
+                        showMoreButton: true,
+                      ),
+                    );
+                  },
+                  itemCount: _pagingController.items.length,
                 ),
               ),
-            ),
-          ),
-        ],
+              Positioned(
+                right: horizontalInset,
+                bottom:
+                    ResponsiveUtil.isLandscapeLayout() ? design.spacing.xl : 76,
+                child: ScrollToHide.multi(
+                  controller: _scrollToHideController,
+                  scrollControllers: [_scrollController],
+                  hideDirection: Axis.vertical,
+                  child: _buildFloatingButtons(),
+                ),
+              ),
+              LoftifyFloatingNavigationHeader(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Selector<AppProvider, bool>(
+                    selector: (_, provider) => provider.reduceTransparency,
+                    builder: (context, reduceTransparency, _) =>
+                        LoftifyNavigationAvatarButton(
+                      semanticLabel: appLocalizations.mine,
+                      enableBlur: !reduceTransparency,
+                      onPressed: _openMine,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

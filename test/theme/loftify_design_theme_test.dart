@@ -72,6 +72,7 @@ void main() {
       expect(design.typography.body.height, 1.6);
       expect(design.typography.readingBody.fontSize, 17);
       expect(design.typography.readingBody.height, 1.8);
+      expect(design.typography.pageTitle.decoration, TextDecoration.none);
       expect(
         <double>[
           design.spacing.xxs,
@@ -183,6 +184,7 @@ void main() {
       expect(grid.contentColumnCount(390), 2);
       expect(grid.contentColumnCount(700), 3);
       expect(grid.contentColumnCount(2560), 6);
+      expect(grid.maximumDenseCardExtent, 300);
       expect(grid.maximumReadingWidth, 720);
     });
   });
