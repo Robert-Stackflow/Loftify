@@ -372,4 +372,112 @@ void main() {
     expect(task.fileName, endsWith('.jpg'));
     expect(task.fileName, isNot(contains(RegExp(r'[\\/:*?"<>|]'))));
   });
+
+  test('batch enqueue deduplicates, validates and persists atomically',
+      () async {
+    final store = _MemoryDownloadTaskStore();
+    final executor = _ControlledDownloadTaskExecutor();
+    final manager = DownloadTaskManager(
+      store: store,
+      executor: executor,
+      maxConcurrentTasks: 1,
+    );
+    await manager.initialize();
+    final writesBeforeBatch = store.writeCount;
+
+    final result = await manager.enqueueBatch(const <DownloadRequest>[
+      DownloadRequest(
+        url: 'https://example.com/a.jpg',
+        fileName: 'a.jpg',
+        mediaType: DownloadMediaType.image,
+      ),
+      DownloadRequest(
+        url: ' https://example.com/a.jpg ',
+        fileName: 'duplicate.jpg',
+        mediaType: DownloadMediaType.image,
+      ),
+      DownloadRequest(
+        url: '',
+        fileName: 'invalid.jpg',
+        mediaType: DownloadMediaType.image,
+      ),
+      DownloadRequest(
+        url: 'ftp://example.com/file.zip',
+        fileName: 'file.zip',
+        mediaType: DownloadMediaType.file,
+      ),
+      DownloadRequest(
+        url: 'https://example.com/b.mp4',
+        fileName: 'b.mp4',
+        mediaType: DownloadMediaType.video,
+      ),
+    ]);
+
+    expect(result.requestedCount, 5);
+    expect(result.queuedCount, 2);
+    expect(result.newTaskCount, 2);
+    expect(result.skippedCount, 1);
+    expect(result.invalidCount, 2);
+    expect(manager.tasks, hasLength(2));
+    expect(store.writeCount, writesBeforeBatch + 1);
+  });
+
+  test('batch enqueue skips completed tasks and requeues failed tasks',
+      () async {
+    final now = DateTime(2026, 8, 24);
+    final completed = DownloadTask(
+      id: 'completed',
+      url: 'https://example.com/completed.jpg',
+      fileName: 'completed.jpg',
+      mediaType: DownloadMediaType.image,
+      status: DownloadTaskStatus.completed,
+      progress: 1,
+      createdAt: now,
+      updatedAt: now,
+    );
+    final failed = DownloadTask(
+      id: 'failed',
+      url: 'https://example.com/failed.jpg',
+      fileName: 'failed.jpg',
+      mediaType: DownloadMediaType.image,
+      status: DownloadTaskStatus.failed,
+      progress: 0.6,
+      receivedBytes: 60,
+      totalBytes: 100,
+      errorMessage: 'offline',
+      failureKind: DownloadFailureKind.network,
+      createdAt: now,
+      updatedAt: now,
+    );
+    final executor = _ControlledDownloadTaskExecutor();
+    final manager = DownloadTaskManager(
+      store: _MemoryDownloadTaskStore(<DownloadTask>[completed, failed]),
+      executor: executor,
+      maxConcurrentTasks: 1,
+    );
+    await manager.initialize();
+
+    final result = await manager.enqueueBatch(const <DownloadRequest>[
+      DownloadRequest(
+        url: 'https://example.com/completed.jpg',
+        fileName: 'completed-again.jpg',
+        mediaType: DownloadMediaType.image,
+      ),
+      DownloadRequest(
+        url: 'https://example.com/failed.jpg',
+        fileName: 'failed-again.jpg',
+        mediaType: DownloadMediaType.image,
+      ),
+    ]);
+
+    expect(result.queuedCount, 1);
+    expect(result.requeuedCount, 1);
+    expect(result.skippedCount, 1);
+    final retried = manager.tasks.firstWhere((task) => task.id == 'failed');
+    expect(retried.progress, 0);
+    expect(retried.errorMessage, isNull);
+    expect(retried.failureKind, isNull);
+    await _settleManager();
+    expect(executor.starts, contains('failed'));
+  });
 }

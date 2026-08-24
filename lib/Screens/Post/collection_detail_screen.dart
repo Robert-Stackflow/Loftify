@@ -11,8 +11,10 @@ import '../../Api/collection_api.dart';
 import '../../Models/history_response.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Models/recommend_response.dart';
+import '../../Screens/Download/batch_download_screen.dart';
 import '../../Utils/enums.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
+import '../../Widgets/PostItem/general_post_item.dart';
 import '../../Widgets/PostDetail/detail_bottom_bar.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
@@ -589,6 +591,11 @@ class CollectionDetailScreenState
     return FlutterContextMenu(
       entries: [
         FlutterContextMenuItem(
+          appLocalizations.batchDownload,
+          iconData: LoftifyIcons.download,
+          onPressed: _openBatchDownload,
+        ),
+        FlutterContextMenuItem(
           appLocalizations.copyLink,
           iconData: LoftifyIcons.copy,
           onPressed: () {
@@ -605,6 +612,34 @@ class CollectionDetailScreenState
         }),
       ],
     );
+  }
+
+  void _openBatchDownload() {
+    RouteUtil.pushPanelCupertinoRoute(
+      context,
+      BatchDownloadScreen(
+        sourceTitle: postCollection?.name ?? appLocalizations.collection,
+        initialItems:
+            posts.map(CommonInfoItemBuilder.getGeneralPostItem).toList(),
+        loadAllItems: _loadAllBatchItems,
+      ),
+    );
+  }
+
+  Future<List<GeneralPostItem>> _loadAllBatchItems() async {
+    if (posts.isEmpty) await _onRefresh();
+    while (!noMore) {
+      final previousLength = posts.length;
+      final result = await _onLoad();
+      if (result == IndicatorResult.fail ||
+          result == IndicatorResult.none ||
+          posts.length == previousLength) {
+        break;
+      }
+    }
+    return posts
+        .map(CommonInfoItemBuilder.getGeneralPostItem)
+        .toList(growable: false);
   }
 
   Widget _buildBackground({double? height}) {

@@ -5,10 +5,13 @@ import 'package:loftify/Models/favorites_response.dart';
 import '../../Api/user_api.dart';
 import '../../Models/history_response.dart';
 import '../../Models/post_detail_response.dart';
+import '../../Screens/Download/batch_download_screen.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/hive_util.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/favorite_folder_post_item_builder.dart';
+import '../../Widgets/PostItem/general_post_item.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import '../Post/post_detail_screen.dart';
 
@@ -214,6 +217,43 @@ class _FavoriteFolderDetailScreenState
     return ResponsiveAppBar(
       showBack: true,
       title: _favoriteFolder?.name ?? appLocalizations.favoriteFolderDetail,
+      actions: [
+        ChewieIconButton(
+          icon: LoftifyIcons.download,
+          tooltip: appLocalizations.batchDownload,
+          onPressed: _openBatchDownload,
+        ),
+      ],
     );
+  }
+
+  void _openBatchDownload() {
+    RouteUtil.pushPanelCupertinoRoute(
+      context,
+      BatchDownloadScreen(
+        sourceTitle:
+            _favoriteFolder?.name ?? appLocalizations.favoriteFolderDetail,
+        initialItems: _posts
+            .map(FavoriteFolderPostItemBuilder.getGeneralPostItem)
+            .toList(),
+        loadAllItems: _loadAllBatchItems,
+      ),
+    );
+  }
+
+  Future<List<GeneralPostItem>> _loadAllBatchItems() async {
+    if (_posts.isEmpty) await _onRefresh();
+    while (!_noMore) {
+      final previousLength = _posts.length;
+      final result = await _onLoad();
+      if (result == IndicatorResult.fail ||
+          result == IndicatorResult.none ||
+          _posts.length == previousLength) {
+        break;
+      }
+    }
+    return _posts
+        .map(FavoriteFolderPostItemBuilder.getGeneralPostItem)
+        .toList(growable: false);
   }
 }

@@ -32,7 +32,7 @@ void main() {
     final resources = localeFiles.map(_loadArb).toList();
     final expectedKeys = _messageKeys(resources.first).toSet();
 
-    expect(expectedKeys, hasLength(735));
+    expect(expectedKeys, hasLength(743));
     for (var index = 1; index < resources.length; index++) {
       expect(
         _messageKeys(resources[index]).toSet(),

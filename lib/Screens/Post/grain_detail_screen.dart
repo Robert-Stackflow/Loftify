@@ -11,6 +11,7 @@ import 'package:loftify/Widgets/PostItem/general_post_item_builder.dart';
 import 'package:loftify/Widgets/PostItem/grain_post_item_builder.dart';
 
 import '../../Models/history_response.dart';
+import '../../Screens/Download/batch_download_screen.dart';
 import '../../Utils/post_sequence_source.dart';
 import '../../Widgets/PostDetail/detail_bottom_bar.dart';
 import '../../Widgets/loftify_icons.dart';
@@ -277,6 +278,11 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
     return FlutterContextMenu(
       entries: [
         FlutterContextMenuItem(
+          appLocalizations.batchDownload,
+          iconData: LoftifyIcons.download,
+          onPressed: _openBatchDownload,
+        ),
+        FlutterContextMenuItem(
           appLocalizations.copyLink,
           iconData: LoftifyIcons.copy,
           onPressed: () {
@@ -293,6 +299,35 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
         }),
       ],
     );
+  }
+
+  void _openBatchDownload() {
+    RouteUtil.pushPanelCupertinoRoute(
+      context,
+      BatchDownloadScreen(
+        sourceTitle: grainDetailData?.grainInfo.name ?? appLocalizations.grain,
+        initialItems: posts
+            .map(GrainPostItemBuilder.getGeneralPostItem)
+            .toList(growable: false),
+        loadAllItems: _loadAllBatchItems,
+      ),
+    );
+  }
+
+  Future<List<GeneralPostItem>> _loadAllBatchItems() async {
+    if (posts.isEmpty) await _onRefresh();
+    while (!noMore) {
+      final previousLength = posts.length;
+      final result = await _onLoad();
+      if (result == IndicatorResult.fail ||
+          result == IndicatorResult.none ||
+          posts.length == previousLength) {
+        break;
+      }
+    }
+    return posts
+        .map(GrainPostItemBuilder.getGeneralPostItem)
+        .toList(growable: false);
   }
 
   PreferredSize _buildFixedBar([double height = 56]) {

@@ -42,6 +42,48 @@ enum DownloadFailureKind {
   }
 }
 
+/// A normalized request that can be submitted alone or as part of a batch.
+class DownloadRequest {
+  const DownloadRequest({
+    required this.url,
+    required this.fileName,
+    required this.mediaType,
+    this.title,
+    this.thumbnailUrl,
+  });
+
+  final String url;
+  final String fileName;
+  final String? title;
+  final String? thumbnailUrl;
+  final DownloadMediaType mediaType;
+}
+
+/// Result of one atomic batch enqueue operation.
+///
+/// Existing active or completed resources are deliberately skipped. Failed,
+/// cancelled and paused tasks are requeued so a partial batch can be retried
+/// without creating duplicate records or files.
+class DownloadBatchResult {
+  const DownloadBatchResult({
+    required this.requestedCount,
+    required this.queuedCount,
+    required this.skippedCount,
+    required this.invalidCount,
+    required this.requeuedCount,
+    required this.tasks,
+  });
+
+  final int requestedCount;
+  final int queuedCount;
+  final int skippedCount;
+  final int invalidCount;
+  final int requeuedCount;
+  final List<DownloadTask> tasks;
+
+  int get newTaskCount => queuedCount - requeuedCount;
+}
+
 class DownloadTask {
   const DownloadTask({
     required this.id,

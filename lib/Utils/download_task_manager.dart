@@ -184,6 +184,97 @@ class DownloadTaskManager extends ChangeNotifier {
     return task;
   }
 
+  /// Adds a group of resources with one state notification and one persisted
+  /// snapshot. The URL is the stable identity across batches.
+  ///
+  /// Active and completed resources are skipped. Failed, cancelled and paused
+  /// records are reset and requeued. This is intentionally a skip policy for
+  /// already downloaded files: batch actions never overwrite or create a
+  /// second copy of a completed resource.
+  Future<DownloadBatchResult> enqueueBatch(
+    Iterable<DownloadRequest> requests,
+  ) async {
+    await initialize();
+    final requestList = requests.toList(growable: false);
+    final seenUrls = <String>{};
+    final affectedTasks = <DownloadTask>[];
+    var queuedCount = 0;
+    var skippedCount = 0;
+    var invalidCount = 0;
+    var requeuedCount = 0;
+    var sequence = 0;
+
+    for (final request in requestList) {
+      final normalizedUrl = request.url.trim();
+      if (!_isValidDownloadUrl(normalizedUrl)) {
+        invalidCount++;
+        continue;
+      }
+      if (!seenUrls.add(normalizedUrl)) {
+        skippedCount++;
+        continue;
+      }
+
+      final existingIndex =
+          _tasks.indexWhere((task) => task.url == normalizedUrl);
+      if (existingIndex >= 0) {
+        final existing = _tasks[existingIndex];
+        if (existing.status == DownloadTaskStatus.failed ||
+            existing.status == DownloadTaskStatus.cancelled ||
+            existing.status == DownloadTaskStatus.paused) {
+          final requeued = existing.copyWith(
+            status: DownloadTaskStatus.queued,
+            progress: 0,
+            receivedBytes: 0,
+            totalBytes: 0,
+            savedPath: null,
+            errorMessage: null,
+            failureKind: null,
+          );
+          _tasks[existingIndex] = requeued;
+          affectedTasks.add(requeued);
+          queuedCount++;
+          requeuedCount++;
+        } else {
+          affectedTasks.add(existing);
+          skippedCount++;
+        }
+        continue;
+      }
+
+      final now = DateTime.now();
+      final task = DownloadTask(
+        id: '${now.microsecondsSinceEpoch}_${sequence++}_'
+            '${normalizedUrl.hashCode.abs()}',
+        url: normalizedUrl,
+        fileName: _sanitizeFileName(request.fileName),
+        title: request.title,
+        thumbnailUrl: request.thumbnailUrl,
+        mediaType: request.mediaType,
+        status: DownloadTaskStatus.queued,
+        createdAt: now,
+        updatedAt: now,
+      );
+      _tasks.add(task);
+      affectedTasks.add(task);
+      queuedCount++;
+    }
+
+    if (queuedCount > 0) {
+      notifyListeners();
+      await _persist();
+      _pump();
+    }
+    return DownloadBatchResult(
+      requestedCount: requestList.length,
+      queuedCount: queuedCount,
+      skippedCount: skippedCount,
+      invalidCount: invalidCount,
+      requeuedCount: requeuedCount,
+      tasks: List<DownloadTask>.unmodifiable(affectedTasks),
+    );
+  }
+
   Future<bool> waitForCompletion(
     String taskId, {
     DownloadProgressCallback? onProgress,
@@ -532,6 +623,13 @@ class DownloadTaskManager extends ChangeNotifier {
     final keepLength =
         (maxLength - extension.length).clamp(1, maxLength).toInt();
     return '${sanitized.substring(0, keepLength)}$extension';
+  }
+
+  bool _isValidDownloadUrl(String value) {
+    final uri = Uri.tryParse(value);
+    return uri != null &&
+        (uri.scheme == 'http' || uri.scheme == 'https') &&
+        uri.host.isNotEmpty;
   }
 
   @override

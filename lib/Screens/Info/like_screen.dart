@@ -8,11 +8,13 @@ import 'package:loftify/Screens/Info/nested_mixin.dart';
 import 'package:loftify/Utils/hive_util.dart';
 
 import '../../Models/post_detail_response.dart';
+import '../../Screens/Download/batch_download_screen.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/like_archive_util.dart';
 import '../../Utils/paged_data_controller.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
+import '../../Widgets/PostItem/general_post_item.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
@@ -354,6 +356,11 @@ class _LikeScreenState extends BaseDynamicState<LikeScreen>
     return FlutterContextMenu(
       entries: [
         FlutterContextMenuItem(
+          appLocalizations.batchDownload,
+          iconData: LoftifyIcons.download,
+          onPressed: _openBatchDownload,
+        ),
+        FlutterContextMenuItem(
           appLocalizations.clearInvalidContent,
           iconData: LoftifyIcons.delete,
           status: MenuItemStatus.error,
@@ -381,6 +388,34 @@ class _LikeScreenState extends BaseDynamicState<LikeScreen>
         ),
       ],
     );
+  }
+
+  void _openBatchDownload() {
+    RouteUtil.pushPanelCupertinoRoute(
+      context,
+      BatchDownloadScreen(
+        sourceTitle: appLocalizations.myLikes,
+        initialItems:
+            _likeList.map(CommonInfoItemBuilder.getGeneralPostItem).toList(),
+        loadAllItems: _loadAllBatchItems,
+      ),
+    );
+  }
+
+  Future<List<GeneralPostItem>> _loadAllBatchItems() async {
+    if (_likeList.isEmpty) await _onRefresh();
+    while (!_pagingController.noMore) {
+      final previousLength = _likeList.length;
+      final result = await _pagingController.load();
+      if (result == IndicatorResult.fail ||
+          result == IndicatorResult.none ||
+          _likeList.length == previousLength) {
+        break;
+      }
+    }
+    return _likeList
+        .map(CommonInfoItemBuilder.getGeneralPostItem)
+        .toList(growable: false);
   }
 
   _buildFloatingButtons() {
