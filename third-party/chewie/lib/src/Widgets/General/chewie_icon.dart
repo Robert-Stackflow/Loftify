@@ -33,10 +33,14 @@ class ChewieIcon extends StatelessWidget {
     final iconTheme = IconTheme.of(context);
     final baseColor =
         color ?? iconTheme.color ?? Theme.of(context).colorScheme.onSurface;
+    final disabledOpacity = MediaQuery.highContrastOf(context) &&
+            specification.disabledOpacity < 0.5
+        ? 0.5
+        : specification.disabledOpacity;
     final effectiveColor = enabled
         ? baseColor
         : baseColor.withValues(
-            alpha: baseColor.a * specification.disabledOpacity,
+            alpha: baseColor.a * disabledOpacity,
           );
     final effectiveSize = size ?? specification.regularSize;
     final child = Icon(

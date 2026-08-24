@@ -25,7 +25,7 @@
 | 本地 `awesome_chewie` | 61 处 / 44 个符号 | 4 处 / 3 个符号 | 77 处 / 35 个符号 | Material 26 个文件；Cupertino 3 个文件；Lucide 24 个文件 |
 | 合计 | 315 处，跨范围去重后 146 个 Material 符号 | 4 处 / 3 个符号 | 99 处 / 45 个符号 | — |
 
-旧的 `assets/icon` 目录另有 51 张 PNG 界面图标（不含 `code.txt` 和 `run.py`）。当前运行路径直接使用其中 18 张，其他文件是未引用或仅存在于注释中的候选清理项；必须在完成迁移和回归后才能删除。
+旧的 `assets/icon` 目录曾包含 51 张 PNG 界面图标（不含 `code.txt` 和 `run.py`）。`ICON-04` 迁移和回归完成后，运行路径已无引用；`ICON-05` 已删除整套染色位图、废弃常量和生成辅助文件。
 
 迁移热点按引用数量排序：
 
@@ -180,7 +180,7 @@
 | `setting_dark/light.png` | 是 | `settings` | `settings` | — |
 | `tag_dark/grey/light/white.png` | 是 | `tag` | `tag` | — |
 
-`assets/icon/code.txt` 和 `assets/icon/run.py` 是旧资源生成辅助文件，不属于运行时资源；随 `ICON-05` 一并清理。`assets/illust` 和 `assets/mess` 不在本表中，它们是插画与内容装饰，最终视觉重构前不得因图标迁移误删。
+`assets/icon/code.txt` 和 `assets/icon/run.py` 是旧资源生成辅助文件，不属于运行时资源，已随 `ICON-05` 一并清理。`assets/illust` 和 `assets/mess` 不在本表中，它们是插画与内容装饰，最终视觉重构前不得因图标迁移误删。
 
 ## 5. 当前已合规的 Lucide 使用
 

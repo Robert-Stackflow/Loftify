@@ -39,6 +39,34 @@ void main() {
     );
   });
 
+  test('runtime and asset manifests contain no legacy interface icons', () {
+    final violations = <String>[];
+    for (final root in ['lib', 'third-party/chewie/lib']) {
+      for (final file in Directory(root)
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((file) => file.path.endsWith('.dart'))) {
+        final lines = file.readAsLinesSync();
+        for (var index = 0; index < lines.length; index++) {
+          final source = lines[index].trimLeft();
+          if (source.startsWith('//') || source.startsWith('*')) continue;
+          if (RegExp(r'\b(?:Icons|CupertinoIcons)\.').hasMatch(source)) {
+            violations.add('${file.path}:${index + 1}');
+          }
+        }
+      }
+    }
+
+    expect(violations, isEmpty);
+    expect(Directory('assets/icon').existsSync(), isFalse);
+    expect(File('pubspec.yaml').readAsStringSync(),
+        isNot(contains('assets/icon/')));
+    expect(
+      File('lib/Utils/asset_util.dart').readAsStringSync(),
+      isNot(contains('assets/icon/')),
+    );
+  });
+
   test('global navigation uses semantic icons without glyph swapping', () {
     final sources = <String, String>{
       'main': File('lib/Screens/main_screen.dart').readAsStringSync(),

@@ -53,6 +53,10 @@ class ChewieIconButton extends StatelessWidget {
     final specification = ChewieIconThemeData.of(context);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final highContrast = MediaQuery.highContrastOf(context);
+    final disabledOpacity = highContrast && specification.disabledOpacity < 0.5
+        ? 0.5
+        : specification.disabledOpacity;
     final effectiveTarget =
         (tapTargetSize ?? specification.minimumTapTarget).clamp(
       specification.minimumTapTarget,
@@ -66,10 +70,13 @@ class ChewieIconButton extends StatelessWidget {
       context,
       specification,
       selected,
+      highContrast,
     );
     final effectiveBorder = style == ChewieIconButtonStyle.outlined
         ? borderColor ?? colorScheme.outlineVariant
-        : Colors.transparent;
+        : highContrast && selected
+            ? activeForeground
+            : Colors.transparent;
 
     final button = IconButton(
       tooltip: tooltip,
@@ -87,7 +94,7 @@ class ChewieIconButton extends StatelessWidget {
         foregroundColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.disabled)) {
             return baseForeground.withValues(
-              alpha: baseForeground.a * specification.disabledOpacity,
+              alpha: baseForeground.a * disabledOpacity,
             );
           }
           return selected ? activeForeground : baseForeground;
@@ -95,7 +102,7 @@ class ChewieIconButton extends StatelessWidget {
         backgroundColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.disabled)) {
             return effectiveBackground.withValues(
-              alpha: effectiveBackground.a * specification.disabledOpacity,
+              alpha: effectiveBackground.a * disabledOpacity,
             );
           }
           return effectiveBackground;
@@ -114,7 +121,7 @@ class ChewieIconButton extends StatelessWidget {
           return Colors.transparent;
         }),
         side: WidgetStatePropertyAll(
-          BorderSide(color: effectiveBorder, width: 0.8),
+          BorderSide(color: effectiveBorder, width: highContrast ? 1.2 : 0.8),
         ),
         shape: WidgetStatePropertyAll(
           RoundedRectangleBorder(
@@ -166,19 +173,24 @@ class ChewieIconButton extends StatelessWidget {
     BuildContext context,
     ChewieIconThemeData specification,
     bool isSelected,
+    bool highContrast,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
     if (isSelected) {
       return selectedBackgroundColor ??
           colorScheme.primary.withValues(
-            alpha: specification.selectedContainerOpacity,
+            alpha: highContrast && specification.selectedContainerOpacity < 0.2
+                ? 0.2
+                : specification.selectedContainerOpacity,
           );
     }
     if (backgroundColor != null) return backgroundColor!;
     return switch (style) {
       ChewieIconButtonStyle.plain => Colors.transparent,
       ChewieIconButtonStyle.soft =>
-        colorScheme.surfaceContainerHighest.withValues(alpha: 0.58),
+        colorScheme.surfaceContainerHighest.withValues(
+          alpha: highContrast ? 0.72 : 0.58,
+        ),
       ChewieIconButtonStyle.outlined => Colors.transparent,
     };
   }

@@ -6,15 +6,26 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loftify/Widgets/loftify_icons.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
-Widget _host(Widget child, {ChewieIconThemeData? iconTheme}) {
+Widget _host(
+  Widget child, {
+  ChewieIconThemeData? iconTheme,
+  Brightness brightness = Brightness.light,
+  bool highContrast = false,
+}) {
   return MaterialApp(
     theme: ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: Colors.teal,
+        brightness: brightness,
+      ),
       extensions: <ThemeExtension<dynamic>>[
         iconTheme ?? ChewieIconThemeData.standard,
       ],
     ),
-    home: Scaffold(body: Center(child: child)),
+    home: MediaQuery(
+      data: MediaQueryData(highContrast: highContrast),
+      child: Scaffold(body: Center(child: child)),
+    ),
   );
 }
 
@@ -121,6 +132,80 @@ void main() {
 
     final icon = tester.widget<Icon>(find.byIcon(LoftifyIcons.nextPost));
     expect(icon.shadows, shadows);
+  });
+
+  testWidgets('high contrast strengthens selected and disabled states',
+      (tester) async {
+    for (final brightness in Brightness.values) {
+      await tester.pumpWidget(
+        _host(
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              ChewieIconButton(
+                icon: LucideIcons.heart,
+                selected: true,
+                tooltip: 'Selected',
+                onPressed: _emptyCallback,
+              ),
+              ChewieIconButton(
+                icon: LucideIcons.download,
+                tooltip: 'Disabled',
+                onPressed: null,
+              ),
+            ],
+          ),
+          brightness: brightness,
+          highContrast: true,
+        ),
+      );
+
+      final buttons = tester.widgetList<IconButton>(find.byType(IconButton));
+      final selectedSide = buttons.first.style!.side!.resolve({})!;
+      final selectedBackground =
+          buttons.first.style!.backgroundColor!.resolve({})!;
+      final disabledIcon =
+          tester.widget<Icon>(find.byIcon(LucideIcons.download));
+
+      expect(selectedSide.width, 1.2);
+      expect(selectedSide.color,
+          Theme.of(tester.element(find.byType(Row))).colorScheme.primary);
+      expect(selectedBackground.a, greaterThanOrEqualTo(0.2));
+      expect(disabledIcon.color!.a, closeTo(0.5, 0.01));
+      expect(
+          tester.getSize(find.byType(IconButton).first), const Size.square(44));
+    }
+  });
+
+  testWidgets('localized icon labels preserve semantics and tap targets',
+      (tester) async {
+    await tester.pumpWidget(
+      _host(
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            ChewieIconButton(
+              icon: LucideIcons.download,
+              tooltip: 'Download',
+              onPressed: _emptyCallback,
+            ),
+            ChewieIconButton(
+              icon: LucideIcons.download,
+              tooltip: '下载',
+              onPressed: _emptyCallback,
+            ),
+          ],
+        ),
+      ),
+    );
+
+    expect(find.bySemanticsLabel('Download'), findsOneWidget);
+    expect(find.bySemanticsLabel('下载'), findsOneWidget);
+    for (final button in find.byType(IconButton).evaluate()) {
+      expect(
+          tester.getSize(find.byWidget(button.widget)), const Size.square(44));
+    }
+    expect(tester.takeException(), isNull);
   });
 
   test('product semantic icons all come from the Lucide font', () {

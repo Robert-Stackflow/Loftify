@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
@@ -107,7 +109,7 @@ void main() {
     const puzzleSourceSize = Size(72, 72);
     final assets = await tester.runAsync(() async => [
           await File('assets/mess/tag_row_bg.png').readAsBytes(),
-          await File('assets/icon/download_white.png').readAsBytes(),
+          await _buildSquarePng(72),
         ]);
     final background = assets![0];
     final puzzle = assets[1];
@@ -252,6 +254,22 @@ void main() {
       await tester.pump();
     }
   });
+}
+
+Future<Uint8List> _buildSquarePng(int size) async {
+  final recorder = ui.PictureRecorder();
+  final canvas = ui.Canvas(recorder);
+  canvas.drawRect(
+    ui.Rect.fromLTWH(0, 0, size.toDouble(), size.toDouble()),
+    ui.Paint()..color = const ui.Color(0xFFFFFFFF),
+  );
+  final image = await recorder.endRecording().toImage(size, size);
+  try {
+    final data = await image.toByteData(format: ui.ImageByteFormat.png);
+    return data!.buffer.asUint8List();
+  } finally {
+    image.dispose();
+  }
 }
 
 Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {

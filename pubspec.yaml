@@ -143,7 +143,6 @@ flutter:
   uses-material-design: true
   assets:
     - assets/lottie/
-    - assets/icon/
     - assets/illust/
     - assets/mess/
     - assets/avatar.png
