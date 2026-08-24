@@ -24,6 +24,7 @@ import 'package:provider/provider.dart';
 import '../Utils/app_provider.dart';
 import '../Utils/enums.dart';
 import '../Utils/lottie_files.dart';
+import '../Widgets/Navigation/loftify_glass_navigation_bar.dart';
 import '../Widgets/loftify_icons.dart';
 import '../l10n/l10n.dart';
 import 'Navigation/home_screen.dart';
@@ -77,17 +78,18 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
     });
   }
 
-  login() {
+  void login() {
     popAll();
     initPage();
   }
 
-  logout() {
+  void logout() {
     popAll();
     initPage();
   }
 
-  popAll([bool initPage = true]) {
+  @override
+  void popAll([bool initPage = true]) {
     while (panelNavigatorState?.canPop() ?? false) {
       panelNavigatorState?.pop();
     }
@@ -99,7 +101,8 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
     }
   }
 
-  pushPage(Widget page) {
+  @override
+  void pushPage(Widget page) {
     ResponsiveUtil.runByOrientation(
       landscape: () {
         appProvider.showPanelNavigator = true;
@@ -116,7 +119,8 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
     );
   }
 
-  popPage() {
+  @override
+  void popPage() {
     if (panelNavigatorState?.canPop() ?? false) {
       panelNavigatorState?.pop();
       Future.delayed(const Duration(milliseconds: 400), () {
@@ -167,6 +171,7 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
     jumpToPage(appProvider.sidebarChoice.index.clamp(0, _pageList.length - 1));
   }
 
+  @override
   void jumpToPage(int index) {
     if (_currentIndex == index) {
       BottomNavgationMixin? mixin =
@@ -183,10 +188,12 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
     if (mounted) setState(() {});
   }
 
+  @override
   void refreshScrollControllers() {
     setState(() {});
   }
 
+  @override
   void showBottomNavigationBar() {
     _scrollToHideController.show();
   }
@@ -254,63 +261,39 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
     );
   }
 
-  _buildBottomNavigationBar() {
+  Widget _buildBottomNavigationBar() {
     return ScrollToHide.multi(
       controller: _scrollToHideController,
       scrollControllers: getScrollControllers(),
       hideDirection: Axis.vertical,
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(
-              color: Theme.of(context).dividerColor,
-              width: 1,
-            ),
+      child: LoftifyGlassNavigationBar(
+        currentIndex: _currentIndex,
+        destinations: [
+          LoftifyNavigationDestination(
+            icon: LoftifyIcons.home,
+            label: appLocalizations.home,
           ),
-        ),
-        child: MyBottomNavigationBar(
-          backgroundColor: ChewieTheme.scaffoldBackgroundColor,
-          currentIndex: _currentIndex,
-          selectedItemColor: Theme.of(context).primaryColor,
-          showSelectedLabels: false,
-          unselectedItemColor: Theme.of(context).colorScheme.onSurfaceVariant,
-          showUnselectedLabels: false,
-          type: BottomNavigationBarType.fixed,
-          elevation: 0,
-          items: [
-            BottomNavigationBarItem(
-              icon: const ChewieIcon(LoftifyIcons.home, size: 24),
-              activeIcon: const ChewieIcon(LoftifyIcons.home, size: 24),
-              label: appLocalizations.home,
-            ),
-            BottomNavigationBarItem(
-              icon: const ChewieIcon(LoftifyIcons.search, size: 24),
-              activeIcon: const ChewieIcon(LoftifyIcons.search, size: 24),
-              label: appLocalizations.search,
-            ),
-            BottomNavigationBarItem(
-              icon: const ChewieIcon(LoftifyIcons.activity, size: 24),
-              activeIcon: const ChewieIcon(LoftifyIcons.activity, size: 24),
-              label: appLocalizations.dynamicTab,
-            ),
-            BottomNavigationBarItem(
-              icon: const ChewieIcon(LoftifyIcons.profile, size: 24),
-              activeIcon: const ChewieIcon(LoftifyIcons.profile, size: 24),
-              label: appLocalizations.mine,
-            ),
-          ],
-          onTap: (index) {
-            appProvider.sidebarChoice = SideBarChoice.fromInt(index);
-          },
-          onDoubleTap: (index) {
-            appProvider.sidebarChoice = SideBarChoice.fromInt(index);
-          },
-        ),
+          LoftifyNavigationDestination(
+            icon: LoftifyIcons.search,
+            label: appLocalizations.search,
+          ),
+          LoftifyNavigationDestination(
+            icon: LoftifyIcons.activity,
+            label: appLocalizations.dynamicTab,
+          ),
+          LoftifyNavigationDestination(
+            icon: LoftifyIcons.profile,
+            label: appLocalizations.mine,
+          ),
+        ],
+        onSelect: (index) {
+          appProvider.sidebarChoice = SideBarChoice.fromInt(index);
+        },
       ),
     );
   }
 
-  changeMode() {
+  void changeMode() {
     if (ColorUtil.isDark(context)) {
       appProvider.themeMode = ActiveThemeMode.light;
       darkModeController.forward();

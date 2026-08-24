@@ -71,6 +71,9 @@ void main() {
     final sources = <String, String>{
       'main': File('lib/Screens/main_screen.dart').readAsStringSync(),
       'panel': File('lib/Screens/panel_screen.dart').readAsStringSync(),
+      'glass': File(
+        'lib/Widgets/Navigation/loftify_glass_navigation_bar.dart',
+      ).readAsStringSync(),
     };
 
     for (final entry in sources.entries) {
@@ -97,13 +100,14 @@ void main() {
       );
       expect(
         RegExp(
-          'icon: const ChewieIcon\\(LoftifyIcons\\.$semantic, size: 24\\),'
-          '[\\s\\S]*?activeIcon: const ChewieIcon\\('
-          'LoftifyIcons\\.$semantic, size: 24\\),',
+          'LoftifyNavigationDestination\\(\\s*'
+          'icon:\\s*LoftifyIcons\\.$semantic,',
         ).hasMatch(sources['panel']!),
         isTrue,
       );
     }
+    expect(sources['panel'], isNot(contains('activeIcon:')));
+    expect(sources['glass'], contains('ChewieIcon(icon, size: 22'));
   });
 
   test('reusable Chewie runtime has no Material or Cupertino glyphs', () {
