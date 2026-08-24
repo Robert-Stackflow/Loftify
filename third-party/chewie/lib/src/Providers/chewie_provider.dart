@@ -7,6 +7,48 @@ ChewieProvider chewieProvider = ChewieProvider();
 
 bool haveMigratedToSupportDirectory = false;
 
+enum ChewieStateViewType { loading, empty, error }
+
+@immutable
+class ChewieStateViewConfig {
+  const ChewieStateViewConfig({
+    required this.type,
+    required this.text,
+    this.actionLabel,
+    this.onAction,
+    this.icon,
+    this.size = 30,
+    this.showText = true,
+    this.forceDark = false,
+    this.background,
+    this.physics,
+    this.shrinkWrap = true,
+    this.scrollController,
+    this.topPadding = 0,
+    this.bottomPadding = 0,
+  });
+
+  final ChewieStateViewType type;
+  final String text;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+  final IconData? icon;
+  final double size;
+  final bool showText;
+  final bool forceDark;
+  final Color? background;
+  final ScrollPhysics? physics;
+  final bool shrinkWrap;
+  final ScrollController? scrollController;
+  final double topPadding;
+  final double bottomPadding;
+}
+
+typedef ChewieStateWidgetBuilder = Widget Function(
+  BuildContext context,
+  ChewieStateViewConfig config,
+);
+
 class ChewieProvider with ChangeNotifier {
   static const Size defaultWindowSize = Size(1280, 720);
   static const Size minimumWindowSize = Size(800, 640);
@@ -83,6 +125,13 @@ class ChewieProvider with ChangeNotifier {
 
   Widget Function(double size, bool forceDark) loadingWidgetBuilder =
       (size, forceDark) => const Center(child: CircularProgressIndicator());
+
+  /// Optional product-level state renderer.
+  ///
+  /// The component package retains its standalone fallbacks, while host apps
+  /// can provide one semantic visual language for loading, empty and error
+  /// states without replacing every call site.
+  ChewieStateWidgetBuilder? stateWidgetBuilder;
 
   bool _enableLandscapeInTablet =
       ChewieHiveUtil.getBool(ChewieHiveUtil.enableLandscapeInTabletKey);

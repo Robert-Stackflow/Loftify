@@ -10,6 +10,7 @@ import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
 import 'package:loftify/Screens/panel_screen.dart';
 import 'package:loftify/Utils/cloud_control_provider.dart';
 import 'package:loftify/Utils/lottie_files.dart';
+import 'package:loftify/Widgets/Design/loftify_state_view.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:loftify/Widgets/loftify_icons.dart';
 import 'package:provider/provider.dart';
@@ -232,6 +233,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
           radius: 14,
         );
     chewieProvider.loadingWidgetBuilder = LottieFiles.buildLoadingAnimation;
+    chewieProvider.stateWidgetBuilder = LoftifyStateView.fromChewie;
   }
 
   showQQGroupDialog() {

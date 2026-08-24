@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:tuple/tuple.dart';
 
-import '../Item/item_builder.dart';
-import '../loftify_icons.dart';
+import '../Design/loftify_controls.dart';
+import '../Design/loftify_surfaces.dart';
 
 class TileList extends StatelessWidget {
   const TileList(
@@ -29,16 +29,14 @@ class TileList extends StatelessWidget {
     super.key,
   }) : children = options
             .map(
-              (option) => ItemBuilder.buildEntryItem(
-                roundTop: !showTitle && option == options.first,
-                title: option.item1,
-                trailing: LoftifyIcons.check,
+              (option) => LoftifyMenuItem(
+                label: option.item1,
+                selected: option.item2 == selected,
                 showTrailing: option.item2 == selected,
-                titleColor:
-                    redOptions.contains(option.item2) ? Colors.redAccent : null,
-                crossAxisAlignment: crossAxisAlignment,
+                status: redOptions.contains(option.item2)
+                    ? LoftifyMenuStatus.danger
+                    : LoftifyMenuStatus.normal,
                 onTap: () => onSelected(option.item2),
-                context: context,
               ),
             )
             .toList();
@@ -52,44 +50,21 @@ class TileList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      shrinkWrap: true,
-      physics: const ClampingScrollPhysics(),
-      children: [
-        if (showTitle)
-          Container(
-            width: MediaQuery.sizeOf(context).width,
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
-            decoration: BoxDecoration(
-              color: Theme.of(context).canvasColor,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(10)),
-            ),
-            child: Text(title, style: Theme.of(context).textTheme.titleLarge),
-          ),
-        if (showTitle)
-          Container(
-            height: 0,
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: Theme.of(context).dividerColor,
-                  width: 1.2,
-                ),
-              ),
-            ),
-          ),
-        ...children,
-        if (showCancel)
-          ItemBuilder.buildEntryItem(
-            title: MaterialLocalizations.of(context).cancelButtonLabel,
-            backgroundColor: Theme.of(context).cardColor.withAlpha(127),
-            showTrailing: false,
-            onTap: onCloseTap,
-            context: context,
-            crossAxisAlignment: crossAxisAlignment,
-          ),
-      ],
+    return LoftifyPanel(
+      title: showTitle ? title : null,
+      body: ListView(
+        shrinkWrap: true,
+        physics: const ClampingScrollPhysics(),
+        children: children.toList(),
+      ),
+      footer: showCancel
+          ? LoftifyButton(
+              label: MaterialLocalizations.of(context).cancelButtonLabel,
+              variant: LoftifyButtonVariant.secondary,
+              onPressed: onCloseTap,
+              expand: true,
+            )
+          : null,
     );
   }
 }

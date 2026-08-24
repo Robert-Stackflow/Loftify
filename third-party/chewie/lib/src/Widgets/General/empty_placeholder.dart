@@ -29,6 +29,24 @@ class EmptyPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final stateBuilder = chewieProvider.stateWidgetBuilder;
+    if (stateBuilder != null) {
+      return stateBuilder(
+        context,
+        ChewieStateViewConfig(
+          type: ChewieStateViewType.empty,
+          text: text,
+          onAction: onTap,
+          icon: icon,
+          size: size,
+          physics: physics,
+          shrinkWrap: shrinkWrap,
+          scrollController: scrollController,
+          topPadding: topPadding,
+          bottomPadding: bottomPadding,
+        ),
+      );
+    }
     return ListView(
       physics: physics,
       shrinkWrap: shrinkWrap,
@@ -52,8 +70,17 @@ class EmptyPlaceholder extends StatelessWidget {
               textAlign: TextAlign.center,
               style: ChewieTheme.labelLarge,
             ),
+            if (onTap != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: TextButton(
+                  onPressed: onTap,
+                  child: Text(chewieLocalizations.retry),
+                ),
+              ),
           ],
         ),
+        SizedBox(height: bottomPadding),
       ],
     );
   }

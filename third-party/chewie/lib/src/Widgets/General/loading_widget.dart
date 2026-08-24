@@ -29,6 +29,22 @@ class LoadingWidget extends StatefulWidget {
 class LoadingWidgetState extends State<LoadingWidget> {
   @override
   Widget build(BuildContext context) {
+    final stateBuilder = chewieProvider.stateWidgetBuilder;
+    if (stateBuilder != null) {
+      return stateBuilder(
+        context,
+        ChewieStateViewConfig(
+          type: ChewieStateViewType.loading,
+          text: widget.text ?? chewieLocalizations.loading,
+          size: widget.size,
+          showText: widget.showText,
+          forceDark: widget.forceDark,
+          background: widget.background,
+          topPadding: widget.topPadding,
+          bottomPadding: widget.bottomPadding,
+        ),
+      );
+    }
     return Center(
       child: Container(
         width: double.infinity,

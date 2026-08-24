@@ -5,6 +5,7 @@ import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/enums.dart';
 import '../../l10n/l10n.dart';
 import '../Design/loftify_controls.dart';
+import '../Design/loftify_surfaces.dart';
 import '../loftify_icons.dart';
 
 class NewestFilterBottomSheet extends StatefulWidget {
@@ -41,49 +42,14 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final design = context.design;
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(design.radii.panel),
-        ),
-        color: design.colors.surfaceRaised,
+    return LoftifyPanel(
+      title: appLocalizations.filter,
+      expandBody: true,
+      body: SingleChildScrollView(
+        primary: false,
+        child: _buildButtons(),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildHeader(),
-          Divider(
-            height: design.borders.hairline,
-            thickness: design.borders.hairline,
-            color: design.colors.outline,
-          ),
-          Flexible(
-            child: SingleChildScrollView(
-              primary: false,
-              child: _buildButtons(),
-            ),
-          ),
-          Divider(
-            height: design.borders.hairline,
-            thickness: design.borders.hairline,
-            color: design.colors.outline,
-          ),
-          _buildFooter(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    final design = context.design;
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: design.spacing.xl),
-      alignment: Alignment.center,
-      child: Text(
-        appLocalizations.filter,
-        style: design.typography.pageTitle,
-      ),
+      footer: _buildFooter(),
     );
   }
 
@@ -166,38 +132,32 @@ class NewestFilterBottomSheetState extends State<NewestFilterBottomSheet> {
 
   Widget _buildFooter() {
     final design = context.design;
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        vertical: design.spacing.xl,
-        horizontal: design.spacing.xxl,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Expanded(
-            child: LoftifyButton(
-              label: appLocalizations.reset,
-              icon: LoftifyIcons.reset,
-              variant: LoftifyButtonVariant.secondary,
-              onPressed: reset,
-              expand: true,
-            ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Expanded(
+          child: LoftifyButton(
+            label: appLocalizations.reset,
+            icon: LoftifyIcons.reset,
+            variant: LoftifyButtonVariant.secondary,
+            onPressed: reset,
+            expand: true,
           ),
-          SizedBox(width: design.spacing.lg),
-          Expanded(
-            flex: 2,
-            child: LoftifyButton(
-              label: appLocalizations.confirm,
-              onPressed: () {
-                widget.onConfirm?.call(params);
-                Navigator.pop(context, params);
-              },
-              expand: true,
-            ),
+        ),
+        SizedBox(width: design.spacing.lg),
+        Expanded(
+          flex: 2,
+          child: LoftifyButton(
+            label: appLocalizations.confirm,
+            onPressed: () {
+              widget.onConfirm?.call(params);
+              Navigator.pop(context, params);
+            },
+            expand: true,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

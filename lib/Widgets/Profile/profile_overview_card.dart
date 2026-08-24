@@ -1,6 +1,8 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 
+import '../Design/loftify_surfaces.dart';
+
 class ProfileStatisticData {
   const ProfileStatisticData({
     required this.title,
@@ -31,38 +33,31 @@ class ProfileOverviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final effectiveForeground =
         foregroundColor ?? Theme.of(context).colorScheme.onSurface;
-    return ContainerItem(
+    return LoftifyCard(
       backgroundColor: backgroundColor,
       radius: radius,
-      roundTop: true,
-      roundBottom: true,
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(radius),
-        clipBehavior: Clip.antiAlias,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            for (var index = 0; index < statistics.length; index++) ...[
-              Expanded(
-                child: _ProfileStatisticItem(
-                  data: statistics[index],
-                  foregroundColor: effectiveForeground,
-                  radius: radius,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          for (var index = 0; index < statistics.length; index++) ...[
+            Expanded(
+              child: _ProfileStatisticItem(
+                data: statistics[index],
+                foregroundColor: effectiveForeground,
+                radius: radius,
+              ),
+            ),
+            if (index != statistics.length - 1)
+              SizedBox(
+                height: 42,
+                child: VerticalDivider(
+                  width: 1,
+                  thickness: 0.6,
+                  color: effectiveForeground.withValues(alpha: 0.22),
                 ),
               ),
-              if (index != statistics.length - 1)
-                SizedBox(
-                  height: 42,
-                  child: VerticalDivider(
-                    width: 1,
-                    thickness: 0.6,
-                    color: effectiveForeground.withValues(alpha: 0.22),
-                  ),
-                ),
-            ],
           ],
-        ),
+        ],
       ),
     );
   }

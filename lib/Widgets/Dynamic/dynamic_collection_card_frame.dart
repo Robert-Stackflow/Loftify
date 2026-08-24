@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../Design/loftify_surfaces.dart';
+
 /// Shared responsive frame for collection cards in the dynamic feed.
 ///
 /// The card deliberately has no fixed height: translated copy, large text and
@@ -25,24 +27,21 @@ class DynamicCollectionCardFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    return LoftifyCard(
       onTap: onTap,
-      child: Padding(
-        padding: padding,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: coverSize),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox.square(
-                dimension: coverSize,
-                child: cover,
-              ),
-              SizedBox(width: gap),
-              Expanded(child: child),
-            ],
-          ),
+      padding: padding,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: coverSize),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox.square(
+              dimension: coverSize,
+              child: cover,
+            ),
+            SizedBox(width: gap),
+            Expanded(child: child),
+          ],
         ),
       ),
     );

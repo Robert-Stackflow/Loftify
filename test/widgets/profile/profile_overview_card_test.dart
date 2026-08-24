@@ -4,6 +4,7 @@ import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
+import 'package:loftify/Widgets/Design/loftify_surfaces.dart';
 import 'package:loftify/Widgets/Profile/profile_overview_card.dart';
 import 'package:loftify/generated/app_localizations.dart';
 
@@ -75,11 +76,10 @@ void main() {
       find.descendant(of: card, matching: find.byType(InkWell)),
       findsNWidgets(4),
     );
-    final containerItem = tester.widget<ContainerItem>(
-      find.descendant(of: card, matching: find.byType(ContainerItem)),
+    final surface = tester.widget<LoftifyCard>(
+      find.descendant(of: card, matching: find.byType(LoftifyCard)),
     );
-    expect(containerItem.roundTop, isTrue);
-    expect(containerItem.roundBottom, isTrue);
+    expect(surface.radius, 14);
     expect(find.text('123 K', findRichText: true), findsOneWidget);
     expect(find.text('988 K', findRichText: true), findsOneWidget);
     expect(find.text('13.6 K', findRichText: true), findsOneWidget);

@@ -66,6 +66,8 @@ abstract final class LoftifyIcons {
   static const IconData save = LucideIcons.save;
   static const IconData add = LucideIcons.plus;
   static const IconData check = LucideIcons.check;
+  static const IconData empty = LucideIcons.inbox;
+  static const IconData error = LucideIcons.circleX;
   static const IconData warning = LucideIcons.triangleAlert;
   static const IconData clear = LucideIcons.x;
   static const IconData visible = LucideIcons.eye;
