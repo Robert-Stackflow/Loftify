@@ -38,6 +38,7 @@ import '../../Utils/post_swipe_gesture.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../../Theme/loftify_design_theme.dart';
+import '../../Widgets/Design/loftify_content_reference.dart';
 import '../../Widgets/Design/loftify_reading.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
@@ -2451,9 +2452,17 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
   }
 
   _buildGrainItem({Key? key}) {
-    return ClickableWrapper(
+    return Padding(
       key: key,
-      child: GestureDetector(
+      padding: EdgeInsets.only(
+        left: context.design.spacing.xl,
+        right: context.design.spacing.xl,
+        top: context.design.spacing.md,
+      ),
+      child: LoftifyContentReferenceCard(
+        icon: LoftifyIcons.grain,
+        eyebrow: appLocalizations.includedIn,
+        title: _postDetailData!.grainInfo!.name,
         onTap: () {
           RouteUtil.pushPanelCupertinoRoute(
             context,
@@ -2463,194 +2472,96 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
             ),
           );
         },
-        child: Container(
-          margin: const EdgeInsets.only(left: 16, right: 16, top: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: Theme.of(context).cardColor,
-              width: 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  ChewieIcon(
-                    LoftifyIcons.grain,
-                    size: 16,
-                    color: ChewieColors.getHotTagTextColor(context),
-                  ),
-                  const SizedBox(width: 3),
-                  Text(
-                    appLocalizations.includedIn,
-                    style: Theme.of(context).textTheme.titleSmall?.apply(
-                        fontSizeDelta: -1,
-                        fontWeightDelta: 2,
-                        color: ChewieColors.getHotTagTextColor(context)),
-                  ),
-                  const SizedBox(width: 3),
-                  Expanded(
-                    child: Text(
-                      _postDetailData!.grainInfo!.name,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleSmall
-                          ?.apply(fontSizeDelta: -1),
-                    ),
-                  ),
-                  ChewieIcon(
-                    LoftifyIcons.next,
-                    size: 16,
-                    color: Theme.of(context).textTheme.labelSmall?.color,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
 
   _buildCollectionItem({Key? key}) {
-    return Container(
+    return Padding(
       key: key,
-      margin: const EdgeInsets.only(left: 16, right: 16, top: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(10),
+      padding: EdgeInsets.only(
+        left: context.design.spacing.xl,
+        right: context.design.spacing.xl,
+        top: context.design.spacing.md,
       ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              ChewieIcon(
-                LoftifyIcons.collection,
-                size: 16,
-                color: Theme.of(context).textTheme.labelSmall?.color,
+      child: LoftifyContentReferenceCard(
+        icon: LoftifyIcons.collection,
+        eyebrow: appLocalizations.collection,
+        title: _postDetailData!.post!.postCollection!.name,
+        trailing: Semantics(
+          button: true,
+          child: TextButton(
+            onPressed: () {
+              HapticFeedback.mediumImpact();
+              CollectionApi.subscribeOrUnSubscribe(
+                collectionId: collectionId,
+                isSubscribe:
+                    !(_postDetailData!.post!.postCollection!.subscribed),
+              ).then((value) {
+                if (value['meta']['status'] != 200) {
+                  IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+                } else {
+                  _postDetailData!.post!.postCollection!.subscribed =
+                      !(_postDetailData!.post!.postCollection!.subscribed);
+                  setState(() {});
+                }
+              });
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: _postDetailData!.post!.postCollection!.subscribed
+                  ? context.design.colors.textSecondary
+                  : context.design.colors.accent,
+              textStyle: context.design.typography.label,
+              minimumSize: Size(
+                context.design.icons.minimumTapTarget,
+                context.design.icons.minimumTapTarget,
               ),
-              const SizedBox(width: 3),
-              Expanded(
-                child: Text(
-                  _postDetailData!.post!.postCollection!.name,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleSmall
-                      ?.apply(fontSizeDelta: -1),
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  HapticFeedback.mediumImpact();
-                  CollectionApi.subscribeOrUnSubscribe(
-                    collectionId: collectionId,
-                    isSubscribe:
-                        !(_postDetailData!.post!.postCollection!.subscribed),
-                  ).then((value) {
-                    if (value['meta']['status'] != 200) {
-                      IToast.showTop(
-                          value['meta']['desc'] ?? value['meta']['msg']);
-                    } else {
-                      _postDetailData!.post!.postCollection!.subscribed =
-                          !(_postDetailData!.post!.postCollection!.subscribed);
-                      setState(() {});
-                    }
-                  });
-                },
-                child: ClickableWrapper(
-                  child: Text(
-                    _postDetailData!.post!.postCollection!.subscribed
-                        ? appLocalizations.subscribed
-                        : appLocalizations.subscribeCollection,
-                    style: Theme.of(context).textTheme.titleSmall?.apply(
-                          fontSizeDelta: -2,
-                          fontWeightDelta: 2,
-                          color: _postDetailData!
-                                  .post!.postCollection!.subscribed
-                              ? Theme.of(context).textTheme.labelSmall?.color
-                              : Theme.of(context).primaryColor,
-                        ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Expanded(
-                child: _buildButton(
-                  text: _postDetailData!.post!.pos > 1
-                      ? appLocalizations.prePost
-                      : appLocalizations.atFirstPost,
-                  disabled: _postDetailData!.post!.pos <= 1,
-                  onTap: () {
-                    if (_postDetailData!.post!.pos > 1) {
-                      setState(() {});
-                      _fetchPreOrNextPost(isPre: true);
-                    } else {
-                      IToast.showTop(appLocalizations.haveAtFirstPost);
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildButton(
-                  text: appLocalizations.catelog,
-                  onTap: showCollectionBottomSheet,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildButton(
-                  text: _postDetailData!.post!.pos <
-                          _postDetailData!.post!.postCollection!.postCount
-                      ? appLocalizations.nextPost
-                      : appLocalizations.atLastPost,
-                  disabled: _postDetailData!.post!.pos >=
-                      _postDetailData!.post!.postCollection!.postCount,
-                  onTap: () {
-                    if (_postDetailData!.post!.pos <
-                        _postDetailData!.post!.postCollection!.postCount) {
-                      setState(() {});
-                      _fetchPreOrNextPost(isPre: false);
-                    } else {
-                      IToast.showTop(appLocalizations.haveAtLastPost);
-                    }
-                  },
-                ),
-              ),
-            ],
-          )
-        ],
-      ),
-    );
-  }
-
-  _buildButton({String? text, Function()? onTap, bool disabled = false}) {
-    return ClickableWrapper(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: ChewieTheme.getBackground(context),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            text ?? "",
-            style: disabled
-                ? Theme.of(context).textTheme.titleSmall?.apply(
-                    color: Theme.of(context).textTheme.labelSmall?.color)
-                : Theme.of(context).textTheme.titleSmall,
+              padding:
+                  EdgeInsets.symmetric(horizontal: context.design.spacing.md),
+              splashFactory: NoSplash.splashFactory,
+            ),
+            child: Text(
+              _postDetailData!.post!.postCollection!.subscribed
+                  ? appLocalizations.subscribed
+                  : appLocalizations.subscribeCollection,
+            ),
           ),
         ),
+        actions: [
+          LoftifyContentReferenceAction(
+            label: _postDetailData!.post!.pos > 1
+                ? appLocalizations.prePost
+                : appLocalizations.atFirstPost,
+            enabled: _postDetailData!.post!.pos > 1,
+            onDisabledPressed: () {
+              IToast.showTop(appLocalizations.haveAtFirstPost);
+            },
+            onPressed: () {
+              setState(() {});
+              _fetchPreOrNextPost(isPre: true);
+            },
+          ),
+          LoftifyContentReferenceAction(
+            label: appLocalizations.catelog,
+            emphasized: true,
+            onPressed: showCollectionBottomSheet,
+          ),
+          LoftifyContentReferenceAction(
+            label: _postDetailData!.post!.pos <
+                    _postDetailData!.post!.postCollection!.postCount
+                ? appLocalizations.nextPost
+                : appLocalizations.atLastPost,
+            enabled: _postDetailData!.post!.pos <
+                _postDetailData!.post!.postCollection!.postCount,
+            onDisabledPressed: () {
+              IToast.showTop(appLocalizations.haveAtLastPost);
+            },
+            onPressed: () {
+              setState(() {});
+              _fetchPreOrNextPost(isPre: false);
+            },
+          ),
+        ],
       ),
     );
   }
@@ -3127,37 +3038,11 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
       actions: _isPostContentReady
           ? [
               if (hasCollection())
-                ClickableWrapper(
-                  child: GestureDetector(
-                    onTap: showCollectionBottomSheet,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(50),
-                      ),
-                      child: Row(
-                        children: [
-                          ChewieIcon(
-                            LoftifyIcons.collection,
-                            size: 14,
-                            color: Theme.of(context).iconTheme.color,
-                          ),
-                          const SizedBox(width: 3),
-                          Text(
-                            "${appLocalizations.collection} ${_postDetailData!.post!.pos}/${_postDetailData!.post!.postCollection!.postCount}",
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleMedium
-                                ?.apply(fontSizeDelta: -3),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                LoftifyContextPill(
+                  icon: LoftifyIcons.collection,
+                  label:
+                      "${appLocalizations.collection} ${_postDetailData!.post!.pos}/${_postDetailData!.post!.postCollection!.postCount}",
+                  onPressed: showCollectionBottomSheet,
                 ),
               ..._buildButtons(),
             ]

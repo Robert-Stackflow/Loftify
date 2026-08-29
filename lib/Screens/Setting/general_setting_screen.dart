@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 
+import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/hive_util.dart';
@@ -223,7 +224,7 @@ class GeneralSettingScreenState extends BaseDynamicState<GeneralSettingScreen>
                       : appLocalizations.alreadyLatestVersion,
               descriptionColor:
                   ChewieUtils.compareVersion(latestVersion, currentVersion) > 0
-                      ? Colors.redAccent
+                      ? context.design.colors.warning
                       : null,
               tip: currentVersion,
               onTap: () {

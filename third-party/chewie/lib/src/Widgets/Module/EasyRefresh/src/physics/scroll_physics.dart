@@ -192,6 +192,26 @@ class _ERScrollPhysics extends BouncingScrollPhysics {
     return total + absDelta;
   }
 
+  /// Flutter requires a boundary result to have the same direction as the
+  /// proposed movement and never be larger than that movement. A scrollable's
+  /// content extent can shrink while an existing ballistic simulation is
+  /// still outside the newly calculated maximum (for example when an overlay
+  /// navigation bar changes the viewport). In that state the old hard-limit
+  /// formula can return the whole distance from [value] to the new boundary,
+  /// which is larger than this frame's delta and triggers a framework error.
+  ///
+  /// Movement back towards the valid range must remain fully allowed. Movement
+  /// farther outside the range is limited to at most the proposed delta.
+  static double _validBoundaryResult(
+    ScrollMetrics position,
+    double value,
+    double result,
+  ) {
+    final delta = value - position.pixels;
+    if (delta == 0 || result == 0 || result.sign != delta.sign) return 0;
+    return result.abs() > delta.abs() ? delta : result;
+  }
+
   @override
   double applyBoundaryConditions(ScrollMetrics position, double value) {
     if (headerNotifier._axis != position.axis ||
@@ -234,8 +254,12 @@ class _ERScrollPhysics extends BouncingScrollPhysics {
           value < -headerNotifier.actualMaxOverOffset) {
         _updateIndicatorOffset(
             position, -headerNotifier.actualMaxOverOffset, value);
-        return (value + headerNotifier.actualMaxOverOffset) -
-            position.minScrollExtent;
+        return _validBoundaryResult(
+          position,
+          value,
+          (value + headerNotifier.actualMaxOverOffset) -
+              position.minScrollExtent,
+        );
       }
       // hit top over
       if (!(headerNotifier.hitOver || headerNotifier.modeLocked) &&
@@ -328,8 +352,12 @@ class _ERScrollPhysics extends BouncingScrollPhysics {
             position,
             position.maxScrollExtent + footerNotifier.actualMaxOverOffset,
             value);
-        return (value - footerNotifier.actualMaxOverOffset) -
-            position.maxScrollExtent;
+        return _validBoundaryResult(
+          position,
+          value,
+          (value - footerNotifier.actualMaxOverOffset) -
+              position.maxScrollExtent,
+        );
       }
       // hit bottom over
       if (!(footerNotifier.hitOver || footerNotifier.modeLocked) &&
