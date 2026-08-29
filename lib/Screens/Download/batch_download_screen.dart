@@ -178,30 +178,35 @@ class _BatchDownloadScreenState extends State<BatchDownloadScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final body = Column(
-      children: [
-        _buildSelectionHeader(),
-        Expanded(
-          child: _items.isEmpty
-              ? EmptyPlaceholder(
-                  text: appLocalizations.noArticle,
-                  icon: LoftifyIcons.download,
-                  shrinkWrap: false,
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(12, 4, 12, 18),
-                  itemCount: _items.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 6),
-                  itemBuilder: (context, index) {
-                    final item = _items[index];
-                    return _BatchPostTile(
-                      item: item,
-                      selected: _selectedPostIds.contains(item.postId),
-                      onTap: () => _toggleItem(item),
-                    );
-                  },
-                ),
-        ),
+    final body = CustomScrollView(
+      key: const Key('batch-download-scroll'),
+      slivers: [
+        SliverToBoxAdapter(child: _buildSelectionHeader()),
+        if (_items.isEmpty)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: EmptyPlaceholder(
+              text: appLocalizations.noArticle,
+              icon: LoftifyIcons.download,
+              shrinkWrap: false,
+            ),
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 18),
+            sliver: SliverList.builder(
+              itemCount: _items.length * 2 - 1,
+              itemBuilder: (context, index) {
+                if (index.isOdd) return const SizedBox(height: 6);
+                final item = _items[index ~/ 2];
+                return _BatchPostTile(
+                  item: item,
+                  selected: _selectedPostIds.contains(item.postId),
+                  onTap: () => _toggleItem(item),
+                );
+              },
+            ),
+          ),
       ],
     );
     return Scaffold(
@@ -304,36 +309,29 @@ class _BatchDownloadScreenState extends State<BatchDownloadScreen> {
                       height: 1.35,
                     ),
                   );
-                  final actions = Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (result != null) ...[
-                        RoundIconTextButton(
-                          text: appLocalizations.retry,
-                          onPressed: _submit,
-                          height: 46,
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      RoundIconTextButton(
-                        text: result == null
-                            ? appLocalizations.download
-                            : appLocalizations.downloadManagement,
-                        icon: ChewieIcon(
-                          LoftifyIcons.download,
-                          size: 17,
-                          color: Colors.white,
-                        ),
-                        background: scheme.primary,
-                        height: 46,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        disabled: _resolving ||
-                            (result == null && _selectedPostIds.isEmpty),
-                        onPressed:
-                            result == null ? _submit : _openDownloadManager,
-                      ),
-                    ],
+                  final retryButton = RoundIconTextButton(
+                    key: const Key('batch-download-retry'),
+                    text: appLocalizations.retry,
+                    onPressed: _submit,
+                    height: 46,
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                  );
+                  final primaryButton = RoundIconTextButton(
+                    key: const Key('batch-download-primary'),
+                    text: result == null
+                        ? appLocalizations.download
+                        : appLocalizations.downloadManagement,
+                    icon: ChewieIcon(
+                      LoftifyIcons.download,
+                      size: 17,
+                      color: Colors.white,
+                    ),
+                    background: scheme.primary,
+                    height: 46,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    disabled: _resolving ||
+                        (result == null && _selectedPostIds.isEmpty),
+                    onPressed: result == null ? _submit : _openDownloadManager,
                   );
                   if (compact) {
                     return Column(
@@ -341,10 +339,24 @@ class _BatchDownloadScreenState extends State<BatchDownloadScreen> {
                       children: [
                         status,
                         const SizedBox(height: 8),
-                        Align(alignment: Alignment.centerRight, child: actions),
+                        if (result != null) ...[
+                          retryButton,
+                          const SizedBox(height: 8),
+                        ],
+                        primaryButton,
                       ],
                     );
                   }
+                  final actions = Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (result != null) ...[
+                        retryButton,
+                        const SizedBox(width: 8),
+                      ],
+                      primaryButton,
+                    ],
+                  );
                   return Row(
                     children: [
                       Expanded(child: status),

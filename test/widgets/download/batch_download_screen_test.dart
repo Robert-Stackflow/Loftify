@@ -80,8 +80,12 @@ GeneralPostItem _item(int id) => GeneralPostItem(
       bigAvaImg: '',
     );
 
-Widget _host(Widget child) => MaterialApp(
-      locale: const Locale('zh'),
+Widget _host(
+  Widget child, {
+  Locale locale = const Locale('zh'),
+}) =>
+    MaterialApp(
+      locale: locale,
       theme: ChewieThemeColorData.defaultLightThemes.first.toThemeData(),
       navigatorKey: chewieProvider.globalNavigatorKey,
       localizationsDelegates: const [
@@ -171,6 +175,58 @@ void main() {
     expect(find.textContaining('已加入 2 项'), findsOneWidget);
     expect(find.text('下载管理'), findsOneWidget);
     expect(find.text('重试'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('batch download actions reflow on narrow large-text screens',
+      (tester) async {
+    tester.view.physicalSize = const Size(280, 480);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final manager = _FakeManager();
+
+    await tester.pumpWidget(
+      _host(
+        MediaQuery(
+          data: const MediaQueryData(
+            size: Size(280, 480),
+            textScaler: TextScaler.linear(2),
+          ),
+          child: BatchDownloadScreen(
+            sourceTitle: 'A very long favorite folder title',
+            source: const DownloadSourceDescriptor(
+              type: DownloadSourceType.favoriteFolder,
+              sourceId: 'large-text',
+              title: 'A very long favorite folder title',
+            ),
+            initialItems: <GeneralPostItem>[_item(1), _item(2)],
+            resolver: _FakeResolver(),
+            manager: manager,
+          ),
+        ),
+        locale: const Locale('en'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final selectAll = tester.widget<CheckboxItem>(find.byType(CheckboxItem));
+    await selectAll.onTap?.call();
+    await tester.pump();
+    await tester.tap(find.text('Download').last);
+    await tester.pumpAndSettle();
+
+    expect(manager.requests, hasLength(2));
+    expect(find.text('Download Manager'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
+    expect(
+      tester.getRect(find.byKey(const Key('batch-download-retry'))).right,
+      lessThanOrEqualTo(280),
+    );
+    expect(
+      tester.getRect(find.byKey(const Key('batch-download-primary'))).right,
+      lessThanOrEqualTo(280),
+    );
     expect(tester.takeException(), isNull);
   });
 }
