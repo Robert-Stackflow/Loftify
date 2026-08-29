@@ -395,6 +395,10 @@ void main() {
 
     expect(find.byType(LottieBuilder), findsOneWidget);
     expect(find.bySemanticsLabel('Retrying'), findsOneWidget);
+    expect(stateKey.currentState!.retryAttempts, 1);
+    await tester.tapAt(tester.getCenter(find.text('Try again')));
+    await tester.pump();
+    expect(stateKey.currentState!.retryAttempts, 1);
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byType(LottieBuilder), findsOneWidget);
@@ -552,6 +556,7 @@ class _AsyncStateHarness extends StatefulWidget {
 class _AsyncStateHarnessState extends State<_AsyncStateHarness> {
   LoftifyStateVisual _visual = LoftifyStateVisual.loading;
   Completer<void>? _retry;
+  int retryAttempts = 0;
 
   void showError() {
     setState(() => _visual = LoftifyStateVisual.error);
@@ -562,6 +567,7 @@ class _AsyncStateHarnessState extends State<_AsyncStateHarness> {
   }
 
   void _retryLoading() {
+    retryAttempts++;
     setState(() => _visual = LoftifyStateVisual.loading);
     final retry = _retry = Completer<void>();
     retry.future.then((_) {

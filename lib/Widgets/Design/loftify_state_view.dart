@@ -97,6 +97,16 @@ class LoftifyStateView extends StatelessWidget {
           duration: reduceMotion ? Duration.zero : design.motion.state,
           switchInCurve: design.motion.enterCurve,
           switchOutCurve: design.motion.exitCurve,
+          layoutBuilder: (currentChild, previousChildren) {
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                for (final child in previousChildren)
+                  IgnorePointer(child: child),
+                if (currentChild != null) currentChild,
+              ],
+            );
+          },
           child: Column(
             key: ValueKey(visual),
             mainAxisSize: MainAxisSize.min,
