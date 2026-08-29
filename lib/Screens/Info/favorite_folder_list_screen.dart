@@ -5,7 +5,7 @@ import 'package:loftify/Models/favorites_response.dart';
 import 'package:loftify/Screens/Info/favorite_folder_detail_screen.dart';
 
 import '../../Utils/utils.dart';
-import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Favorite/favorite_folder_card.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
@@ -116,133 +116,80 @@ class _FavoriteFolderListScreenState
   }
 
   Widget _buildFolderItem(BuildContext context, FavoriteFolder item) {
-    return ClickableGestureDetector(
+    return LoftifyFavoriteFolderCard(
+      title: item.name ?? "",
+      folderIdLabel: appLocalizations.folderId(item.id.toString()),
+      postCountLabel: "${item.postCount}${appLocalizations.chapter}",
+      editLabel: appLocalizations.edit,
+      deleteLabel: appLocalizations.delete,
       onTap: () {
         RouteUtil.pushPanelCupertinoRoute(
           context,
           FavoriteFolderDetailScreen(favoriteFolderId: item.id ?? 0),
         );
       },
-      child: Container(
-        color: Colors.transparent,
-        child: Row(
-          children: <Widget>[
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(
-                    color: Theme.of(context).dividerColor, width: 0.5),
-                borderRadius: BorderRadius.circular(10),
-                color: Colors.transparent,
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: SizedBox(
-                  height: 80,
-                  width: 80,
-                  child: ChewieItemBuilder.buildCachedImage(
-                    context: context,
-                    fit: BoxFit.cover,
-                    showLoading: false,
-                    imageUrl: Utils.removeWatermark(item.coverUrl ?? ""),
-                  ),
-                ),
-              ),
-            ),
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.only(left: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  mainAxisSize: MainAxisSize.max,
-                  children: <Widget>[
-                    ItemBuilder.buildCopyable(
-                      context,
-                      child: Text(
-                        item.name ?? "",
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      text: item.name ?? "",
-                      toastText: appLocalizations.haveCopiedFolderName,
-                    ),
-                    const SizedBox(height: 10),
-                    ItemBuilder.buildCopyable(context,
-                        child: Text(
-                          appLocalizations.folderId(item.id.toString()),
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
-                        text: item.id.toString(),
-                        toastText: appLocalizations.haveCopiedFolderID),
-                    const SizedBox(height: 10),
-                    Text(
-                      "${item.postCount}${appLocalizations.chapter}",
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            ChewieIconButton(
-              icon: LoftifyIcons.edit,
-              tooltip: appLocalizations.edit,
-              onPressed: () {
-                BottomSheetBuilder.showBottomSheet(
-                  context,
-                  (sheetContext) => InputBottomSheet(
-                    title: appLocalizations.editFolderTitle,
-                    hint: appLocalizations.inputFolderTitle,
-                    text: item.name ?? "",
-                    onConfirm: (text) {
-                      var tmp = item;
-                      tmp.name = text;
-                      UserApi.editFolder(folder: tmp).then((value) {
-                        if (value['code'] == 0) {
-                          IToast.showTop(appLocalizations.editSuccess);
-                          item.name = text;
-                          setState(() {});
-                        } else {
-                          IToast.showTop(value['msg']);
-                        }
-                      });
-                    },
-                  ),
-                  preferMinWidth: 400,
-                  responsive: true,
-                );
-              },
-            ),
-            if (item.isDefault != 1)
-              ChewieIconButton(
-                icon: LoftifyIcons.delete,
-                tooltip: appLocalizations.delete,
-                foregroundColor: Theme.of(context).colorScheme.error,
-                onPressed: () {
-                  DialogBuilder.showConfirmDialog(
-                    context,
-                    title: appLocalizations.deleteFolder,
-                    message: appLocalizations
-                        .deleteFolderMessage(item.name.toString()),
-                    messageTextAlign: TextAlign.center,
-                    onTapConfirm: () async {
-                      UserApi.deleteFolder(folderId: item.id ?? 0)
-                          .then((value) {
-                        if (value['code'] == 0) {
-                          IToast.showTop(appLocalizations.deleteSuccess);
-                          _refreshController.callRefresh();
-                        } else {
-                          IToast.showTop(value['msg']);
-                        }
-                      });
-                    },
-                  );
-                },
-              ),
-          ],
-        ),
+      onCopyTitle: () => ChewieUtils.copy(
+        context,
+        item.name ?? "",
+        toastText: appLocalizations.haveCopiedFolderName,
       ),
+      onCopyFolderId: () => ChewieUtils.copy(
+        context,
+        item.id.toString(),
+        toastText: appLocalizations.haveCopiedFolderID,
+      ),
+      cover: ChewieItemBuilder.buildCachedImage(
+        context: context,
+        fit: BoxFit.cover,
+        showLoading: false,
+        imageUrl: Utils.removeWatermark(item.coverUrl ?? ""),
+      ),
+      onEdit: () {
+        BottomSheetBuilder.showBottomSheet(
+          context,
+          (sheetContext) => InputBottomSheet(
+            title: appLocalizations.editFolderTitle,
+            hint: appLocalizations.inputFolderTitle,
+            text: item.name ?? "",
+            onConfirm: (text) {
+              var tmp = item;
+              tmp.name = text;
+              UserApi.editFolder(folder: tmp).then((value) {
+                if (value['code'] == 0) {
+                  IToast.showTop(appLocalizations.editSuccess);
+                  item.name = text;
+                  setState(() {});
+                } else {
+                  IToast.showTop(value['msg']);
+                }
+              });
+            },
+          ),
+          preferMinWidth: 400,
+          responsive: true,
+        );
+      },
+      onDelete: item.isDefault == 1
+          ? null
+          : () {
+              DialogBuilder.showConfirmDialog(
+                context,
+                title: appLocalizations.deleteFolder,
+                message:
+                    appLocalizations.deleteFolderMessage(item.name.toString()),
+                messageTextAlign: TextAlign.center,
+                onTapConfirm: () async {
+                  UserApi.deleteFolder(folderId: item.id ?? 0).then((value) {
+                    if (value['code'] == 0) {
+                      IToast.showTop(appLocalizations.deleteSuccess);
+                      _refreshController.callRefresh();
+                    } else {
+                      IToast.showTop(value['msg']);
+                    }
+                  });
+                },
+              );
+            },
     );
   }
 
