@@ -21,7 +21,10 @@ class ColorUtil {
   }
 
   static Color getContrastColor(Color color) {
-    return color.computeLuminance() > 0.5 ? Colors.black : Colors.white;
+    final luminance = color.computeLuminance();
+    final blackContrast = (luminance + 0.05) / 0.05;
+    final whiteContrast = 1.05 / (luminance + 0.05);
+    return blackContrast >= whiteContrast ? Colors.black : Colors.white;
   }
 
   static isDark(BuildContext context) {

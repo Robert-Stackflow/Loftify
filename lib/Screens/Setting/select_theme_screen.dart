@@ -212,10 +212,10 @@ class _SelectThemeScreenState extends BaseDynamicState<SelectThemeScreen>
                 color: ChewieTheme.iconColor,
               )
             : isSelected
-                ? const ChewieIcon(
+                ? ChewieIcon(
                     LoftifyIcons.check,
                     size: 18,
-                    color: Colors.white,
+                    color: ColorUtil.getContrastColor(color),
                   )
                 : null,
       ),

@@ -164,6 +164,42 @@ void main() {
         );
       }
     });
+
+    test('accent foreground meets AA contrast across built-in themes', () {
+      for (final source in <ChewieThemeColorData>[
+        ...ChewieThemeColorData.defaultLightThemes,
+        ...ChewieThemeColorData.defaultDarkThemes,
+      ]) {
+        final colors = LoftifyTheme.build(
+          source,
+        ).extension<LoftifyDesignThemeData>()!.colors;
+        expect(
+          _contrastRatio(colors.onAccent, colors.accent),
+          greaterThanOrEqualTo(4.5),
+          reason: '${source.id} needs a readable foreground on its accent',
+        );
+      }
+    });
+
+    test('custom bright accents choose a readable foreground', () {
+      for (final accent in <Color>[
+        const Color(0xFF14C2BB),
+        const Color(0xFFFF9800),
+        const Color(0xFF4CAF50),
+      ]) {
+        final source = ChewieThemeColorData.defaultLightThemes.first.copyWith(
+          primaryColor: accent,
+        );
+        final colors = LoftifyTheme.build(
+          source,
+        ).extension<LoftifyDesignThemeData>()!.colors;
+        expect(
+          _contrastRatio(colors.onAccent, colors.accent),
+          greaterThanOrEqualTo(4.5),
+          reason: '$accent needs a readable foreground',
+        );
+      }
+    });
   });
 
   group('LoftifyGridTokens', () {
