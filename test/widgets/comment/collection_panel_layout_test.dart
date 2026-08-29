@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loftify/Widgets/BottomSheet/collection_bottom_sheet.dart';
+import 'package:loftify/Widgets/PostItem/loftify_post_archive_grid.dart';
 
 void main() {
   testWidgets('short large-text collection panel preserves one scroll viewport',
@@ -35,11 +36,11 @@ void main() {
   });
 
   test('collection grid keeps three true square columns on phones', () {
-    final geometry = LoftifyCollectionGridGeometry.calculate(296);
+    final geometry = LoftifyArchiveGridGeometry.calculate(296);
     expect(geometry.columnCount, 3);
     expect(geometry.tileExtent, closeTo((296 - 12) / 3, 0.001));
 
-    final wide = LoftifyCollectionGridGeometry.calculate(1000);
+    final wide = LoftifyArchiveGridGeometry.calculate(1000);
     expect(wide.columnCount, 6);
     expect(wide.tileExtent, closeTo((1000 - 30) / 6, 0.001));
   });
@@ -50,7 +51,8 @@ void main() {
     ).readAsStringSync();
     expect(source, contains('LoftifyCollectionPanelFrame('));
     expect(source, contains('LoftifyPanel('));
-    expect(source, contains('wh: geometry.tileExtent'));
+    expect(source, contains('LoftifyPostArchiveGrid('));
+    expect(source, contains('wh: tileExtent'));
     expect(source, isNot(contains('GridView.extent(')));
     expect(source, isNot(contains('Radius.circular(20)')));
   });

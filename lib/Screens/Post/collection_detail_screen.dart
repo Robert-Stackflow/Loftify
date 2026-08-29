@@ -16,6 +16,7 @@ import '../../Screens/Download/batch_download_screen.dart';
 import '../../Utils/enums.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
 import '../../Widgets/PostItem/general_post_item.dart';
+import '../../Widgets/PostItem/loftify_post_archive_grid.dart';
 import '../../Widgets/PostDetail/detail_bottom_bar.dart';
 import '../../Widgets/Design/loftify_media_overlays.dart';
 import '../../Widgets/loftify_icons.dart';
@@ -80,8 +81,9 @@ class CollectionDetailScreenState
   _fetchData({bool refresh = false, bool showLoading = false}) async {
     if (loading || (!refresh && noMore)) return IndicatorResult.none;
     if (refresh) noMore = false;
-    if (showLoading)
+    if (showLoading) {
       CustomLoadingDialog.showLoading(title: appLocalizations.loading);
+    }
     loading = true;
     int offset = refresh ? 0 : posts.length;
     return await CollectionApi.getCollectionDetail(
@@ -570,22 +572,17 @@ class CollectionDetailScreenState
   }
 
   Widget _buildNineGrid(int startIndex, int count) {
-    return GridView.extent(
-      padding: const EdgeInsets.only(top: 12),
-      shrinkWrap: true,
-      maxCrossAxisExtent: 160,
-      mainAxisSpacing: 6,
-      crossAxisSpacing: 6,
-      physics: const NeverScrollableScrollPhysics(),
-      children: List.generate(count, (index) {
-        int trueIndex = startIndex + index;
+    return LoftifyPostArchiveGrid(
+      itemCount: count,
+      itemBuilder: (context, index, tileExtent) {
+        final trueIndex = startIndex + index;
         return CommonInfoItemBuilder.buildNineGridPostItem(
           context,
           posts[trueIndex],
-          wh: 160,
+          wh: tileExtent,
           activePostId: widget.postId,
         );
-      }),
+      },
     );
   }
 

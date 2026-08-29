@@ -11,6 +11,7 @@ import '../../Screens/Download/batch_download_screen.dart';
 import '../../Utils/enums.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
+import '../../Widgets/PostItem/loftify_post_archive_grid.dart';
 import '../../Widgets/PostItem/general_post_item.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
@@ -245,19 +246,17 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
   }
 
   Widget _buildNineGrid(int startIndex, int count) {
-    return GridView.extent(
+    return LoftifyPostArchiveGrid(
       padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
-      shrinkWrap: true,
-      maxCrossAxisExtent: 160,
-      mainAxisSpacing: 6,
-      crossAxisSpacing: 6,
-      physics: const NeverScrollableScrollPhysics(),
-      children: List.generate(count, (index) {
-        int trueIndex = startIndex + index;
+      itemCount: count,
+      itemBuilder: (context, index, tileExtent) {
+        final trueIndex = startIndex + index;
         return CommonInfoItemBuilder.buildNineGridPostItem(
-            context, _shareList[trueIndex],
-            wh: 160);
-      }),
+          context,
+          _shareList[trueIndex],
+          wh: tileExtent,
+        );
+      },
     );
   }
 

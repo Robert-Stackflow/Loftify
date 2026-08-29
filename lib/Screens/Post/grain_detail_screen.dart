@@ -9,6 +9,7 @@ import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:loftify/Widgets/PostItem/general_post_item_builder.dart';
 import 'package:loftify/Widgets/PostItem/grain_post_item_builder.dart';
+import 'package:loftify/Widgets/PostItem/loftify_post_archive_grid.dart';
 
 import '../../Models/history_response.dart';
 import '../../Models/download_task.dart';
@@ -74,8 +75,9 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
   _fetchData({bool refresh = false, bool showLoading = false}) async {
     if (loading || (!refresh && noMore)) return IndicatorResult.none;
     if (refresh) noMore = false;
-    if (showLoading)
+    if (showLoading) {
       CustomLoadingDialog.showLoading(title: appLocalizations.loading);
+    }
     loading = true;
     int offset = refresh ? 0 : grainDetailData?.offset ?? 0;
     return await GrainApi.getGrainDetail(
@@ -634,22 +636,17 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
   }
 
   Widget _buildNineGrid(int startIndex, int count) {
-    return GridView.extent(
-      padding: const EdgeInsets.only(top: 12),
-      shrinkWrap: true,
-      maxCrossAxisExtent: 160,
-      mainAxisSpacing: 6,
-      crossAxisSpacing: 6,
-      physics: const NeverScrollableScrollPhysics(),
-      children: List.generate(count, (index) {
-        int trueIndex = startIndex + index;
+    return LoftifyPostArchiveGrid(
+      itemCount: count,
+      itemBuilder: (context, index, tileExtent) {
+        final trueIndex = startIndex + index;
         return GrainPostItemBuilder.buildNineGridPostItem(
           context,
           posts[trueIndex],
-          wh: 160,
+          wh: tileExtent,
           sequenceSource: _postSequenceSource,
         );
-      }),
+      },
     );
   }
 

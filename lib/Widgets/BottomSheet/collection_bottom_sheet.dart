@@ -13,6 +13,7 @@ import '../Design/loftify_controls.dart';
 import '../Design/loftify_surfaces.dart';
 import '../Item/item_builder.dart';
 import '../PostItem/common_info_post_item_builder.dart';
+import '../PostItem/loftify_post_archive_grid.dart';
 import '../loftify_icons.dart';
 
 class CollectionBottomSheet extends StatefulWidget {
@@ -384,30 +385,15 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
   }
 
   Widget _buildNineGrid(int startIndex, int count) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final geometry = LoftifyCollectionGridGeometry.calculate(
-          constraints.maxWidth,
-        );
-        return GridView.builder(
-          padding: const EdgeInsets.only(top: 12),
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: count,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: geometry.columnCount,
-            mainAxisSpacing: geometry.spacing,
-            crossAxisSpacing: geometry.spacing,
-          ),
-          itemBuilder: (context, index) {
-            final trueIndex = startIndex + index;
-            return CommonInfoItemBuilder.buildNineGridPostItem(
-              context,
-              posts[trueIndex],
-              wh: geometry.tileExtent,
-              activePostId: widget.postId,
-            );
-          },
+    return LoftifyPostArchiveGrid(
+      itemCount: count,
+      itemBuilder: (context, index, tileExtent) {
+        final trueIndex = startIndex + index;
+        return CommonInfoItemBuilder.buildNineGridPostItem(
+          context,
+          posts[trueIndex],
+          wh: tileExtent,
+          activePostId: widget.postId,
         );
       },
     );
@@ -441,32 +427,4 @@ class LoftifyCollectionPanelFrame extends StatelessWidget {
       ),
     );
   }
-}
-
-@immutable
-class LoftifyCollectionGridGeometry {
-  const LoftifyCollectionGridGeometry._({
-    required this.columnCount,
-    required this.tileExtent,
-    required this.spacing,
-  });
-
-  factory LoftifyCollectionGridGeometry.calculate(
-    double width, {
-    double spacing = 6,
-  }) {
-    final safeWidth =
-        width.isFinite ? width.clamp(1.0, double.infinity).toDouble() : 1.0;
-    final columns =
-        safeWidth < 600 ? 3 : (safeWidth / 160).floor().clamp(3, 8).toInt();
-    return LoftifyCollectionGridGeometry._(
-      columnCount: columns,
-      spacing: spacing,
-      tileExtent: (safeWidth - spacing * (columns - 1)) / columns,
-    );
-  }
-
-  final int columnCount;
-  final double tileExtent;
-  final double spacing;
 }

@@ -9,6 +9,7 @@ import '../../Models/post_detail_response.dart';
 import '../../Utils/enums.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
+import '../../Widgets/PostItem/loftify_post_archive_grid.dart';
 import '../../l10n/l10n.dart';
 
 class PostScreen extends StatefulWidgetForNested {
@@ -266,19 +267,17 @@ class _PostScreenState extends BaseDynamicState<PostScreen>
   }
 
   Widget _buildNineGrid(int startIndex, int count) {
-    return GridView.extent(
+    return LoftifyPostArchiveGrid(
       padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
-      shrinkWrap: true,
-      maxCrossAxisExtent: 160,
-      mainAxisSpacing: 6,
-      crossAxisSpacing: 6,
-      physics: const NeverScrollableScrollPhysics(),
-      children: List.generate(count, (index) {
-        int trueIndex = startIndex + index;
+      itemCount: count,
+      itemBuilder: (context, index, tileExtent) {
+        final trueIndex = startIndex + index;
         return CommonInfoItemBuilder.buildNineGridPostItem(
-            context, _postList[trueIndex],
-            wh: 160);
-      }),
+          context,
+          _postList[trueIndex],
+          wh: tileExtent,
+        );
+      },
     );
   }
 
