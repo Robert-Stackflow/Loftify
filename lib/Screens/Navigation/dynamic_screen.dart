@@ -96,12 +96,7 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
 
   @override
   List<ScrollController> getScrollControllers() {
-    return [
-      _tagScrollController,
-      _collectionScrollController,
-      _grainScrollController,
-      _followScrollController,
-    ];
+    return [getCurrentController()];
   }
 
   @override
@@ -323,8 +318,14 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
       index,
       _tabLabelList.length,
     );
-    if (safeIndex != _currentTabIndex) {
+    final changed = safeIndex != _currentTabIndex;
+    if (changed) {
       setState(() => _currentTabIndex = safeIndex);
+      _scrollToHideController.show();
+      panelScreenState?.showBottomNavigationBar();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) panelScreenState?.refreshScrollControllers();
+      });
     }
     PersistentTabState.save(
       idKey: HiveUtil.dynamicTabIdKey,

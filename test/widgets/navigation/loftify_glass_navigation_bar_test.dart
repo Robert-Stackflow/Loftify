@@ -635,6 +635,31 @@ void main() {
     expect(mainSource, contains('_sideBar(leftPadding: 8, rightPadding: 8)'));
   });
 
+  test('panel and tab navigation listen only to the active scroll source', () {
+    final panelSource =
+        File('lib/Screens/panel_screen.dart').readAsStringSync();
+    final dynamicSource = File(
+      'lib/Screens/Navigation/dynamic_screen.dart',
+    ).readAsStringSync();
+
+    expect(
+      panelSource,
+      allOf(
+        contains('_keyList[_currentIndex].currentState'),
+        contains('_scrollToHideController.show();'),
+      ),
+    );
+    expect(
+      dynamicSource,
+      allOf(
+        contains('return [getCurrentController()];'),
+        contains('_scrollToHideController.show();'),
+        contains('panelScreenState?.showBottomNavigationBar();'),
+        contains('panelScreenState?.refreshScrollControllers();'),
+      ),
+    );
+  });
+
   test('reduce-transparency preference is persisted and localized', () {
     final hiveSource = File('lib/Utils/hive_util.dart').readAsStringSync();
     final providerSource = File(

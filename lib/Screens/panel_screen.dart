@@ -175,6 +175,7 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
 
   @override
   void jumpToPage(int index) {
+    _scrollToHideController.show();
     if (_currentIndex == index) {
       BottomNavgationMixin? mixin =
           _keyList[_currentIndex].currentState is BottomNavgationMixin?
@@ -342,14 +343,12 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
 
   @override
   List<ScrollController> getScrollControllers() {
-    List<ScrollController> res = [];
-    for (var page in _pageList) {
-      var state = _keyList[_pageList.indexOf(page)].currentState;
-      if (state is ScrollToHideMixin) {
-        res.addAll((state as ScrollToHideMixin).getScrollControllers());
-      }
+    if (_currentIndex < 0 || _currentIndex >= _keyList.length) {
+      return const [];
     }
-    return res;
+    final state = _keyList[_currentIndex].currentState;
+    if (state is! ScrollToHideMixin) return const [];
+    return (state as ScrollToHideMixin).getScrollControllers();
   }
 
   @override

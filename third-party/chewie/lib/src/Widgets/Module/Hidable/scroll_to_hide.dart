@@ -118,6 +118,7 @@ class ScrollToHideState extends State<ScrollToHide>
     with SingleTickerProviderStateMixin {
   bool isShown = true;
   late final AnimationController _visibilityController;
+  final Map<ScrollController, VoidCallback> _controllerListeners = {};
 
   List<ScrollController> get _allScrollControllers => [
         if (widget.scrollController != null) widget.scrollController!,
@@ -132,18 +133,14 @@ class ScrollToHideState extends State<ScrollToHide>
       duration: widget.duration,
       value: 1,
     );
-    for (final controller in _allScrollControllers) {
-      controller.addListener(listen);
-    }
+    _replaceScrollControllers(_allScrollControllers);
     widget.controller?.doShow = show;
     widget.controller?.doHide = hide;
   }
 
   @override
   void dispose() {
-    for (final controller in _allScrollControllers) {
-      controller.removeListener(listen);
-    }
+    _replaceScrollControllers(const []);
     if (widget.controller?.doShow == show) {
       widget.controller?.doShow = null;
     }
@@ -168,18 +165,8 @@ class ScrollToHideState extends State<ScrollToHide>
     if (oldWidget.duration != widget.duration) {
       _visibilityController.duration = widget.duration;
     }
-    final oldControllers = _controllersFor(oldWidget);
     final newControllers = _controllersFor(widget);
-    for (final controller in oldControllers) {
-      if (!newControllers.contains(controller)) {
-        controller.removeListener(listen);
-      }
-    }
-    for (final controller in newControllers) {
-      if (!oldControllers.contains(controller)) {
-        controller.addListener(listen);
-      }
-    }
+    final controllersChanged = _replaceScrollControllers(newControllers);
     if (oldWidget.controller != widget.controller) {
       if (oldWidget.controller?.doShow == show) {
         oldWidget.controller?.doShow = null;
@@ -191,12 +178,37 @@ class ScrollToHideState extends State<ScrollToHide>
       widget.controller?.doHide = hide;
     }
     if (oldWidget.enabled && !widget.enabled) show();
+    if (controllersChanged) show();
   }
 
   List<ScrollController> _controllersFor(ScrollToHide target) => [
         if (target.scrollController != null) target.scrollController!,
         ...target.scrollControllers,
       ];
+
+  bool _replaceScrollControllers(List<ScrollController> controllers) {
+    final uniqueControllers = <ScrollController>[];
+    for (final controller in controllers) {
+      if (!uniqueControllers.contains(controller)) {
+        uniqueControllers.add(controller);
+      }
+    }
+
+    var changed = false;
+    for (final controller in _controllerListeners.keys.toList()) {
+      if (uniqueControllers.contains(controller)) continue;
+      controller.removeListener(_controllerListeners.remove(controller)!);
+      changed = true;
+    }
+    for (final controller in uniqueControllers) {
+      if (_controllerListeners.containsKey(controller)) continue;
+      void listener() => _handleScroll(controller);
+      _controllerListeners[controller] = listener;
+      controller.addListener(listener);
+      changed = true;
+    }
+    return changed;
+  }
 
   bool get _reduceMotion {
     final mediaQuery = MediaQuery.maybeOf(context);
@@ -274,24 +286,23 @@ class ScrollToHideState extends State<ScrollToHide>
     );
   }
 
-  void listen() {
-    if (!widget.enabled) return;
-    for (final controller in _allScrollControllers) {
-      if (!controller.hasClients) continue;
-      final position = controller.position;
-      if (position.pixels <= position.minScrollExtent + 0.5) {
-        show();
-        return;
-      }
-      final direction = position.userScrollDirection;
-      if (direction == ScrollDirection.forward) {
-        show();
-        return;
-      }
-      if (direction == ScrollDirection.reverse) {
-        hide();
-        return;
-      }
+  void _handleScroll(ScrollController controller) {
+    if (!widget.enabled || !controller.hasClients) return;
+    final positions = controller.positions.toList(growable: false);
+    if (positions.isEmpty) return;
+    final position = positions.lastWhere(
+      (position) => position.userScrollDirection != ScrollDirection.idle,
+      orElse: () => positions.last,
+    );
+    if (position.pixels <= position.minScrollExtent + 0.5) {
+      show();
+      return;
+    }
+    final direction = position.userScrollDirection;
+    if (direction == ScrollDirection.forward) {
+      show();
+    } else if (direction == ScrollDirection.reverse) {
+      hide();
     }
   }
 }
