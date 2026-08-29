@@ -7,9 +7,11 @@ import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Screens/Post/collection_detail_screen.dart';
 
 import '../../Models/history_response.dart';
+import '../../Theme/loftify_design_theme.dart';
 import '../../l10n/l10n.dart';
+import '../Design/loftify_controls.dart';
+import '../Design/loftify_surfaces.dart';
 import '../Item/item_builder.dart';
-import '../Item/loftify_item_builder.dart';
 import '../PostItem/common_info_post_item_builder.dart';
 import '../loftify_icons.dart';
 
@@ -59,7 +61,7 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
     super.dispose();
   }
 
-  _fetchData({
+  Future<IndicatorResult> _fetchData({
     int upDown = -1,
     int startPostId = 0,
     bool showLoading = false,
@@ -69,8 +71,9 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
         (upDown == 1 && bottomNoMore)) {
       return IndicatorResult.none;
     }
-    if (showLoading)
+    if (showLoading) {
       CustomLoadingDialog.showLoading(title: appLocalizations.loading);
+    }
     loading = true;
     return await CollectionApi.getCollection(
       postId: widget.postId,
@@ -152,7 +155,7 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
     });
   }
 
-  _onRefresh({
+  Future<IndicatorResult> _onRefresh({
     bool showLoading = false,
   }) async {
     if (!isInited) {
@@ -171,43 +174,51 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
     }
   }
 
-  _onLoad() async {
+  Future<IndicatorResult> _onLoad() async {
     return await _fetchData(
         upDown: 1, startPostId: posts.length > 1 ? posts.last.post!.id : 0);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
-        color: ChewieTheme.getBackground(context),
-      ),
-      height: MediaQuery.sizeOf(context).height * 0.8,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Column(
-        children: [
-          _buildHeader(),
-          Expanded(
-            child: EasyRefresh(
-              refreshOnStart: true,
-              controller: _refreshController,
-              onRefresh: _onRefresh,
-              onLoad: bottomNoMore ? null : _onLoad,
-              triggerAxis: Axis.vertical,
-              child: _buildNineGridGroup(),
+    return LoftifyCollectionPanelFrame(
+      body: Padding(
+        padding: EdgeInsets.symmetric(horizontal: context.design.spacing.lg),
+        child: Column(
+          children: [
+            _buildHeader(),
+            Expanded(
+              child: EasyRefresh(
+                refreshOnStart: true,
+                controller: _refreshController,
+                onRefresh: _onRefresh,
+                onLoad: bottomNoMore ? null : _onLoad,
+                triggerAxis: Axis.vertical,
+                child: _buildNineGridGroup(),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  _buildHeader() {
+  Widget _buildHeader() {
+    final design = context.design;
+    final followButton = LoftifyButton(
+      label:
+          subscribed ? appLocalizations.subscribed : appLocalizations.subscribe,
+      variant: subscribed
+          ? LoftifyButtonVariant.secondary
+          : LoftifyButtonVariant.tonal,
+      size: LoftifyButtonSize.compact,
+      onPressed: _toggleSubscribe,
+    );
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+      padding: EdgeInsets.symmetric(
+        vertical: design.spacing.lg,
+        horizontal: design.spacing.xs,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -224,65 +235,67 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
               );
             },
             child: ClickableWrapper(
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: ChewieItemBuilder.buildCachedImage(
-                      context: context,
-                      imageUrl: widget.postCollection.coverUrl,
-                      width: 50,
-                      height: 50,
-                      showLoading: false,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "${widget.postCollection.name}（${widget.postCollection.postCount}篇）",
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.apply(fontWeightDelta: 2),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final compact = constraints.maxWidth < 360 ||
+                      MediaQuery.textScalerOf(context).scale(1) > 1.35;
+                  final summary = Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      ClipRRect(
+                        borderRadius:
+                            BorderRadius.circular(design.radii.control),
+                        child: ChewieItemBuilder.buildCachedImage(
+                          context: context,
+                          imageUrl: widget.postCollection.coverUrl,
+                          width: 50,
+                          height: 50,
+                          showLoading: false,
+                          fit: BoxFit.cover,
                         ),
-                        if (widget.postCollection.description.isNotEmpty)
-                          Text(
-                            widget.postCollection.description,
-                            style: Theme.of(context).textTheme.labelMedium,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                      ),
+                      SizedBox(width: design.spacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "${widget.postCollection.name}（${widget.postCollection.postCount}篇）",
+                              style: design.typography.sectionTitle,
+                              maxLines: compact ? 2 : 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (widget.postCollection.description.isNotEmpty)
+                              Text(
+                                widget.postCollection.description,
+                                style: design.typography.metadata.copyWith(
+                                  color: design.colors.textSecondary,
+                                ),
+                                maxLines: compact ? 2 : 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (!compact) ...[
+                        SizedBox(width: design.spacing.md),
+                        followButton,
                       ],
-                    ),
-                  ),
-                  SizedBox(width: subscribed ? 8 : 20),
-                  LoftifyItemBuilder.buildFramedDoubleButton(
-                      context: context,
-                      isFollowed: subscribed,
-                      positiveText: appLocalizations.subscribed,
-                      negtiveText: appLocalizations.subscribe,
-                      onTap: () {
-                        HapticFeedback.mediumImpact();
-                        CollectionApi.subscribeOrUnSubscribe(
-                          collectionId: widget.collectionId,
-                          isSubscribe: !subscribed,
-                        ).then((value) {
-                          if (value['meta']['status'] != 200) {
-                            IToast.showTop(
-                                value['meta']['desc'] ?? value['meta']['msg']);
-                          } else {
-                            subscribed = !subscribed;
-                            setState(() {});
-                          }
-                        });
-                      }),
-                ],
+                    ],
+                  );
+                  if (!compact) return summary;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      summary,
+                      SizedBox(height: design.spacing.md),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: followButton,
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ),
@@ -327,6 +340,20 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
     );
   }
 
+  void _toggleSubscribe() {
+    HapticFeedback.mediumImpact();
+    CollectionApi.subscribeOrUnSubscribe(
+      collectionId: widget.collectionId,
+      isSubscribe: !subscribed,
+    ).then((value) {
+      if (value['meta']['status'] != 200) {
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+      } else if (mounted) {
+        setState(() => subscribed = !subscribed);
+      }
+    });
+  }
+
   Widget _buildNineGridGroup() {
     List<Widget> widgets = [];
     int startIndex = 0;
@@ -357,22 +384,89 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
   }
 
   Widget _buildNineGrid(int startIndex, int count) {
-    return GridView.extent(
-      padding: const EdgeInsets.only(top: 12),
-      shrinkWrap: true,
-      maxCrossAxisExtent: 160,
-      mainAxisSpacing: 6,
-      crossAxisSpacing: 6,
-      physics: const NeverScrollableScrollPhysics(),
-      children: List.generate(count, (index) {
-        int trueIndex = startIndex + index;
-        return CommonInfoItemBuilder.buildNineGridPostItem(
-          context,
-          posts[trueIndex],
-          wh: (MediaQuery.sizeOf(context).width - 22) / 3,
-          activePostId: widget.postId,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final geometry = LoftifyCollectionGridGeometry.calculate(
+          constraints.maxWidth,
         );
-      }),
+        return GridView.builder(
+          padding: const EdgeInsets.only(top: 12),
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: count,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: geometry.columnCount,
+            mainAxisSpacing: geometry.spacing,
+            crossAxisSpacing: geometry.spacing,
+          ),
+          itemBuilder: (context, index) {
+            final trueIndex = startIndex + index;
+            return CommonInfoItemBuilder.buildNineGridPostItem(
+              context,
+              posts[trueIndex],
+              wh: geometry.tileExtent,
+              activePostId: widget.postId,
+            );
+          },
+        );
+      },
     );
   }
+}
+
+class LoftifyCollectionPanelFrame extends StatelessWidget {
+  const LoftifyCollectionPanelFrame({super.key, required this.body});
+
+  final Widget body;
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final visibleHeight = (media.size.height - media.viewInsets.bottom)
+        .clamp(0.0, double.infinity);
+    final compact = media.size.width < 380 ||
+        media.textScaler.scale(1) > 1.35 ||
+        visibleHeight * 0.8 < 420;
+    final panelHeight =
+        (visibleHeight * (compact ? 0.92 : 0.8)).clamp(0.0, 760.0);
+    return SafeArea(
+      top: false,
+      child: SizedBox(
+        key: const ValueKey('loftify-collection-panel'),
+        height: panelHeight,
+        child: LoftifyPanel(
+          expandBody: true,
+          body: body,
+        ),
+      ),
+    );
+  }
+}
+
+@immutable
+class LoftifyCollectionGridGeometry {
+  const LoftifyCollectionGridGeometry._({
+    required this.columnCount,
+    required this.tileExtent,
+    required this.spacing,
+  });
+
+  factory LoftifyCollectionGridGeometry.calculate(
+    double width, {
+    double spacing = 6,
+  }) {
+    final safeWidth =
+        width.isFinite ? width.clamp(1.0, double.infinity).toDouble() : 1.0;
+    final columns =
+        safeWidth < 600 ? 3 : (safeWidth / 160).floor().clamp(3, 8).toInt();
+    return LoftifyCollectionGridGeometry._(
+      columnCount: columns,
+      spacing: spacing,
+      tileExtent: (safeWidth - spacing * (columns - 1)) / columns,
+    );
+  }
+
+  final int columnCount;
+  final double tileExtent;
+  final double spacing;
 }
