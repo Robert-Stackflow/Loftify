@@ -72,25 +72,46 @@ void main() {
   testWidgets('primary follow action remains content-sized and clickable',
       (tester) async {
     var taps = 0;
-    await tester.pumpWidget(
-      _TestApp(
-        width: 320,
-        child: LoftifyProfileAction(
-          label: 'Follow this creator',
-          icon: LoftifyIcons.follow,
-          emphasized: true,
-          onPressed: () => taps++,
+    for (final dark in <bool>[false, true]) {
+      await tester.pumpWidget(
+        _TestApp(
+          width: 320,
+          dark: dark,
+          child: LoftifyProfileAction(
+            label: 'Follow this creator',
+            icon: LoftifyIcons.follow,
+            emphasized: true,
+            onPressed: () => taps++,
+          ),
         ),
-      ),
-    );
-    await tester.pump();
+      );
+      await tester.pump();
 
-    final action = find.byKey(const ValueKey('loftify-profile-action'));
-    expect(tester.getSize(action).height, greaterThanOrEqualTo(48));
-    await tester.tap(find.text('Follow this creator'));
-    await tester.pump();
-    expect(taps, 1);
-    expect(tester.takeException(), isNull);
+      final action = find.byKey(const ValueKey('loftify-profile-action'));
+      expect(tester.getSize(action).height, greaterThanOrEqualTo(48));
+      final design = LoftifyDesignThemeData.of(tester.element(action));
+      final decoration = tester
+          .widget<AnimatedContainer>(
+            find.descendant(
+              of: action,
+              matching: find.byType(AnimatedContainer),
+            ),
+          )
+          .decoration! as BoxDecoration;
+      final effectiveBackground = Color.alphaBlend(
+        decoration.color!,
+        design.colors.page,
+      );
+      final label = tester.widget<Text>(find.text('Follow this creator'));
+      expect(
+        _contrastRatio(label.style!.color!, effectiveBackground),
+        greaterThanOrEqualTo(4.5),
+      );
+      await tester.tap(find.text('Follow this creator'));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+    }
+    expect(taps, 2);
   });
 
   testWidgets('header uses columns on phones and two panes on wide windows',
@@ -152,17 +173,21 @@ class _TestApp extends StatelessWidget {
     required this.child,
     required this.width,
     this.textScaler = TextScaler.noScaling,
+    this.dark = false,
   });
 
   final Widget child;
   final double width;
   final TextScaler textScaler;
+  final bool dark;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: LoftifyTheme.build(
-        ChewieThemeColorData.defaultLightThemes.first,
+        dark
+            ? ChewieThemeColorData.defaultDarkThemes.first
+            : ChewieThemeColorData.defaultLightThemes.first,
       ),
       home: MediaQuery(
         data: MediaQueryData(
@@ -180,4 +205,16 @@ class _TestApp extends StatelessWidget {
       ),
     );
   }
+}
+
+double _contrastRatio(Color foreground, Color background) {
+  final foregroundLuminance = foreground.computeLuminance();
+  final backgroundLuminance = background.computeLuminance();
+  final lighter = foregroundLuminance > backgroundLuminance
+      ? foregroundLuminance
+      : backgroundLuminance;
+  final darker = foregroundLuminance > backgroundLuminance
+      ? backgroundLuminance
+      : foregroundLuminance;
+  return (lighter + 0.05) / (darker + 0.05);
 }

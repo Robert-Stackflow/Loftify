@@ -54,7 +54,7 @@ class LoftifyCard extends StatelessWidget {
     final enabled = status != LoftifySurfaceStatus.disabled;
     final interactive = enabled && (onTap != null || onLongPress != null);
     final stateColor = switch (status) {
-      LoftifySurfaceStatus.selected => colors.accent,
+      LoftifySurfaceStatus.selected => colors.accentForeground,
       LoftifySurfaceStatus.success => colors.success,
       LoftifySurfaceStatus.warning => colors.warning,
       LoftifySurfaceStatus.error => colors.danger,
@@ -190,7 +190,8 @@ class LoftifyMenuItem extends StatelessWidget {
       LoftifyMenuStatus.success => colors.success,
       LoftifyMenuStatus.warning => colors.warning,
       LoftifyMenuStatus.danger => colors.danger,
-      LoftifyMenuStatus.normal => selected ? colors.accent : colors.textPrimary,
+      LoftifyMenuStatus.normal =>
+        selected ? colors.accentForeground : colors.textPrimary,
     };
 
     return Semantics(
@@ -295,7 +296,9 @@ class LoftifyMenuItem extends StatelessWidget {
                           Icon(
                             selected ? LoftifyIcons.check : LoftifyIcons.next,
                             size: design.icons.small,
-                            color: selected ? colors.accent : colors.textMuted,
+                            color: selected
+                                ? colors.accentForeground
+                                : colors.textMuted,
                           ),
                     ],
                   ],

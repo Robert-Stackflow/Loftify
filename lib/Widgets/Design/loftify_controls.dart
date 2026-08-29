@@ -315,7 +315,7 @@ class _LoftifyTextFieldState extends State<LoftifyTextField> {
     };
     final borderColor = stateColor ??
         (focused
-            ? colors.accent
+            ? colors.accentForeground
             : _hovered
                 ? colors.outlineStrong
                 : colors.outline);
@@ -481,7 +481,7 @@ class LoftifyTag extends StatelessWidget {
             : colors.textMuted;
     final background = selected ? colors.accentContainer : colors.surface;
     final borderColor = selected
-        ? colors.accent
+        ? colors.accentForeground
         : highContrast
             ? colors.outlineStrong
             : colors.outline;

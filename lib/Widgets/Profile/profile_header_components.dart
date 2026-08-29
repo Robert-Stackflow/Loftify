@@ -297,6 +297,11 @@ class LoftifyProfileAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final design = context.design;
+    final emphasizedForeground = LoftifyTheme.readableForegroundColor(
+      design.colors.accent,
+      backgrounds: const [Colors.white],
+      brightness: Brightness.light,
+    );
     final background = danger
         ? design.colors.danger.withValues(alpha: 0.2)
         : emphasized
@@ -305,7 +310,7 @@ class LoftifyProfileAction extends StatelessWidget {
     final foreground = danger
         ? Colors.white
         : emphasized
-            ? design.colors.accent
+            ? emphasizedForeground
             : Colors.white;
     return LoftifyCard(
       key: const ValueKey('loftify-profile-action'),

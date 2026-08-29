@@ -110,7 +110,7 @@ class DressPreviewCard extends StatelessWidget {
                   Icon(
                     LoftifyIcons.next,
                     size: design.icons.small,
-                    color: design.colors.accent,
+                    color: design.colors.accentForeground,
                   ),
                 ],
               ],

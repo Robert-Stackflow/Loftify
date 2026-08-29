@@ -27,6 +27,7 @@ class LoftifyColorTokens {
     required this.outline,
     required this.outlineStrong,
     required this.accent,
+    required this.accentForeground,
     required this.onAccent,
     required this.accentContainer,
     required this.onAccentContainer,
@@ -46,6 +47,7 @@ class LoftifyColorTokens {
   final Color outline;
   final Color outlineStrong;
   final Color accent;
+  final Color accentForeground;
   final Color onAccent;
   final Color accentContainer;
   final Color onAccentContainer;
@@ -65,6 +67,7 @@ class LoftifyColorTokens {
     Color? outline,
     Color? outlineStrong,
     Color? accent,
+    Color? accentForeground,
     Color? onAccent,
     Color? accentContainer,
     Color? onAccentContainer,
@@ -84,6 +87,7 @@ class LoftifyColorTokens {
       outline: outline ?? this.outline,
       outlineStrong: outlineStrong ?? this.outlineStrong,
       accent: accent ?? this.accent,
+      accentForeground: accentForeground ?? this.accentForeground,
       onAccent: onAccent ?? this.onAccent,
       accentContainer: accentContainer ?? this.accentContainer,
       onAccentContainer: onAccentContainer ?? this.onAccentContainer,
@@ -110,6 +114,7 @@ class LoftifyColorTokens {
       outline: Color.lerp(a.outline, b.outline, t)!,
       outlineStrong: Color.lerp(a.outlineStrong, b.outlineStrong, t)!,
       accent: Color.lerp(a.accent, b.accent, t)!,
+      accentForeground: Color.lerp(a.accentForeground, b.accentForeground, t)!,
       onAccent: Color.lerp(a.onAccent, b.onAccent, t)!,
       accentContainer: Color.lerp(
         a.accentContainer,
@@ -685,6 +690,19 @@ class LoftifyDesignThemeData extends ThemeExtension<LoftifyDesignThemeData> {
 /// Builds the app ThemeData and keeps legacy Chewie colors and custom accent
 /// themes as the authoritative user preference source.
 abstract final class LoftifyTheme {
+  static Color readableForegroundColor(
+    Color source, {
+    required List<Color> backgrounds,
+    required Brightness brightness,
+  }) {
+    assert(backgrounds.isNotEmpty);
+    return _readableForegroundColor(
+      source,
+      backgrounds: backgrounds,
+      isDark: brightness == Brightness.dark,
+    );
+  }
+
   static ThemeData build(ChewieThemeColorData source) {
     final base = source.toThemeData();
     final isDark = source.isDarkMode;
@@ -766,7 +784,7 @@ abstract final class LoftifyTheme {
       bottomNavigationBarTheme: base.bottomNavigationBarTheme.copyWith(
         backgroundColor: colors.page,
         elevation: 0,
-        selectedItemColor: colors.accent,
+        selectedItemColor: colors.accentForeground,
         unselectedItemColor: colors.textSecondary,
       ),
       navigationBarTheme: base.navigationBarTheme.copyWith(
@@ -801,7 +819,7 @@ abstract final class LoftifyTheme {
         enabledBorder: outline,
         focusedBorder: outline.copyWith(
           borderSide: BorderSide(
-            color: colors.accent,
+            color: colors.accentForeground,
             width: borders.focus,
           ),
         ),
@@ -832,7 +850,7 @@ abstract final class LoftifyTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: Size(0, icons.minimumTapTarget),
-          foregroundColor: colors.accent,
+          foregroundColor: colors.accentForeground,
           side: BorderSide(color: colors.outlineStrong),
           textStyle: typography.label,
           shape: RoundedRectangleBorder(
@@ -843,7 +861,7 @@ abstract final class LoftifyTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           minimumSize: Size(0, icons.minimumTapTarget),
-          foregroundColor: colors.accent,
+          foregroundColor: colors.accentForeground,
           textStyle: typography.label,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radii.control),
@@ -948,6 +966,11 @@ abstract final class LoftifyTheme {
       backgrounds: [page, surface, surfaceRaised, surfaceMuted],
       isDark: isDark,
     );
+    final accentForeground = _readableForegroundColor(
+      accent,
+      backgrounds: [page, surface, surfaceRaised, surfaceMuted],
+      isDark: isDark,
+    );
     final accentContainer = Color.alphaBlend(
       accent.withAlpha(isDark ? 52 : 28),
       surfaceRaised,
@@ -990,6 +1013,7 @@ abstract final class LoftifyTheme {
       outline: isDark ? const Color(0xFF303630) : const Color(0xFFE5E9E6),
       outlineStrong: isDark ? const Color(0xFF485049) : const Color(0xFFCDD4CF),
       accent: accent,
+      accentForeground: accentForeground,
       onAccent: ColorUtil.getContrastColor(accent),
       accentContainer: accentContainer,
       onAccentContainer: onAccentContainer,

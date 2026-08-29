@@ -146,7 +146,7 @@ class LoftifyEntryItem extends StatelessWidget {
         LoftifyEntryVisualState.normal ||
         LoftifyEntryVisualState.selected ||
         LoftifyEntryVisualState.loading =>
-          colors.accent,
+          colors.accentForeground,
       };
 
   Widget _buildLeading(BuildContext context, Color foreground) {

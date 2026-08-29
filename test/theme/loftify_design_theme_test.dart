@@ -55,6 +55,10 @@ void main() {
       final design = theme.extension<LoftifyDesignThemeData>()!;
 
       expect(design.colors.accent, accent);
+      expect(
+        HSLColor.fromColor(design.colors.accentForeground).hue,
+        closeTo(HSLColor.fromColor(accent).hue, 2),
+      );
       expect(theme.colorScheme.primary, accent);
       expect(
         HSLColor.fromColor(design.colors.success).hue,
@@ -224,6 +228,68 @@ void main() {
           reason: '$accent needs a readable foreground',
         );
       }
+    });
+
+    test('accent strokes and labels stay readable on neutral surfaces', () {
+      final sources = <ChewieThemeColorData>[
+        ...ChewieThemeColorData.defaultLightThemes,
+        ...ChewieThemeColorData.defaultDarkThemes,
+        for (final accent in <Color>[
+          const Color(0xFF14C2BB),
+          const Color(0xFFFF9800),
+          const Color(0xFF4CAF50),
+        ])
+          ChewieThemeColorData.defaultLightThemes.first.copyWith(
+            id: 'Custom-$accent',
+            primaryColor: accent,
+          ),
+      ];
+      final failures = <String>[];
+      for (final source in sources) {
+        final colors = LoftifyTheme.build(
+          source,
+        ).extension<LoftifyDesignThemeData>()!.colors;
+        for (final background in <Color>[
+          colors.page,
+          colors.surface,
+          colors.surfaceRaised,
+          colors.surfaceMuted,
+        ]) {
+          final ratio = _contrastRatio(colors.accentForeground, background);
+          if (ratio < 4.5) {
+            failures.add(
+              '${source.id}: ${colors.accentForeground} on $background is '
+              '${ratio.toStringAsFixed(3)}:1',
+            );
+          }
+        }
+      }
+      expect(failures, isEmpty, reason: failures.join('\n'));
+    });
+
+    test('Material interaction themes use the readable accent foreground', () {
+      final theme = LoftifyTheme.build(
+        ChewieThemeColorData.defaultLightThemes.first,
+      );
+      final colors = theme.extension<LoftifyDesignThemeData>()!.colors;
+      final focusedBorder =
+          theme.inputDecorationTheme.focusedBorder! as OutlineInputBorder;
+
+      expect(focusedBorder.borderSide.color, colors.accentForeground);
+      expect(
+        theme.textButtonTheme.style!.foregroundColor!.resolve({}),
+        colors.accentForeground,
+      );
+      expect(
+        theme.outlinedButtonTheme.style!.foregroundColor!.resolve({}),
+        colors.accentForeground,
+      );
+      expect(
+        theme.bottomNavigationBarTheme.selectedItemColor,
+        colors.accentForeground,
+      );
+      expect(theme.filledButtonTheme.style!.backgroundColor!.resolve({}),
+          colors.accent);
     });
 
     test('accent container content meets AA contrast in every theme', () {

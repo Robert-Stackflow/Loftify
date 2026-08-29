@@ -107,6 +107,12 @@ void main() {
         .decoration! as BoxDecoration;
     expect(selectedDecoration.border!.top.width, 2);
     expect(
+      selectedDecoration.border!.top.color,
+      LoftifyDesignThemeData.of(
+        tester.element(find.byKey(const Key('selected-card'))),
+      ).colors.accentForeground,
+    );
+    expect(
       tester
           .widget<AnimatedContainer>(
             find.descendant(

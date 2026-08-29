@@ -207,8 +207,12 @@ void main() {
           .first,
     );
     final decoration = animated.decoration! as BoxDecoration;
+    final colors = LoftifyDesignThemeData.of(
+      tester.element(find.byKey(const Key('tag'))),
+    ).colors;
     expect(animated.duration, Duration.zero);
     expect(decoration.border!.top.width, 2);
+    expect(decoration.border!.top.color, colors.accentForeground);
     expect(tester.takeException(), isNull);
   });
 

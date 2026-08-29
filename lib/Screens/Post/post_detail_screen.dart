@@ -2510,7 +2510,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
             style: TextButton.styleFrom(
               foregroundColor: _postDetailData!.post!.postCollection!.subscribed
                   ? context.design.colors.textSecondary
-                  : context.design.colors.accent,
+                  : context.design.colors.accentForeground,
               textStyle: context.design.typography.label,
               minimumSize: Size(
                 context.design.icons.minimumTapTarget,

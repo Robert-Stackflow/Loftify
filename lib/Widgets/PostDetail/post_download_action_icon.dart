@@ -71,7 +71,7 @@ class PostDownloadActionIcon extends StatelessWidget {
                           value: value,
                           strokeWidth: progressStrokeWidth,
                           strokeCap: StrokeCap.round,
-                          color: design.colors.accent,
+                          color: design.colors.accentForeground,
                           backgroundColor: design.colors.outline.withValues(
                             alpha:
                                 MediaQuery.highContrastOf(context) ? 0.72 : 0.4,
