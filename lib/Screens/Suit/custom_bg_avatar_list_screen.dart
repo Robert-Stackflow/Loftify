@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:loftify/Api/gift_api.dart';
 import 'package:loftify/Models/suit_response.dart';
 import 'package:loftify/Widgets/BottomSheet/custom_bg_avatar_detail_bottom_sheet.dart';
+import 'package:loftify/Widgets/Design/loftify_media_overlays.dart';
 
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Suit/dress_preview_card.dart';
@@ -430,6 +431,14 @@ class CustomBgAvatarListScreenState
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: isHero ? image : IgnorePointer(child: image),
+          ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: const LoftifyTopTextScrim(),
+              ),
+            ),
           ),
           Positioned(
             top: 20,

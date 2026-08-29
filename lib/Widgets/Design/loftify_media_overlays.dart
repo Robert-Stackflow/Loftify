@@ -27,3 +27,31 @@ class LoftifyCoverScrim extends StatelessWidget {
     );
   }
 }
+
+/// Top-edge scrim for clocks, titles and compact controls over media previews.
+///
+/// Unlike [LoftifyCoverScrim], this fades to transparent so the rest of the
+/// artwork remains visually accurate. Content should stay inside the protected
+/// top region represented by [protectedColor].
+class LoftifyTopTextScrim extends StatelessWidget {
+  const LoftifyTopTextScrim({super.key});
+
+  static const topColor = Color.fromRGBO(0, 0, 0, 0.66);
+  static const protectedColor = Color.fromRGBO(0, 0, 0, 0.58);
+  static const bottomColor = Colors.transparent;
+
+  @override
+  Widget build(BuildContext context) {
+    return const DecoratedBox(
+      key: ValueKey('loftify-top-text-scrim'),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [topColor, protectedColor, bottomColor],
+          stops: [0, 0.45, 1],
+        ),
+      ),
+    );
+  }
+}

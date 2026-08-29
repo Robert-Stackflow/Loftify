@@ -26,6 +26,20 @@ void main() {
     );
   });
 
+  test('top text scrim protects white preview content without hiding artwork',
+      () {
+    final protectedBackground = Color.alphaBlend(
+      LoftifyTopTextScrim.protectedColor,
+      Colors.white,
+    );
+
+    expect(
+      _contrastRatio(Colors.white, protectedBackground),
+      greaterThanOrEqualTo(4.5),
+    );
+    expect(LoftifyTopTextScrim.bottomColor.a, 0);
+  });
+
   test('all artwork-backed detail headers use the shared cover scrim', () {
     for (final path in <String>[
       'lib/Screens/Info/user_detail_screen.dart',
@@ -35,6 +49,13 @@ void main() {
       final source = File(path).readAsStringSync();
       expect(source, contains('LoftifyCoverScrim()'), reason: path);
     }
+  });
+
+  test('wallpaper previews protect their white clock with a top scrim', () {
+    final source = File(
+      'lib/Screens/Suit/custom_bg_avatar_list_screen.dart',
+    ).readAsStringSync();
+    expect(source, contains('LoftifyTopTextScrim()'));
   });
 
   testWidgets('translucent media badges clamp weak requested opacity',
