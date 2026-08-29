@@ -272,10 +272,8 @@ class AppProvider with ChangeNotifier {
   }
 
   void refreshSystemLocale() {
-    if (_locale == null) {
-      Intl.defaultLocale = resolveSystemAppLocale().toString();
-      notifyListeners();
-    }
+    Intl.defaultLocale = (_locale ?? resolveSystemAppLocale()).toString();
+    if (_locale == null) notifyListeners();
   }
 
   void refreshSystemTheme() {

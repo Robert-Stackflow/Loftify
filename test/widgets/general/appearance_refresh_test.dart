@@ -77,6 +77,15 @@ void main() {
     expect(notifications, greaterThan(0));
   });
 
+  test('persisted locale refresh keeps intl aligned after cold start', () {
+    appProvider.locale = const Locale('zh', 'TW');
+    Intl.defaultLocale = 'en';
+
+    appProvider.refreshSystemLocale();
+
+    expect(Intl.defaultLocale, 'zh_TW');
+  });
+
   test('theme and font changes notify and produce a fresh root theme',
       () async {
     var notifications = 0;
