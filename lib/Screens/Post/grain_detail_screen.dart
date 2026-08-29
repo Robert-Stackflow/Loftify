@@ -15,6 +15,7 @@ import '../../Models/download_task.dart';
 import '../../Screens/Download/batch_download_screen.dart';
 import '../../Utils/post_sequence_source.dart';
 import '../../Widgets/PostDetail/detail_bottom_bar.dart';
+import '../../Widgets/Design/loftify_media_overlays.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
@@ -570,28 +571,28 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
           title: appLocalizations.postCount,
           count: grainDetailData!.grainInfo.postCount,
           countColor: Colors.white,
-          labelColor: Colors.white.withOpacity(0.6),
+          labelColor: LoftifyCoverScrim.secondaryForeground,
         ),
         ItemBuilder.buildStatisticItem(
           context,
           title: appLocalizations.subscribeCount,
           count: grainDetailData!.grainInfo.subscribedCount,
           countColor: Colors.white,
-          labelColor: Colors.white.withOpacity(0.6),
+          labelColor: LoftifyCoverScrim.secondaryForeground,
         ),
         ItemBuilder.buildStatisticItem(
           context,
           title: appLocalizations.coCreatorCount,
           count: grainDetailData!.grainInfo.joinCount,
           countColor: Colors.white,
-          labelColor: Colors.white.withOpacity(0.6),
+          labelColor: LoftifyCoverScrim.secondaryForeground,
         ),
         ItemBuilder.buildStatisticItem(
           context,
           title: appLocalizations.viewCountLong,
           count: grainDetailData!.grainInfo.viewCount,
           countColor: Colors.white,
-          labelColor: Colors.white.withOpacity(0.6),
+          labelColor: LoftifyCoverScrim.secondaryForeground,
         ),
       ],
     );
@@ -668,19 +669,26 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
 
   Widget _buildBackground({double? height}) {
     String backgroudUrl = grainDetailData!.grainInfo.coverUrl;
-    return Blur(
-      blur: 20,
-      blurColor: Colors.black12,
-      child: ChewieItemBuilder.buildCachedImage(
-        context: context,
-        imageUrl: backgroudUrl,
-        fit: BoxFit.cover,
-        showLoading: false,
-        width: MediaQuery.sizeOf(context).width * 2,
-        height: height ?? MediaQuery.sizeOf(context).height * 0.7,
-        placeholderBackground: Theme.of(context).textTheme.labelSmall?.color,
-        bottomPadding: 50,
-      ),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Blur(
+          blur: 20,
+          blurColor: Colors.black12,
+          child: ChewieItemBuilder.buildCachedImage(
+            context: context,
+            imageUrl: backgroudUrl,
+            fit: BoxFit.cover,
+            showLoading: false,
+            width: MediaQuery.sizeOf(context).width * 2,
+            height: height ?? MediaQuery.sizeOf(context).height * 0.7,
+            placeholderBackground:
+                Theme.of(context).textTheme.labelSmall?.color,
+            bottomPadding: 50,
+          ),
+        ),
+        const LoftifyCoverScrim(),
+      ],
     );
   }
 }

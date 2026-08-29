@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Theme/loftify_design_theme.dart';
+import 'package:loftify/Widgets/Design/loftify_media_overlays.dart';
 import 'package:loftify/Widgets/Profile/profile_header_components.dart';
 import 'package:loftify/Widgets/Profile/profile_overview_card.dart';
 import 'package:loftify/Widgets/loftify_icons.dart';
@@ -77,7 +78,7 @@ void main() {
         child: Stack(
           children: [
             const Positioned.fill(child: ColoredBox(color: Colors.white)),
-            const Positioned.fill(child: LoftifyProfileCoverScrim()),
+            const Positioned.fill(child: LoftifyCoverScrim()),
             Padding(
               padding: const EdgeInsets.all(12),
               child: LoftifyProfileIdentity(
@@ -94,7 +95,7 @@ void main() {
     await tester.pump();
 
     final scrim = tester.widget<DecoratedBox>(
-      find.byKey(const ValueKey('loftify-profile-cover-scrim')),
+      find.byKey(const ValueKey('loftify-cover-scrim')),
     );
     final gradient =
         (scrim.decoration as BoxDecoration).gradient! as LinearGradient;

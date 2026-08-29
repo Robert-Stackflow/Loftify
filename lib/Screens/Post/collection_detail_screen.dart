@@ -17,6 +17,7 @@ import '../../Utils/enums.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
 import '../../Widgets/PostItem/general_post_item.dart';
 import '../../Widgets/PostDetail/detail_bottom_bar.dart';
+import '../../Widgets/Design/loftify_media_overlays.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
@@ -506,28 +507,28 @@ class CollectionDetailScreenState
           title: appLocalizations.postCount,
           count: postCollection!.postCount,
           countColor: Colors.white,
-          labelColor: Colors.white.withOpacity(0.6),
+          labelColor: LoftifyCoverScrim.secondaryForeground,
         ),
         ItemBuilder.buildStatisticItem(
           context,
           title: appLocalizations.subscribeCount,
           count: postCollection!.subscribedCount,
           countColor: Colors.white,
-          labelColor: Colors.white.withOpacity(0.6),
+          labelColor: LoftifyCoverScrim.secondaryForeground,
         ),
         ItemBuilder.buildStatisticItem(
           context,
           title: appLocalizations.totalHotCount,
           count: postCollection!.postCollectionHot,
           countColor: Colors.white,
-          labelColor: Colors.white.withOpacity(0.6),
+          labelColor: LoftifyCoverScrim.secondaryForeground,
         ),
         ItemBuilder.buildStatisticItem(
           context,
           title: appLocalizations.viewCountLong,
           count: postCollection!.viewCount,
           countColor: Colors.white,
-          labelColor: Colors.white.withOpacity(0.6),
+          labelColor: LoftifyCoverScrim.secondaryForeground,
         ),
       ],
     );
@@ -657,19 +658,26 @@ class CollectionDetailScreenState
 
   Widget _buildBackground({double? height}) {
     String backgroudUrl = postCollection!.coverUrl;
-    return Blur(
-      blur: 20,
-      blurColor: Colors.black12,
-      child: ChewieItemBuilder.buildCachedImage(
-        context: context,
-        imageUrl: backgroudUrl,
-        showLoading: false,
-        fit: BoxFit.cover,
-        width: MediaQuery.sizeOf(context).width * 2,
-        height: height ?? MediaQuery.sizeOf(context).height * 0.7,
-        placeholderBackground: Theme.of(context).textTheme.labelSmall?.color,
-        bottomPadding: 50,
-      ),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Blur(
+          blur: 20,
+          blurColor: Colors.black12,
+          child: ChewieItemBuilder.buildCachedImage(
+            context: context,
+            imageUrl: backgroudUrl,
+            showLoading: false,
+            fit: BoxFit.cover,
+            width: MediaQuery.sizeOf(context).width * 2,
+            height: height ?? MediaQuery.sizeOf(context).height * 0.7,
+            placeholderBackground:
+                Theme.of(context).textTheme.labelSmall?.color,
+            bottomPadding: 50,
+          ),
+        ),
+        const LoftifyCoverScrim(),
+      ],
     );
   }
 }

@@ -17,6 +17,7 @@ import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 import 'package:loftify/Widgets/Design/loftify_surfaces.dart';
+import 'package:loftify/Widgets/Design/loftify_media_overlays.dart';
 import 'package:loftify/Widgets/Profile/profile_overview_card.dart';
 import 'package:loftify/Widgets/Profile/profile_header_components.dart';
 import 'package:loftify/Widgets/loftify_icons.dart';
@@ -1215,7 +1216,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
             ),
           ),
         ),
-        const LoftifyProfileCoverScrim(),
+        const LoftifyCoverScrim(),
       ],
     );
   }
