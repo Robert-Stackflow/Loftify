@@ -112,7 +112,6 @@ void main() {
         title: 'Parent collection',
       ),
     );
-
     await tester.pumpWidget(
       _host(DownloadManagementScreen(manager: manager)),
     );
@@ -169,7 +168,6 @@ void main() {
         title: 'Parent collection',
       ),
     );
-
     await tester.pumpWidget(
       _host(
         DownloadGroupDetailScreen(
@@ -262,6 +260,116 @@ void main() {
     );
     expect(
       tester.getRect(find.byKey(const ValueKey('download-task-actions'))).right,
+      lessThanOrEqualTo(280),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('download group details reflow on narrow large-text screens',
+      (tester) async {
+    tester.view.physicalSize = const Size(280, 480);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final manager = DownloadTaskManager(
+      store: _MemoryStore(),
+      executor: _PendingExecutor(),
+      maxConcurrentTasks: 1,
+    );
+    await manager.initialize();
+    final result = await manager.enqueueBatch(
+      const <DownloadRequest>[
+        DownloadRequest(
+          url: 'https://example.com/detail-large-one.jpg',
+          fileName: 'detail-large-one.jpg',
+          mediaType: DownloadMediaType.image,
+          title: 'A very long first resource download title',
+        ),
+        DownloadRequest(
+          url: 'https://example.com/detail-large-two.jpg',
+          fileName: 'detail-large-two.jpg',
+          mediaType: DownloadMediaType.image,
+          title: 'A very long second resource download title',
+        ),
+      ],
+      source: const DownloadSourceDescriptor(
+        type: DownloadSourceType.favoriteFolder,
+        sourceId: 'detail-large-text',
+        title: 'A very long source title for download details',
+      ),
+    );
+    final secondTaskId = result.tasks.last.id;
+
+    await tester.pumpWidget(
+      _host(
+        MediaQuery(
+          data: const MediaQueryData(
+            size: Size(280, 480),
+            textScaler: TextScaler.linear(2),
+          ),
+          child: DownloadGroupDetailScreen(
+            groupId: result.group!.id,
+            manager: manager,
+          ),
+        ),
+        locale: const Locale('en'),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('A very long source title for download details'),
+        findsOneWidget);
+    final detailScrollable = find.descendant(
+      of: find.byKey(const Key('download-group-detail-list')),
+      matching: find.byType(Scrollable),
+    );
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('download-group-overview-status')),
+      120,
+      scrollable: detailScrollable,
+    );
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('download-group-cancel')),
+      120,
+      scrollable: detailScrollable,
+    );
+    expect(
+      tester
+          .getRect(find.byKey(const Key('download-group-overview-status')))
+          .right,
+      lessThanOrEqualTo(280),
+    );
+    expect(
+      tester.getRect(find.byKey(const Key('download-group-cancel'))).right,
+      lessThanOrEqualTo(280),
+    );
+    await tester.scrollUntilVisible(
+      find.text('A very long second resource download title'),
+      180,
+      scrollable: detailScrollable,
+    );
+    await tester.scrollUntilVisible(
+      find.byKey(ValueKey('download-resource-actions-$secondTaskId')),
+      100,
+      scrollable: detailScrollable,
+    );
+    await tester.pump();
+
+    expect(find.text('A very long second resource download title'),
+        findsOneWidget);
+    expect(
+      tester
+          .getRect(
+            find.byKey(ValueKey('download-resource-status-$secondTaskId')),
+          )
+          .right,
+      lessThanOrEqualTo(280),
+    );
+    expect(
+      tester
+          .getRect(
+            find.byKey(ValueKey('download-resource-actions-$secondTaskId')),
+          )
+          .right,
       lessThanOrEqualTo(280),
     );
     expect(tester.takeException(), isNull);

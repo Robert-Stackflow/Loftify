@@ -263,6 +263,7 @@ class _DownloadGroupOverview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final compact = _useCompactDownloadDetailLayout(context);
     final statusColor = _groupStatusColor(context, snapshot.status);
     final percent = (snapshot.progress * 100).clamp(0, 100).round();
     final hasRunning = snapshot.tasks.any(
@@ -279,35 +280,59 @@ class _DownloadGroupOverview extends StatelessWidget {
           task.status == DownloadTaskStatus.cancelled,
     );
     final hasActive = snapshot.tasks.any((task) => task.isActive);
+    final actions = <Widget>[
+      if (hasRunning)
+        LoftifyButton(
+          key: const Key('download-group-pause'),
+          label: appLocalizations.pauseAllDownloads,
+          icon: LoftifyIcons.pause,
+          size: LoftifyButtonSize.compact,
+          variant: LoftifyButtonVariant.secondary,
+          expand: compact,
+          onPressed: onPause,
+        ),
+      if (hasPaused)
+        LoftifyButton(
+          key: const Key('download-group-resume'),
+          label: appLocalizations.resumeAllDownloads,
+          icon: LoftifyIcons.play,
+          size: LoftifyButtonSize.compact,
+          variant: LoftifyButtonVariant.tonal,
+          expand: compact,
+          onPressed: onResume,
+        ),
+      if (hasFailed)
+        LoftifyButton(
+          key: const Key('download-group-retry'),
+          label: appLocalizations.retryFailedDownloads,
+          icon: LoftifyIcons.retry,
+          size: LoftifyButtonSize.compact,
+          variant: LoftifyButtonVariant.tonal,
+          expand: compact,
+          onPressed: onRetryFailed,
+        ),
+      if (hasActive)
+        LoftifyButton(
+          key: const Key('download-group-cancel'),
+          label: appLocalizations.cancelAllDownloads,
+          icon: LoftifyIcons.close,
+          size: LoftifyButtonSize.compact,
+          variant: LoftifyButtonVariant.danger,
+          expand: compact,
+          onPressed: onCancel,
+        ),
+    ];
 
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              _StatusBadge(
-                text: _groupStatusText(snapshot.status),
-                color: statusColor,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  appLocalizations.downloadGroupProgress(
-                    snapshot.completedCount,
-                    percent,
-                    snapshot.tasks.length,
-                  ),
-                  textAlign: TextAlign.end,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: ChewieTheme.labelSmall.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ],
+          _buildStatusAndProgress(
+            context,
+            statusColor,
+            percent,
+            compact: compact,
           ),
           const SizedBox(height: 12),
           ClipRRect(
@@ -330,53 +355,66 @@ class _DownloadGroupOverview extends StatelessWidget {
               ),
             ),
           ],
-          if (hasRunning || hasPaused || hasFailed || hasActive) ...[
+          if (actions.isNotEmpty) ...[
             const SizedBox(height: 14),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                if (hasRunning)
-                  LoftifyButton(
-                    key: const Key('download-group-pause'),
-                    label: appLocalizations.pauseAllDownloads,
-                    icon: LoftifyIcons.pause,
-                    size: LoftifyButtonSize.compact,
-                    variant: LoftifyButtonVariant.secondary,
-                    onPressed: onPause,
-                  ),
-                if (hasPaused)
-                  LoftifyButton(
-                    key: const Key('download-group-resume'),
-                    label: appLocalizations.resumeAllDownloads,
-                    icon: LoftifyIcons.play,
-                    size: LoftifyButtonSize.compact,
-                    variant: LoftifyButtonVariant.tonal,
-                    onPressed: onResume,
-                  ),
-                if (hasFailed)
-                  LoftifyButton(
-                    key: const Key('download-group-retry'),
-                    label: appLocalizations.retryFailedDownloads,
-                    icon: LoftifyIcons.retry,
-                    size: LoftifyButtonSize.compact,
-                    variant: LoftifyButtonVariant.tonal,
-                    onPressed: onRetryFailed,
-                  ),
-                if (hasActive)
-                  LoftifyButton(
-                    key: const Key('download-group-cancel'),
-                    label: appLocalizations.cancelAllDownloads,
-                    icon: LoftifyIcons.close,
-                    size: LoftifyButtonSize.compact,
-                    variant: LoftifyButtonVariant.danger,
-                    onPressed: onCancel,
-                  ),
-              ],
-            ),
+            compact
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (var index = 0; index < actions.length; index++) ...[
+                        if (index > 0) const SizedBox(height: 8),
+                        actions[index],
+                      ],
+                    ],
+                  )
+                : Wrap(spacing: 8, runSpacing: 8, children: actions),
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildStatusAndProgress(
+    BuildContext context,
+    Color statusColor,
+    int percent, {
+    required bool compact,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    final badge = _StatusBadge(
+      key: const Key('download-group-overview-status'),
+      text: _groupStatusText(snapshot.status),
+      color: statusColor,
+    );
+    final progress = Text(
+      appLocalizations.downloadGroupProgress(
+        snapshot.completedCount,
+        percent,
+        snapshot.tasks.length,
+      ),
+      textAlign: compact ? TextAlign.start : TextAlign.end,
+      maxLines: compact ? 2 : 1,
+      overflow: TextOverflow.ellipsis,
+      style: ChewieTheme.labelSmall.copyWith(
+        color: scheme.onSurfaceVariant,
+      ),
+    );
+    if (compact) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Align(alignment: Alignment.centerLeft, child: badge),
+          const SizedBox(height: 8),
+          progress,
+        ],
+      );
+    }
+    return Row(
+      children: [
+        badge,
+        const SizedBox(width: 10),
+        Expanded(child: progress),
+      ],
     );
   }
 }
@@ -400,6 +438,7 @@ class _DownloadResourceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final compact = _useCompactDownloadDetailLayout(context);
     final statusColor = _taskStatusColor(context, task.status);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -412,28 +451,9 @@ class _DownloadResourceTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        task.title?.trim().isNotEmpty == true
-                            ? task.title!.trim()
-                            : task.fileName,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: ChewieTheme.titleSmall.copyWith(
-                          height: 1.35,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    _StatusBadge(
-                      text: _taskStatusText(task.status),
-                      color: statusColor,
-                    ),
-                  ],
+                _buildTitleAndStatus(
+                  statusColor,
+                  compact: compact,
                 ),
                 const SizedBox(height: 5),
                 Text(
@@ -456,21 +476,9 @@ class _DownloadResourceTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 7),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        _taskProgressText(task),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: ChewieTheme.labelSmall.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    ..._actions(),
-                  ],
+                _buildProgressAndActions(
+                  context,
+                  compact: compact,
                 ),
                 if (task.errorMessage?.trim().isNotEmpty == true) ...[
                   const SizedBox(height: 5),
@@ -489,6 +497,88 @@ class _DownloadResourceTile extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTitleAndStatus(
+    Color statusColor, {
+    required bool compact,
+  }) {
+    final title = Text(
+      task.title?.trim().isNotEmpty == true
+          ? task.title!.trim()
+          : task.fileName,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: ChewieTheme.titleSmall.copyWith(
+        height: 1.35,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+    final badge = _StatusBadge(
+      key: ValueKey('download-resource-status-${task.id}'),
+      text: _taskStatusText(task.status),
+      color: statusColor,
+    );
+    if (compact) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          title,
+          const SizedBox(height: 6),
+          Align(alignment: Alignment.centerLeft, child: badge),
+        ],
+      );
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: title),
+        const SizedBox(width: 8),
+        badge,
+      ],
+    );
+  }
+
+  Widget _buildProgressAndActions(
+    BuildContext context, {
+    required bool compact,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    final progress = Text(
+      _taskProgressText(task),
+      maxLines: compact ? 2 : 1,
+      overflow: TextOverflow.ellipsis,
+      style: ChewieTheme.labelSmall.copyWith(
+        color: scheme.onSurfaceVariant,
+      ),
+    );
+    final actionItems = _actions();
+    final actions = Row(
+      key: ValueKey('download-resource-actions-${task.id}'),
+      mainAxisSize: MainAxisSize.min,
+      children: actionItems,
+    );
+    if (compact) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          progress,
+          if (actionItems.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Align(alignment: Alignment.centerRight, child: actions),
+          ],
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: progress),
+        if (actionItems.isNotEmpty) ...[
+          const SizedBox(width: 6),
+          actions,
+        ],
+      ],
     );
   }
 
@@ -603,7 +693,7 @@ class _ResourceActionButton extends StatelessWidget {
 }
 
 class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.text, required this.color});
+  const _StatusBadge({super.key, required this.text, required this.color});
 
   final String text;
   final Color color;
@@ -627,6 +717,11 @@ class _StatusBadge extends StatelessWidget {
       ),
     );
   }
+}
+
+bool _useCompactDownloadDetailLayout(BuildContext context) {
+  return MediaQuery.sizeOf(context).width < 380 ||
+      MediaQuery.textScalerOf(context).scale(1) > 1.35;
 }
 
 IconData _sourceIcon(DownloadSourceType type) => switch (type) {
