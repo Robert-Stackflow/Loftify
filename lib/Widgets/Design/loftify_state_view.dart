@@ -23,6 +23,7 @@ class LoftifyStateView extends StatelessWidget {
     this.forceDark = false,
     this.background,
     this.padding,
+    this.scrollWhenConstrained = true,
   });
 
   final LoftifyStateVisual visual;
@@ -36,6 +37,7 @@ class LoftifyStateView extends StatelessWidget {
   final bool forceDark;
   final Color? background;
   final EdgeInsetsGeometry? padding;
+  final bool scrollWhenConstrained;
 
   static Widget fromChewie(
     BuildContext context,
@@ -57,6 +59,7 @@ class LoftifyStateView extends StatelessWidget {
       showTitle: config.showText,
       forceDark: config.forceDark,
       background: config.background,
+      scrollWhenConstrained: config.type != ChewieStateViewType.empty,
       padding: config.type == ChewieStateViewType.empty
           ? const EdgeInsets.symmetric(horizontal: 20, vertical: 16)
           : EdgeInsets.only(
@@ -86,6 +89,72 @@ class LoftifyStateView extends StatelessWidget {
       if (showTitle) title,
       if (message?.isNotEmpty == true) message,
     ].join(', ');
+    final stateContent = ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 420),
+      child: Padding(
+        padding: padding ?? EdgeInsets.all(design.spacing.xxl),
+        child: AnimatedSwitcher(
+          duration: reduceMotion ? Duration.zero : design.motion.state,
+          switchInCurve: design.motion.enterCurve,
+          switchOutCurve: design.motion.exitCurve,
+          child: Column(
+            key: ValueKey(visual),
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ExcludeSemantics(child: _buildVisual(context, stateColor)),
+              if (showTitle) ...[
+                SizedBox(height: design.spacing.lg),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: design.typography.cardTitle.copyWith(
+                    color: foreground,
+                  ),
+                ),
+              ],
+              if (message?.isNotEmpty == true) ...[
+                SizedBox(height: design.spacing.sm),
+                Text(
+                  message!,
+                  textAlign: TextAlign.center,
+                  style: design.typography.body.copyWith(
+                    color: secondary,
+                  ),
+                ),
+              ],
+              if (onAction != null && actionLabel?.isNotEmpty == true) ...[
+                SizedBox(height: design.spacing.xl),
+                LoftifyButton(
+                  label: actionLabel!,
+                  icon: LoftifyIcons.retry,
+                  variant: LoftifyButtonVariant.secondary,
+                  size: LoftifyButtonSize.compact,
+                  onPressed: onAction,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+    final stateBody = scrollWhenConstrained
+        ? LayoutBuilder(
+            builder: (context, constraints) {
+              if (!constraints.hasBoundedHeight ||
+                  !constraints.maxHeight.isFinite) {
+                return Center(child: stateContent);
+              }
+              return SingleChildScrollView(
+                key: const ValueKey('loftify-state-scroll-view'),
+                physics: const ClampingScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Center(child: stateContent),
+                ),
+              );
+            },
+          )
+        : Center(child: stateContent);
 
     return Semantics(
       container: true,
@@ -93,57 +162,7 @@ class LoftifyStateView extends StatelessWidget {
       label: semanticsLabel,
       child: ColoredBox(
         color: background ?? Colors.transparent,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Padding(
-              padding: padding ?? EdgeInsets.all(design.spacing.xxl),
-              child: AnimatedSwitcher(
-                duration: reduceMotion ? Duration.zero : design.motion.state,
-                switchInCurve: design.motion.enterCurve,
-                switchOutCurve: design.motion.exitCurve,
-                child: Column(
-                  key: ValueKey(visual),
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ExcludeSemantics(child: _buildVisual(context, stateColor)),
-                    if (showTitle) ...[
-                      SizedBox(height: design.spacing.lg),
-                      Text(
-                        title,
-                        textAlign: TextAlign.center,
-                        style: design.typography.cardTitle.copyWith(
-                          color: foreground,
-                        ),
-                      ),
-                    ],
-                    if (message?.isNotEmpty == true) ...[
-                      SizedBox(height: design.spacing.sm),
-                      Text(
-                        message!,
-                        textAlign: TextAlign.center,
-                        style: design.typography.body.copyWith(
-                          color: secondary,
-                        ),
-                      ),
-                    ],
-                    if (onAction != null &&
-                        actionLabel?.isNotEmpty == true) ...[
-                      SizedBox(height: design.spacing.xl),
-                      LoftifyButton(
-                        label: actionLabel!,
-                        icon: LoftifyIcons.retry,
-                        variant: LoftifyButtonVariant.secondary,
-                        size: LoftifyButtonSize.compact,
-                        onPressed: onAction,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
+        child: stateBody,
       ),
     );
   }

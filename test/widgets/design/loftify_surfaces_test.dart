@@ -299,6 +299,39 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('short Android error state keeps localized retry reachable',
+      (tester) async {
+    var retries = 0;
+    await tester.pumpWidget(
+      _TestApp(
+        width: 320,
+        mediaQuery: const MediaQueryData(
+          size: Size(320, 220),
+          textScaler: TextScaler.linear(2),
+        ),
+        child: SizedBox(
+          height: 220,
+          child: LoftifyStateView(
+            visual: LoftifyStateVisual.error,
+            title: 'Unable to load this section right now',
+            message:
+                'Check your connection and try again without losing your current reading position.',
+            actionLabel: 'Try loading this section again',
+            onAction: () => retries++,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    await tester.ensureVisible(find.text('Try loading this section again'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Try loading this section again'));
+    await tester.pump();
+    expect(retries, 1);
+  });
+
   testWidgets('real dress card and option panel remain responsive on Windows', (
     tester,
   ) async {
