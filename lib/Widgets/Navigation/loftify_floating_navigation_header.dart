@@ -228,18 +228,15 @@ class LoftifyFloatingHeaderTitle extends StatelessWidget {
   const LoftifyFloatingHeaderTitle({
     super.key,
     required this.title,
-    this.enableBlur = true,
   });
 
   final String title;
-  final bool enableBlur;
 
   @override
   Widget build(BuildContext context) {
     final design = context.design;
-    return LoftifyFloatingCapsule(
-      enableBlur: enableBlur,
-      padding: EdgeInsets.symmetric(horizontal: design.spacing.xl),
+    return Semantics(
+      header: true,
       child: Center(
         child: Text(
           title,

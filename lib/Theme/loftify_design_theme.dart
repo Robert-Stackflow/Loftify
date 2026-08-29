@@ -543,6 +543,18 @@ class LoftifyGridTokens {
           widePagePadding,
       };
 
+  /// Denser edge rhythm for image-led waterfall feeds on phones. Reading
+  /// surfaces and discovery pages keep [pagePaddingFor] for calmer line
+  /// lengths, while the home feed gives artwork more of the viewport.
+  double denseFeedPagePaddingFor(double width) =>
+      switch (windowClassFor(width)) {
+        LoftifyWindowClass.compact => width < 360 ? 8 : 10,
+        LoftifyWindowClass.medium ||
+        LoftifyWindowClass.expanded ||
+        LoftifyWindowClass.large =>
+          widePagePadding,
+      };
+
   double gutterFor(double width) => switch (windowClassFor(width)) {
         LoftifyWindowClass.compact => compactGutter,
         LoftifyWindowClass.medium => mediumGutter,

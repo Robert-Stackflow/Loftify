@@ -164,7 +164,7 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
           final centeredInset =
               ((viewportWidth - design.grid.maximumContentWidth) / 2)
                   .clamp(0.0, double.infinity);
-          final pageInset = design.grid.pagePaddingFor(viewportWidth);
+          final pageInset = design.grid.denseFeedPagePaddingFor(viewportWidth);
           final horizontalInset = centeredInset + pageInset;
           final gutter = design.grid.gutterFor(viewportWidth);
 
@@ -235,7 +235,6 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
                       LoftifyFloatingHeaderTitle(
                         key: const ValueKey('home-navigation-title'),
                         title: appLocalizations.appName,
-                        enableBlur: !reduceTransparency,
                       ),
                       LoftifyFloatingHeaderAction(
                         key: const ValueKey('home-navigation-notice'),

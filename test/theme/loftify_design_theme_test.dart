@@ -177,6 +177,9 @@ void main() {
       expect(grid.pagePaddingFor(320), 12);
       expect(grid.pagePaddingFor(390), 16);
       expect(grid.pagePaddingFor(700), 24);
+      expect(grid.denseFeedPagePaddingFor(320), 8);
+      expect(grid.denseFeedPagePaddingFor(390), 10);
+      expect(grid.denseFeedPagePaddingFor(700), 24);
     });
 
     test('keeps card grids bounded from narrow phone to large desktop', () {

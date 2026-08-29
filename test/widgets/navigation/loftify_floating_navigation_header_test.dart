@@ -150,7 +150,7 @@ void main() {
     }
   });
 
-  testWidgets('center title keeps a compact single-line capsule', (
+  testWidgets('center title stays single-line without a floating surface', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -161,7 +161,6 @@ void main() {
               height: LoftifyFloatingNavigationHeader.height,
               child: LoftifyFloatingHeaderTitle(
                 title: 'A deliberately long Loftify title',
-                enableBlur: false,
               ),
             ),
           ),
@@ -174,7 +173,9 @@ void main() {
     );
     expect(title.maxLines, 1);
     expect(title.overflow, TextOverflow.ellipsis);
-    expect(find.byType(LoftifyFloatingCapsule), findsOneWidget);
+    expect(find.byType(LoftifyFloatingCapsule), findsNothing);
+    expect(find.byType(BackdropFilter), findsNothing);
+    expect(find.byType(DecoratedBox), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
