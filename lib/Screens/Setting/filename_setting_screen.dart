@@ -42,7 +42,14 @@ class _FilenameSettingScreenState
     _focusNode.requestFocus();
   }
 
-  _save() {
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _save() {
     ChewieHiveUtil.put(
       HiveUtil.filenameFormatKey,
       _controller.text,
@@ -51,7 +58,7 @@ class _FilenameSettingScreenState
     IToast.showTop(appLocalizations.saveSuccess);
   }
 
-  _reset() {
+  void _reset() {
     _controller.text = defaultFilenameFormat;
     ChewieHiveUtil.put(
       HiveUtil.filenameFormatKey,
@@ -63,6 +70,8 @@ class _FilenameSettingScreenState
 
   @override
   Widget build(BuildContext context) {
+    final compact = MediaQuery.sizeOf(context).width < 360 ||
+        MediaQuery.textScalerOf(context).scale(1) > 1.35;
     return ChewieItemBuilder.buildSettingScreen(
       context: context,
       title: appLocalizations.filenameFormat,
@@ -152,32 +161,93 @@ class _FilenameSettingScreenState
                   borderRadius: BorderRadius.circular(10),
                   color: Theme.of(context).canvasColor,
                 ),
-                child: Table(
-                  // defaultColumnWidth: const IntrinsicColumnWidth(),
-                  defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                  children: [
-                    _buildRow([
-                      appLocalizations.field,
-                      appLocalizations.description,
-                      appLocalizations.example,
-                    ], fontWeightDelta: 2),
-                    ...List.generate(
-                      FilenameField.values.length,
-                      (index) {
-                        return _buildRow([
-                          FilenameField.values[index].label,
-                          FilenameField.values[index].description,
-                          FilenameField.values[index].example,
-                        ], useBorder: index != FilenameField.values.length - 1);
-                      },
-                    ),
-                  ],
-                ),
+                child: compact
+                    ? Column(
+                        children: List.generate(
+                          FilenameField.values.length,
+                          (index) => _buildCompactField(
+                            FilenameField.values[index],
+                            useBorder: index != FilenameField.values.length - 1,
+                          ),
+                        ),
+                      )
+                    : Table(
+                        defaultVerticalAlignment:
+                            TableCellVerticalAlignment.middle,
+                        children: [
+                          _buildRow([
+                            appLocalizations.field,
+                            appLocalizations.description,
+                            appLocalizations.example,
+                          ], fontWeightDelta: 2),
+                          ...List.generate(
+                            FilenameField.values.length,
+                            (index) {
+                              return _buildRow([
+                                FilenameField.values[index].label,
+                                FilenameField.values[index].description,
+                                FilenameField.values[index].example,
+                              ],
+                                  useBorder:
+                                      index != FilenameField.values.length - 1);
+                            },
+                          ),
+                        ],
+                      ),
               ),
             ),
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildCompactField(
+    FilenameField field, {
+    required bool useBorder,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      key: ValueKey('filename-field-${field.name}'),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      decoration: BoxDecoration(
+        border: useBorder
+            ? Border(
+                bottom: BorderSide(
+                  color: Theme.of(context).dividerColor,
+                  width: 0.5,
+                ),
+              )
+            : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            field.label,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            field.description,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  height: 1.4,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${appLocalizations.example}: ${field.example}',
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: scheme.primary,
+                  height: 1.35,
+                ),
+          ),
+        ],
+      ),
     );
   }
 
