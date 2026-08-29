@@ -133,42 +133,57 @@ class _SelectThemeScreenState extends BaseDynamicState<SelectThemeScreen>
   Widget _buildAccentColorPalette({required bool isDark}) {
     final selectedIndex =
         isDark ? _darkPrimaryColorIndex : _lightPrimaryColorIndex;
+    final compact = MediaQuery.sizeOf(context).width < 360 ||
+        MediaQuery.textScalerOf(context).scale(1) > 1.35;
+    final label = Text(
+      appLocalizations.primaryColor,
+      style: ChewieTheme.bodyMedium,
+    );
+    final palette = Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        _buildAccentCircle(
+          key: ValueKey(
+            'theme-accent-${isDark ? 'dark' : 'light'}-reset',
+          ),
+          color: null,
+          isSelected: selectedIndex == 0,
+          onTap: () => _setAccentColor(isDark, null, 0),
+        ),
+        for (int index = 0; index < _presetAccentColors.length; index++)
+          _buildAccentCircle(
+            key: ValueKey(
+              'theme-accent-${isDark ? 'dark' : 'light'}-$index',
+            ),
+            color: _presetAccentColors[index],
+            isSelected: selectedIndex == index + 1,
+            onTap: () => _setAccentColor(
+              isDark,
+              _presetAccentColors[index],
+              index + 1,
+            ),
+          ),
+      ],
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 76,
-            child: Text(
-              appLocalizations.primaryColor,
-              style: ChewieTheme.bodyMedium,
-            ),
-          ),
-          Expanded(
-            child: Wrap(
-              spacing: 10,
-              runSpacing: 10,
+      child: compact
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildAccentCircle(
-                  color: null,
-                  isSelected: selectedIndex == 0,
-                  onTap: () => _setAccentColor(isDark, null, 0),
-                ),
-                for (int index = 0; index < _presetAccentColors.length; index++)
-                  _buildAccentCircle(
-                    color: _presetAccentColors[index],
-                    isSelected: selectedIndex == index + 1,
-                    onTap: () => _setAccentColor(
-                      isDark,
-                      _presetAccentColors[index],
-                      index + 1,
-                    ),
-                  ),
+                label,
+                const SizedBox(height: 8),
+                palette,
+              ],
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(width: 76, child: label),
+                Expanded(child: palette),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -185,39 +200,46 @@ class _SelectThemeScreenState extends BaseDynamicState<SelectThemeScreen>
   }
 
   Widget _buildAccentCircle({
+    required Key key,
     required Color? color,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
     return InkAnimation(
+      key: key,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: isSelected
-                ? ChewieTheme.primaryColor
-                : ChewieTheme.dividerColor,
-            width: isSelected ? 2.5 : 1,
+      borderRadius: BorderRadius.circular(24),
+      child: SizedBox.square(
+        dimension: 48,
+        child: Center(
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isSelected
+                    ? ChewieTheme.primaryColor
+                    : ChewieTheme.dividerColor,
+                width: isSelected ? 2.5 : 1,
+              ),
+            ),
+            child: color == null
+                ? Icon(
+                    LoftifyIcons.reset,
+                    size: 18,
+                    color: ChewieTheme.iconColor,
+                  )
+                : isSelected
+                    ? ChewieIcon(
+                        LoftifyIcons.check,
+                        size: 18,
+                        color: ColorUtil.getContrastColor(color),
+                      )
+                    : null,
           ),
         ),
-        child: color == null
-            ? Icon(
-                LoftifyIcons.reset,
-                size: 18,
-                color: ChewieTheme.iconColor,
-              )
-            : isSelected
-                ? ChewieIcon(
-                    LoftifyIcons.check,
-                    size: 18,
-                    color: ColorUtil.getContrastColor(color),
-                  )
-                : null,
       ),
     );
   }

@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:awesome_chewie/awesome_chewie.dart';
+import 'package:flutter/material.dart';
 
 class ThemeItem extends StatefulWidget {
   final ChewieThemeColorData themeColorData;
@@ -9,27 +9,29 @@ class ThemeItem extends StatefulWidget {
   final VoidCallback? onLongPress;
 
   const ThemeItem({
-    Key? key,
+    super.key,
     required this.themeColorData,
     required this.index,
     required this.groupIndex,
     required this.onChanged,
     this.onLongPress,
-  }) : super(key: key);
+  });
 
   @override
-  _ThemeItemState createState() => _ThemeItemState();
+  State<ThemeItem> createState() => _ThemeItemState();
 }
 
 class _ThemeItemState extends State<ThemeItem> {
   @override
   Widget build(BuildContext context) {
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final responsiveHeight = 166.4 + 24 * (textScale - 1).clamp(0.0, 2.0);
     return GestureDetector(
       onLongPress: widget.onLongPress,
       onTap: () => widget.onChanged?.call(widget.index),
       child: Container(
         width: 107.3,
-        height: 166.4,
+        height: responsiveHeight,
         margin: EdgeInsets.only(left: widget.index == 0 ? 10 : 0, right: 10),
         child: Column(
           children: [
@@ -48,18 +50,21 @@ class _ThemeItemState extends State<ThemeItem> {
                     const SizedBox(height: 5),
                     _buildCardRow(widget.themeColorData),
                     const SizedBox(height: 15),
-                    Radio(
-                      value: widget.index,
-                      groupValue: widget.groupIndex,
-                      onChanged: widget.onChanged,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      fillColor: WidgetStateProperty.resolveWith((states) {
-                        if (states.contains(WidgetState.selected)) {
-                          return widget.themeColorData.primaryColor;
-                        } else {
-                          return widget.themeColorData.textLightGreyColor;
-                        }
-                      }),
+                    Semantics(
+                      selected: widget.index == widget.groupIndex,
+                      button: true,
+                      child: SizedBox.square(
+                        dimension: 48,
+                        child: Icon(
+                          widget.index == widget.groupIndex
+                              ? Icons.radio_button_checked
+                              : Icons.radio_button_unchecked,
+                          size: 24,
+                          color: widget.index == widget.groupIndex
+                              ? widget.themeColorData.primaryColor
+                              : widget.themeColorData.textLightGreyColor,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -143,17 +148,19 @@ class EmptyThemeItem extends StatefulWidget {
   });
 
   @override
-  _EmptyThemeItemState createState() => _EmptyThemeItemState();
+  State<EmptyThemeItem> createState() => _EmptyThemeItemState();
 }
 
 class _EmptyThemeItemState extends State<EmptyThemeItem> {
   @override
   Widget build(BuildContext context) {
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final responsiveHeight = 166.4 + 24 * (textScale - 1).clamp(0.0, 2.0);
     return GestureDetector(
       onTap: widget.onTap,
       child: Container(
         width: 107.3,
-        height: 166.4,
+        height: responsiveHeight,
         margin: const EdgeInsets.only(right: 10),
         child: Column(
           children: [
