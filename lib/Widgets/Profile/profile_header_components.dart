@@ -84,6 +84,32 @@ class LoftifyProfileHeaderLayout extends StatelessWidget {
   }
 }
 
+/// Stable cover scrim for white profile-header content.
+///
+/// The lightest stop keeps white primary and secondary content readable even
+/// when the creator's cover is entirely white, while the gradient still leaves
+/// enough artwork visible to preserve the page's identity.
+class LoftifyProfileCoverScrim extends StatelessWidget {
+  const LoftifyProfileCoverScrim({super.key});
+
+  static const topColor = Color.fromRGBO(0, 0, 0, 0.58);
+  static const bottomColor = Color.fromRGBO(0, 0, 0, 0.72);
+
+  @override
+  Widget build(BuildContext context) {
+    return const DecoratedBox(
+      key: ValueKey('loftify-profile-cover-scrim'),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [topColor, bottomColor],
+        ),
+      ),
+    );
+  }
+}
+
 /// Responsive identity block used over the author's cover image.
 ///
 /// The block intentionally owns no fixed height. Long identifiers, localized
@@ -157,7 +183,7 @@ class LoftifyProfileIdentity extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: design.typography.metadata.copyWith(
-                        color: foregroundColor.withValues(alpha: 0.74),
+                        color: foregroundColor.withValues(alpha: 0.88),
                       ),
                     ),
                   ),
@@ -172,7 +198,7 @@ class LoftifyProfileIdentity extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: design.typography.metadata.copyWith(
-                          color: foregroundColor.withValues(alpha: 0.76),
+                          color: foregroundColor.withValues(alpha: 0.88),
                         ),
                       ),
                       if (descriptionLabel != null &&

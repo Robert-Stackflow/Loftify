@@ -69,6 +69,55 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('cover scrim keeps profile text readable on a white cover',
+      (tester) async {
+    await tester.pumpWidget(
+      _TestApp(
+        width: 320,
+        child: Stack(
+          children: [
+            const Positioned.fill(child: ColoredBox(color: Colors.white)),
+            const Positioned.fill(child: LoftifyProfileCoverScrim()),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: LoftifyProfileIdentity(
+                avatar: const SizedBox.square(dimension: 64),
+                displayName: 'Creator',
+                idLabel: 'ID: bright_cover',
+                metadata: 'Location: white artwork',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final scrim = tester.widget<DecoratedBox>(
+      find.byKey(const ValueKey('loftify-profile-cover-scrim')),
+    );
+    final gradient =
+        (scrim.decoration as BoxDecoration).gradient! as LinearGradient;
+    final weakestBackground = Color.alphaBlend(
+      gradient.colors.first,
+      Colors.white,
+    );
+    final primary = tester.widget<Text>(find.text('Creator')).style!.color!;
+    final secondary =
+        tester.widget<Text>(find.text('ID: bright_cover')).style!.color!;
+
+    expect(
+        _contrastRatio(primary, weakestBackground), greaterThanOrEqualTo(4.5));
+    expect(
+      _contrastRatio(
+        Color.alphaBlend(secondary, weakestBackground),
+        weakestBackground,
+      ),
+      greaterThanOrEqualTo(4.5),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('primary follow action remains content-sized and clickable',
       (tester) async {
     var taps = 0;

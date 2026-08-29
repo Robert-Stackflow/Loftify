@@ -1215,18 +1215,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
             ),
           ),
         ),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.black.withValues(alpha: 0.18),
-                Colors.black.withValues(alpha: 0.52),
-              ],
-            ),
-          ),
-        ),
+        const LoftifyProfileCoverScrim(),
       ],
     );
   }
