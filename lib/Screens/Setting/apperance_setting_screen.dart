@@ -6,6 +6,7 @@ import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:provider/provider.dart';
 
+import '../../Utils/enums.dart';
 import '../../l10n/l10n.dart';
 import 'base_setting_screen.dart';
 
@@ -133,6 +134,29 @@ class _AppearanceSettingScreenState
                   });
                 },
               ),
+            Selector<AppProvider, NavigationBarDisplayStyle>(
+              selector: (context, appProvider) =>
+                  appProvider.navigationBarDisplayStyle,
+              builder: (context, displayStyle, child) => InlineSelectionItem<
+                  SelectionItemModel<NavigationBarDisplayStyle>>(
+                title: appLocalizations.navigationBarDisplayStyle,
+                description:
+                    appLocalizations.navigationBarDisplayStyleDescription,
+                hint: appLocalizations.chooseNavigationBarDisplayStyle,
+                items: NavigationBarDisplayStyle.values
+                    .map((style) => SelectionItemModel(style.label, style))
+                    .toList(),
+                initItem: SelectionItemModel(
+                  displayStyle.label,
+                  displayStyle,
+                ),
+                onChanged: (item) {
+                  if (item != null) {
+                    appProvider.navigationBarDisplayStyle = item.value;
+                  }
+                },
+              ),
+            ),
             Selector<AppProvider, bool>(
               selector: (context, appProvider) =>
                   appProvider.reduceTransparency,

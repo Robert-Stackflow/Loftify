@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/lottie_files.dart';
 import 'package:loftify/Widgets/Navigation/loftify_glass_navigation_bar.dart';
 import 'package:loftify/Widgets/loftify_icons.dart';
@@ -61,6 +62,8 @@ Widget _host({
   ValueChanged<int>? onSelect,
   ValueChanged<int>? onDoubleTap,
   VoidCallback? onBodyTap,
+  NavigationBarDisplayStyle displayStyle =
+      NavigationBarDisplayStyle.iconAndText,
 }) {
   final colorScheme = ColorScheme.fromSeed(
     seedColor: const Color(0xFF14C2BB),
@@ -81,6 +84,7 @@ Widget _host({
           destinations: _destinations,
           currentIndex: currentIndex,
           enableBlur: enableBlur,
+          displayStyle: displayStyle,
           onSelect: onSelect ?? (_) {},
           onDoubleTap: onDoubleTap,
         ),
@@ -225,6 +229,67 @@ void main() {
     );
     expect(tester.takeException(), isNull);
     semantics.dispose();
+  });
+
+  testWidgets('supports icon, text and combined styles on narrow large text', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    for (final style in NavigationBarDisplayStyle.values) {
+      await tester.pumpWidget(
+        _host(
+          mediaQuery: const MediaQueryData(
+            size: Size(280, 600),
+            textScaler: TextScaler.linear(2),
+          ),
+          currentIndex: 2,
+          displayStyle: style,
+        ),
+      );
+      await tester.pump();
+
+      final showsIcons = style != NavigationBarDisplayStyle.textOnly;
+      final showsLabels = style != NavigationBarDisplayStyle.iconOnly;
+      expect(
+        find.byType(LoftifyNavigationLottieIcon),
+        showsIcons ? findsNWidgets(4) : findsNothing,
+        reason: style.key,
+      );
+      expect(
+        find.text('Home'),
+        showsLabels ? findsOneWidget : findsNothing,
+        reason: style.key,
+      );
+      expect(
+        find.text('99+'),
+        findsOneWidget,
+        reason: 'badge remains visible for ${style.key}',
+      );
+      expect(
+        find.bySemanticsLabel('Activity, 120'),
+        findsOneWidget,
+        reason: style.key,
+      );
+      expect(tester.takeException(), isNull, reason: style.key);
+    }
+    semantics.dispose();
+  });
+
+  test('defaults persisted and unknown styles to icons only', () {
+    final bar = LoftifyGlassNavigationBar(
+      destinations: _destinations,
+      currentIndex: 0,
+      onSelect: (_) {},
+    );
+    expect(bar.displayStyle, NavigationBarDisplayStyle.iconOnly);
+    expect(
+      NavigationBarDisplayStyle.fromKey(null),
+      NavigationBarDisplayStyle.iconOnly,
+    );
+    expect(
+      NavigationBarDisplayStyle.fromKey('unsupported'),
+      NavigationBarDisplayStyle.iconOnly,
+    );
   });
 
   testWidgets('dispatches tap and double-tap without material ripple', (
@@ -560,7 +625,7 @@ void main() {
     expect(source, contains('portrait: _buildBottomNavigationBar()'));
     expect(source, contains('landscape: null'));
     expect(source, contains('LoftifyGlassNavigationBar('));
-    expect(source, contains('enableBlur: !reduceTransparency'));
+    expect(source, contains('enableBlur: !preferences.reduceTransparency'));
     expect(source, contains('shouldShowForKeyboard('));
     expect(source, contains('_pageController.animateToPage('));
     expect(source, contains('curve: Curves.easeOutCubic'));
@@ -610,6 +675,55 @@ void main() {
         isNotEmpty,
         reason: path,
       );
+    }
+  });
+
+  test('navigation display preference is persisted and localized', () {
+    final hiveSource = File('lib/Utils/hive_util.dart').readAsStringSync();
+    final providerSource = File(
+      'lib/Utils/app_provider.dart',
+    ).readAsStringSync();
+    final appearanceSource = File(
+      'lib/Screens/Setting/apperance_setting_screen.dart',
+    ).readAsStringSync();
+    final panelSource =
+        File('lib/Screens/panel_screen.dart').readAsStringSync();
+
+    expect(hiveSource, contains('navigationBarDisplayStyleKey'));
+    expect(
+      providerSource,
+      allOf(
+        contains('NavigationBarDisplayStyle get navigationBarDisplayStyle'),
+        contains('HiveUtil.navigationBarDisplayStyleKey'),
+        contains('NavigationBarDisplayStyle.iconOnly.key'),
+      ),
+    );
+    expect(
+      appearanceSource,
+      allOf(
+        contains('appLocalizations.navigationBarDisplayStyle'),
+        contains('NavigationBarDisplayStyle.values'),
+        contains('appProvider.navigationBarDisplayStyle = item.value'),
+      ),
+    );
+    expect(panelSource, contains('displayStyle: preferences.displayStyle'));
+
+    for (final path in <String>[
+      'lib/l10n/intl_en.arb',
+      'lib/l10n/intl_zh.arb',
+      'lib/l10n/intl_zh_CN.arb',
+      'lib/l10n/intl_zh_TW.arb',
+    ]) {
+      final messages = jsonDecode(File(path).readAsStringSync()) as Map;
+      for (final key in <String>[
+        'navigationBarDisplayStyle',
+        'navigationBarDisplayStyleDescription',
+        'navigationBarIconAndText',
+        'navigationBarIconOnly',
+        'navigationBarTextOnly',
+      ]) {
+        expect(messages[key], isNotEmpty, reason: '$path: $key');
+      }
     }
   });
 }

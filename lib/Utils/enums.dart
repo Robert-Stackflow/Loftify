@@ -2,7 +2,6 @@ import 'package:tuple/tuple.dart';
 
 import '../l10n/l10n.dart';
 
-
 enum TokenType {
   none,
   captchCode,
@@ -13,6 +12,32 @@ enum TokenType {
 enum ImageQuality { small, medium, origin, raw }
 
 enum HistoryLayoutMode { waterFlow, nineGrid }
+
+enum NavigationBarDisplayStyle {
+  iconAndText('iconAndText'),
+  iconOnly('iconOnly'),
+  textOnly('textOnly');
+
+  const NavigationBarDisplayStyle(this.key);
+
+  final String key;
+
+  static NavigationBarDisplayStyle fromKey(String? key) {
+    return NavigationBarDisplayStyle.values.firstWhere(
+      (style) => style.key == key,
+      orElse: () => NavigationBarDisplayStyle.iconOnly,
+    );
+  }
+
+  String get label => switch (this) {
+        NavigationBarDisplayStyle.iconAndText =>
+          appLocalizations.navigationBarIconAndText,
+        NavigationBarDisplayStyle.iconOnly =>
+          appLocalizations.navigationBarIconOnly,
+        NavigationBarDisplayStyle.textOnly =>
+          appLocalizations.navigationBarTextOnly,
+      };
+}
 
 enum FavoriteFolderDetailLayoutMode { list, nineGrid, flow }
 
@@ -228,7 +253,7 @@ enum FilenameField {
         return appLocalizations.fieldUnderlineExample;
       case slack:
         return appLocalizations.fieldSlackExample;
-      }
+    }
   }
 
   String get description {

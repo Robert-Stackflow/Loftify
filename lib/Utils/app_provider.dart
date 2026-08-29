@@ -319,6 +319,24 @@ class AppProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  NavigationBarDisplayStyle _navigationBarDisplayStyle =
+      NavigationBarDisplayStyle.fromKey(
+    ChewieHiveUtil.getString(
+      HiveUtil.navigationBarDisplayStyleKey,
+      defaultValue: NavigationBarDisplayStyle.iconOnly.key,
+    ),
+  );
+
+  NavigationBarDisplayStyle get navigationBarDisplayStyle =>
+      _navigationBarDisplayStyle;
+
+  set navigationBarDisplayStyle(NavigationBarDisplayStyle value) {
+    if (value == _navigationBarDisplayStyle) return;
+    _navigationBarDisplayStyle = value;
+    ChewieHiveUtil.put(HiveUtil.navigationBarDisplayStyleKey, value.key);
+    notifyListeners();
+  }
+
   List<String> _searchHistoryList =
       ChewieHiveUtil.getStringList(HiveUtil.searchHistoryKey)!;
 

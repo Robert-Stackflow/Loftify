@@ -5,6 +5,7 @@ import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../Utils/enums.dart';
 import '../../Utils/lottie_files.dart';
 
 @immutable
@@ -35,6 +36,7 @@ class LoftifyGlassNavigationBar extends StatelessWidget {
     required this.onSelect,
     this.onDoubleTap,
     this.enableBlur = true,
+    this.displayStyle = NavigationBarDisplayStyle.iconOnly,
   })  : assert(destinations.length >= 2),
         assert(currentIndex >= 0 && currentIndex < destinations.length);
 
@@ -43,6 +45,7 @@ class LoftifyGlassNavigationBar extends StatelessWidget {
   final ValueChanged<int> onSelect;
   final ValueChanged<int>? onDoubleTap;
   final bool enableBlur;
+  final NavigationBarDisplayStyle displayStyle;
 
   static const double barHeight = 64;
   static const double horizontalMargin = 10;
@@ -131,6 +134,7 @@ class LoftifyGlassNavigationBar extends StatelessWidget {
               child: _LoftifyNavigationItem(
                 destination: destinations[index],
                 selected: currentIndex == index,
+                displayStyle: displayStyle,
                 onTap: () => onSelect(index),
                 onDoubleTap:
                     onDoubleTap == null ? null : () => onDoubleTap!(index),
@@ -174,12 +178,14 @@ class _LoftifyNavigationItem extends StatefulWidget {
   const _LoftifyNavigationItem({
     required this.destination,
     required this.selected,
+    required this.displayStyle,
     required this.onTap,
     this.onDoubleTap,
   });
 
   final LoftifyNavigationDestination destination;
   final bool selected;
+  final NavigationBarDisplayStyle displayStyle;
   final VoidCallback onTap;
   final VoidCallback? onDoubleTap;
 
@@ -226,6 +232,8 @@ class _LoftifyNavigationItemState extends State<_LoftifyNavigationItem> {
     final foregroundColor = widget.selected ? selectedColor : unselectedColor;
     final duration =
         reduceMotion ? Duration.zero : const Duration(milliseconds: 180);
+    final showIcon = widget.displayStyle != NavigationBarDisplayStyle.textOnly;
+    final showLabel = widget.displayStyle != NavigationBarDisplayStyle.iconOnly;
 
     final semanticLabel = widget.destination.badgeCount > 0
         ? '${widget.destination.label}, ${widget.destination.badgeCount}'
@@ -271,37 +279,81 @@ class _LoftifyNavigationItemState extends State<_LoftifyNavigationItem> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _NavigationIcon(
-                    icon: widget.destination.icon,
-                    lottieAsset: widget.destination.lottieAsset,
-                    selected: widget.selected,
-                    badgeCount: widget.destination.badgeCount,
-                    color: foregroundColor,
-                  ),
-                  const SizedBox(height: 2),
-                  AnimatedDefaultTextStyle(
-                    duration: duration,
-                    curve: Curves.easeOutCubic,
-                    style: (theme.textTheme.labelSmall ?? const TextStyle())
-                        .copyWith(
+                  if (showIcon)
+                    _NavigationIcon(
+                      icon: widget.destination.icon,
+                      lottieAsset: widget.destination.lottieAsset,
+                      selected: widget.selected,
+                      badgeCount: widget.destination.badgeCount,
                       color: foregroundColor,
-                      fontSize: 10.5,
-                      height: 1,
-                      fontWeight:
-                          widget.selected ? FontWeight.w600 : FontWeight.w500,
                     ),
-                    child: Text(
-                      widget.destination.label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  if (showIcon && showLabel) const SizedBox(height: 2),
+                  if (showLabel)
+                    _NavigationLabel(
+                      label: widget.destination.label,
+                      badgeCount: showIcon ? 0 : widget.destination.badgeCount,
+                      selected: widget.selected,
+                      color: foregroundColor,
+                      fontSize: showIcon ? 10.5 : 12.5,
+                      duration: duration,
                     ),
-                  ),
                 ],
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _NavigationLabel extends StatelessWidget {
+  const _NavigationLabel({
+    required this.label,
+    required this.badgeCount,
+    required this.selected,
+    required this.color,
+    required this.fontSize,
+    required this.duration,
+  });
+
+  final String label;
+  final int badgeCount;
+  final bool selected;
+  final Color color;
+  final double fontSize;
+  final Duration duration;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.4,
+      child: AnimatedDefaultTextStyle(
+        duration: duration,
+        curve: Curves.easeOutCubic,
+        style: (Theme.of(context).textTheme.labelSmall ?? const TextStyle())
+            .copyWith(
+          color: color,
+          fontSize: fontSize,
+          height: 1,
+          fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+        ),
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+    if (badgeCount <= 0) return text;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Flexible(child: text),
+        const SizedBox(width: 4),
+        _NavigationBadge(count: badgeCount),
+      ],
     );
   }
 }
@@ -342,35 +394,46 @@ class _NavigationIcon extends StatelessWidget {
             Positioned(
               top: -3,
               right: -7,
-              child: Semantics(
-                label: '$badgeCount',
-                child: Container(
-                  constraints: const BoxConstraints(minWidth: 15),
-                  height: 15,
-                  padding: const EdgeInsets.symmetric(horizontal: 3),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.error,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.surface,
-                      width: 1.2,
-                    ),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    badgeCount > 99 ? '99+' : '$badgeCount',
-                    maxLines: 1,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onError,
-                      fontSize: 8,
-                      height: 1,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
+              child: _NavigationBadge(count: badgeCount),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _NavigationBadge extends StatelessWidget {
+  const _NavigationBadge({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: '$count',
+      child: Container(
+        constraints: const BoxConstraints(minWidth: 15),
+        height: 15,
+        padding: const EdgeInsets.symmetric(horizontal: 3),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.error,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.surface,
+            width: 1.2,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          count > 99 ? '99+' : '$count',
+          maxLines: 1,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onError,
+            fontSize: 8,
+            height: 1,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ),
     );
   }
