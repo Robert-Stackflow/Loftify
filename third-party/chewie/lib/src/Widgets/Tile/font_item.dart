@@ -1,8 +1,7 @@
+import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:auto_size_text/auto_size_text.dart';
-
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:awesome_chewie/awesome_chewie.dart';
 
 class FontItem extends StatefulWidget {
   final CustomFont font;
@@ -33,124 +32,142 @@ class FontItemState extends State<FontItem> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: widget.width,
-      child: Column(
-        children: [
-          Container(
-            width: widget.width,
-            height: widget.height,
-            padding: const EdgeInsets.only(top: 8, left: 10, right: 10),
-            decoration: BoxDecoration(
-              color: ChewieTheme.canvasColor,
-              border: ChewieTheme.border,
-              borderRadius: ChewieDimens.borderRadius8,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  height: widget.height - 65,
-                  child: FutureBuilder(
-                    future: Future<CustomFont>.sync(() async {
-                      exist = await CustomFont.isFontFileExist(widget.font);
-                      return widget.font;
-                    }),
-                    builder: (context, snapshot) {
-                      return exist
-                          ? Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                AutoSizeText(
-                                  "AaBbCcDd",
-                                  style: ChewieTheme.bodyMedium.apply(
-                                    fontFamily: widget.font.fontFamily,
-                                    letterSpacingDelta: 1,
-                                  ),
-                                  maxLines: 1,
-                                ),
-                                AutoSizeText(
-                                  "AaBbCcDd",
-                                  style: ChewieTheme.bodyMedium.apply(
-                                    fontWeightDelta: 2,
-                                    fontFamily: widget.font.fontFamily,
-                                    letterSpacingDelta: 1,
-                                  ),
-                                  maxLines: 1,
-                                ),
-                                AutoSizeText(
-                                  "你好世界",
-                                  style: ChewieTheme.bodyMedium.apply(
-                                    fontFamily: widget.font.fontFamily,
-                                    letterSpacingDelta: 1,
-                                  ),
-                                  maxLines: 1,
-                                ),
-                                AutoSizeText(
-                                  "你好世界",
-                                  style: ChewieTheme.bodyMedium.apply(
-                                    fontWeightDelta: 2,
-                                    fontFamily: widget.font.fontFamily,
-                                    letterSpacingDelta: 1,
-                                  ),
-                                  maxLines: 1,
-                                ),
-                              ],
-                            )
-                          : Text(
-                              chewieLocalizations.fontFileNotExist,
-                              style: ChewieTheme.bodyMedium.apply(
-                                fontFamily: widget.font.fontFamily,
-                                fontWeightDelta: 0,
-                              ),
-                            );
-                    },
-                  ),
+    final selected = widget.font == widget.currentFont;
+    return Semantics(
+      selected: selected,
+      button: true,
+      label: widget.font.intlFontName,
+      child: ClickableGestureDetector(
+        onTap: () => widget.onChanged?.call(widget.font),
+        child: SizedBox(
+          width: widget.width,
+          child: Column(
+            children: [
+              Container(
+                width: widget.width,
+                height: widget.height,
+                padding: const EdgeInsets.only(top: 8, left: 10, right: 10),
+                decoration: BoxDecoration(
+                  color: ChewieTheme.canvasColor,
+                  border: ChewieTheme.border,
+                  borderRadius: ChewieDimens.borderRadius8,
                 ),
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Radio(
-                      value: widget.font,
-                      groupValue: widget.currentFont,
-                      onChanged: widget.onChanged,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      fillColor: WidgetStateProperty.resolveWith((states) {
-                        if (states.contains(WidgetState.selected)) {
-                          return ChewieTheme.primaryColor;
-                        } else {
-                          return ChewieTheme.bodySmall.color;
-                        }
-                      }),
-                    ),
-                    if (widget.showDelete) const SizedBox(width: 5),
-                    if (widget.showDelete)
-                      CircleIconButton(
-                        icon: Icon(
-                          LucideIcons.trash2,
-                          color: ChewieTheme.errorColor,
-                          size: 21,
+                    SizedBox(
+                      height: widget.height - 72,
+                      child: MediaQuery.withNoTextScaling(
+                        child: FutureBuilder(
+                          future: Future<CustomFont>.sync(() async {
+                            exist =
+                                await CustomFont.isFontFileExist(widget.font);
+                            return widget.font;
+                          }),
+                          builder: (context, snapshot) {
+                            return exist
+                                ? Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      AutoSizeText(
+                                        "AaBbCcDd",
+                                        style: ChewieTheme.bodyMedium.apply(
+                                          fontFamily: widget.font.fontFamily,
+                                          letterSpacingDelta: 1,
+                                        ),
+                                        maxLines: 1,
+                                      ),
+                                      AutoSizeText(
+                                        "AaBbCcDd",
+                                        style: ChewieTheme.bodyMedium.apply(
+                                          fontWeightDelta: 2,
+                                          fontFamily: widget.font.fontFamily,
+                                          letterSpacingDelta: 1,
+                                        ),
+                                        maxLines: 1,
+                                      ),
+                                      AutoSizeText(
+                                        "你好世界",
+                                        style: ChewieTheme.bodyMedium.apply(
+                                          fontFamily: widget.font.fontFamily,
+                                          letterSpacingDelta: 1,
+                                        ),
+                                        maxLines: 1,
+                                      ),
+                                      AutoSizeText(
+                                        "你好世界",
+                                        style: ChewieTheme.bodyMedium.apply(
+                                          fontWeightDelta: 2,
+                                          fontFamily: widget.font.fontFamily,
+                                          letterSpacingDelta: 1,
+                                        ),
+                                        maxLines: 1,
+                                      ),
+                                    ],
+                                  )
+                                : Text(
+                                    chewieLocalizations.fontFileNotExist,
+                                    style: ChewieTheme.bodyMedium.apply(
+                                      fontFamily: widget.font.fontFamily,
+                                      fontWeightDelta: 0,
+                                    ),
+                                  );
+                          },
                         ),
-                        padding: const EdgeInsets.all(10),
-                        onTap: () {
-                          widget.onDelete?.call(widget.font);
-                        },
                       ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox.square(
+                          key: ValueKey(
+                            'font-selection-${widget.font.fontFamily}',
+                          ),
+                          dimension: 32,
+                          child: Icon(
+                            selected
+                                ? Icons.radio_button_checked
+                                : Icons.radio_button_unchecked,
+                            size: 24,
+                            color: selected
+                                ? ChewieTheme.primaryColor
+                                : ChewieTheme.bodySmall.color,
+                          ),
+                        ),
+                        if (widget.showDelete) const SizedBox(width: 5),
+                        if (widget.showDelete)
+                          CircleIconButton(
+                            key: ValueKey(
+                              'font-delete-${widget.font.fontFamily}',
+                            ),
+                            icon: Icon(
+                              LucideIcons.trash2,
+                              color: ChewieTheme.errorColor,
+                              size: 21,
+                            ),
+                            padding: const EdgeInsets.all(13.5),
+                            onTap: () {
+                              widget.onDelete?.call(widget.font);
+                            },
+                          ),
+                      ],
+                    ),
                   ],
-                )
-              ],
-            ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                widget.font.intlFontName,
+                style: ChewieTheme.bodySmall.apply(
+                  fontFamily: widget.font.fontFamily,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            widget.font.intlFontName,
-            style: ChewieTheme.bodySmall.apply(
-              fontFamily: widget.font.fontFamily,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+        ),
       ),
     );
   }
