@@ -467,6 +467,8 @@
   - [ ] `REDESIGN-C6` 至少完成两轮跨页面一致性与内容沉浸自检。
     - [x] `REDESIGN-C6-P1` 第一轮检查设计系统连续性、内容沉浸和真实交互；修复发现的问题并完成代表页交叉回归、Android 真机与 Windows 构建验证。详见 [`Stage_C_Self_Check.md`](docs/redesign/Stage_C_Self_Check.md)。
     - [ ] `REDESIGN-C6-P2` 第二轮独立检查可读性、状态反馈、深浅色、多语言、大字体与极端尺寸；补齐当前最终构建截图后才能完成阶段 C。
+      - [x] `REDESIGN-C6-P2A` 完成 Android 紧凑屏与大字体 AppBar 审查：修复 320dp / 2 倍英文下帖子详情“合集胶囊 + 下载 + 更多”横向溢出，以及平板横屏长标题挤出操作区的问题；标题改为剩余空间内单行省略，文本胶囊按屏宽和字号自适应收窄，点击区与完整语义标签保持不变。
+      - [ ] `REDESIGN-C6-P2B` 继续完成 Android 深浅色、自定义主题、简中 / 繁中 / 英文、空态 / 错误 / 加载、系统返回以及当前最终构建截图验收。
 - [ ] `REDESIGN-D` 按页面族迁移全部剩余页面，删除旧样式和重复组件；每一族独立完成测试、截图、双端运行与提交。
 - [ ] `REDESIGN-E` 完成设计一致性、信息层级、可访问性、响应式、语言、主题、性能和逐像素细节的多轮收口，以及重构前后功能入口无遗漏对照。
 
@@ -491,6 +493,8 @@
 `REDESIGN-C5` 完成记录（2026-08-24）：设置页族继续统一经过 `BaseSettingScreen` 与公共设置 Scaffold，默认页面水平边距固定为 10px，所有 Caption 分组的顶部间距固定为 10px；普通 AppBar 保持圆形独立返回 / 更多按钮、状态栏连续背景且不绘制底部分割线。旧 Caption / SearchableCaption 公共实现改为读取主题卡片 14px 圆角，使用 16px 分组标题、48px 最小触控高度、统一的低噪声按压 / 聚焦 / 悬停反馈，并修复 `showDivider` 参数此前不生效的问题；各 Entry、Checkbox 和行内选择的水平信息轴同步对齐。行内下拉在小于 380px 或文本缩放超过 1.35 倍时自动改为上下布局，避免标题、说明和选项互相挤压；下拉菜单统一 10px 圆角、无扩散水波纹、主题强调色选中底板，并在深浅主题下保持清晰层级。新增 Caption 节奏 / 圆角 / 分割线策略、320px 两倍字体行内选择及设置 AppBar 默认状态回归；独立全量 257 项测试通过，目标静态检查无问题，Android Debug APK 与 Windows Profile 构建通过。MuMu Android 12 已完成通用设置浅色 / 深色、分组展开收起、语言行内菜单、Hot Reload 与 Hot Restart 验证；截图保存在 `build/screenshots/loftify_c5_general_pass1.png`、`build/screenshots/loftify_c5_inline_menu_pass2.png`、`build/screenshots/loftify_c5_collapsed.png`、`build/screenshots/loftify_c5_general_dark.png` 与 `build/screenshots/loftify_c5_inline_menu_dark.png`。独立 Android 16 真机 `986008e8` 已安装当前 Debug APK，以 1200×2670 / 120Hz 启动并恢复真实登录数据，独立 Flutter 调试会话完成 Hot Reload 与 Hot Restart。
 
 `REDESIGN-C6-P1` 完成记录（2026-08-29）：按 [`Stage_C_Self_Check.md`](docs/redesign/Stage_C_Self_Check.md) 对首页、作品详情、标签详情、作者主页与设置页执行第一轮设计连续性和内容沉浸检查。新增公共 `LoftifyContentReferenceCard` 与 `LoftifyContextPill`，将作品详情 AppBar 合集入口、正文合集 / 粮单及上下篇操作从旧 `cardColor` 和局部圆角组合迁移到语义色、细边界、14px 卡片圆角、36px 胶囊与 48px 点击目标；320px 或 1.35 倍以上字体自动重排，目录、订阅、上下篇和首末篇提示业务保持不变。通用设置“发现新版本”由硬编码红色改为独立 warning Token。真机跨页快速反向滚动还暴露 EasyRefresh 在内容范围缩短时可能返回大于当前帧位移的 overscroll；公共滚动物理现会放行向合法区间的回弹并约束向外边界结果，新增缩短范围后的弹道测试。45 项代表页与滚动回归通过，定向静态检查 0 error / 0 warning，Android Debug APK 与 Windows Profile 构建成功。Android 16 真机 `986008e8` 以真实登录数据逐页进入五类代表页，真实合集目录 Panel 与系统返回正常；连续四轮快速反向拖动和底栏显隐后运行日志 0 异常，Hot Reload 616ms、Hot Restart 2282ms。真机安全模式会遮蔽 ADB 截图，第二轮必须在不降低用户安全设置的前提下补齐当前构建可视截图，不能用旧截图完成最终验收。
+
+`REDESIGN-C6-P2A` 完成记录（2026-08-29）：第二轮从 Android 320dp、2 倍字体和英文长文案重新开始，不复用第一轮结论。真实 AppBar 组合回归先复现出 1321px 横向溢出；`LoftifyContextPill` 现按 360 / 420dp 阈值和动态字号将最大宽度收敛为 96 / 104 / 128 / 180dp，视觉文本安全省略但屏幕阅读器仍获得完整合集语义。公共 `ResponsiveAppBar` 的长标题改为只占剩余空间并单行省略，避免 Android 平板横屏把操作按钮推离屏幕；帖子详情自定义标题同步约束。23 项 AppBar、深浅色内容归属卡和详情组件回归通过，定向静态检查 0 error / 0 warning（46 项均为详情页既有 info）。按用户要求，本轮不继续桌面端，阶段 C 第二轮仍需完成 Android 主题、语言、状态、系统返回及当前构建截图，因此 `REDESIGN-C6-P2` 保持未完成。
 
 `REDESIGN-R01`～`REDESIGN-R03` 完成记录（2026-08-24）：确认视觉回归来自全局 Material 排版映射与内容表面映射，而不是帖子详情业务组件本身。旧页面的 `titleLarge / titleMedium / titleSmall` 已恢复 18 / 16 / 14，`bodyLarge / bodyMedium` 恢复 16 / 14；新设计 Token 仍保留独立排版角色，只由明确迁移的新组件使用，避免旧页面已有 `fontSizeDelta` 被二次放大。浅色页面和导航继续保持白色，`canvasColor` 与 `cardColor` 则恢复用户所选主题的原始浅灰层级，帖子详情 AppBar 合集胶囊、正文底部合集 / 粮单 / 标签以及其他旧控件不再白底叠白底。28 项主题、背景、详情和组件测试通过；MuMu Android 12 已现场确认首页与“我的”字号，以及帖子详情顶部合集、底部合集导航和标签背景，并完成 Hot Reload / Hot Restart。运行日志未发现 Loftify 断言、溢出或未处理异常；独立 Android 真机当前未连接。
 

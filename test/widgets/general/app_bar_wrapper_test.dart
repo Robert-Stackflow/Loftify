@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:loftify/Widgets/Design/loftify_content_reference.dart';
 
 void main() {
   setUpAll(() async {
@@ -149,6 +150,102 @@ void main() {
     final decoration = surface.decoration as BoxDecoration;
     expect(decoration.border, isNull);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'compact app bar keeps context and icon actions inside large text width',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 568));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      _buildHost(
+        (context) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            size: const Size(320, 568),
+            textScaler: const TextScaler.linear(2),
+          ),
+          child: Scaffold(
+            appBar: AppBarWrapper(
+              title: const Text(
+                'Post details with a localized title',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              leadingIcon: LucideIcons.arrowLeft,
+              onLeadingTap: () {},
+              actions: [
+                LoftifyContextPill(
+                  icon: LucideIcons.layers,
+                  label: 'Collection 123/999',
+                  onPressed: () {},
+                ),
+                ChewieIconButton(
+                  icon: LucideIcons.download,
+                  tooltip: 'Download',
+                  onPressed: () {},
+                ),
+                ChewieIconButton(
+                  icon: LucideIcons.ellipsis,
+                  tooltip: 'More',
+                  onPressed: () {},
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(
+      tester
+          .getSize(
+            find.byKey(const ValueKey('loftify-context-pill')),
+          )
+          .width,
+      lessThanOrEqualTo(96),
+    );
+  });
+
+  testWidgets('landscape app bar constrains a localized large-text title',
+      (tester) async {
+    await tester.pumpWidget(
+      _buildHost(
+        (context) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            size: const Size(640, 360),
+            textScaler: const TextScaler.linear(2),
+          ),
+          child: Scaffold(
+            appBar: ResponsiveAppBar(
+              title:
+                  'A deliberately long localized page title that must not push actions away',
+              showBack: true,
+              landscapeActions: [
+                ChewieIconButton(
+                  icon: LucideIcons.ellipsis,
+                  tooltip: 'More',
+                  onPressed: () {},
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    final title = tester.widget<Text>(
+      find.text(
+        'A deliberately long localized page title that must not push actions away',
+      ),
+    );
+    expect(title.maxLines, 1);
+    expect(title.overflow, TextOverflow.ellipsis);
+    expect(find.bySemanticsLabel('More'), findsOneWidget);
   });
 
   testWidgets('dark app bar background uses light status icons',

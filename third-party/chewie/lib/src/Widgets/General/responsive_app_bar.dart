@@ -69,7 +69,13 @@ class ResponsiveAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     final Widget titleContent = Container(
       margin: EdgeInsets.only(left: titleLeftMargin),
-      child: titleWidget ?? Text(title, style: ChewieTheme.titleLarge),
+      child: titleWidget ??
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: ChewieTheme.titleLarge,
+          ),
     );
 
     final PreferredSize topWidget = PreferredSize(
@@ -100,8 +106,7 @@ class ResponsiveAppBar extends StatelessWidget implements PreferredSizeWidget {
                                   .backButtonTooltip,
                             ),
                           ),
-                        titleContent,
-                        const Spacer(),
+                        Expanded(child: titleContent),
                         ...[
                           ...desktopActions,
                           ...landscapeActions,
@@ -129,6 +134,8 @@ class ResponsiveAppBar extends StatelessWidget implements PreferredSizeWidget {
                       )
                     : Text(
                         title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style:
                             ChewieTheme.titleMedium.apply(fontWeightDelta: 2),
                       ),

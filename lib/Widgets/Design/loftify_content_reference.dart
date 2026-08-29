@@ -293,6 +293,15 @@ class LoftifyContextPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final design = context.design;
+    final mediaQuery = MediaQuery.of(context);
+    final screenWidth = mediaQuery.size.width;
+    final textScale = mediaQuery.textScaler.scale(1).clamp(1, 3);
+    final maxWidth = switch (screenWidth) {
+      <= 360 => 96.0,
+      <= 420 when textScale > 1.35 => 104.0,
+      <= 420 => 128.0,
+      _ => 180.0,
+    };
     return Semantics(
       button: true,
       label: semanticLabel ?? label,
@@ -328,7 +337,7 @@ class LoftifyContextPill extends StatelessWidget {
             return Colors.transparent;
           }),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 36, maxWidth: 180),
+            constraints: BoxConstraints(minHeight: 36, maxWidth: maxWidth),
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: design.spacing.lg),
               child: Row(

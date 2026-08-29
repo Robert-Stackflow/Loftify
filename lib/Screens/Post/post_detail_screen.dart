@@ -3031,6 +3031,8 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
       showBack: true,
       titleWidget: Text(
         appLocalizations.postDetail,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.titleLarge?.apply(
               fontWeightDelta: 2,
             ),
