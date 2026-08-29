@@ -42,4 +42,15 @@ void main() {
     expect(contentSource, contains('LoftifyEntryItem('));
     expect(contentSource, contains('const SuitScreen()'));
   });
+
+  test('image settings do not duplicate the download manager entrance', () {
+    final source = File(
+      'lib/Screens/Setting/image_setting_screen.dart',
+    ).readAsStringSync();
+
+    expect(source, isNot(contains('DownloadManagementScreen')));
+    expect(source, isNot(contains('appLocalizations.downloadManagement')));
+    expect(source, contains('appLocalizations.downloadImagePath'));
+    expect(source, contains('appLocalizations.filenameFormat'));
+  });
 }

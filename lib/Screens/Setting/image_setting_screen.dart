@@ -1,14 +1,12 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:loftify/Screens/Download/download_management_screen.dart';
 import 'package:loftify/Screens/Setting/filename_setting_screen.dart';
 import 'package:loftify/Utils/enums.dart';
 
 import '../../Utils/cloud_control_provider.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/hive_util.dart';
-import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import 'base_setting_screen.dart';
 
@@ -64,18 +62,6 @@ class _ImageSettingScreenState extends BaseDynamicState<ImageSettingScreen>
           context: context,
           title: appLocalizations.downloadImageSetting,
           children: [
-            EntryItem(
-              context: context,
-              title: appLocalizations.downloadManagement,
-              showLeading: true,
-              leading: LoftifyIcons.download,
-              onTap: () {
-                RouteUtil.pushPanelCupertinoRoute(
-                  context,
-                  const DownloadManagementScreen(),
-                );
-              },
-            ),
             EntryItem(
               context: context,
               title: appLocalizations.downloadImagePath,
