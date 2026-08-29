@@ -16,6 +16,7 @@ import '../../Utils/paged_data_controller.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
 import '../../Widgets/PostItem/general_post_item.dart';
+import '../../Widgets/PostItem/loftify_post_archive_grid.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
@@ -261,38 +262,26 @@ class _LikeScreenState extends BaseDynamicState<LikeScreen>
         ),
       );
       slivers.add(
-        SliverPadding(
+        LoftifyPostArchiveSliverGrid(
           padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
-          sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 160,
-              mainAxisSpacing: 6,
-              crossAxisSpacing: 6,
-              childAspectRatio: 1,
-            ),
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final trueIndex = groupStartIndex + index;
-                final item = _likeList[trueIndex];
-                final postId = item.post?.id ?? item.postData?.id;
-                return CommonInfoItemBuilder.buildNineGridPostItem(
-                  context,
-                  item,
-                  key: postId == null || postId == 0
-                      ? ObjectKey(item)
-                      : ValueKey('liked-$postId'),
-                  wh: 160,
-                  onLikeChanged: (liked) {
-                    if (!liked) _removeLikedPost(item);
-                  },
-                );
+          itemCount: visibleCount,
+          addAutomaticKeepAlives: false,
+          itemBuilder: (context, index, tileExtent) {
+            final trueIndex = groupStartIndex + index;
+            final item = _likeList[trueIndex];
+            final postId = item.post?.id ?? item.postData?.id;
+            return CommonInfoItemBuilder.buildNineGridPostItem(
+              context,
+              item,
+              key: postId == null || postId == 0
+                  ? ObjectKey(item)
+                  : ValueKey('liked-$postId'),
+              wh: tileExtent,
+              onLikeChanged: (liked) {
+                if (!liked) _removeLikedPost(item);
               },
-              childCount: visibleCount,
-              addAutomaticKeepAlives: false,
-              addRepaintBoundaries: true,
-              addSemanticIndexes: true,
-            ),
-          ),
+            );
+          },
         ),
       );
       startIndex += groupCount;

@@ -9,6 +9,7 @@ import '../../Utils/enums.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
+import '../../Widgets/PostItem/loftify_post_archive_grid.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
@@ -180,21 +181,16 @@ class _HistoryScreenState extends BaseDynamicState<HistoryScreen>
   }
 
   Widget _buildNineGrid(int startIndex, int count) {
-    return GridView.builder(
+    return LoftifyPostArchiveGrid(
       padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
-      shrinkWrap: true,
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        mainAxisSpacing: 6,
-        crossAxisSpacing: 6,
-        maxCrossAxisExtent: 160,
-      ),
-      physics: const NeverScrollableScrollPhysics(),
-      itemBuilder: (BuildContext context, int index) {
-        return CommonInfoItemBuilder.buildNineGridPostItem(
-            context, _histories[startIndex + index],
-            wh: 160);
-      },
       itemCount: count,
+      itemBuilder: (context, index, tileExtent) {
+        return CommonInfoItemBuilder.buildNineGridPostItem(
+          context,
+          _histories[startIndex + index],
+          wh: tileExtent,
+        );
+      },
     );
   }
 

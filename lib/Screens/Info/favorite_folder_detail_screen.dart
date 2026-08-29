@@ -12,6 +12,7 @@ import '../../Utils/hive_util.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/favorite_folder_post_item_builder.dart';
 import '../../Widgets/PostItem/general_post_item.dart';
+import '../../Widgets/PostItem/loftify_post_archive_grid.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import '../Post/post_detail_screen.dart';
@@ -171,46 +172,36 @@ class _FavoriteFolderDetailScreenState
   }
 
   Widget _buildNineGrid(int startIndex, int count) {
-    return SliverPadding(
+    return LoftifyPostArchiveSliverGrid(
       padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
-      sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 160,
-          mainAxisSpacing: 6,
-          crossAxisSpacing: 6,
-        ),
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            int trueIndex = startIndex + index;
-            final post = _posts[trueIndex];
-            return GestureDetector(
-              key: ValueKey('favorite-folder-${post.post?.id ?? trueIndex}'),
-              child: FavoriteFolderPostItemBuilder.buildNineGridPostItem(
+      itemCount: count,
+      addAutomaticKeepAlives: false,
+      itemBuilder: (context, index, tileExtent) {
+        final trueIndex = startIndex + index;
+        final post = _posts[trueIndex];
+        return GestureDetector(
+          key: ValueKey('favorite-folder-${post.post?.id ?? trueIndex}'),
+          child: FavoriteFolderPostItemBuilder.buildNineGridPostItem(
+            context,
+            post,
+            wh: tileExtent,
+          ),
+          onTap: () {
+            if (FavoriteFolderPostItemBuilder.isInvalid(post)) {
+              IToast.showTop(appLocalizations.invalidContent);
+            } else {
+              RouteUtil.pushPanelCupertinoRoute(
                 context,
-                post,
-                wh: 160,
-              ),
-              onTap: () {
-                if (FavoriteFolderPostItemBuilder.isInvalid(post)) {
-                  IToast.showTop(appLocalizations.invalidContent);
-                } else {
-                  RouteUtil.pushPanelCupertinoRoute(
-                    context,
-                    PostDetailScreen(
-                      favoritePostDetailData: post,
-                      isArticle:
-                          FavoriteFolderPostItemBuilder.getPostType(post) ==
-                              PostType.article,
-                    ),
-                  );
-                }
-              },
-            );
+                PostDetailScreen(
+                  favoritePostDetailData: post,
+                  isArticle: FavoriteFolderPostItemBuilder.getPostType(post) ==
+                      PostType.article,
+                ),
+              );
+            }
           },
-          childCount: count,
-          addAutomaticKeepAlives: false,
-        ),
-      ),
+        );
+      },
     );
   }
 

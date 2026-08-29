@@ -60,6 +60,66 @@ class LoftifyPostArchiveGrid extends StatelessWidget {
   }
 }
 
+/// Sliver counterpart of [LoftifyPostArchiveGrid] for grouped archive pages.
+class LoftifyPostArchiveSliverGrid extends StatelessWidget {
+  const LoftifyPostArchiveSliverGrid({
+    super.key,
+    required this.itemCount,
+    required this.itemBuilder,
+    this.padding = const EdgeInsets.only(top: 12),
+    this.spacing = 6,
+    this.addAutomaticKeepAlives = true,
+    this.addRepaintBoundaries = true,
+    this.addSemanticIndexes = true,
+  });
+
+  final int itemCount;
+  final LoftifyArchiveGridItemBuilder itemBuilder;
+  final EdgeInsetsGeometry padding;
+  final double spacing;
+  final bool addAutomaticKeepAlives;
+  final bool addRepaintBoundaries;
+  final bool addSemanticIndexes;
+
+  @override
+  Widget build(BuildContext context) {
+    return SliverLayoutBuilder(
+      builder: (context, constraints) {
+        final resolvedPadding = padding.resolve(Directionality.of(context));
+        final contentWidth = max(
+          1.0,
+          constraints.crossAxisExtent - resolvedPadding.horizontal,
+        );
+        final geometry = LoftifyArchiveGridGeometry.calculate(
+          contentWidth,
+          spacing: spacing,
+        );
+        return SliverPadding(
+          padding: padding,
+          sliver: SliverGrid(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: geometry.columnCount,
+              mainAxisSpacing: geometry.spacing,
+              crossAxisSpacing: geometry.spacing,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => itemBuilder(
+                context,
+                index,
+                geometry.tileExtent,
+              ),
+              childCount: itemCount,
+              addAutomaticKeepAlives: addAutomaticKeepAlives,
+              addRepaintBoundaries: addRepaintBoundaries,
+              addSemanticIndexes: addSemanticIndexes,
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 @immutable
 class LoftifyArchiveGridGeometry {
   const LoftifyArchiveGridGeometry._({
