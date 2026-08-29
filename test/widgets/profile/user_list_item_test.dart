@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Models/account_response.dart';
 import 'package:loftify/Models/user_response.dart';
+import 'package:loftify/Widgets/Design/loftify_controls.dart';
+import 'package:loftify/Widgets/Design/loftify_surfaces.dart';
 import 'package:loftify/Widgets/Item/loftify_item_builder.dart';
 import 'package:loftify/generated/app_localizations.dart';
 
@@ -64,13 +66,20 @@ void main() {
         home: Builder(
           builder: (context) {
             chewieProvider.setRootContext(context);
-            return Scaffold(
-              body: Padding(
-                padding: const EdgeInsets.all(8),
-                child: LoftifyItemBuilder.buildFollowerOrFollowingItem(
-                  context,
-                  0,
-                  item,
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                textScaler: const TextScaler.linear(2),
+              ),
+              child: Builder(
+                builder: (context) => Scaffold(
+                  body: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: LoftifyItemBuilder.buildFollowerOrFollowingItem(
+                      context,
+                      0,
+                      item,
+                    ),
+                  ),
                 ),
               ),
             );
@@ -79,12 +88,16 @@ void main() {
       ),
     );
 
-    final material = tester
-        .widgetList<Material>(find.byType(Material))
-        .firstWhere((widget) => widget.shape is RoundedRectangleBorder);
-    final shape = material.shape! as RoundedRectangleBorder;
-    expect(shape.borderRadius, BorderRadius.circular(14));
-    expect(find.byType(InkWell), findsWidgets);
+    expect(find.byType(LoftifyCard), findsOneWidget);
+    expect(find.byType(LoftifyButton), findsOneWidget);
+    expect(
+      tester.getSize(find.byType(LoftifyButton)).height,
+      greaterThanOrEqualTo(48),
+    );
+    expect(
+      tester.getSize(find.byType(LoftifyCard)).height,
+      greaterThan(150),
+    );
     expect(find.textContaining('ID:'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

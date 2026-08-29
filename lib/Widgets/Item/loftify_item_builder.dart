@@ -15,10 +15,13 @@ import '../../Models/search_response.dart';
 import '../../Models/user_response.dart';
 import '../../Screens/Info/user_detail_screen.dart';
 import '../../Screens/Login/login_by_captcha_screen.dart';
+import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/asset_util.dart';
 import '../../Utils/enums.dart';
 import '../PostDetail/comment_item.dart';
+import '../Design/loftify_controls.dart';
+import '../Design/loftify_surfaces.dart';
 import '../../l10n/l10n.dart';
 import '../loftify_icons.dart';
 import 'item_builder.dart';
@@ -326,103 +329,116 @@ class LoftifyItemBuilder {
     FollowingUserItem item, {
     Function()? onFollowOrUnFollow,
   }) {
-    final theme = Theme.of(context);
-    return Material(
-      color: theme.colorScheme.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(
-          color: theme.dividerColor.withValues(alpha: 0.65),
-          width: 0.6,
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () {
-          panelScreenState?.pushPage(
-            UserDetailScreen(
-              blogId: item.blogInfo.blogId,
-              blogName: item.blogInfo.blogName,
-            ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          child: Row(
-            children: [
-              ItemBuilder.buildAvatar(
-                context: context,
-                size: 48,
-                imageUrl: item.blogInfo.bigAvaImg,
-                tagPrefix: "relation-${item.blogInfo.blogId}",
-                showDetailMode: ShowDetailMode.not,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.blogInfo.blogNickName,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      'ID: ${item.blogInfo.blogName}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (item.blogInfo.selfIntro.isNotEmpty)
-                      const SizedBox(height: 3),
-                    if (item.blogInfo.selfIntro.isNotEmpty)
-                      Text(
-                        item.blogInfo.selfIntro,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              LoftifyItemBuilder.buildFramedDoubleButton(
-                context: context,
-                isFollowed: item.following,
-                positiveText: item.follower
-                    ? appLocalizations.followEach
-                    : appLocalizations.followed,
-                onTap: () {
-                  UserApi.followOrUnfollow(
-                    isFollow: !item.following,
-                    blogId: item.blogInfo.blogId,
-                    blogName: item.blogInfo.blogName,
-                  ).then((value) {
-                    if (value['meta']['status'] != 200) {
-                      IToast.showTop(
-                          value['meta']['desc'] ?? value['meta']['msg']);
-                    } else {
-                      item.following = !item.following;
-                      IToast.showTop(item.following
-                          ? appLocalizations.followed
-                          : appLocalizations.followEach);
-                      onFollowOrUnFollow?.call();
-                    }
-                  });
-                },
-              ),
-            ],
+    final design = context.design;
+    final relationButton = LoftifyItemBuilder.buildFramedDoubleButton(
+      context: context,
+      isFollowed: item.following,
+      positiveText: item.follower
+          ? appLocalizations.followEach
+          : appLocalizations.followed,
+      onTap: () {
+        UserApi.followOrUnfollow(
+          isFollow: !item.following,
+          blogId: item.blogInfo.blogId,
+          blogName: item.blogInfo.blogName,
+        ).then((value) {
+          if (value['meta']['status'] != 200) {
+            IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+          } else {
+            item.following = !item.following;
+            IToast.showTop(item.following
+                ? appLocalizations.followed
+                : appLocalizations.followEach);
+            onFollowOrUnFollow?.call();
+          }
+        });
+      },
+    );
+
+    Widget buildSummary({Widget? trailing}) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ItemBuilder.buildAvatar(
+            context: context,
+            size: 48,
+            imageUrl: item.blogInfo.bigAvaImg,
+            tagPrefix: "relation-${item.blogInfo.blogId}",
+            showDetailMode: ShowDetailMode.not,
           ),
-        ),
-      ),
+          SizedBox(width: design.spacing.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.blogInfo.blogNickName,
+                  style: design.typography.cardTitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: design.spacing.xs),
+                Text(
+                  'ID: ${item.blogInfo.blogName}',
+                  style: design.typography.metadata.copyWith(
+                    color: design.colors.textMuted,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (item.blogInfo.selfIntro.isNotEmpty) ...[
+                  SizedBox(height: design.spacing.xs),
+                  Text(
+                    item.blogInfo.selfIntro,
+                    style: design.typography.metadata.copyWith(
+                      color: design.colors.textSecondary,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (trailing != null) ...[
+            SizedBox(width: design.spacing.md),
+            trailing,
+          ],
+        ],
+      );
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 420 ||
+            MediaQuery.textScalerOf(context).scale(1) > 1.35;
+        return LoftifyCard(
+          variant: LoftifyCardVariant.outlined,
+          semanticLabel: item.blogInfo.blogNickName,
+          padding: EdgeInsets.all(design.spacing.lg),
+          onTap: () {
+            panelScreenState?.pushPage(
+              UserDetailScreen(
+                blogId: item.blogInfo.blogId,
+                blogName: item.blogInfo.blogName,
+              ),
+            );
+          },
+          child: compact
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    buildSummary(),
+                    SizedBox(height: design.spacing.md),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: relationButton,
+                    ),
+                  ],
+                )
+              : buildSummary(trailing: relationButton),
+        );
+      },
     );
   }
 
@@ -640,44 +656,18 @@ class LoftifyItemBuilder {
     required Function() onTap,
     String? positiveText,
     String? negtiveText,
-    double radius = 50,
-    Color? outline,
   }) {
-    return Material(
-      color: isFollowed ? Theme.of(context).cardColor : Colors.transparent,
-      borderRadius: BorderRadius.circular(radius),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(radius),
-        child: ClickableWrapper(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(radius),
-              border: Border.all(
-                color: isFollowed
-                    ? Theme.of(context).dividerColor
-                    : outline ?? Theme.of(context).primaryColor.withAlpha(127),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Text(
-                  isFollowed
-                      ? positiveText ?? appLocalizations.followed
-                      : negtiveText ?? appLocalizations.follow,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: isFollowed
-                            ? Theme.of(context).colorScheme.onSurfaceVariant
-                            : Theme.of(context).primaryColor,
-                      ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    final label = isFollowed
+        ? positiveText ?? appLocalizations.followed
+        : negtiveText ?? appLocalizations.follow;
+    return LoftifyButton(
+      label: label,
+      semanticLabel: label,
+      size: LoftifyButtonSize.compact,
+      variant: isFollowed
+          ? LoftifyButtonVariant.secondary
+          : LoftifyButtonVariant.tonal,
+      onPressed: onTap,
     );
   }
 
