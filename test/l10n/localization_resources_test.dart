@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loftify/generated/app_localizations_en.dart';
+import 'package:loftify/generated/app_localizations_zh.dart';
 
 Map<String, Object?> _loadArb(String name) {
   final file = File('lib/l10n/$name');
@@ -71,5 +72,14 @@ void main() {
     expect(localizations.loginByCaptcha, 'SMS Code Login');
     expect(localizations.grain, 'Grain Lists');
     expect(localizations.exitApp, 'Exit Loftify');
+  });
+
+  test('Traditional Chinese page states do not fall back to simplified copy',
+      () {
+    final localizations = AppLocalizationsZhTw();
+
+    expect(localizations.noNotice, '暫無通知');
+    expect(localizations.loadingArticle, '文章載入中...');
+    expect(localizations.retry, '重試');
   });
 }

@@ -659,7 +659,7 @@
   "atMe": "@我",
   "other": "其他",
   "notice": "通知",
-  "noNotice": "暂无通知",
+  "noNotice": "暫無通知",
   "personalHomepage": "個人首頁",
   "viewThemeBg": "查看主題背景",
   "themeBg": "主題背景",
@@ -762,7 +762,7 @@
   "joinCount": "{count}人參與",
   "enter": "進入",
   "searchInApp": "應用程式內搜尋",
-  "loadingArticle": "文章加载中...",
+  "loadingArticle": "文章載入中...",
   "retry": "重試",
   "tenThousand": "萬"
 }
