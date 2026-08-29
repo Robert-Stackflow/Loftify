@@ -94,7 +94,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('discovery entrances grow for two-line localized descriptions',
+  testWidgets('discovery entrances preserve the compact illustration ratio',
       (tester) async {
     var taps = 0;
     await tester.pumpWidget(
@@ -117,11 +117,60 @@ void main() {
     final card = find.byKey(
       const ValueKey('loftify-tag-discovery-card-Related collections'),
     );
-    expect(tester.getSize(card).width, 220);
-    expect(tester.getSize(card).height, greaterThan(140));
+    final size = tester.getSize(card);
+    expect(size.height, inInclusiveRange(70, 96));
+    expect(
+      size.aspectRatio,
+      moreOrLessEquals(
+        LoftifyTagDiscoveryCard.illustrationAspectRatio,
+        epsilon: 0.01,
+      ),
+    );
+    final surface = tester.widget<AnimatedContainer>(
+      find.descendant(of: card, matching: find.byType(AnimatedContainer)).first,
+    );
+    final decoration = surface.decoration! as BoxDecoration;
+    expect(decoration.color, Colors.transparent);
+    expect(decoration.border, isNull);
+    expect(decoration.boxShadow, isEmpty);
     await tester.tap(card);
     await tester.pump();
     expect(taps, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('discovery entrance stays compact and semantic in dark mode',
+      (tester) async {
+    await tester.pumpWidget(
+      _TestApp(
+        dark: true,
+        child: Align(
+          child: LoftifyTagDiscoveryCard(
+            title: 'Related dress',
+            description: '12 available looks',
+            illustration: const ColoredBox(color: Colors.indigo),
+            onTap: _noop,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final card = find.byKey(
+      const ValueKey('loftify-tag-discovery-card-Related dress'),
+    );
+    final size = tester.getSize(card);
+    expect(size.height, LoftifyTagDiscoveryCard.minimumHeight);
+    expect(size.width, lessThan(190));
+    expect(find.text('Related dress'), findsOneWidget);
+    expect(find.text('12 available looks'), findsOneWidget);
+    final buttonSemantics = tester
+        .widgetList<Semantics>(
+          find.descendant(of: card, matching: find.byType(Semantics)),
+        )
+        .where((widget) => widget.properties.button == true);
+    expect(buttonSemantics, hasLength(1));
+    expect(buttonSemantics.single.properties.enabled, isTrue);
     expect(tester.takeException(), isNull);
   });
 }
@@ -146,17 +195,21 @@ class _TestApp extends StatelessWidget {
     required this.child,
     this.width = 390,
     this.textScaler = TextScaler.noScaling,
+    this.dark = false,
   });
 
   final Widget child;
   final double width;
   final TextScaler textScaler;
+  final bool dark;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: LoftifyTheme.build(
-        ChewieThemeColorData.defaultLightThemes.first,
+        dark
+            ? ChewieThemeColorData.defaultDarkThemes.first
+            : ChewieThemeColorData.defaultLightThemes.first,
       ),
       home: MediaQuery(
         data: MediaQueryData(

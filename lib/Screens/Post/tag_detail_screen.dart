@@ -473,7 +473,7 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
         StringUtil.isNotEmpty(_tagDetailData!.relatedTags);
     return showEntries
         ? SizedBox(
-            height: entryHeight + design.spacing.xxl,
+            height: entryHeight + design.spacing.lg,
             width: MediaQuery.sizeOf(context).width,
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -482,7 +482,7 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
                   padding: EdgeInsets.only(
                     left: inset,
                     right: inset,
-                    bottom: design.spacing.xxl,
+                    bottom: design.spacing.lg,
                   ),
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),
@@ -547,8 +547,10 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
     required VoidCallback onTap,
   }) {
     final design = context.design;
+    final entryHeight = LoftifyTagDiscoveryCard.preferredHeight(context);
+    final entryWidth = LoftifyTagDiscoveryCard.preferredWidth(context);
     return Padding(
-      padding: EdgeInsets.only(right: design.spacing.lg),
+      padding: EdgeInsets.only(right: design.spacing.md),
       child: LoftifyTagDiscoveryCard(
         title: title,
         description: desc,
@@ -557,8 +559,8 @@ class _TagDetailScreenState extends BaseDynamicState<TagDetailScreen>
           context,
           lightBg,
           darkBg,
-          width: 220,
-          height: LoftifyTagDiscoveryCard.preferredHeight(context),
+          width: entryWidth,
+          height: entryHeight,
           fit: BoxFit.cover,
         ),
       ),

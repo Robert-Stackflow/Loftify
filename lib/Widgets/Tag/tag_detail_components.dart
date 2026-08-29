@@ -200,81 +200,81 @@ class LoftifyTagDiscoveryCard extends StatelessWidget {
   final Widget illustration;
   final VoidCallback onTap;
 
+  static const double illustrationAspectRatio = 170 / 65;
+  static const double minimumHeight = 70;
+  static const double maximumTextScale = 1.5;
+
   static double preferredHeight(BuildContext context) {
     final design = context.design;
     final scaler = MediaQuery.textScalerOf(context);
-    final titleHeight = scaler.scale(
-          design.typography.metadata.fontSize ?? 12,
-        ) *
-        (design.typography.metadata.height ?? 1);
-    final descriptionHeight = scaler.scale(
-          design.typography.cardTitle.fontSize ?? 15,
-        ) *
-        (design.typography.cardTitle.height ?? 1) *
-        2;
+    final metadataSize = design.typography.metadata.fontSize ?? 12;
+    final cardTitleSize = design.typography.cardTitle.fontSize ?? 15;
+    final scale = math.min(
+      maximumTextScale,
+      scaler.scale(metadataSize) / metadataSize,
+    );
+    final titleHeight =
+        metadataSize * scale * (design.typography.metadata.height ?? 1);
+    final descriptionHeight =
+        cardTitleSize * scale * (design.typography.cardTitle.height ?? 1);
     return math.max(
-      96,
-      design.spacing.lg * 2 +
+      minimumHeight,
+      design.spacing.md * 2 +
           titleHeight +
           design.spacing.xs +
           descriptionHeight +
-          design.spacing.sm,
+          2,
     );
   }
+
+  static double preferredWidth(BuildContext context) =>
+      preferredHeight(context) * illustrationAspectRatio;
 
   @override
   Widget build(BuildContext context) {
     final design = context.design;
+    final height = preferredHeight(context);
     return SizedBox(
       key: ValueKey('loftify-tag-discovery-card-$title'),
-      width: 220,
-      height: preferredHeight(context),
+      width: preferredWidth(context),
+      height: height,
       child: LoftifyCard(
-        variant: LoftifyCardVariant.outlined,
+        variant: LoftifyCardVariant.flat,
+        backgroundColor: Colors.transparent,
+        radius: design.radii.control,
         onTap: onTap,
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Opacity(opacity: 0.72, child: illustration),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [
-                    design.colors.surfaceRaised.withValues(alpha: 0.94),
-                    design.colors.surfaceRaised.withValues(alpha: 0.56),
-                    Colors.transparent,
-                  ],
-                  stops: const [0, 0.68, 1],
-                ),
-              ),
-            ),
+            illustration,
             Padding(
               padding: EdgeInsets.symmetric(
-                horizontal: design.spacing.xl,
-                vertical: design.spacing.lg,
+                horizontal: design.spacing.lg,
+                vertical: design.spacing.md,
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: design.typography.metadata.copyWith(
-                      color: design.colors.textSecondary,
+              child: MediaQuery.withClampedTextScaling(
+                maxScaleFactor: maximumTextScale,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: design.typography.metadata.copyWith(
+                        color: design.colors.textSecondary,
+                      ),
                     ),
-                  ),
-                  SizedBox(height: design.spacing.xs),
-                  Text(
-                    description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: design.typography.cardTitle,
-                  ),
-                ],
+                    SizedBox(height: design.spacing.xs),
+                    Text(
+                      description,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: design.typography.cardTitle,
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
