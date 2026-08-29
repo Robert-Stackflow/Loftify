@@ -186,11 +186,17 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
     super.build(context);
     return Scaffold(
       backgroundColor: ChewieTheme.getBackground(context),
-      body: Stack(
+      body: Column(
         children: [
-          _buildMainBody(),
-          if (_sugList.isNotEmpty) _buildSuggestList(),
-          _buildFloatingHeader(),
+          _buildNavigationHeader(),
+          Expanded(
+            child: Stack(
+              children: [
+                _buildMainBody(),
+                if (_sugList.isNotEmpty) _buildSuggestList(),
+              ],
+            ),
+          ),
         ],
       ),
       extendBody: true,
@@ -231,9 +237,6 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
   _buildSuggestList() {
     return Container(
       color: ChewieTheme.getBackground(context),
-      padding: EdgeInsets.only(
-        top: LoftifyFloatingNavigationHeader.contentTopInset(context),
-      ),
       child: ListView.builder(
         itemCount: _sugList.length,
         itemBuilder: (context, index) {
@@ -286,11 +289,6 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
     return CustomScrollView(
       controller: _scrollController,
       slivers: [
-        SliverToBoxAdapter(
-          child: SizedBox(
-            height: LoftifyFloatingNavigationHeader.contentTopInset(context),
-          ),
-        ),
         SliverToBoxAdapter(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -690,8 +688,8 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
     );
   }
 
-  Widget _buildFloatingHeader() {
-    return LoftifyFloatingNavigationHeader(
+  Widget _buildNavigationHeader() {
+    return LoftifyNavigationHeader(
       child: Selector<AppProvider, bool>(
         selector: (_, provider) => provider.reduceTransparency,
         builder: (context, reduceTransparency, _) => LayoutBuilder(

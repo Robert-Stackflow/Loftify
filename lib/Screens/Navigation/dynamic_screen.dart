@@ -212,40 +212,46 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
     return Scaffold(
       backgroundColor: ChewieTheme.getBackground(context),
       body: appProvider.token.isNotEmpty
-          ? Stack(
+          ? Column(
               children: [
-                TabBarView(
-                  controller: _tabController,
-                  children: [
-                    FollowTab(
-                      key: _followTabKey,
-                      scrollController: _followScrollController,
-                    ),
-                    SubscribeTagTab(
-                      key: _tagTabKey,
-                      scrollController: _tagScrollController,
-                    ),
-                    SubscribeCollectionTab(
-                      key: _collectionTabKey,
-                      scrollController: _collectionScrollController,
-                    ),
-                    SubscribeGrainTab(
-                      key: _grainTabKey,
-                      scrollController: _grainScrollController,
-                    ),
-                  ],
-                ),
-                Positioned(
-                  right: ResponsiveUtil.isLandscapeLayout() ? 16 : 12,
-                  bottom: ResponsiveUtil.isLandscapeLayout() ? 16 : 76,
-                  child: ScrollToHide.multi(
-                    controller: _scrollToHideController,
-                    scrollControllers: getScrollControllers(),
-                    hideDirection: Axis.vertical,
-                    child: _buildFloatingButtons(),
+                _buildNavigationTabHeader(),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      TabBarView(
+                        controller: _tabController,
+                        children: [
+                          FollowTab(
+                            key: _followTabKey,
+                            scrollController: _followScrollController,
+                          ),
+                          SubscribeTagTab(
+                            key: _tagTabKey,
+                            scrollController: _tagScrollController,
+                          ),
+                          SubscribeCollectionTab(
+                            key: _collectionTabKey,
+                            scrollController: _collectionScrollController,
+                          ),
+                          SubscribeGrainTab(
+                            key: _grainTabKey,
+                            scrollController: _grainScrollController,
+                          ),
+                        ],
+                      ),
+                      Positioned(
+                        right: ResponsiveUtil.isLandscapeLayout() ? 16 : 12,
+                        bottom: ResponsiveUtil.isLandscapeLayout() ? 16 : 76,
+                        child: ScrollToHide.multi(
+                          controller: _scrollToHideController,
+                          scrollControllers: getScrollControllers(),
+                          hideDirection: Axis.vertical,
+                          child: _buildFloatingButtons(),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                _buildFloatingTabHeader(),
               ],
             )
           : LoftifyItemBuilder.buildUnLoginMainBody(context),
@@ -373,8 +379,8 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
     _tabLoadState.markLoadFailed(index);
   }
 
-  Widget _buildFloatingTabHeader() {
-    return LoftifyFloatingNavigationHeader(
+  Widget _buildNavigationTabHeader() {
+    return LoftifyNavigationHeader(
       child: Selector<AppProvider, bool>(
         selector: (_, provider) => provider.reduceTransparency,
         builder: (context, reduceTransparency, _) => Row(
@@ -555,11 +561,6 @@ class FollowTabState extends BaseDynamicState<FollowTab>
         physics: physics,
         slivers: [
           SliverToBoxAdapter(
-            child: SizedBox(
-              height: LoftifyFloatingNavigationHeader.contentTopInset(context),
-            ),
-          ),
-          SliverToBoxAdapter(
             child: Column(
               children: [
                 if (_timelineBlogList.isNotEmpty) ...[
@@ -647,7 +648,6 @@ class FollowTabState extends BaseDynamicState<FollowTab>
 
   _buildEasyRefresh(ERChildBuilder builder) {
     return EasyRefresh.builder(
-      header: buildFloatingNavigationRefreshHeader(),
       refreshOnStart: false,
       controller: _refreshController,
       scrollController: _scrollController,
@@ -806,7 +806,6 @@ class SubscribeTagTabState extends BaseDynamicState<SubscribeTagTab>
   Widget build(BuildContext context) {
     super.build(context);
     return EasyRefresh.builder(
-      header: buildFloatingNavigationRefreshHeader(),
       refreshOnStart: false,
       controller: _refreshController,
       onRefresh: () async {
@@ -822,11 +821,6 @@ class SubscribeTagTabState extends BaseDynamicState<SubscribeTagTab>
         controller: _scrollController,
         physics: physics,
         slivers: [
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: LoftifyFloatingNavigationHeader.contentTopInset(context),
-            ),
-          ),
           SliverList(
             delegate: SliverChildListDelegate(
               [
@@ -1412,7 +1406,6 @@ class SubscribeCollectionTabState
   Widget build(BuildContext context) {
     super.build(context);
     return EasyRefresh.builder(
-      header: buildFloatingNavigationRefreshHeader(),
       refreshOnStart: false,
       controller: _refreshController,
       onRefresh: () async {
@@ -1428,11 +1421,6 @@ class SubscribeCollectionTabState
         controller: _scrollController,
         physics: physics,
         slivers: [
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: LoftifyFloatingNavigationHeader.contentTopInset(context),
-            ),
-          ),
           SliverList(
             delegate: SliverChildListDelegate(
               [
@@ -1925,7 +1913,6 @@ class SubscribeGrainTabState extends BaseDynamicState<SubscribeGrainTab>
   Widget build(BuildContext context) {
     super.build(context);
     return EasyRefresh.builder(
-      header: buildFloatingNavigationRefreshHeader(),
       refreshOnStart: false,
       controller: _refreshController,
       onRefresh: () async {
@@ -1941,11 +1928,6 @@ class SubscribeGrainTabState extends BaseDynamicState<SubscribeGrainTab>
         controller: _scrollController,
         physics: physics,
         slivers: [
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: LoftifyFloatingNavigationHeader.contentTopInset(context),
-            ),
-          ),
           SliverList(
             delegate: SliverChildListDelegate(
               [

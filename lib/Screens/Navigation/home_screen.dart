@@ -171,42 +171,49 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
           return Stack(
             children: [
               EasyRefresh(
-                header: buildFloatingNavigationRefreshHeader(),
                 refreshOnStart: true,
                 controller: _refreshController,
                 onRefresh: _onRefresh,
                 onLoad: _pagingController.noMore ? null : _onLoad,
-                child: WaterfallFlow.builder(
+                child: CustomScrollView(
                   controller: _scrollController,
                   cacheExtent: MediaQuery.sizeOf(context).height,
-                  padding: EdgeInsets.only(
-                    top: LoftifyFloatingNavigationHeader.contentTopInset(
-                      context,
+                  slivers: [
+                    SliverToBoxAdapter(child: _buildNavigationHeader()),
+                    SliverPadding(
+                      padding: EdgeInsets.only(
+                        left: horizontalInset,
+                        right: horizontalInset,
+                      ),
+                      sliver: SliverWaterfallFlow(
+                        gridDelegate:
+                            SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                          mainAxisSpacing: gutter,
+                          crossAxisSpacing: gutter,
+                          maxCrossAxisExtent:
+                              design.grid.maximumDenseCardExtent,
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                          (BuildContext context, int index) {
+                            final item = _pagingController.items[index];
+                            return KeyedSubtree(
+                              key: ValueKey(
+                                'explore-${item.postData?.postView.id ?? item.itemId}',
+                              ),
+                              child: RecommendFlowItemBuilder
+                                  .buildWaterfallFlowPostItem(
+                                context,
+                                item,
+                                showMoreButton: true,
+                              ),
+                            );
+                          },
+                          childCount: _pagingController.items.length,
+                          addAutomaticKeepAlives: false,
+                        ),
+                      ),
                     ),
-                    left: horizontalInset,
-                    right: horizontalInset,
-                  ),
-                  gridDelegate:
-                      SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-                    mainAxisSpacing: gutter,
-                    crossAxisSpacing: gutter,
-                    maxCrossAxisExtent: design.grid.maximumDenseCardExtent,
-                  ),
-                  itemBuilder: (BuildContext context, int index) {
-                    final item = _pagingController.items[index];
-                    return KeyedSubtree(
-                      key: ValueKey(
-                        'explore-${item.postData?.postView.id ?? item.itemId}',
-                      ),
-                      child:
-                          RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
-                        context,
-                        item,
-                        showMoreButton: true,
-                      ),
-                    );
-                  },
-                  itemCount: _pagingController.items.length,
+                  ],
                 ),
               ),
               Positioned(
@@ -220,41 +227,44 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
                   child: _buildFloatingButtons(),
                 ),
               ),
-              LoftifyFloatingNavigationHeader(
-                child: Selector<AppProvider, bool>(
-                  selector: (_, provider) => provider.reduceTransparency,
-                  builder: (context, reduceTransparency, _) => Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      LoftifyNavigationAvatarButton(
-                        key: const ValueKey('home-navigation-avatar'),
-                        semanticLabel: appLocalizations.mine,
-                        enableBlur: !reduceTransparency,
-                        onPressed: _openMine,
-                      ),
-                      LoftifyFloatingHeaderTitle(
-                        key: const ValueKey('home-navigation-title'),
-                        title: appLocalizations.appName,
-                      ),
-                      LoftifyFloatingHeaderAction(
-                        key: const ValueKey('home-navigation-notice'),
-                        icon: LoftifyIcons.notifications,
-                        tooltip: appLocalizations.notice,
-                        enableBlur: !reduceTransparency,
-                        onPressed: () {
-                          RouteUtil.pushPanelCupertinoRoute(
-                            context,
-                            const SystemNoticeScreen(),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildNavigationHeader() {
+    return LoftifyNavigationHeader(
+      child: Selector<AppProvider, bool>(
+        selector: (_, provider) => provider.reduceTransparency,
+        builder: (context, reduceTransparency, _) => Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            LoftifyNavigationAvatarButton(
+              key: const ValueKey('home-navigation-avatar'),
+              semanticLabel: appLocalizations.mine,
+              enableBlur: !reduceTransparency,
+              onPressed: _openMine,
+            ),
+            LoftifyFloatingHeaderTitle(
+              key: const ValueKey('home-navigation-title'),
+              title: appLocalizations.appName,
+            ),
+            LoftifyFloatingHeaderAction(
+              key: const ValueKey('home-navigation-notice'),
+              icon: LoftifyIcons.notifications,
+              tooltip: appLocalizations.notice,
+              enableBlur: !reduceTransparency,
+              onPressed: () {
+                RouteUtil.pushPanelCupertinoRoute(
+                  context,
+                  const SystemNoticeScreen(),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

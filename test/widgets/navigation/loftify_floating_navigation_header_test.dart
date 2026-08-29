@@ -13,34 +13,28 @@ Widget _host({
     home: MediaQuery(
       data: mediaQuery,
       child: Scaffold(
-        body: Stack(
-          children: [
-            ListView(
-              controller: scrollController,
-              padding: EdgeInsets.only(
-                top: mediaQuery.padding.top +
-                    LoftifyFloatingNavigationHeader.topGap +
-                    LoftifyFloatingNavigationHeader.height +
-                    LoftifyFloatingNavigationHeader.contentGap,
-              ),
-              children: List.generate(
-                20,
-                (index) => SizedBox(
-                  key: ValueKey('item-$index'),
-                  height: 48,
-                  child: Text('Item $index'),
+        body: CustomScrollView(
+          controller: scrollController,
+          slivers: [
+            SliverToBoxAdapter(
+              child: LoftifyNavigationHeader(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: LoftifyFloatingHeaderAction(
+                    icon: LoftifyIcons.search,
+                    tooltip: 'Search',
+                    enableBlur: enableBlur,
+                    onPressed: () {},
+                  ),
                 ),
               ),
             ),
-            LoftifyFloatingNavigationHeader(
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: LoftifyFloatingHeaderAction(
-                  icon: LoftifyIcons.search,
-                  tooltip: 'Search',
-                  enableBlur: enableBlur,
-                  onPressed: () {},
-                ),
+            SliverList.builder(
+              itemCount: 20,
+              itemBuilder: (_, index) => SizedBox(
+                key: ValueKey('item-$index'),
+                height: 48,
+                child: Text('Item $index'),
               ),
             ),
           ],
@@ -60,14 +54,19 @@ void main() {
     );
     await tester.pumpWidget(_host(mediaQuery: media));
 
-    final header = tester.widget<Positioned>(
-      find.descendant(
-        of: find.byType(LoftifyFloatingNavigationHeader),
-        matching: find.byType(Positioned),
+    final headerSize = tester.getSize(
+      find.byType(LoftifyNavigationHeader),
+    );
+    expect(
+      headerSize.height,
+      LoftifyNavigationHeader.contentTopInset(
+        tester.element(find.byType(LoftifyNavigationHeader)),
       ),
     );
-    expect(header.top, 30);
-    expect(header.height, LoftifyFloatingNavigationHeader.height);
+    expect(
+      tester.getTopLeft(find.byType(LoftifyFloatingHeaderAction)).dy,
+      30,
+    );
 
     final surface = tester.widget<DecoratedBox>(
       find.byKey(const ValueKey('loftify-floating-capsule-surface')),
@@ -91,8 +90,7 @@ void main() {
     );
   });
 
-  testWidgets('keeps the header fixed while its initial content inset scrolls',
-      (
+  testWidgets('header occupies layout height and scrolls with page content', (
     tester,
   ) async {
     final controller = ScrollController();
@@ -106,12 +104,12 @@ void main() {
         tester.getTopLeft(find.byKey(const ValueKey('item-0')));
     expect(itemTopBefore.dy, 62);
 
-    controller.jumpTo(80);
+    controller.jumpTo(20);
     await tester.pump();
 
     expect(
-      tester.getTopLeft(find.byType(LoftifyFloatingHeaderAction)),
-      headerTopBefore,
+      tester.getTopLeft(find.byType(LoftifyFloatingHeaderAction)).dy,
+      lessThan(headerTopBefore.dy),
     );
     expect(
       tester.getTopLeft(find.byKey(const ValueKey('item-0'))).dy,
@@ -158,7 +156,7 @@ void main() {
         home: Scaffold(
           body: Center(
             child: SizedBox(
-              height: LoftifyFloatingNavigationHeader.height,
+              height: LoftifyNavigationHeader.height,
               child: LoftifyFloatingHeaderTitle(
                 title: 'A deliberately long Loftify title',
               ),
@@ -177,23 +175,5 @@ void main() {
     expect(find.byType(BackdropFilter), findsNothing);
     expect(find.byType(DecoratedBox), findsNothing);
     expect(tester.takeException(), isNull);
-  });
-
-  test('floating navigation refresh starts below the overlay header', () {
-    final header =
-        buildFloatingNavigationRefreshHeader() as LottieCupertinoHeader;
-
-    expect(header.triggerOffset, 56);
-    expect(header.radius, 20);
-    expect(
-      header.indicatorOffset,
-      LoftifyFloatingNavigationHeader.refreshIndicatorOffset,
-    );
-    expect(
-      header.indicatorOffset,
-      LoftifyFloatingNavigationHeader.topGap +
-          LoftifyFloatingNavigationHeader.height +
-          LoftifyFloatingNavigationHeader.contentGap,
-    );
   });
 }

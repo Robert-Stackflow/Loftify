@@ -139,10 +139,10 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
       backgroundColor: appProvider.token.isNotEmpty
           ? Theme.of(context).scaffoldBackgroundColor
           : ChewieTheme.getBackground(context),
-      body: Stack(
+      body: Column(
         children: [
-          _buildMainBody(),
-          _buildFloatingHeader(),
+          _buildNavigationHeader(),
+          Expanded(child: _buildMainBody()),
         ],
       ),
     );
@@ -164,7 +164,6 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
 
   Widget _buildMobileMainBody() {
     return EasyRefresh(
-      header: buildFloatingNavigationRefreshHeader(),
       controller: _refreshController,
       onRefresh: _onRefresh,
       child: Container(
@@ -173,9 +172,6 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
           cacheExtent: MediaQuery.sizeOf(context).height,
           controller: _scrollController,
           children: [
-            SizedBox(
-              height: LoftifyFloatingNavigationHeader.contentTopInset(context),
-            ),
             _buildUserCard(),
             _buildStatsticRow(),
             if (blogInfo != null) ..._buildContent(),
@@ -195,7 +191,6 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
         Expanded(
           flex: 1,
           child: EasyRefresh(
-            header: buildFloatingNavigationRefreshHeader(),
             controller: _refreshController,
             onRefresh: _onRefresh,
             child: Container(
@@ -203,11 +198,6 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
               child: ListView(
                 cacheExtent: MediaQuery.sizeOf(context).height,
                 children: [
-                  SizedBox(
-                    height: LoftifyFloatingNavigationHeader.contentTopInset(
-                      context,
-                    ),
-                  ),
                   _buildUserCard(),
                   if (blogInfo != null) ..._buildContent(),
                   // if (blogInfo != null) ..._buildMessage(),
@@ -237,11 +227,6 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
               child: ListView(
                 cacheExtent: MediaQuery.sizeOf(context).height,
                 children: [
-                  SizedBox(
-                    height: LoftifyFloatingNavigationHeader.contentTopInset(
-                      context,
-                    ),
-                  ),
                   if (meInfoData != null) _buildFollowingCard(),
                   const SizedBox(height: 10),
                   if (meInfoData != null) _buildFollowerCard(),
@@ -724,8 +709,8 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     }
   }
 
-  Widget _buildFloatingHeader() {
-    return LoftifyFloatingNavigationHeader(
+  Widget _buildNavigationHeader() {
+    return LoftifyNavigationHeader(
       child: Selector<AppProvider, bool>(
         selector: (_, provider) => provider.reduceTransparency,
         builder: (context, reduceTransparency, _) => Align(
@@ -757,7 +742,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                 ChewieIconButton(
                   icon: LoftifyIcons.settings,
                   tooltip: appLocalizations.setting,
-                  tapTargetSize: LoftifyFloatingNavigationHeader.height,
+                  tapTargetSize: LoftifyNavigationHeader.height,
                   onPressed: () {
                     RouteUtil.pushPanelCupertinoRoute(
                       context,

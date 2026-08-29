@@ -7,16 +7,15 @@ import 'package:flutter/material.dart';
 import '../../Models/account_response.dart';
 import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/hive_util.dart';
-import '../../Utils/lottie_files.dart';
 import '../Item/item_builder.dart';
 
-/// Overlay geometry shared by the four primary navigation pages.
+/// Occupied header geometry shared by the four primary navigation pages.
 ///
-/// The matching [contentTopInset] belongs inside each page's scrollable. It
-/// preserves the familiar first-frame spacing, then scrolls away so content can
-/// naturally continue beneath the system status bar and this floating layer.
-class LoftifyFloatingNavigationHeader extends StatelessWidget {
-  const LoftifyFloatingNavigationHeader({
+/// This widget is deliberately part of normal layout instead of an overlay.
+/// Pages can keep it above their content or place it as the first scroll item
+/// when the whole header should leave with the feed.
+class LoftifyNavigationHeader extends StatelessWidget {
+  const LoftifyNavigationHeader({
     super.key,
     required this.child,
   });
@@ -26,8 +25,6 @@ class LoftifyFloatingNavigationHeader extends StatelessWidget {
   static const double height = 48;
   static const double topGap = 6;
   static const double contentGap = 8;
-
-  static const double refreshIndicatorOffset = topGap + height + contentGap;
 
   static double horizontalInset(BuildContext context) =>
       MediaQuery.sizeOf(context).width >= 600 ? 16 : 12;
@@ -41,25 +38,20 @@ class LoftifyFloatingNavigationHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final horizontal = horizontalInset(context);
-    return Positioned(
-      top: topOffset(context),
-      left: horizontal,
-      right: horizontal,
-      height: height,
-      child: child,
+    return SizedBox(
+      height: contentTopInset(context),
+      child: Padding(
+        padding: EdgeInsets.only(
+          top: topOffset(context),
+          left: horizontal,
+          right: horizontal,
+          bottom: contentGap,
+        ),
+        child: SizedBox(height: height, child: child),
+      ),
     );
   }
 }
-
-Header buildFloatingNavigationRefreshHeader() => LottieCupertinoHeader(
-      backgroundColor: Colors.transparent,
-      indicator: LottieFiles.buildLoadingAnimation(40, false),
-      hapticFeedback: true,
-      triggerOffset: 56,
-      maxOverOffset: 84,
-      radius: 20,
-      indicatorOffset: LoftifyFloatingNavigationHeader.refreshIndicatorOffset,
-    );
 
 /// A low-noise, full-radius floating surface for navigation-page controls.
 class LoftifyFloatingCapsule extends StatelessWidget {
@@ -216,7 +208,7 @@ class LoftifyFloatingHeaderAction extends StatelessWidget {
       child: ChewieIconButton(
         icon: icon,
         tooltip: tooltip,
-        tapTargetSize: LoftifyFloatingNavigationHeader.height,
+        tapTargetSize: LoftifyNavigationHeader.height,
         onPressed: onPressed,
       ),
     );
