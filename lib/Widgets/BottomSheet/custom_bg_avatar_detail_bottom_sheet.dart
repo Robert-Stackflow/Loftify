@@ -8,9 +8,11 @@ import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 
 import '../../Theme/loftify_design_theme.dart';
+import '../../Utils/loftify_file_util.dart';
 import '../../Screens/Suit/custom_bg_avatar_list_screen.dart';
 import '../../l10n/l10n.dart';
 import '../Design/loftify_controls.dart';
+import '../Design/loftify_download_progress_button.dart';
 import '../Design/loftify_surfaces.dart';
 import '../loftify_icons.dart';
 
@@ -76,6 +78,8 @@ class CustomBgAvatarDetailPanel extends StatelessWidget {
   }
 }
 
+enum _DecorationDownloadAction { current, all }
+
 class CustomBgAvatarDetailBottomSheet extends StatefulWidget {
   const CustomBgAvatarDetailBottomSheet({super.key, required this.item});
 
@@ -93,6 +97,8 @@ class CustomBgAvatarDetailBottomSheetState
   final SwiperController _swiperController = SwiperController();
   int _currentIndex = 0;
   String currentUserNickName = "";
+  _DecorationDownloadAction? _activeDownload;
+  double _downloadProgress = 0;
 
   bool get isLootBox => item.type != 0;
 
@@ -374,26 +380,33 @@ class CustomBgAvatarDetailBottomSheetState
   Widget _buildFooter() {
     final design = context.design;
     final actions = <Widget>[
-      LoftifyButton(
+      LoftifyDownloadProgressButton(
         label: appLocalizations.singleImage,
         icon: LoftifyIcons.download,
         variant: LoftifyButtonVariant.secondary,
         expand: true,
-        onPressed: _downloadCurrent,
+        progress: _activeDownload == _DecorationDownloadAction.current
+            ? _downloadProgress
+            : null,
+        onPressed: _activeDownload == null ? _downloadCurrent : null,
       ),
       if (count > 1)
-        LoftifyButton(
+        LoftifyDownloadProgressButton(
           label: appLocalizations.all,
           icon: LoftifyIcons.batchDownload,
           variant: LoftifyButtonVariant.secondary,
           expand: true,
-          onPressed: _downloadAll,
+          progress: _activeDownload == _DecorationDownloadAction.all
+              ? _downloadProgress
+              : null,
+          onPressed: _activeDownload == null ? _downloadAll : null,
         ),
       LoftifyButton(
         label: appLocalizations.confirm,
         variant: LoftifyButtonVariant.primary,
         expand: true,
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed:
+            _activeDownload == null ? () => Navigator.of(context).pop() : null,
       ),
     ];
     return LayoutBuilder(
@@ -428,17 +441,31 @@ class CustomBgAvatarDetailBottomSheetState
   }
 
   Future<void> _downloadCurrent() async {
-    CustomLoadingDialog.showLoading(title: appLocalizations.downloading);
+    if (_activeDownload != null) return;
+    _beginDownload(_DecorationDownloadAction.current);
     try {
       final url = getUrlByIndex(_currentIndex);
-      await FileUtil.saveImage(context, url);
+      final success = await LoftifyFileUtil.saveImage(
+        context,
+        url,
+        onReceiveProgress: (received, total) => _updateDownloadProgress(
+          _DecorationDownloadAction.current,
+          received,
+          total,
+        ),
+      );
+      await _showDownloadCompletion(
+        _DecorationDownloadAction.current,
+        success,
+      );
     } finally {
-      CustomLoadingDialog.dismissLoading();
+      _endDownload(_DecorationDownloadAction.current);
     }
   }
 
   Future<void> _downloadAll() async {
-    CustomLoadingDialog.showLoading(title: appLocalizations.downloading);
+    if (_activeDownload != null) return;
+    _beginDownload(_DecorationDownloadAction.all);
     try {
       final urls = <String>[];
       if (isLootBox) {
@@ -453,9 +480,55 @@ class CustomBgAvatarDetailBottomSheetState
           urls.add(avatar.img.raw);
         }
       }
-      await FileUtil.saveImages(context, urls);
+      final success = await LoftifyFileUtil.saveImages(
+        context,
+        urls,
+        onReceiveProgress: (received, total) => _updateDownloadProgress(
+          _DecorationDownloadAction.all,
+          received,
+          total,
+        ),
+      );
+      await _showDownloadCompletion(_DecorationDownloadAction.all, success);
     } finally {
-      CustomLoadingDialog.dismissLoading();
+      _endDownload(_DecorationDownloadAction.all);
     }
+  }
+
+  void _beginDownload(_DecorationDownloadAction action) {
+    if (!mounted) return;
+    setState(() {
+      _activeDownload = action;
+      _downloadProgress = 0;
+    });
+  }
+
+  void _updateDownloadProgress(
+    _DecorationDownloadAction action,
+    int received,
+    int total,
+  ) {
+    if (!mounted || _activeDownload != action || total <= 0) return;
+    final next = (received / total).clamp(0.0, 1.0).toDouble();
+    if (next < 1 && (next - _downloadProgress).abs() < 0.002) return;
+    setState(() => _downloadProgress = next);
+  }
+
+  Future<void> _showDownloadCompletion(
+    _DecorationDownloadAction action,
+    bool success,
+  ) async {
+    if (!mounted || _activeDownload != action || !success) return;
+    setState(() => _downloadProgress = 1);
+    final motion = context.design.motion;
+    await Future<void>.delayed(motion.effective(context, motion.state));
+  }
+
+  void _endDownload(_DecorationDownloadAction action) {
+    if (!mounted || _activeDownload != action) return;
+    setState(() {
+      _activeDownload = null;
+      _downloadProgress = 0;
+    });
   }
 }

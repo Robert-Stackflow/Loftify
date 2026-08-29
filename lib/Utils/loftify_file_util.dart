@@ -48,6 +48,7 @@ class LoftifyFileUtil {
     String imageUrl, {
     bool showToast = true,
     String? fileName,
+    Function(int, int)? onReceiveProgress,
   }) {
     return _enqueueAndWait(
       context,
@@ -55,7 +56,75 @@ class LoftifyFileUtil {
       fileName: fileName ?? FileUtil.extractFileNameFromUrl(imageUrl),
       mediaType: DownloadMediaType.image,
       showToast: showToast,
+      onReceiveProgress: onReceiveProgress,
     );
+  }
+
+  static Future<bool> saveImages(
+    BuildContext context,
+    List<String> imageUrls, {
+    bool showToast = true,
+    Function(int, int)? onReceiveProgress,
+    DownloadSourceDescriptor? source,
+  }) async {
+    try {
+      if (imageUrls.isEmpty) return false;
+      if (ResponsiveUtil.isDesktop()) {
+        final saveDirectory = await FileUtil.checkSaveDirectory(context);
+        if (saveDirectory.nullOrEmpty) {
+          if (showToast) IToast.showTop('下载失败，请先选择保存路径');
+          return false;
+        }
+      }
+      const progressUnits = 1000000;
+      final requests = imageUrls
+          .map(
+            (url) => DownloadRequest(
+              url: url,
+              fileName: FileUtil.extractFileNameFromUrl(url),
+              mediaType: DownloadMediaType.image,
+              thumbnailUrl: url,
+            ),
+          )
+          .toList(growable: false);
+      final result = await DownloadTaskManager.instance.enqueueBatch(
+        requests,
+        source: source,
+      );
+      if (result.tasks.isEmpty) return false;
+      final accumulator = DownloadProgressAccumulator(result.tasks.length);
+      void report(double progress) {
+        onReceiveProgress?.call(
+          (progress.clamp(0.0, 1.0) * progressUnits).round(),
+          progressUnits,
+        );
+      }
+
+      report(0);
+      final status = await Future.wait(
+        result.tasks.asMap().entries.map(
+          (entry) async {
+            final saved = await DownloadTaskManager.instance.waitForCompletion(
+              entry.value.id,
+              onProgress: (received, total) {
+                report(accumulator.update(entry.key, received, total));
+              },
+            );
+            if (saved) report(accumulator.complete(entry.key));
+            return saved;
+          },
+        ),
+      );
+      final success = status.every((saved) => saved);
+      if (showToast) {
+        IToast.showTop(success ? '所有图片已保存' : '保存失败，请在下载管理中重试');
+      }
+      return success;
+    } catch (error, stackTrace) {
+      ILogger.error('Failed to enqueue image downloads', error, stackTrace);
+      if (showToast) IToast.showTop('保存失败，请重试');
+      return false;
+    }
   }
 
   static Future<bool> saveVideo(
