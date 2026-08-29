@@ -114,6 +114,52 @@ void main() {
     expect(taps, 2);
   });
 
+  testWidgets('blocked profile action stays dangerous and readable',
+      (tester) async {
+    var taps = 0;
+    for (final dark in <bool>[false, true]) {
+      await tester.pumpWidget(
+        _TestApp(
+          width: 320,
+          dark: dark,
+          child: LoftifyProfileAction(
+            label: 'Blocked creator',
+            icon: LoftifyIcons.block,
+            danger: true,
+            onPressed: () => taps++,
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final action = find.byKey(const ValueKey('loftify-profile-action'));
+      final design = LoftifyDesignThemeData.of(tester.element(action));
+      final decoration = tester
+          .widget<AnimatedContainer>(
+            find.descendant(
+              of: action,
+              matching: find.byType(AnimatedContainer),
+            ),
+          )
+          .decoration! as BoxDecoration;
+      final effectiveBackground = Color.alphaBlend(
+        decoration.color!,
+        design.colors.page,
+      );
+      final label = tester.widget<Text>(find.text('Blocked creator'));
+
+      expect(decoration.border!.top.color, design.colors.danger);
+      expect(
+        _contrastRatio(label.style!.color!, effectiveBackground),
+        greaterThanOrEqualTo(4.5),
+      );
+      await tester.tap(find.text('Blocked creator'));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+    }
+    expect(taps, 2);
+  });
+
   testWidgets('header uses columns on phones and two panes on wide windows',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(1200, 900));

@@ -302,13 +302,16 @@ class LoftifyProfileAction extends StatelessWidget {
       backgrounds: const [Colors.white],
       brightness: Brightness.light,
     );
-    final background = danger
-        ? design.colors.danger.withValues(alpha: 0.2)
-        : emphasized
-            ? Colors.white.withValues(alpha: 0.94)
-            : Colors.black.withValues(alpha: 0.22);
+    final dangerForeground = LoftifyTheme.readableForegroundColor(
+      design.colors.danger,
+      backgrounds: const [Colors.white],
+      brightness: Brightness.light,
+    );
+    final background = danger || emphasized
+        ? Colors.white.withValues(alpha: 0.94)
+        : Colors.black.withValues(alpha: 0.22);
     final foreground = danger
-        ? Colors.white
+        ? dangerForeground
         : emphasized
             ? emphasizedForeground
             : Colors.white;
@@ -316,6 +319,7 @@ class LoftifyProfileAction extends StatelessWidget {
       key: const ValueKey('loftify-profile-action'),
       onTap: onPressed,
       backgroundColor: background,
+      status: danger ? LoftifySurfaceStatus.error : LoftifySurfaceStatus.normal,
       radius: design.radii.control,
       semanticLabel: label,
       padding: EdgeInsets.symmetric(
