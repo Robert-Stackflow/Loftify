@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
@@ -357,6 +358,61 @@ void main() {
     expect(retries, 1);
   });
 
+  testWidgets('Android async recovery replaces stale error feedback', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    final stateKey = GlobalKey<_AsyncStateHarnessState>();
+
+    await tester.pumpWidget(
+      _TestApp(
+        width: 320,
+        mediaQuery: const MediaQueryData(
+          size: Size(320, 568),
+          textScaler: TextScaler.linear(1.6),
+        ),
+        child: _AsyncStateHarness(key: stateKey),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(LottieBuilder), findsOneWidget);
+    expect(find.bySemanticsLabel('Loading artwork'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+
+    stateKey.currentState!.showError();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byIcon(LoftifyIcons.error), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+    expect(find.bySemanticsLabel('Unable to load, Check your connection'),
+        findsOneWidget);
+
+    await tester.tap(find.text('Try again'));
+    await tester.pump();
+
+    expect(find.byType(LottieBuilder), findsOneWidget);
+    expect(find.bySemanticsLabel('Retrying'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byType(LottieBuilder), findsOneWidget);
+    expect(find.text('Try again'), findsNothing);
+    expect(find.byIcon(LoftifyIcons.error), findsNothing);
+
+    stateKey.currentState!.completeRetry();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byIcon(LoftifyIcons.check), findsOneWidget);
+    expect(find.bySemanticsLabel('Loaded'), findsOneWidget);
+    expect(find.byType(LottieBuilder), findsNothing);
+    expect(find.text('Try again'), findsNothing);
+    expect(tester.takeException(), isNull);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   testWidgets('real dress card and option panel remain responsive on Windows', (
     tester,
   ) async {
@@ -485,6 +541,55 @@ void main() {
 }
 
 void _noop() {}
+
+class _AsyncStateHarness extends StatefulWidget {
+  const _AsyncStateHarness({super.key});
+
+  @override
+  State<_AsyncStateHarness> createState() => _AsyncStateHarnessState();
+}
+
+class _AsyncStateHarnessState extends State<_AsyncStateHarness> {
+  LoftifyStateVisual _visual = LoftifyStateVisual.loading;
+  Completer<void>? _retry;
+
+  void showError() {
+    setState(() => _visual = LoftifyStateVisual.error);
+  }
+
+  void completeRetry() {
+    _retry?.complete();
+  }
+
+  void _retryLoading() {
+    setState(() => _visual = LoftifyStateVisual.loading);
+    final retry = _retry = Completer<void>();
+    retry.future.then((_) {
+      if (mounted && identical(_retry, retry)) {
+        setState(() => _visual = LoftifyStateVisual.success);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LoftifyStateView(
+      visual: _visual,
+      title: switch (_visual) {
+        LoftifyStateVisual.loading =>
+          _retry == null ? 'Loading artwork' : 'Retrying',
+        LoftifyStateVisual.error => 'Unable to load',
+        LoftifyStateVisual.success => 'Loaded',
+        LoftifyStateVisual.empty => 'Empty',
+        LoftifyStateVisual.warning => 'Warning',
+      },
+      message:
+          _visual == LoftifyStateVisual.error ? 'Check your connection' : null,
+      actionLabel: _visual == LoftifyStateVisual.error ? 'Try again' : null,
+      onAction: _visual == LoftifyStateVisual.error ? _retryLoading : null,
+    );
+  }
+}
 
 class _TestApp extends StatelessWidget {
   const _TestApp({
