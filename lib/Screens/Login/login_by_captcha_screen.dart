@@ -15,8 +15,8 @@ import '../../Models/simple_response.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/request_util.dart';
 import '../../Widgets/Design/loftify_controls.dart';
-import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/login_input_item.dart';
+import '../../Widgets/Login/loftify_login_layout.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
@@ -168,144 +168,102 @@ class _LoginByCaptchaScreenState extends BaseDynamicState<LoginByCaptchaScreen>
           showBorder: false,
           titleLeftMargin: ResponsiveUtil.isLandscapeLayout() ? 15 : 5,
         ),
-        body: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 20),
-          child: Stack(
-            children: [
-              ScrollConfiguration(
-                behavior: NoShadowScrollBehavior(),
-                child: ListView(
-                  children: [
-                    const SizedBox(height: 50),
-                    LoginInputItem(
-                      hint: appLocalizations.inputPhone,
-                      textInputAction: TextInputAction.next,
-                      controller: _mobileController,
-                      focusNode: _mobileFocusNode,
-                      autofillHints: const [AutofillHints.telephoneNumber],
-                      onSubmitted: (_) => _photoCaptchaFocusNode.requestFocus(),
-                      tailingConfig: InputItemLeadingTailingConfig(
-                        type: InputItemLeadingTailingType.clear,
-                      ),
-                      leadingConfig: InputItemLeadingTailingConfig(
-                        type: InputItemLeadingTailingType.icon,
-                        icon: LoftifyIcons.phone,
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                    LoginInputItem(
-                      hint: appLocalizations.inputImageCaptcha,
-                      textInputAction: TextInputAction.next,
-                      leadingConfig: InputItemLeadingTailingConfig(
-                        type: InputItemLeadingTailingType.icon,
-                        icon: LoftifyIcons.verification,
-                      ),
-                      tailingConfig: InputItemLeadingTailingConfig(
-                        type: InputItemLeadingTailingType.widget,
-                        widget: _photoCaptcha != null
-                            ? GestureDetector(
-                                onTap: () {
-                                  _refreshPhotoCaptcha();
-                                },
-                                child: ClipRRect(
-                                  borderRadius: const BorderRadius.all(
-                                      Radius.circular(8)),
-                                  child: Image.memory(_photoCaptcha,
-                                      width: 80, height: 40),
-                                ),
-                              )
-                            : const SizedBox(width: 80, height: 40),
-                      ),
-                      controller: _captchaController,
-                      focusNode: _photoCaptchaFocusNode,
-                      onSubmitted: (_) => _captchaCodeFocusNode.requestFocus(),
-                      keyboardType: TextInputType.number,
-                    ),
-                    LoginInputItem(
-                      hint: appLocalizations.inputCodeCaptcha,
-                      textInputAction: TextInputAction.done,
-                      controller: _captchaCodeController,
-                      focusNode: _captchaCodeFocusNode,
-                      autofillHints: const [AutofillHints.oneTimeCode],
-                      onSubmitted: (_) => _login(),
-                      tailingConfig: InputItemLeadingTailingConfig(
-                        type: InputItemLeadingTailingType.text,
-                        text: _captchaText,
-                        enable: !_isFetchingCaptchaCode,
-                        onTap: _fetchCaptchaCode,
-                      ),
-                      leadingConfig: InputItemLeadingTailingConfig(
-                        type: InputItemLeadingTailingType.icon,
-                        icon: LoftifyIcons.verification,
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                    const SizedBox(height: 30),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 50),
-                      child: LoftifyButton(
-                        label: appLocalizations.login,
-                        onPressed: _login,
-                        size: LoftifyButtonSize.large,
-                        expand: true,
-                      ),
-                    ),
-                  ],
-                ),
+        body: LoftifyLoginLayout(
+          formChildren: [
+            LoginInputItem(
+              hint: appLocalizations.inputPhone,
+              textInputAction: TextInputAction.next,
+              controller: _mobileController,
+              focusNode: _mobileFocusNode,
+              autofillHints: const [AutofillHints.telephoneNumber],
+              onSubmitted: (_) => _photoCaptchaFocusNode.requestFocus(),
+              tailingConfig: InputItemLeadingTailingConfig(
+                type: InputItemLeadingTailingType.clear,
               ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 50,
-                child: Column(
-                  children: [
-                    ItemBuilder.buildTextDivider(
-                      context: context,
-                      text: appLocalizations.otherLoginMethods,
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        ToolButton(
-                            context: context,
-                            icon: LoftifyIcons.password,
-                            onPressed: () {
-                              RouteUtil.pushCupertinoRoute(
-                                context,
-                                LoginByPasswordScreen(
-                                  initPhone: _mobileController.text,
-                                ),
-                              );
-                            }),
-                        const SizedBox(width: 30),
-                        ToolButton(
-                            context: context,
-                            icon: LoftifyIcons.lofterId,
-                            onPressed: () {
-                              RouteUtil.pushCupertinoRoute(
-                                context,
-                                const LoginByLofterIDScreen(),
-                              );
-                            }),
-                        // const SizedBox(width: 30),
-                        // ToolButton(
-                        //     context: context,
-                        //     icon: LoftifyIcons.email,
-                        //     onTap: () {
-                        //       RouteUtil.pushCupertinoRoute(
-                        //         context,
-                        //         const LoginByMailScreen(),
-                        //       );
-                        //     }),
-                      ],
-                    ),
-                  ],
-                ),
+              leadingConfig: InputItemLeadingTailingConfig(
+                type: InputItemLeadingTailingType.icon,
+                icon: LoftifyIcons.phone,
               ),
-            ],
+              keyboardType: TextInputType.number,
+            ),
+            LoginInputItem(
+              hint: appLocalizations.inputImageCaptcha,
+              textInputAction: TextInputAction.next,
+              leadingConfig: InputItemLeadingTailingConfig(
+                type: InputItemLeadingTailingType.icon,
+                icon: LoftifyIcons.verification,
+              ),
+              tailingConfig: InputItemLeadingTailingConfig(
+                type: InputItemLeadingTailingType.widget,
+                widget: _photoCaptcha != null
+                    ? GestureDetector(
+                        onTap: _refreshPhotoCaptcha,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.memory(
+                            _photoCaptcha,
+                            width: 80,
+                            height: 40,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      )
+                    : const SizedBox(width: 80, height: 40),
+              ),
+              controller: _captchaController,
+              focusNode: _photoCaptchaFocusNode,
+              onSubmitted: (_) => _captchaCodeFocusNode.requestFocus(),
+              keyboardType: TextInputType.number,
+            ),
+            LoginInputItem(
+              hint: appLocalizations.inputCodeCaptcha,
+              textInputAction: TextInputAction.done,
+              controller: _captchaCodeController,
+              focusNode: _captchaCodeFocusNode,
+              autofillHints: const [AutofillHints.oneTimeCode],
+              onSubmitted: (_) => _login(),
+              tailingConfig: InputItemLeadingTailingConfig(
+                type: InputItemLeadingTailingType.text,
+                text: _captchaText,
+                enable: !_isFetchingCaptchaCode,
+                onTap: _fetchCaptchaCode,
+              ),
+              leadingConfig: InputItemLeadingTailingConfig(
+                type: InputItemLeadingTailingType.icon,
+                icon: LoftifyIcons.verification,
+              ),
+              keyboardType: TextInputType.number,
+            ),
+          ],
+          primaryAction: LoftifyButton(
+            label: appLocalizations.login,
+            onPressed: _login,
+            size: LoftifyButtonSize.large,
+            expand: true,
           ),
+          alternativeTitle: appLocalizations.otherLoginMethods,
+          alternativeMethods: [
+            LoftifyLoginMethod(
+              label: appLocalizations.loginByPassword,
+              icon: LoftifyIcons.password,
+              onPressed: () {
+                RouteUtil.pushCupertinoRoute(
+                  context,
+                  LoginByPasswordScreen(initPhone: _mobileController.text),
+                );
+              },
+            ),
+            LoftifyLoginMethod(
+              label: appLocalizations.loginByLofterID,
+              icon: LoftifyIcons.lofterId,
+              onPressed: () {
+                RouteUtil.pushCupertinoRoute(
+                  context,
+                  const LoginByLofterIDScreen(),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
