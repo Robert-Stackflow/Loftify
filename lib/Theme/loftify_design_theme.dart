@@ -941,6 +941,22 @@ abstract final class LoftifyTheme {
         isDark ? const Color(0xFF202421) : const Color(0xFFFFFFFF);
     final textPrimary =
         isDark ? const Color(0xFFF2F5F3) : const Color(0xFF202522);
+    final accentContainer = Color.alphaBlend(
+      accent.withAlpha(isDark ? 52 : 28),
+      surfaceRaised,
+    );
+    final tonalCandidate = isDark
+        ? Color.lerp(accent, Colors.white, 0.30)!
+        : Color.lerp(accent, const Color(0xFF10201B), 0.38)!;
+    final onAccentContainer = _contrastRatio(
+              tonalCandidate,
+              accentContainer,
+            ) >=
+            4.5
+        ? tonalCandidate
+        : _contrastRatio(accent, accentContainer) >= 4.5
+            ? accent
+            : textPrimary;
     return LoftifyColorTokens(
       page: page,
       surface: surface,
@@ -953,18 +969,25 @@ abstract final class LoftifyTheme {
       outlineStrong: isDark ? const Color(0xFF485049) : const Color(0xFFCDD4CF),
       accent: accent,
       onAccent: ColorUtil.getContrastColor(accent),
-      accentContainer: Color.alphaBlend(
-        accent.withAlpha(isDark ? 52 : 28),
-        surfaceRaised,
-      ),
-      onAccentContainer: isDark
-          ? Color.lerp(accent, Colors.white, 0.30)!
-          : Color.lerp(accent, const Color(0xFF10201B), 0.38)!,
+      accentContainer: accentContainer,
+      onAccentContainer: onAccentContainer,
       success: success,
       warning: warning,
       danger: danger,
       scrim: Colors.black.withAlpha(isDark ? 156 : 104),
     );
+  }
+
+  static double _contrastRatio(Color foreground, Color background) {
+    final foregroundLuminance = foreground.computeLuminance();
+    final backgroundLuminance = background.computeLuminance();
+    final lighter = foregroundLuminance > backgroundLuminance
+        ? foregroundLuminance
+        : backgroundLuminance;
+    final darker = foregroundLuminance > backgroundLuminance
+        ? backgroundLuminance
+        : foregroundLuminance;
+    return (lighter + 0.05) / (darker + 0.05);
   }
 
   static LoftifyTypographyTokens _typography(

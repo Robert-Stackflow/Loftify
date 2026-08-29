@@ -200,6 +200,32 @@ void main() {
         );
       }
     });
+
+    test('accent container content meets AA contrast in every theme', () {
+      final sources = <ChewieThemeColorData>[
+        ...ChewieThemeColorData.defaultLightThemes,
+        ...ChewieThemeColorData.defaultDarkThemes,
+        for (final accent in <Color>[
+          const Color(0xFF14C2BB),
+          const Color(0xFFFF9800),
+          const Color(0xFF4CAF50),
+        ])
+          ChewieThemeColorData.defaultLightThemes.first.copyWith(
+            id: 'Custom-$accent',
+            primaryColor: accent,
+          ),
+      ];
+      for (final source in sources) {
+        final colors = LoftifyTheme.build(
+          source,
+        ).extension<LoftifyDesignThemeData>()!.colors;
+        expect(
+          _contrastRatio(colors.onAccentContainer, colors.accentContainer),
+          greaterThanOrEqualTo(4.5),
+          reason: '${source.id} needs readable tonal content',
+        );
+      }
+    });
   });
 
   group('LoftifyGridTokens', () {
