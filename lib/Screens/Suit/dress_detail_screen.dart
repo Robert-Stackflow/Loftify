@@ -6,7 +6,10 @@ import 'package:loftify/Models/gift_response.dart';
 import 'package:loftify/Screens/Info/nested_mixin.dart';
 import 'package:loftify/Utils/hive_util.dart';
 
+import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/enums.dart';
+import '../../Utils/loftify_file_util.dart';
+import '../../Widgets/Design/loftify_download_progress_button.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
@@ -35,6 +38,7 @@ class _DressDetailScreenState extends BaseDynamicState<DressDetailScreen>
   String? userAvatarImg;
   String? currentAvatarImg;
   final EasyRefreshController _refreshController = EasyRefreshController();
+  final Map<String, double> _downloadProgress = {};
 
   @override
   void initState() {
@@ -301,10 +305,13 @@ class _DressDetailScreenState extends BaseDynamicState<DressDetailScreen>
             padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
             child: Row(
               children: [
-                IconButton.outlined(
-                  tooltip: appLocalizations.download,
-                  onPressed: () => _downloadPart(item),
-                  icon: const ChewieIcon(LoftifyIcons.download, size: 19),
+                LoftifyDownloadProgressIconButton(
+                  semanticLabel: appLocalizations.download,
+                  icon: LoftifyIcons.download,
+                  progress: _downloadProgress[item.partUrl],
+                  onPressed: _downloadProgress.containsKey(item.partUrl)
+                      ? null
+                      : () => _downloadPart(item),
                 ),
                 if (isAvatarBox) ...[
                   const SizedBox(width: 8),
@@ -333,9 +340,36 @@ class _DressDetailScreenState extends BaseDynamicState<DressDetailScreen>
   }
 
   Future<void> _downloadPart(GiftPartItem item) async {
-    CustomLoadingDialog.showLoading(title: appLocalizations.downloading);
-    await FileUtil.saveImage(context, item.partUrl);
-    CustomLoadingDialog.dismissLoading();
+    final key = item.partUrl;
+    if (_downloadProgress.containsKey(key)) return;
+    setState(() => _downloadProgress[key] = 0);
+    try {
+      final success = await LoftifyFileUtil.saveImage(
+        context,
+        key,
+        onReceiveProgress: (received, total) {
+          _updateDownloadProgress(key, received, total);
+        },
+      );
+      await _showDownloadCompletion(key, success);
+    } finally {
+      if (mounted) setState(() => _downloadProgress.remove(key));
+    }
+  }
+
+  void _updateDownloadProgress(String key, int received, int total) {
+    if (!mounted || !_downloadProgress.containsKey(key) || total <= 0) return;
+    final next = (received / total).clamp(0.0, 1.0).toDouble();
+    final current = _downloadProgress[key] ?? 0;
+    if (next < 1 && (next - current).abs() < 0.002) return;
+    setState(() => _downloadProgress[key] = next);
+  }
+
+  Future<void> _showDownloadCompletion(String key, bool success) async {
+    if (!mounted || !_downloadProgress.containsKey(key) || !success) return;
+    setState(() => _downloadProgress[key] = 1);
+    final motion = context.design.motion;
+    await Future<void>.delayed(motion.effective(context, motion.state));
   }
 
   PreferredSizeWidget _buildAppBar() {

@@ -71,3 +71,67 @@ class LoftifyDownloadProgressButton extends StatelessWidget {
     );
   }
 }
+
+/// Compact circular counterpart for dense cards and app-bar-sized actions.
+class LoftifyDownloadProgressIconButton extends StatelessWidget {
+  const LoftifyDownloadProgressIconButton({
+    super.key,
+    required this.semanticLabel,
+    required this.icon,
+    required this.onPressed,
+    this.progress,
+  });
+
+  final String semanticLabel;
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final double? progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final design = context.design;
+    final normalized = progress?.clamp(0.0, 1.0).toDouble();
+    final percent = normalized == null ? null : (normalized * 100).round();
+    return Semantics(
+      button: true,
+      liveRegion: normalized != null,
+      label: semanticLabel,
+      value: percent == null ? null : '$percent%',
+      enabled: normalized == null && onPressed != null,
+      child: ExcludeSemantics(
+        child: SizedBox.square(
+          dimension: 44,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Positioned.fill(
+                child: IconButton.outlined(
+                  onPressed: normalized == null ? onPressed : null,
+                  icon: Icon(icon, size: design.icons.regular),
+                ),
+              ),
+              if (normalized != null)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: Padding(
+                      padding: const EdgeInsets.all(2),
+                      child: CircularProgressIndicator(
+                        key: const ValueKey(
+                          'loftify-download-progress-ring',
+                        ),
+                        value: normalized,
+                        strokeWidth: 2.5,
+                        strokeCap: StrokeCap.round,
+                        color: design.colors.accentForeground,
+                        backgroundColor: design.colors.outline,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

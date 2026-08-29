@@ -73,6 +73,35 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('compact card action exposes a real circular progress value',
+      (tester) async {
+    var taps = 0;
+    await tester.pumpWidget(
+      _TestApp(
+        child: LoftifyDownloadProgressIconButton(
+          semanticLabel: 'Download decoration part',
+          icon: LoftifyIcons.download,
+          progress: 0.68,
+          onPressed: () => taps++,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final button = find.byType(LoftifyDownloadProgressIconButton);
+    final semantics = tester.getSemantics(button);
+    final progress = tester.widget<CircularProgressIndicator>(
+      find.byKey(const ValueKey('loftify-download-progress-ring')),
+    );
+    expect(semantics.label, 'Download decoration part');
+    expect(semantics.value, '68%');
+    expect(progress.value, 0.68);
+    await tester.tap(button);
+    await tester.pump();
+    expect(taps, 0);
+    expect(tester.takeException(), isNull);
+  });
+
   test('download progress button does not use Lottie loading feedback', () {
     final source = File(
       'lib/Widgets/Design/loftify_download_progress_button.dart',
@@ -87,6 +116,17 @@ void main() {
     expect(sheetSource, isNot(contains('CustomLoadingDialog')));
     expect(sheetSource, contains('LoftifyFileUtil.saveImage'));
     expect(sheetSource, contains('LoftifyFileUtil.saveImages'));
+
+    for (final path in <String>[
+      'lib/Screens/Suit/emote_detail_screen.dart',
+      'lib/Screens/Suit/dress_detail_screen.dart',
+    ]) {
+      final detailSource = File(path).readAsStringSync();
+      expect(detailSource, isNot(contains('CustomLoadingDialog')),
+          reason: path);
+      expect(detailSource, contains('LoftifyFileUtil.saveImage'), reason: path);
+      expect(detailSource, contains('_downloadProgress'), reason: path);
+    }
   });
 }
 
