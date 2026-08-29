@@ -24,9 +24,16 @@ import 'experiment_setting_screen.dart';
 import 'general_setting_screen.dart';
 import 'image_setting_screen.dart';
 import 'lofter_basic_setting_screen.dart';
+import 'base_setting_screen.dart';
 
-class MobileSettingNavigationScreen extends StatefulWidget {
-  const MobileSettingNavigationScreen({super.key});
+class MobileSettingNavigationScreen extends BaseSettingScreen {
+  const MobileSettingNavigationScreen({
+    super.key,
+    super.padding,
+    super.showTitleBar,
+    super.searchConfig,
+    super.searchText,
+  });
 
   static const String routeName = "/setting/navigation";
 
@@ -36,91 +43,79 @@ class MobileSettingNavigationScreen extends StatefulWidget {
 }
 
 class _MobileSettingNavigationScreenState
-    extends BaseDynamicState<MobileSettingNavigationScreen>
-    with TickerProviderStateMixin {
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
+    extends BaseDynamicState<MobileSettingNavigationScreen> {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.transparent,
-      child: Scaffold(
-        appBar: ResponsiveAppBar(
+    return ChewieItemBuilder.buildSettingScreen(
+      context: context,
+      title: appLocalizations.setting,
+      showTitleBar: widget.showTitleBar,
+      showBack: !ResponsiveUtil.isLandscapeLayout(),
+      padding: widget.padding,
+      children: [
+        CaptionItem(
+          context: context,
           title: appLocalizations.setting,
-          showBack: true,
-          showBorder: true,
-          actions: const [
-            BlankIconButton(),
-            SizedBox(width: 5),
+          children: [
+            EntryItem(
+              title: appLocalizations.generalSetting,
+              leading: LoftifyIcons.generalSettings,
+              showLeading: true,
+              onTap: () {
+                RouteUtil.pushCupertinoRoute(
+                  context,
+                  GeneralSettingScreen(key: generalSettingScreenKey),
+                );
+              },
+            ),
+            EntryItem(
+              title: appLocalizations.appearanceSetting,
+              leading: LoftifyIcons.appearance,
+              showLeading: true,
+              onTap: () {
+                RouteUtil.pushCupertinoRoute(
+                  context,
+                  const AppearanceSettingScreen(),
+                );
+              },
+            ),
+            EntryItem(
+              title: appLocalizations.imageSetting,
+              leading: LoftifyIcons.image,
+              showLeading: true,
+              onTap: () {
+                RouteUtil.pushCupertinoRoute(
+                  context,
+                  const ImageSettingScreen(),
+                );
+              },
+            ),
+            EntryItem(
+              title: appLocalizations.lofterBasicSetting,
+              leading: LoftifyIcons.basicSettings,
+              showLeading: true,
+              onTap: () {
+                RouteUtil.pushCupertinoRoute(
+                  context,
+                  const LofterBasicSettingScreen(),
+                );
+              },
+            ),
+            EntryItem(
+              title: appLocalizations.experimentSetting,
+              leading: LoftifyIcons.experiment,
+              showLeading: true,
+              onTap: () {
+                RouteUtil.pushCupertinoRoute(
+                  context,
+                  const ExperimentSettingScreen(),
+                );
+              },
+            ),
           ],
         ),
-        body: EasyRefresh(
-          child: ListView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            children: [
-              CaptionItem(
-                context: context,
-                title: appLocalizations.setting,
-                children: [
-                  EntryItem(
-                    title: appLocalizations.generalSetting,
-                    leading: LoftifyIcons.generalSettings,
-                    showLeading: true,
-                    onTap: () {
-                      RouteUtil.pushCupertinoRoute(
-                        context,
-                        GeneralSettingScreen(key: generalSettingScreenKey),
-                      );
-                    },
-                  ),
-                  EntryItem(
-                    title: appLocalizations.appearanceSetting,
-                    leading: LoftifyIcons.appearance,
-                    showLeading: true,
-                    onTap: () {
-                      RouteUtil.pushCupertinoRoute(
-                          context, const AppearanceSettingScreen());
-                    },
-                  ),
-                  EntryItem(
-                    title: appLocalizations.imageSetting,
-                    leading: LoftifyIcons.image,
-                    showLeading: true,
-                    onTap: () {
-                      RouteUtil.pushCupertinoRoute(
-                          context, const ImageSettingScreen());
-                    },
-                  ),
-                  EntryItem(
-                    title: appLocalizations.lofterBasicSetting,
-                    leading: LoftifyIcons.basicSettings,
-                    showLeading: true,
-                    onTap: () {
-                      RouteUtil.pushCupertinoRoute(
-                          context, const LofterBasicSettingScreen());
-                    },
-                  ),
-                  EntryItem(
-                    title: appLocalizations.experimentSetting,
-                    leading: LoftifyIcons.experiment,
-                    showLeading: true,
-                    onTap: () {
-                      RouteUtil.pushCupertinoRoute(
-                          context, const ExperimentSettingScreen());
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 30),
-            ],
-          ),
-        ),
-      ),
+        const SizedBox(height: 30),
+      ],
     );
   }
 }
