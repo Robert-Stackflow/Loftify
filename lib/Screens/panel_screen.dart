@@ -32,6 +32,30 @@ import '../l10n/l10n.dart';
 import 'Navigation/home_screen.dart';
 import 'Navigation/search_screen.dart';
 
+class PanelBackScope extends StatelessWidget {
+  const PanelBackScope({
+    super.key,
+    required this.canRootPop,
+    required this.onNestedPop,
+    required this.child,
+  });
+
+  final bool canRootPop;
+  final FutureOr<void> Function() onNestedPop;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: canRootPop,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) onNestedPop();
+      },
+      child: child,
+    );
+  }
+}
+
 class PanelScreen extends StatefulWidget {
   const PanelScreen({
     super.key,
@@ -270,9 +294,9 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
         ),
       ],
     );
-    return PopScope(
-      canPop: canRootPop,
-      onPopInvokedWithResult: (_, __) => popPage(),
+    return PanelBackScope(
+      canRootPop: canRootPop,
+      onNestedPop: popPage,
       child: scaffold,
     );
   }
