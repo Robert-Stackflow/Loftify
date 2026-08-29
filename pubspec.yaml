@@ -110,6 +110,7 @@ dev_dependencies:
   json_serializable: ^6.7.1
   msix: ^3.16.7
   sqflite_common_ffi: 2.3.3
+  vm_service: ^15.3.0
 
 msix_config:
   display_name: Loftify
