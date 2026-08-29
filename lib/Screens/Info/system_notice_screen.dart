@@ -30,6 +30,144 @@ class SystemNoticeTabPlaceholder extends StatelessWidget {
   }
 }
 
+class SystemNoticeMessageTile extends StatelessWidget {
+  const SystemNoticeMessageTile({
+    super.key,
+    required this.nickname,
+    required this.message,
+    required this.timestamp,
+    required this.avatarUrl,
+    required this.thumbnailUrl,
+    required this.onTap,
+    required this.onAvatarTap,
+  });
+
+  final String nickname;
+  final String message;
+  final int timestamp;
+  final String avatarUrl;
+  final String thumbnailUrl;
+  final VoidCallback onTap;
+  final VoidCallback onAvatarTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 360 || textScale > 1.35;
+        final avatarSize = compact ? 44.0 : 50.0;
+        final messageText = Text.rich(
+          key: const Key('system-notice-message'),
+          TextSpan(
+            children: [
+              TextSpan(
+                text: nickname,
+                style: Theme.of(context).textTheme.titleSmall?.apply(
+                      fontSizeDelta: 1,
+                    ),
+              ),
+              TextSpan(
+                text: message.replaceFirst(nickname, ''),
+                style: Theme.of(context).textTheme.titleSmall?.apply(
+                      fontSizeDelta: 1,
+                      color: Theme.of(context).textTheme.bodySmall?.color,
+                    ),
+              ),
+            ],
+          ),
+        );
+        final timeText = Text(
+          TimeUtil.formatTimestamp(timestamp),
+          style: Theme.of(context).textTheme.labelMedium?.apply(
+                fontSizeDelta: 1,
+              ),
+        );
+        final thumbnail = ClipRRect(
+          key: const Key('system-notice-thumbnail'),
+          borderRadius: BorderRadius.circular(8),
+          child: ChewieItemBuilder.buildCachedImage(
+            imageUrl: thumbnailUrl,
+            context: context,
+            height: 50,
+            width: 50,
+            fit: BoxFit.cover,
+            showLoading: false,
+          ),
+        );
+        final content = compact
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  messageText,
+                  const SizedBox(height: 8),
+                  timeText,
+                  const SizedBox(height: 8),
+                  Align(alignment: Alignment.centerRight, child: thumbnail),
+                  const SizedBox(height: 10),
+                ],
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        messageText,
+                        const SizedBox(height: 10),
+                        timeText,
+                        const SizedBox(height: 10),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  thumbnail,
+                ],
+              );
+        return ClickableGestureDetector(
+          onTap: onTap,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              compact ? 12 : 15,
+              compact ? 8 : 5,
+              compact ? 12 : 15,
+              0,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                GestureDetector(
+                  onTap: onAvatarTap,
+                  child: ItemBuilder.buildAvatar(
+                    context: context,
+                    size: avatarSize,
+                    imageUrl: avatarUrl,
+                  ),
+                ),
+                SizedBox(width: compact ? 8 : 10),
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Theme.of(context).dividerColor,
+                          width: 0.5,
+                        ),
+                      ),
+                    ),
+                    child: content,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 class SystemNoticeScreen extends StatefulWidget {
   const SystemNoticeScreen({super.key});
 
@@ -124,7 +262,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
     super.dispose();
   }
 
-  initTab() {
+  void initTab() {
     final restored = PersistentTabState.restore(
       idKey: HiveUtil.systemNoticeTabIdKey,
       legacyIndexKey: HiveUtil.systemNoticeTabIndexKey,
@@ -169,7 +307,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
     });
   }
 
-  _fetchLikeMessages({bool refresh = false}) async {
+  Future<IndicatorResult> _fetchLikeMessages({bool refresh = false}) async {
     const loadingKey = 'like';
     if (!_loadingTabs.add(loadingKey)) return IndicatorResult.none;
     if (refresh) _likeNoMore = false;
@@ -209,7 +347,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
     });
   }
 
-  _fetchSystemNotices(
+  Future<IndicatorResult> _fetchSystemNotices(
     MessageType type,
     List<MessageItem> list, {
     bool refresh = false,
@@ -283,7 +421,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
     );
   }
 
-  _buildAllTab() {
+  Widget _buildAllTab() {
     return EasyRefresh(
       controller: _allRefreshController,
       onRefresh: () async {
@@ -324,7 +462,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
     );
   }
 
-  _buildLikeTab() {
+  Widget _buildLikeTab() {
     return EasyRefresh(
       controller: _likeRefreshController,
       onRefresh: () async {
@@ -352,7 +490,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
     );
   }
 
-  _buildRecommendTab() {
+  Widget _buildRecommendTab() {
     return EasyRefresh(
       controller: _recommendRefreshController,
       onRefresh: () async {
@@ -393,7 +531,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
     );
   }
 
-  _buildGiftTab() {
+  Widget _buildGiftTab() {
     return EasyRefresh(
       controller: _giftRefreshController,
       onRefresh: () async {
@@ -434,7 +572,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
     );
   }
 
-  _buildAtTab() {
+  Widget _buildAtTab() {
     return EasyRefresh(
       controller: _atRefreshController,
       onRefresh: () async {
@@ -474,7 +612,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
     );
   }
 
-  _buildSubscribeTab() {
+  Widget _buildSubscribeTab() {
     return EasyRefresh(
       controller: _subscribeRefreshController,
       onRefresh: () async {
@@ -515,7 +653,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
     );
   }
 
-  _buildCollectionTab() {
+  Widget _buildCollectionTab() {
     return EasyRefresh(
       controller: _collectionRefreshController,
       onRefresh: () async {
@@ -556,7 +694,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
     );
   }
 
-  _buildOtherTab() {
+  Widget _buildOtherTab() {
     return EasyRefresh(
       controller: _otherRefreshController,
       onRefresh: () async {
@@ -597,8 +735,13 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
     );
   }
 
-  _buildItem(MessageItem item) {
-    return ClickableGestureDetector(
+  Widget _buildItem(MessageItem item) {
+    return SystemNoticeMessageTile(
+      nickname: item.actUserBlogInfo.blogNickName,
+      message: item.defString,
+      timestamp: item.publishTime,
+      avatarUrl: item.actUserBlogInfo.bigAvaImg,
+      thumbnailUrl: item.thumbnail,
       onTap: () {
         RouteUtil.pushPanelCupertinoRoute(
           context,
@@ -608,107 +751,15 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
           ),
         );
       },
-      child: Container(
-        padding: const EdgeInsets.only(left: 5, right: 5, top: 5, bottom: 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(width: 10),
-            GestureDetector(
-              child: ItemBuilder.buildAvatar(
-                context: context,
-                size: 50,
-                imageUrl: item.actUserBlogInfo.bigAvaImg,
-              ),
-              onTap: () {
-                RouteUtil.pushPanelCupertinoRoute(
-                  context,
-                  UserDetailScreen(
-                    blogId: item.actUserId,
-                    blogName: item.actUserBlogInfo.blogName,
-                  ),
-                );
-              },
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                      width: 0.5,
-                    ),
-                  ),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text.rich(
-                            TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: item.actUserBlogInfo.blogNickName,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleSmall
-                                      ?.apply(
-                                        fontSizeDelta: 1,
-                                      ),
-                                ),
-                                TextSpan(
-                                  text: item.defString.replaceFirst(
-                                      item.actUserBlogInfo.blogNickName, ""),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleSmall
-                                      ?.apply(
-                                        fontSizeDelta: 1,
-                                        color: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.color,
-                                      ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            TimeUtil.formatTimestamp(item.publishTime),
-                            style:
-                                Theme.of(context).textTheme.labelMedium?.apply(
-                                      fontSizeDelta: 1,
-                                    ),
-                          ),
-                          const SizedBox(height: 10),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: ChewieItemBuilder.buildCachedImage(
-                        imageUrl: item.thumbnail,
-                        context: context,
-                        height: 50,
-                        width: 50,
-                        fit: BoxFit.cover,
-                        showLoading: false,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-          ],
-        ),
-      ),
+      onAvatarTap: () {
+        RouteUtil.pushPanelCupertinoRoute(
+          context,
+          UserDetailScreen(
+            blogId: item.actUserId,
+            blogName: item.actUserBlogInfo.blogName,
+          ),
+        );
+      },
     );
   }
 
