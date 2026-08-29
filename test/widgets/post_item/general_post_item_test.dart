@@ -280,7 +280,9 @@ void main() {
     final layouts = <Widget>[
       WaterfallFlowPostItemWidget(item: mediaPost),
       GridPostItemWidget(item: mediaPost, wh: 160),
-      TilePostItemWidget(item: mediaPost),
+      SingleChildScrollView(
+        child: TilePostItemWidget(item: mediaPost),
+      ),
     ];
 
     for (final layout in layouts) {
