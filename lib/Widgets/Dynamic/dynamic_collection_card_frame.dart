@@ -2,6 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../Design/loftify_surfaces.dart';
 
+/// Page-level rhythm shared by subscribed and suggested collection grids.
+abstract final class DynamicCollectionGridLayout {
+  static EdgeInsets paddingFor(double width) => EdgeInsets.symmetric(
+        horizontal: width < 600 ? 12 : 16,
+        vertical: 6,
+      );
+
+  static double spacingFor(double width) => width < 600 ? 10 : 12;
+}
+
 /// Shared responsive frame for collection cards in the dynamic feed.
 ///
 /// The card deliberately has no fixed height: translated copy, large text and

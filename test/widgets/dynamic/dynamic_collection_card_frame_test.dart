@@ -3,6 +3,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loftify/Widgets/Dynamic/dynamic_collection_card_frame.dart';
 
 void main() {
+  test('collection grids keep breathing room across phone and wide layouts',
+      () {
+    expect(
+      DynamicCollectionGridLayout.paddingFor(390),
+      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    );
+    expect(DynamicCollectionGridLayout.spacingFor(390), 10);
+    expect(
+      DynamicCollectionGridLayout.paddingFor(900),
+      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+    );
+    expect(DynamicCollectionGridLayout.spacingFor(900), 12);
+  });
+
   Widget buildFrame({
     required double width,
     required double textScale,

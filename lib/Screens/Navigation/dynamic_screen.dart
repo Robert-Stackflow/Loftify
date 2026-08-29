@@ -1470,22 +1470,29 @@ class SubscribeCollectionTabState
   }
 
   _buildSubscribeCollectionList(ScrollPhysics physics) {
-    return SliverWaterfallFlow(
-      gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 560,
-      ),
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final item = _subscribeList[index];
-          return KeyedSubtree(
-            key: ValueKey('dynamic-collection-${item.collectionId}'),
-            child: ClickableWrapper(
-              child: _buildSubscribeCollectionItem(item),
-            ),
-          );
-        },
-        childCount: _subscribeList.length,
-        addAutomaticKeepAlives: false,
+    final width = MediaQuery.sizeOf(context).width;
+    final spacing = DynamicCollectionGridLayout.spacingFor(width);
+    return SliverPadding(
+      padding: DynamicCollectionGridLayout.paddingFor(width),
+      sliver: SliverWaterfallFlow(
+        gridDelegate: SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 560,
+          mainAxisSpacing: spacing,
+          crossAxisSpacing: spacing,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final item = _subscribeList[index];
+            return KeyedSubtree(
+              key: ValueKey('dynamic-collection-${item.collectionId}'),
+              child: ClickableWrapper(
+                child: _buildSubscribeCollectionItem(item),
+              ),
+            );
+          },
+          childCount: _subscribeList.length,
+          addAutomaticKeepAlives: false,
+        ),
       ),
     );
   }
@@ -1626,22 +1633,31 @@ class SubscribeCollectionTabState
   }
 
   _buildGuessLikeCollectionList(ScrollPhysics physics) {
-    return SliverWaterfallFlow(
-      gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 560,
-      ),
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final item = _guessLikeList[index];
-          return KeyedSubtree(
-            key: ValueKey('dynamic-guess-collection-${item.collectionId}'),
-            child: ClickableWrapper(
-              child: _buildGuessLikeCollectionItem(item),
-            ),
-          );
-        },
-        childCount: _guessLikeList.length,
-        addAutomaticKeepAlives: false,
+    final width = MediaQuery.sizeOf(context).width;
+    final spacing = DynamicCollectionGridLayout.spacingFor(width);
+    return SliverPadding(
+      padding: DynamicCollectionGridLayout.paddingFor(width),
+      sliver: SliverWaterfallFlow(
+        gridDelegate: SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 560,
+          mainAxisSpacing: spacing,
+          crossAxisSpacing: spacing,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final item = _guessLikeList[index];
+            return KeyedSubtree(
+              key: ValueKey(
+                'dynamic-guess-collection-${item.collectionId}',
+              ),
+              child: ClickableWrapper(
+                child: _buildGuessLikeCollectionItem(item),
+              ),
+            );
+          },
+          childCount: _guessLikeList.length,
+          addAutomaticKeepAlives: false,
+        ),
       ),
     );
   }
