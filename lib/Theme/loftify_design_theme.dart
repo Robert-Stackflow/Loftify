@@ -957,6 +957,21 @@ abstract final class LoftifyTheme {
         : _contrastRatio(accent, accentContainer) >= 4.5
             ? accent
             : textPrimary;
+    final readableSuccess = _readableStatusColor(
+      success,
+      backgrounds: [page, surfaceRaised],
+      isDark: isDark,
+    );
+    final readableWarning = _readableStatusColor(
+      warning,
+      backgrounds: [page, surfaceRaised],
+      isDark: isDark,
+    );
+    final readableDanger = _readableStatusColor(
+      danger,
+      backgrounds: [page, surfaceRaised],
+      isDark: isDark,
+    );
     return LoftifyColorTokens(
       page: page,
       surface: surface,
@@ -971,9 +986,9 @@ abstract final class LoftifyTheme {
       onAccent: ColorUtil.getContrastColor(accent),
       accentContainer: accentContainer,
       onAccentContainer: onAccentContainer,
-      success: success,
-      warning: warning,
-      danger: danger,
+      success: readableSuccess,
+      warning: readableWarning,
+      danger: readableDanger,
       scrim: Colors.black.withAlpha(isDark ? 156 : 104),
     );
   }
@@ -988,6 +1003,34 @@ abstract final class LoftifyTheme {
         ? backgroundLuminance
         : foregroundLuminance;
     return (lighter + 0.05) / (darker + 0.05);
+  }
+
+  static Color _readableStatusColor(
+    Color source, {
+    required List<Color> backgrounds,
+    required bool isDark,
+  }) {
+    bool isReadable(Color candidate) {
+      for (final background in backgrounds) {
+        final tinted = Color.alphaBlend(
+          candidate.withValues(alpha: 0.10),
+          background,
+        );
+        if (_contrastRatio(candidate, background) < 4.5 ||
+            _contrastRatio(candidate, tinted) < 4.5) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    if (isReadable(source)) return source;
+    final target = isDark ? Colors.white : Colors.black;
+    for (var step = 1; step <= 100; step++) {
+      final candidate = Color.lerp(source, target, step / 100)!;
+      if (isReadable(candidate)) return candidate;
+    }
+    return target;
   }
 
   static LoftifyTypographyTokens _typography(

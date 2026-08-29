@@ -46,7 +46,7 @@ void main() {
       expect(light.appBarTheme.shadowColor, Colors.transparent);
     });
 
-    test('preserves user-selected accents and independent status colors', () {
+    test('preserves user-selected accents and independent status hues', () {
       const accent = Color(0xFFE91E63);
       final source = ChewieThemeColorData.defaultLightThemes.first.copyWith(
         primaryColor: accent,
@@ -56,9 +56,18 @@ void main() {
 
       expect(design.colors.accent, accent);
       expect(theme.colorScheme.primary, accent);
-      expect(design.colors.success, source.successColor);
-      expect(design.colors.warning, source.warningColor);
-      expect(design.colors.danger, source.errorColor);
+      expect(
+        HSLColor.fromColor(design.colors.success).hue,
+        closeTo(HSLColor.fromColor(source.successColor).hue, 2),
+      );
+      expect(
+        HSLColor.fromColor(design.colors.warning).hue,
+        closeTo(HSLColor.fromColor(source.warningColor).hue, 2),
+      );
+      expect(
+        HSLColor.fromColor(design.colors.danger).hue,
+        closeTo(HSLColor.fromColor(source.errorColor).hue, 2),
+      );
       expect(design.colors.danger, isNot(accent));
     });
 
@@ -224,6 +233,44 @@ void main() {
           greaterThanOrEqualTo(4.5),
           reason: '${source.id} needs readable tonal content',
         );
+      }
+    });
+
+    test('semantic status colors remain readable on page and tinted surfaces',
+        () {
+      for (final source in <ChewieThemeColorData>[
+        ...ChewieThemeColorData.defaultLightThemes,
+        ...ChewieThemeColorData.defaultDarkThemes,
+      ]) {
+        final colors = LoftifyTheme.build(
+          source,
+        ).extension<LoftifyDesignThemeData>()!.colors;
+        for (final status in <Color>[
+          colors.success,
+          colors.warning,
+          colors.danger,
+        ]) {
+          final tintedPage = Color.alphaBlend(
+            status.withValues(alpha: 0.10),
+            colors.page,
+          );
+          final tintedRaised = Color.alphaBlend(
+            status.withValues(alpha: 0.10),
+            colors.surfaceRaised,
+          );
+          for (final background in <Color>[
+            colors.page,
+            colors.surfaceRaised,
+            tintedPage,
+            tintedRaised,
+          ]) {
+            expect(
+              _contrastRatio(status, background),
+              greaterThanOrEqualTo(4.5),
+              reason: '${source.id} status color needs readable contrast',
+            );
+          }
+        }
       }
     });
   });
