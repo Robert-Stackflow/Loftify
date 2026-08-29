@@ -60,61 +60,89 @@ class PinChangeScreenState extends BaseDynamicState<PinChangeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final mediaSize = MediaQuery.sizeOf(context);
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final compact = mediaSize.width < 360 || textScale > 1.35;
+    final gestureSize = (compact
+            ? min(240.0, max(0.0, mediaSize.width - 32))
+            : min(mediaSize.width, 400))
+        .toDouble();
     return Scaffold(
       appBar: ResponsiveAppBar(showBack: true),
-      body: Center(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 50),
-            Text(
-              _notifier.gestureText,
-              style: Theme.of(context).textTheme.titleMedium,
+      body: SafeArea(
+        top: false,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: compact ? 16 : 28,
             ),
-            const SizedBox(height: 30),
-            GestureUnlockIndicator(
-              key: _indicator,
-              size: 30,
-              roundSpace: 4,
-              defaultColor: Theme.of(context)
-                  .colorScheme
-                  .onSurfaceVariant
-                  .withValues(alpha: 0.5),
-              selectedColor:
-                  Theme.of(context).primaryColor.withValues(alpha: 0.6),
-            ),
-            Flexible(
-              child: GestureUnlockView(
-                key: _gestureUnlockView,
-                size: min(MediaQuery.sizeOf(context).width, 400),
-                padding: 60,
-                roundSpace: 40,
-                defaultColor: Theme.of(context)
-                    .colorScheme
-                    .onSurfaceVariant
-                    .withValues(alpha: 0.5),
-                selectedColor: Theme.of(context).primaryColor,
-                failedColor: Theme.of(context).colorScheme.error,
-                disableColor: Theme.of(context).colorScheme.onSurfaceVariant,
-                solidRadiusRatio: 0.3,
-                lineWidth: 2,
-                touchRadiusRatio: 0.3,
-                onCompleted: _gestureComplete,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: max(
+                  0,
+                  constraints.maxHeight - (compact ? 32 : 56),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _notifier.gestureText,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  SizedBox(height: compact ? 12 : 24),
+                  GestureUnlockIndicator(
+                    key: _indicator,
+                    size: 30,
+                    roundSpace: 4,
+                    defaultColor: Theme.of(context)
+                        .colorScheme
+                        .onSurfaceVariant
+                        .withValues(alpha: 0.5),
+                    selectedColor:
+                        Theme.of(context).primaryColor.withValues(alpha: 0.6),
+                  ),
+                  SizedBox(height: compact ? 8 : 14),
+                  SizedBox.square(
+                    dimension: gestureSize,
+                    child: GestureUnlockView(
+                      key: _gestureUnlockView,
+                      size: gestureSize,
+                      padding: compact ? 44 : 60,
+                      roundSpace: compact ? 32 : 40,
+                      defaultColor: Theme.of(context)
+                          .colorScheme
+                          .onSurfaceVariant
+                          .withValues(alpha: 0.5),
+                      selectedColor: Theme.of(context).primaryColor,
+                      failedColor: Theme.of(context).colorScheme.error,
+                      disableColor:
+                          Theme.of(context).colorScheme.onSurfaceVariant,
+                      solidRadiusRatio: 0.3,
+                      lineWidth: 2,
+                      touchRadiusRatio: 0.3,
+                      onCompleted: _gestureComplete,
+                    ),
+                  ),
+                  if (_isEditMode && _isUseBiometric) ...[
+                    SizedBox(height: compact ? 12 : 20),
+                    RoundIconTextButton(
+                      text: ResponsiveUtil.isWindows()
+                          ? appLocalizations.biometricVerifyPin
+                          : appLocalizations.biometric,
+                      onPressed: () {
+                        auth();
+                      },
+                    ),
+                  ],
+                ],
               ),
             ),
-            if (_isEditMode && _isUseBiometric)
-              RoundIconTextButton(
-                text: ResponsiveUtil.isWindows()
-                    ? appLocalizations.biometricVerifyPin
-                    : appLocalizations.biometric,
-                onPressed: () {
-                  auth();
-                },
-              ),
-            const SizedBox(height: 50),
-          ],
+          ),
         ),
       ),
     );

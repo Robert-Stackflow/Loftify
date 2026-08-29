@@ -82,6 +82,13 @@ class PinVerifyScreenState extends BaseWindowState<PinVerifyScreen>
   Widget build(BuildContext context) {
     ChewieUtils.setSafeMode(ChewieHiveUtil.getBool(HiveUtil.enableSafeModeKey,
         defaultValue: defaultEnableSafeMode));
+    final mediaSize = MediaQuery.sizeOf(context);
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final compact = mediaSize.width < 360 || textScale > 1.35;
+    final gestureSize = (compact
+            ? min(240.0, max(0.0, mediaSize.width - 32))
+            : min(mediaSize.width, 400))
+        .toDouble();
     return Scaffold(
       backgroundColor: ChewieTheme.background,
       appBar: ResponsiveUtil.isDesktop() && widget.showWindowTitle
@@ -108,50 +115,70 @@ class PinVerifyScreenState extends BaseWindowState<PinVerifyScreen>
               color: ChewieTheme.background,
             )
           : null,
-      body: Center(
+      body: SafeArea(
+        top: false,
         child: PopScope(
           canPop: !widget.isModal,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 50),
-              Text(
-                _notifier.gestureText,
-                style: Theme.of(context).textTheme.titleMedium,
+          child: LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              padding: EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: compact ? 16 : 28,
               ),
-              const SizedBox(height: 30),
-              Flexible(
-                child: GestureUnlockView(
-                  key: _gestureUnlockView,
-                  size: min(MediaQuery.sizeOf(context).width, 400),
-                  padding: 60,
-                  roundSpace: 40,
-                  defaultColor: Theme.of(context)
-                      .colorScheme
-                      .onSurfaceVariant
-                      .withValues(alpha: 0.5),
-                  selectedColor: Theme.of(context).primaryColor,
-                  failedColor: Theme.of(context).colorScheme.error,
-                  disableColor: Theme.of(context).colorScheme.onSurfaceVariant,
-                  solidRadiusRatio: 0.3,
-                  lineWidth: 2,
-                  touchRadiusRatio: 0.3,
-                  onCompleted: _gestureComplete,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: max(
+                    0,
+                    constraints.maxHeight - (compact ? 32 : 56),
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      _notifier.gestureText,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    SizedBox(height: compact ? 12 : 24),
+                    SizedBox.square(
+                      dimension: gestureSize,
+                      child: GestureUnlockView(
+                        key: _gestureUnlockView,
+                        size: gestureSize,
+                        padding: compact ? 44 : 60,
+                        roundSpace: compact ? 32 : 40,
+                        defaultColor: Theme.of(context)
+                            .colorScheme
+                            .onSurfaceVariant
+                            .withValues(alpha: 0.5),
+                        selectedColor: Theme.of(context).primaryColor,
+                        failedColor: Theme.of(context).colorScheme.error,
+                        disableColor:
+                            Theme.of(context).colorScheme.onSurfaceVariant,
+                        solidRadiusRatio: 0.3,
+                        lineWidth: 2,
+                        touchRadiusRatio: 0.3,
+                        onCompleted: _gestureComplete,
+                      ),
+                    ),
+                    if (_isUseBiometric) ...[
+                      SizedBox(height: compact ? 12 : 20),
+                      RoundIconTextButton(
+                        text: ResponsiveUtil.isWindows()
+                            ? appLocalizations.biometricVerifyPin
+                            : appLocalizations.biometric,
+                        onPressed: () {
+                          auth();
+                        },
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              if (_isUseBiometric)
-                RoundIconTextButton(
-                  text: ResponsiveUtil.isWindows()
-                      ? appLocalizations.biometricVerifyPin
-                      : appLocalizations.biometric,
-                  onPressed: () {
-                    auth();
-                  },
-                ),
-              const SizedBox(height: 50),
-            ],
+            ),
           ),
         ),
       ),
