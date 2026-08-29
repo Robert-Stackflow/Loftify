@@ -10,6 +10,26 @@ import '../../Utils/tab_state_util.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../l10n/l10n.dart';
 
+/// Full-viewport placeholder used by every notification tab.
+///
+/// Keeping this scrollable even when empty preserves pull-to-refresh while the
+/// content is loading or when the server returns no messages.
+class SystemNoticeTabPlaceholder extends StatelessWidget {
+  const SystemNoticeTabPlaceholder({super.key, required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return EmptyPlaceholder(
+      text: text,
+      physics: const AlwaysScrollableScrollPhysics(),
+      shrinkWrap: false,
+      topPadding: 0,
+    );
+  }
+}
+
 class SystemNoticeScreen extends StatefulWidget {
   const SystemNoticeScreen({super.key});
 
@@ -286,7 +306,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       },
       triggerAxis: Axis.vertical,
       child: _allMessages.isEmpty
-          ? EmptyPlaceholder(text: appLocalizations.noNotice)
+          ? SystemNoticeTabPlaceholder(text: appLocalizations.noNotice)
           : LoadMoreNotification(
               noMore: _allNoMore,
               onLoad: () {
@@ -316,7 +336,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       },
       triggerAxis: Axis.vertical,
       child: _likeMessages.isEmpty
-          ? EmptyPlaceholder(text: appLocalizations.noNotice)
+          ? SystemNoticeTabPlaceholder(text: appLocalizations.noNotice)
           : LoadMoreNotification(
               noMore: _likeNoMore,
               onLoad: () {
@@ -355,7 +375,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       },
       triggerAxis: Axis.vertical,
       child: _recommendMessages.isEmpty
-          ? EmptyPlaceholder(text: appLocalizations.noNotice)
+          ? SystemNoticeTabPlaceholder(text: appLocalizations.noNotice)
           : LoadMoreNotification(
               noMore: _recommendNoMore,
               onLoad: () {
@@ -396,7 +416,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       },
       triggerAxis: Axis.vertical,
       child: _giftMessages.isEmpty
-          ? EmptyPlaceholder(text: appLocalizations.noNotice)
+          ? SystemNoticeTabPlaceholder(text: appLocalizations.noNotice)
           : LoadMoreNotification(
               noMore: _giftNoMore,
               onLoad: () {
@@ -437,7 +457,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       },
       triggerAxis: Axis.vertical,
       child: _atMessages.isEmpty
-          ? EmptyPlaceholder(text: appLocalizations.noNotice)
+          ? SystemNoticeTabPlaceholder(text: appLocalizations.noNotice)
           : LoadMoreNotification(
               noMore: _atNoMore,
               onLoad: () {
@@ -477,7 +497,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       },
       triggerAxis: Axis.vertical,
       child: _subscribeMessages.isEmpty
-          ? EmptyPlaceholder(text: appLocalizations.noNotice)
+          ? SystemNoticeTabPlaceholder(text: appLocalizations.noNotice)
           : LoadMoreNotification(
               noMore: _subscribeNoMore,
               onLoad: () {
@@ -518,7 +538,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       },
       triggerAxis: Axis.vertical,
       child: _collectionMessages.isEmpty
-          ? EmptyPlaceholder(text: appLocalizations.noNotice)
+          ? SystemNoticeTabPlaceholder(text: appLocalizations.noNotice)
           : LoadMoreNotification(
               noMore: _collectionNoMore,
               onLoad: () {
@@ -559,7 +579,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       },
       triggerAxis: Axis.vertical,
       child: _otherMessages.isEmpty
-          ? EmptyPlaceholder(text: appLocalizations.noNotice)
+          ? SystemNoticeTabPlaceholder(text: appLocalizations.noNotice)
           : LoadMoreNotification(
               noMore: _otherNoMore,
               onLoad: () {
