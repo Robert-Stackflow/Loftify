@@ -39,12 +39,16 @@ class _FakeResolver extends PostBatchDownloadResolver {
 
 class _FakeManager extends DownloadTaskManager {
   List<DownloadRequest> requests = <DownloadRequest>[];
+  DownloadSourceDescriptor? source;
 
   @override
   Future<DownloadBatchResult> enqueueBatch(
-    Iterable<DownloadRequest> requests,
-  ) async {
+    Iterable<DownloadRequest> requests, {
+    DownloadSourceDescriptor? source,
+    int unavailableCount = 0,
+  }) async {
     this.requests = requests.toList(growable: false);
+    this.source = source;
     return DownloadBatchResult(
       requestedCount: this.requests.length,
       queuedCount: this.requests.length,
@@ -113,6 +117,11 @@ void main() {
 
     await tester.pumpWidget(_host(BatchDownloadScreen(
       sourceTitle: '测试集合',
+      source: const DownloadSourceDescriptor(
+        type: DownloadSourceType.collection,
+        sourceId: '42',
+        title: '测试集合',
+      ),
       initialItems: <GeneralPostItem>[_item(1), _item(2)],
       loadAllItems: () async {
         loadAllCount++;
@@ -141,6 +150,11 @@ void main() {
     final manager = _FakeManager();
     await tester.pumpWidget(_host(BatchDownloadScreen(
       sourceTitle: '测试集合',
+      source: const DownloadSourceDescriptor(
+        type: DownloadSourceType.collection,
+        sourceId: '42',
+        title: '测试集合',
+      ),
       initialItems: <GeneralPostItem>[_item(1), _item(2)],
       resolver: _FakeResolver(),
       manager: manager,
@@ -153,6 +167,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(manager.requests, hasLength(2));
+    expect(manager.source?.stableKey, 'collection:42');
     expect(find.textContaining('已加入 2 项'), findsOneWidget);
     expect(find.text('下载管理'), findsOneWidget);
     expect(find.text('重试'), findsOneWidget);

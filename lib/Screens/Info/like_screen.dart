@@ -8,6 +8,7 @@ import 'package:loftify/Screens/Info/nested_mixin.dart';
 import 'package:loftify/Utils/hive_util.dart';
 
 import '../../Models/post_detail_response.dart';
+import '../../Models/download_task.dart';
 import '../../Screens/Download/batch_download_screen.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/like_archive_util.dart';
@@ -395,6 +396,14 @@ class _LikeScreenState extends BaseDynamicState<LikeScreen>
       context,
       BatchDownloadScreen(
         sourceTitle: appLocalizations.myLikes,
+        source: DownloadSourceDescriptor(
+          type: DownloadSourceType.likes,
+          sourceId: widget.blogId?.toString() ?? 'self',
+          title: appLocalizations.myLikes,
+          metadata: widget.blogId == null
+              ? const <String, String>{}
+              : <String, String>{'blogId': widget.blogId.toString()},
+        ),
         initialItems:
             _likeList.map(CommonInfoItemBuilder.getGeneralPostItem).toList(),
         loadAllItems: _loadAllBatchItems,

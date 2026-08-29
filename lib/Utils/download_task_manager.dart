@@ -31,6 +31,10 @@ abstract class DownloadTaskStore {
   Future<List<DownloadTask>> read();
 
   Future<void> write(List<DownloadTask> tasks);
+
+  Future<List<DownloadGroup>> readGroups() async => const <DownloadGroup>[];
+
+  Future<void> writeGroups(List<DownloadGroup> groups) async {}
 }
 
 class HiveDownloadTaskStore implements DownloadTaskStore {
@@ -68,6 +72,39 @@ class HiveDownloadTaskStore implements DownloadTaskStore {
       tasks.map((task) => task.toJson()).toList(growable: false),
     );
   }
+
+  @override
+  Future<List<DownloadGroup>> readGroups() async {
+    final records = ChewieHiveUtil.getList(
+          HiveUtil.downloadGroupsKey,
+          defaultValue: const <dynamic>[],
+        ) ??
+        const <dynamic>[];
+    final groups = <DownloadGroup>[];
+    for (final record in records) {
+      try {
+        final group = DownloadGroup.fromJson(
+          Map<String, dynamic>.from(record as Map),
+        );
+        if (group.id.isNotEmpty && group.taskIds.isNotEmpty) groups.add(group);
+      } catch (error, stackTrace) {
+        _logDownloadError(
+          'Failed to restore a download group',
+          error,
+          stackTrace,
+        );
+      }
+    }
+    return groups;
+  }
+
+  @override
+  Future<void> writeGroups(List<DownloadGroup> groups) {
+    return ChewieHiveUtil.put(
+      HiveUtil.downloadGroupsKey,
+      groups.map((group) => group.toJson()).toList(growable: false),
+    );
+  }
 }
 
 class DownloadTaskManager extends ChangeNotifier {
@@ -100,6 +137,7 @@ class DownloadTaskManager extends ChangeNotifier {
   final int maxConcurrentTasks;
   final bool monitorConnectivity;
   final List<DownloadTask> _tasks = <DownloadTask>[];
+  final List<DownloadGroup> _groups = <DownloadGroup>[];
   final Map<String, CancelToken> _cancelTokens = <String, CancelToken>{};
   final Map<String, DateTime> _lastProgressNotification = <String, DateTime>{};
   final Map<String, DateTime> _lastProgressPersistence = <String, DateTime>{};
@@ -111,6 +149,8 @@ class DownloadTaskManager extends ChangeNotifier {
 
   List<DownloadTask> get tasks => List<DownloadTask>.unmodifiable(_tasks);
 
+  List<DownloadGroup> get groups => List<DownloadGroup>.unmodifiable(_groups);
+
   int get activeCount => _tasks.where((task) => task.isActive).length;
 
   Future<void> initialize() => _initialization ??= _initialize();
@@ -118,6 +158,7 @@ class DownloadTaskManager extends ChangeNotifier {
   Future<void> _initialize() async {
     await _executor.initialize();
     final restored = await _store.read();
+    final restoredGroups = await _store.readGroups();
     _tasks
       ..clear()
       ..addAll(restored.map((task) {
@@ -128,6 +169,14 @@ class DownloadTaskManager extends ChangeNotifier {
           failureKind: null,
         );
       }));
+    final restoredTaskIds = _tasks.map((task) => task.id).toSet();
+    _groups
+      ..clear()
+      ..addAll(
+        restoredGroups.where(
+          (group) => group.taskIds.any(restoredTaskIds.contains),
+        ),
+      );
     _initialized = true;
     if (monitorConnectivity) await _startConnectivityMonitor();
     await _persist();
@@ -192,8 +241,10 @@ class DownloadTaskManager extends ChangeNotifier {
   /// already downloaded files: batch actions never overwrite or create a
   /// second copy of a completed resource.
   Future<DownloadBatchResult> enqueueBatch(
-    Iterable<DownloadRequest> requests,
-  ) async {
+    Iterable<DownloadRequest> requests, {
+    DownloadSourceDescriptor? source,
+    int unavailableCount = 0,
+  }) async {
     await initialize();
     final requestList = requests.toList(growable: false);
     final seenUrls = <String>{};
@@ -260,7 +311,24 @@ class DownloadTaskManager extends ChangeNotifier {
       queuedCount++;
     }
 
-    if (queuedCount > 0) {
+    DownloadGroup? group;
+    if (source != null && affectedTasks.isNotEmpty) {
+      final now = DateTime.now();
+      final taskIds = affectedTasks.map((task) => task.id).toSet().toList();
+      group = DownloadGroup(
+        id: 'group_${now.microsecondsSinceEpoch}_${source.stableKey.hashCode.abs()}',
+        source: source,
+        taskIds: taskIds,
+        requestedCount: requestList.length,
+        unavailableCount: unavailableCount + invalidCount,
+        skippedCount: skippedCount,
+        createdAt: now,
+        updatedAt: now,
+      );
+      _groups.insert(0, group);
+    }
+
+    if (queuedCount > 0 || group != null) {
       notifyListeners();
       await _persist();
       _pump();
@@ -272,6 +340,7 @@ class DownloadTaskManager extends ChangeNotifier {
       invalidCount: invalidCount,
       requeuedCount: requeuedCount,
       tasks: List<DownloadTask>.unmodifiable(affectedTasks),
+      group: group,
     );
   }
 
@@ -381,9 +450,19 @@ class DownloadTaskManager extends ChangeNotifier {
   }
 
   Future<void> clearFinished() async {
-    final removed = _tasks.where((task) => task.isTerminal).toList();
-    if (removed.isEmpty) return;
-    _tasks.removeWhere((task) => task.isTerminal);
+    _groups.removeWhere((group) => group.snapshot(_tasks).isTerminal);
+    final retainedTaskIds = _groups.expand((group) => group.taskIds).toSet();
+    final removed = _tasks
+        .where(
+          (task) => task.isTerminal && !retainedTaskIds.contains(task.id),
+        )
+        .toList();
+    if (removed.isEmpty) {
+      await _persist();
+      notifyListeners();
+      return;
+    }
+    _tasks.removeWhere((task) => removed.any((item) => item.id == task.id));
     for (final task in removed) {
       await _executor.deleteTemporaryFiles(task);
     }
@@ -605,9 +684,12 @@ class DownloadTaskManager extends ChangeNotifier {
 
   Future<void> _persist() {
     final snapshot = List<DownloadTask>.from(_tasks);
-    _persistenceQueue = _persistenceQueue
-        .catchError((_) {})
-        .then((_) => _store.write(snapshot));
+    final groupSnapshot = List<DownloadGroup>.from(_groups);
+    _persistenceQueue =
+        _persistenceQueue.catchError((_) {}).then((_) => Future.wait<void>([
+              _store.write(snapshot),
+              _store.writeGroups(groupSnapshot),
+            ]));
     return _persistenceQueue;
   }
 

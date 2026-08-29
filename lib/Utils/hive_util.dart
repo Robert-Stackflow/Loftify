@@ -43,6 +43,7 @@ class HiveUtil {
   static const String videoContinuousPlaybackKey = "videoContinuousPlayback";
   static const String videoDanmakuEnabledKey = "videoDanmakuEnabled";
   static const String downloadTasksKey = "downloadTasks";
+  static const String downloadGroupsKey = "downloadGroups";
 
   //Appearance
   static const String enableLandscapeInTabletKey = "enableLandscapeInTablet";

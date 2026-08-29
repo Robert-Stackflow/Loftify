@@ -138,11 +138,35 @@ class LoftifyFileUtil {
     List<Illust> illusts, {
     bool showToast = true,
     Function(int, int)? onReceiveProgress,
+    DownloadSourceDescriptor? source,
   }) async {
     try {
       if (illusts.isEmpty) return false;
+      if (ResponsiveUtil.isDesktop()) {
+        final saveDirectory = await FileUtil.checkSaveDirectory(context);
+        if (saveDirectory.nullOrEmpty) {
+          if (showToast) IToast.showTop('下载失败，请先选择保存路径');
+          return false;
+        }
+      }
       const progressUnits = 1000000;
-      final accumulator = DownloadProgressAccumulator(illusts.length);
+      final requests = illusts
+          .map(
+            (illust) => DownloadRequest(
+              url: illust.url,
+              fileName: getFileNameByIllust(illust),
+              mediaType: DownloadMediaType.image,
+              title: illust.postTitle,
+              thumbnailUrl: illust.url,
+            ),
+          )
+          .toList(growable: false);
+      final result = await DownloadTaskManager.instance.enqueueBatch(
+        requests,
+        source: source,
+      );
+      if (result.tasks.isEmpty) return false;
+      final accumulator = DownloadProgressAccumulator(result.tasks.length);
       void report(double progress) {
         onReceiveProgress?.call(
           (progress.clamp(0.0, 1.0) * progressUnits).round(),
@@ -152,13 +176,11 @@ class LoftifyFileUtil {
 
       report(0);
       final status = await Future.wait(
-        illusts.asMap().entries.map(
+        result.tasks.asMap().entries.map(
           (entry) async {
-            final saved = await saveIllust(
-              context,
-              entry.value,
-              showToast: false,
-              onReceiveProgress: (received, total) {
+            final saved = await DownloadTaskManager.instance.waitForCompletion(
+              entry.value.id,
+              onProgress: (received, total) {
                 report(
                   accumulator.update(entry.key, received, total),
                 );

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:loftify/Models/favorites_response.dart';
 
 import '../../Api/user_api.dart';
+import '../../Models/download_task.dart';
 import '../../Models/history_response.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Screens/Download/batch_download_screen.dart';
@@ -233,6 +234,14 @@ class _FavoriteFolderDetailScreenState
       BatchDownloadScreen(
         sourceTitle:
             _favoriteFolder?.name ?? appLocalizations.favoriteFolderDetail,
+        source: DownloadSourceDescriptor(
+          type: DownloadSourceType.favoriteFolder,
+          sourceId: favoriteFolderId.toString(),
+          title: _favoriteFolder?.name ?? appLocalizations.favoriteFolderDetail,
+          metadata: <String, String>{
+            'favoriteFolderId': favoriteFolderId.toString(),
+          },
+        ),
         initialItems: _posts
             .map(FavoriteFolderPostItemBuilder.getGeneralPostItem)
             .toList(),

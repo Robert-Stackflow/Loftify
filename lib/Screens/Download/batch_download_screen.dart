@@ -16,6 +16,7 @@ class BatchDownloadScreen extends StatefulWidget {
   const BatchDownloadScreen({
     super.key,
     required this.sourceTitle,
+    required this.source,
     required this.initialItems,
     this.loadAllItems,
     this.resolver,
@@ -23,6 +24,7 @@ class BatchDownloadScreen extends StatefulWidget {
   });
 
   final String sourceTitle;
+  final DownloadSourceDescriptor source;
   final List<GeneralPostItem> initialItems;
   final LoadAllBatchPosts? loadAllItems;
   final PostBatchDownloadResolver? resolver;
@@ -147,7 +149,11 @@ class _BatchDownloadScreenState extends State<BatchDownloadScreen> {
         }
         return;
       }
-      final result = await _manager.enqueueBatch(requests);
+      final result = await _manager.enqueueBatch(
+        requests,
+        source: widget.source,
+        unavailableCount: unavailablePosts,
+      );
       if (!mounted) return;
       setState(() {
         _lastResult = result;

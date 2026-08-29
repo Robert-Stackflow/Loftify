@@ -6,6 +6,7 @@ import 'package:loftify/Screens/Info/nested_mixin.dart';
 import 'package:loftify/Utils/hive_util.dart';
 
 import '../../Models/post_detail_response.dart';
+import '../../Models/download_task.dart';
 import '../../Screens/Download/batch_download_screen.dart';
 import '../../Utils/enums.dart';
 import '../../Widgets/Item/item_builder.dart';
@@ -310,6 +311,14 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
       context,
       BatchDownloadScreen(
         sourceTitle: appLocalizations.myRecommends,
+        source: DownloadSourceDescriptor(
+          type: DownloadSourceType.recommendations,
+          sourceId: widget.blogId?.toString() ?? 'self',
+          title: appLocalizations.myRecommends,
+          metadata: widget.blogId == null
+              ? const <String, String>{}
+              : <String, String>{'blogId': widget.blogId.toString()},
+        ),
         initialItems:
             _shareList.map(CommonInfoItemBuilder.getGeneralPostItem).toList(),
         loadAllItems: _loadAllBatchItems,

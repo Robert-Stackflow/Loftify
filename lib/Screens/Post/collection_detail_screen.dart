@@ -8,6 +8,7 @@ import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 
 import '../../Api/collection_api.dart';
+import '../../Models/download_task.dart';
 import '../../Models/history_response.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Models/recommend_response.dart';
@@ -619,6 +620,15 @@ class CollectionDetailScreenState
       context,
       BatchDownloadScreen(
         sourceTitle: postCollection?.name ?? appLocalizations.collection,
+        source: DownloadSourceDescriptor(
+          type: DownloadSourceType.collection,
+          sourceId: widget.collectionId.toString(),
+          title: postCollection?.name ?? appLocalizations.collection,
+          thumbnailUrl: postCollection?.coverUrl,
+          metadata: <String, String>{
+            'collectionId': widget.collectionId.toString(),
+          },
+        ),
         initialItems:
             posts.map(CommonInfoItemBuilder.getGeneralPostItem).toList(),
         loadAllItems: _loadAllBatchItems,

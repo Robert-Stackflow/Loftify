@@ -7,11 +7,16 @@ import 'package:loftify/Models/download_task.dart';
 import 'package:loftify/Utils/download_task_manager.dart';
 
 class _MemoryDownloadTaskStore implements DownloadTaskStore {
-  _MemoryDownloadTaskStore([List<DownloadTask> initial = const []])
-      : records = List<DownloadTask>.from(initial);
+  _MemoryDownloadTaskStore([
+    List<DownloadTask> initial = const [],
+    List<DownloadGroup> initialGroups = const [],
+  ])  : records = List<DownloadTask>.from(initial),
+        groupRecords = List<DownloadGroup>.from(initialGroups);
 
   List<DownloadTask> records;
+  List<DownloadGroup> groupRecords;
   int writeCount = 0;
+  int groupWriteCount = 0;
 
   @override
   Future<List<DownloadTask>> read() async => List<DownloadTask>.from(records);
@@ -21,6 +26,18 @@ class _MemoryDownloadTaskStore implements DownloadTaskStore {
     writeCount++;
     records = tasks
         .map((task) => DownloadTask.fromJson(task.toJson()))
+        .toList(growable: false);
+  }
+
+  @override
+  Future<List<DownloadGroup>> readGroups() async =>
+      List<DownloadGroup>.from(groupRecords);
+
+  @override
+  Future<void> writeGroups(List<DownloadGroup> groups) async {
+    groupWriteCount++;
+    groupRecords = groups
+        .map((group) => DownloadGroup.fromJson(group.toJson()))
         .toList(growable: false);
   }
 }
@@ -146,6 +163,52 @@ void main() {
     expect(restored.receivedBytes, 45);
     expect(restored.totalBytes, 100);
     expect(restored.isActive, isTrue);
+  });
+
+  test('download group preserves source type metadata and aggregate status',
+      () {
+    final now = DateTime(2026, 8, 29, 10, 30);
+    final source = DownloadGroup(
+      id: 'group-1',
+      source: const DownloadSourceDescriptor(
+        type: DownloadSourceType.collection,
+        sourceId: '42',
+        title: 'Collection title',
+        metadata: <String, String>{'collectionId': '42'},
+      ),
+      taskIds: const <String>['task-1', 'task-2'],
+      requestedCount: 2,
+      createdAt: now,
+      updatedAt: now,
+    );
+    final restored = DownloadGroup.fromJson(source.toJson());
+    final snapshot = restored.snapshot(<DownloadTask>[
+      DownloadTask(
+        id: 'task-1',
+        url: 'https://example.com/1.jpg',
+        fileName: '1.jpg',
+        mediaType: DownloadMediaType.image,
+        status: DownloadTaskStatus.completed,
+        progress: 1,
+        createdAt: now,
+        updatedAt: now,
+      ),
+      DownloadTask(
+        id: 'task-2',
+        url: 'https://example.com/2.jpg',
+        fileName: '2.jpg',
+        mediaType: DownloadMediaType.image,
+        status: DownloadTaskStatus.failed,
+        progress: 0.5,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    ]);
+
+    expect(restored.source.stableKey, 'collection:42');
+    expect(restored.source.metadata['collectionId'], '42');
+    expect(snapshot.status, DownloadGroupStatus.partiallyFailed);
+    expect(snapshot.progress, 0.75);
   });
 
   test('manager queues, pauses, resumes and completes a task', () async {
@@ -420,6 +483,53 @@ void main() {
     expect(result.invalidCount, 2);
     expect(manager.tasks, hasLength(2));
     expect(store.writeCount, writesBeforeBatch + 1);
+  });
+
+  test('batch enqueue creates and restores one typed parent group', () async {
+    final store = _MemoryDownloadTaskStore();
+    final manager = DownloadTaskManager(
+      store: store,
+      executor: _ControlledDownloadTaskExecutor(),
+      maxConcurrentTasks: 1,
+    );
+    await manager.initialize();
+
+    final result = await manager.enqueueBatch(
+      const <DownloadRequest>[
+        DownloadRequest(
+          url: 'https://example.com/group-a.jpg',
+          fileName: 'group-a.jpg',
+          mediaType: DownloadMediaType.image,
+        ),
+        DownloadRequest(
+          url: 'https://example.com/group-b.jpg',
+          fileName: 'group-b.jpg',
+          mediaType: DownloadMediaType.image,
+        ),
+      ],
+      source: const DownloadSourceDescriptor(
+        type: DownloadSourceType.grain,
+        sourceId: '88',
+        title: 'A grain',
+        metadata: <String, String>{'grainId': '88'},
+      ),
+      unavailableCount: 1,
+    );
+
+    expect(result.group, isNotNull);
+    expect(manager.groups, hasLength(1));
+    expect(manager.groups.single.taskIds, hasLength(2));
+    expect(manager.groups.single.unavailableCount, 1);
+    expect(store.groupRecords.single.source.type, DownloadSourceType.grain);
+
+    final restored = DownloadTaskManager(
+      store: store,
+      executor: _ControlledDownloadTaskExecutor(),
+      maxConcurrentTasks: 1,
+    );
+    await restored.initialize();
+    expect(restored.groups.single.source.stableKey, 'grain:88');
+    expect(restored.groups.single.taskIds, hasLength(2));
   });
 
   test('batch enqueue skips completed tasks and requeues failed tasks',

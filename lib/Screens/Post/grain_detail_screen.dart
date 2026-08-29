@@ -11,6 +11,7 @@ import 'package:loftify/Widgets/PostItem/general_post_item_builder.dart';
 import 'package:loftify/Widgets/PostItem/grain_post_item_builder.dart';
 
 import '../../Models/history_response.dart';
+import '../../Models/download_task.dart';
 import '../../Screens/Download/batch_download_screen.dart';
 import '../../Utils/post_sequence_source.dart';
 import '../../Widgets/PostDetail/detail_bottom_bar.dart';
@@ -306,6 +307,16 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
       context,
       BatchDownloadScreen(
         sourceTitle: grainDetailData?.grainInfo.name ?? appLocalizations.grain,
+        source: DownloadSourceDescriptor(
+          type: DownloadSourceType.grain,
+          sourceId: widget.grainId.toString(),
+          title: grainDetailData?.grainInfo.name ?? appLocalizations.grain,
+          thumbnailUrl: grainDetailData?.grainInfo.coverUrl,
+          metadata: <String, String>{
+            'grainId': widget.grainId.toString(),
+            'blogId': widget.blogId.toString(),
+          },
+        ),
         initialItems: posts
             .map(GrainPostItemBuilder.getGeneralPostItem)
             .toList(growable: false),

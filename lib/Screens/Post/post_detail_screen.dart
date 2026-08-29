@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:loftify/Api/post_api.dart';
 import 'package:loftify/Api/user_api.dart';
 import 'package:loftify/Models/grain_response.dart';
+import 'package:loftify/Models/download_task.dart';
 import 'package:loftify/Models/illust.dart';
 import 'package:loftify/Models/message_response.dart';
 import 'package:loftify/Models/post_detail_response.dart';
@@ -1552,6 +1553,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
       LoftifyFileUtil.saveIllusts(
         context,
         _getIllusts(),
+        source: _postAllDownloadSource(),
         onReceiveProgress: (received, total) {
           _setDownloadProgress(received, total, downloadPostId);
         },
@@ -1565,6 +1567,24 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
         }
       });
     }
+  }
+
+  DownloadSourceDescriptor _postAllDownloadSource() {
+    final post = _postDetailData!.post!;
+    final title = StringUtil.clearBlank(post.title);
+    final illusts = _getIllusts();
+    return DownloadSourceDescriptor(
+      type: DownloadSourceType.postAll,
+      sourceId: postId.toString(),
+      title: title.isEmpty ? appLocalizations.postDetail : title,
+      thumbnailUrl: illusts.isEmpty ? null : illusts.first.url,
+      metadata: <String, String>{
+        'postId': postId.toString(),
+        'blogId': blogId.toString(),
+        'blogName': blogName,
+        'permalink': post.permalink,
+      },
+    );
   }
 
   _buildCommonContent(bool isTablet) {

@@ -14,7 +14,10 @@ class DownloadManagementScreen extends BaseSettingScreen {
     super.showTitleBar,
     super.searchConfig,
     super.searchText,
+    this.manager,
   });
+
+  final DownloadTaskManager? manager;
 
   static const String routeName = '/download/management';
 
@@ -26,19 +29,40 @@ class DownloadManagementScreen extends BaseSettingScreen {
 class _DownloadManagementScreenState
     extends BaseDynamicState<DownloadManagementScreen>
     with TickerProviderStateMixin {
-  final DownloadTaskManager _manager = DownloadTaskManager.instance;
+  late final DownloadTaskManager _manager;
+
+  @override
+  void initState() {
+    super.initState();
+    _manager = widget.manager ?? DownloadTaskManager.instance;
+  }
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: _manager,
       builder: (context, _) {
-        final active = _manager.tasks
+        final groupSnapshots = _manager.groups
+            .map((group) => group.snapshot(_manager.tasks))
+            .toList(growable: false);
+        final groupedTaskIds =
+            _manager.groups.expand((group) => group.taskIds).toSet();
+        final standaloneTasks = _manager.tasks
+            .where((task) => !groupedTaskIds.contains(task.id))
+            .toList(growable: false);
+        final activeGroups = groupSnapshots
+            .where((snapshot) => snapshot.isActive)
+            .toList(growable: false);
+        final historyGroups = groupSnapshots
+            .where((snapshot) => !snapshot.isActive)
+            .toList(growable: false);
+        final activeTasks = standaloneTasks
             .where((task) => task.isActive)
             .toList(growable: false);
-        final history = _manager.tasks
+        final historyTasks = standaloneTasks
             .where((task) => task.isTerminal)
             .toList(growable: false);
+        final hasHistory = historyGroups.isNotEmpty || historyTasks.isNotEmpty;
         return ChewieItemBuilder.buildSettingScreen(
           context: context,
           title: appLocalizations.downloadManagement,
@@ -46,7 +70,7 @@ class _DownloadManagementScreenState
           showBack: !ResponsiveUtil.isLandscapeLayout(),
           padding: widget.padding,
           showBorder: false,
-          actions: history.isEmpty
+          actions: !hasHistory
               ? const <Widget>[]
               : <Widget>[
                   ChewieIconButton(
@@ -55,17 +79,27 @@ class _DownloadManagementScreenState
                     icon: LoftifyIcons.delete,
                   ),
                 ],
-          overrideBody: _buildBody(active, history),
+          overrideBody: _buildBody(
+            activeGroups,
+            historyGroups,
+            activeTasks,
+            historyTasks,
+          ),
         );
       },
     );
   }
 
   Widget _buildBody(
-    List<DownloadTask> active,
-    List<DownloadTask> history,
+    List<DownloadGroupSnapshot> activeGroups,
+    List<DownloadGroupSnapshot> historyGroups,
+    List<DownloadTask> activeTasks,
+    List<DownloadTask> historyTasks,
   ) {
-    if (active.isEmpty && history.isEmpty) {
+    if (activeGroups.isEmpty &&
+        historyGroups.isEmpty &&
+        activeTasks.isEmpty &&
+        historyTasks.isEmpty) {
       return EmptyPlaceholder(
         text: appLocalizations.noDownloadTasks,
         icon: LoftifyIcons.download,
@@ -76,17 +110,23 @@ class _DownloadManagementScreenState
     return ListView(
       padding: widget.padding,
       children: [
-        if (active.isNotEmpty)
+        if (activeGroups.isNotEmpty || activeTasks.isNotEmpty)
           CaptionItem(
             context: context,
             title: appLocalizations.activeDownloads,
-            children: active.map(_buildTask).toList(growable: false),
+            children: <Widget>[
+              ...activeGroups.map(_buildGroup),
+              ...activeTasks.map(_buildTask),
+            ],
           ),
-        if (history.isNotEmpty)
+        if (historyGroups.isNotEmpty || historyTasks.isNotEmpty)
           CaptionItem(
             context: context,
             title: appLocalizations.downloadHistory,
-            children: history.map(_buildTask).toList(growable: false),
+            children: <Widget>[
+              ...historyGroups.map(_buildGroup),
+              ...historyTasks.map(_buildTask),
+            ],
           ),
         const SizedBox(height: 16),
       ],
@@ -103,6 +143,184 @@ class _DownloadManagementScreenState
       onRemove: () => _manager.remove(task.id),
     );
   }
+
+  Widget _buildGroup(DownloadGroupSnapshot snapshot) {
+    return _DownloadGroupTile(snapshot: snapshot);
+  }
+}
+
+class _DownloadGroupTile extends StatelessWidget {
+  const _DownloadGroupTile({required this.snapshot});
+
+  final DownloadGroupSnapshot snapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final source = snapshot.group.source;
+    final statusColor = switch (snapshot.status) {
+      DownloadGroupStatus.failed ||
+      DownloadGroupStatus.partiallyFailed =>
+        ChewieTheme.errorColor,
+      DownloadGroupStatus.cancelled => scheme.outline,
+      _ => scheme.primary,
+    };
+    final percent = (snapshot.progress * 100).clamp(0, 100).round();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildPreview(context),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        source.title.trim().isEmpty
+                            ? _sourceTypeText()
+                            : source.title.trim(),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: ChewieTheme.titleSmall.copyWith(
+                          height: 1.35,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildStatusBadge(context, statusColor),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  _sourceTypeText(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: ChewieTheme.labelSmall.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 9),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(99),
+                  child: LinearProgressIndicator(
+                    minHeight: 3,
+                    value: snapshot.progress,
+                    color: statusColor,
+                    backgroundColor:
+                        scheme.surfaceContainerHighest.withValues(alpha: 0.7),
+                  ),
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  appLocalizations.downloadGroupProgress(
+                    snapshot.completedCount,
+                    percent,
+                    snapshot.tasks.length,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: ChewieTheme.labelSmall.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreview(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final thumbnailUrl = snapshot.group.source.thumbnailUrl?.trim();
+    final canPreview = thumbnailUrl != null && thumbnailUrl.isNotEmpty;
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.7),
+          width: 0.5,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: canPreview
+          ? ChewieItemBuilder.buildCachedImage(
+              context: context,
+              imageUrl: thumbnailUrl,
+              width: 48,
+              height: 48,
+              fit: BoxFit.cover,
+              showLoading: false,
+              simpleError: true,
+            )
+          : ChewieIcon(
+              _sourceIcon,
+              size: 21,
+              color: scheme.primary,
+            ),
+    );
+  }
+
+  Widget _buildStatusBadge(BuildContext context, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(99),
+      ),
+      child: Text(
+        _statusText(),
+        maxLines: 1,
+        style: ChewieTheme.labelSmall.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  IconData get _sourceIcon => switch (snapshot.group.source.type) {
+        DownloadSourceType.postAll => LoftifyIcons.article,
+        DownloadSourceType.collection => LoftifyIcons.collection,
+        DownloadSourceType.grain => LoftifyIcons.grain,
+        DownloadSourceType.likes => LoftifyIcons.favorite,
+        DownloadSourceType.recommendations => LoftifyIcons.recommend,
+        DownloadSourceType.favoriteFolder => LoftifyIcons.favorite,
+        DownloadSourceType.other => LoftifyIcons.batchDownload,
+      };
+
+  String _sourceTypeText() => switch (snapshot.group.source.type) {
+        DownloadSourceType.postAll => appLocalizations.downloadSourcePostAll,
+        DownloadSourceType.collection => appLocalizations.collection,
+        DownloadSourceType.grain => appLocalizations.grain,
+        DownloadSourceType.likes => appLocalizations.myLikes,
+        DownloadSourceType.recommendations => appLocalizations.myRecommends,
+        DownloadSourceType.favoriteFolder =>
+          appLocalizations.downloadSourceFavoriteFolder,
+        DownloadSourceType.other => appLocalizations.downloadSourceOther,
+      };
+
+  String _statusText() => switch (snapshot.status) {
+        DownloadGroupStatus.queued => appLocalizations.waitingForDownload,
+        DownloadGroupStatus.downloading => appLocalizations.downloading,
+        DownloadGroupStatus.paused => appLocalizations.downloadPaused,
+        DownloadGroupStatus.completed => appLocalizations.downloadComplete,
+        DownloadGroupStatus.partiallyFailed =>
+          appLocalizations.downloadPartiallyFailed,
+        DownloadGroupStatus.failed => appLocalizations.downloadFailed,
+        DownloadGroupStatus.cancelled => appLocalizations.downloadCancelled,
+      };
 }
 
 class _DownloadTaskTile extends StatelessWidget {
