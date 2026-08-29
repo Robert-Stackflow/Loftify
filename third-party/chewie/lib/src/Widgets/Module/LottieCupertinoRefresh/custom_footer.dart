@@ -21,7 +21,7 @@ class LottieCupertinoFooter extends Footer {
 
   const LottieCupertinoFooter({
     this.key,
-    super.triggerOffset = 44,
+    super.triggerOffset = 52,
     super.clamping = false,
     super.position = IndicatorPosition.above,
     super.processedDuration = const Duration(milliseconds: 180),
@@ -35,12 +35,12 @@ class LottieCupertinoFooter extends Footer {
     super.infiniteHitOver,
     super.hapticFeedback,
     super.triggerWhenRelease,
-    super.maxOverOffset = 64,
+    super.maxOverOffset = 76,
     this.foregroundColor,
     this.backgroundColor,
     this.emptyWidget,
     required this.indicator,
-    this.radius = 14,
+    this.radius = 18,
   }) : super(
           frictionFactor: frictionFactor ??
               (infiniteOffset == null ? kCustomCupertinoFrictionFactor : null),

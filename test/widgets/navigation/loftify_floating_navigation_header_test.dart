@@ -177,4 +177,22 @@ void main() {
     expect(find.byType(LoftifyFloatingCapsule), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  test('floating navigation refresh starts below the overlay header', () {
+    final header =
+        buildFloatingNavigationRefreshHeader() as LottieCupertinoHeader;
+
+    expect(header.triggerOffset, 56);
+    expect(header.radius, 20);
+    expect(
+      header.indicatorOffset,
+      LoftifyFloatingNavigationHeader.refreshIndicatorOffset,
+    );
+    expect(
+      header.indicatorOffset,
+      LoftifyFloatingNavigationHeader.topGap +
+          LoftifyFloatingNavigationHeader.height +
+          LoftifyFloatingNavigationHeader.contentGap,
+    );
+  });
 }

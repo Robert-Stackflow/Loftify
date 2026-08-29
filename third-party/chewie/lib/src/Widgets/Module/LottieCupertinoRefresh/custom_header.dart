@@ -19,9 +19,14 @@ class LottieCupertinoHeader extends Header {
 
   final Widget indicator;
 
+  /// Visual translation applied after the safe-area offset is resolved.
+  /// Useful for scrollables that intentionally render beneath an overlay
+  /// header while keeping their refresh animation below that overlay.
+  final double indicatorOffset;
+
   const LottieCupertinoHeader({
     this.key,
-    super.triggerOffset = 48,
+    super.triggerOffset = 56,
     super.clamping = false,
     super.position = IndicatorPosition.above,
     super.processedDuration = const Duration(milliseconds: 180),
@@ -35,12 +40,13 @@ class LottieCupertinoHeader extends Header {
     super.infiniteHitOver,
     super.hapticFeedback,
     super.triggerWhenRelease,
-    super.maxOverOffset = 72,
+    super.maxOverOffset = 84,
     this.foregroundColor,
     this.backgroundColor,
     this.emptyWidget,
     required this.indicator,
-    this.radius = 15,
+    this.radius = 20,
+    this.indicatorOffset = 0,
   }) : super(
           frictionFactor: frictionFactor ??
               (infiniteOffset == null ? kCustomCupertinoFrictionFactor : null),
@@ -58,6 +64,7 @@ class LottieCupertinoHeader extends Header {
       emptyWidget: emptyWidget,
       radius: radius,
       indicator: indicator,
+      indicatorOffset: indicatorOffset,
     );
   }
 }

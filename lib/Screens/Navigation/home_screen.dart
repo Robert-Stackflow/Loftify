@@ -171,6 +171,7 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
           return Stack(
             children: [
               EasyRefresh(
+                header: buildFloatingNavigationRefreshHeader(),
                 refreshOnStart: true,
                 controller: _refreshController,
                 onRefresh: _onRefresh,

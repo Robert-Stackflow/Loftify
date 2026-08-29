@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../../Models/account_response.dart';
 import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/hive_util.dart';
+import '../../Utils/lottie_files.dart';
 import '../Item/item_builder.dart';
 
 /// Overlay geometry shared by the four primary navigation pages.
@@ -25,6 +26,8 @@ class LoftifyFloatingNavigationHeader extends StatelessWidget {
   static const double height = 48;
   static const double topGap = 6;
   static const double contentGap = 8;
+
+  static const double refreshIndicatorOffset = topGap + height + contentGap;
 
   static double horizontalInset(BuildContext context) =>
       MediaQuery.sizeOf(context).width >= 600 ? 16 : 12;
@@ -47,6 +50,16 @@ class LoftifyFloatingNavigationHeader extends StatelessWidget {
     );
   }
 }
+
+Header buildFloatingNavigationRefreshHeader() => LottieCupertinoHeader(
+      backgroundColor: Colors.transparent,
+      indicator: LottieFiles.buildLoadingAnimation(40, false),
+      hapticFeedback: true,
+      triggerOffset: 56,
+      maxOverOffset: 84,
+      radius: 20,
+      indicatorOffset: LoftifyFloatingNavigationHeader.refreshIndicatorOffset,
+    );
 
 /// A low-noise, full-radius floating surface for navigation-page controls.
 class LoftifyFloatingCapsule extends StatelessWidget {

@@ -32,6 +32,8 @@ class _CustomIndicator extends StatefulWidget {
 
   final Widget indicator;
 
+  final double indicatorOffset;
+
   const _CustomIndicator({
     super.key,
     required this.state,
@@ -40,6 +42,7 @@ class _CustomIndicator extends StatefulWidget {
     this.backgroundColor,
     this.emptyWidget,
     required this.indicator,
+    this.indicatorOffset = 0,
     this.radius,
   });
 
@@ -79,14 +82,16 @@ class _CustomIndicatorState extends State<_CustomIndicator>
   Widget _buildIndicator() {
     final progress =
         (_offset / math.max(1, _actualTriggerOffset)).clamp(0.0, 1.0);
-    final easedScale = Curves.easeOutCubic.transform(progress).clamp(0.0, 1.0);
     final availableExtent = math.max(0.0, _offset - 2);
     final fittedScale =
         (availableExtent / math.max(1, _radius * 2)).clamp(0.0, 1.0);
     // Never let the painted indicator become larger than the revealed gap.
     // Otherwise its lower edge is clipped by the returning list and looks as
     // if the content is covering the refresh animation.
-    final scale = math.min(easedScale, fittedScale);
+    // Keep the visual size on the same proportion as the pull gesture. The
+    // fitted cap only protects custom configurations whose trigger distance is
+    // smaller than the indicator diameter.
+    final scale = math.min(progress, fittedScale);
     Widget indicator;
     switch (_mode) {
       case IndicatorMode.drag:
@@ -163,7 +168,7 @@ class _CustomIndicatorState extends State<_CustomIndicator>
     return Stack(
       key: const ValueKey('refresh-indicator-viewport'),
       alignment: Alignment.center,
-      clipBehavior: Clip.hardEdge,
+      clipBehavior: widget.indicatorOffset == 0 ? Clip.hardEdge : Clip.none,
       children: [
         SizedBox(
           height: _axis == Axis.vertical ? offset : double.infinity,
@@ -173,9 +178,14 @@ class _CustomIndicatorState extends State<_CustomIndicator>
         Positioned.fill(
           child: ColoredBox(
             color: widget.backgroundColor ?? const Color(0x00000000),
-            child: Align(
-              alignment: Alignment.center,
-              child: _buildIndicator(),
+            child: Transform.translate(
+              offset: _axis == Axis.vertical
+                  ? Offset(0, widget.indicatorOffset)
+                  : Offset(widget.indicatorOffset, 0),
+              child: Align(
+                alignment: Alignment.center,
+                child: _buildIndicator(),
+              ),
             ),
           ),
         ),

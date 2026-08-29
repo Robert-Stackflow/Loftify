@@ -218,19 +218,19 @@ class MainScreenState extends BaseWindowState<MainScreen>
   void initEasyRefresh() {
     EasyRefresh.defaultHeaderBuilder = () => LottieCupertinoHeader(
           backgroundColor: Colors.transparent,
-          indicator: LottieFiles.buildLoadingAnimation(30, false),
+          indicator: LottieFiles.buildLoadingAnimation(40, false),
           hapticFeedback: true,
-          triggerOffset: 48,
-          maxOverOffset: 72,
-          radius: 15,
+          triggerOffset: 56,
+          maxOverOffset: 84,
+          radius: 20,
         );
     EasyRefresh.defaultFooterBuilder = () => LottieCupertinoFooter(
           backgroundColor: Colors.transparent,
-          indicator: LottieFiles.buildLoadingAnimation(28, false),
-          triggerOffset: 44,
-          maxOverOffset: 64,
+          indicator: LottieFiles.buildLoadingAnimation(36, false),
+          triggerOffset: 52,
+          maxOverOffset: 76,
           infiniteOffset: 240,
-          radius: 14,
+          radius: 18,
         );
     chewieProvider.loadingWidgetBuilder = LottieFiles.buildLoadingAnimation;
     chewieProvider.stateWidgetBuilder = LoftifyStateView.fromChewie;

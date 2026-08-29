@@ -164,6 +164,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
 
   Widget _buildMobileMainBody() {
     return EasyRefresh(
+      header: buildFloatingNavigationRefreshHeader(),
       controller: _refreshController,
       onRefresh: _onRefresh,
       child: Container(
@@ -194,6 +195,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
         Expanded(
           flex: 1,
           child: EasyRefresh(
+            header: buildFloatingNavigationRefreshHeader(),
             controller: _refreshController,
             onRefresh: _onRefresh,
             child: Container(

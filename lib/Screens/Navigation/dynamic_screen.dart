@@ -647,6 +647,7 @@ class FollowTabState extends BaseDynamicState<FollowTab>
 
   _buildEasyRefresh(ERChildBuilder builder) {
     return EasyRefresh.builder(
+      header: buildFloatingNavigationRefreshHeader(),
       refreshOnStart: false,
       controller: _refreshController,
       scrollController: _scrollController,
@@ -805,6 +806,7 @@ class SubscribeTagTabState extends BaseDynamicState<SubscribeTagTab>
   Widget build(BuildContext context) {
     super.build(context);
     return EasyRefresh.builder(
+      header: buildFloatingNavigationRefreshHeader(),
       refreshOnStart: false,
       controller: _refreshController,
       onRefresh: () async {
@@ -1410,6 +1412,7 @@ class SubscribeCollectionTabState
   Widget build(BuildContext context) {
     super.build(context);
     return EasyRefresh.builder(
+      header: buildFloatingNavigationRefreshHeader(),
       refreshOnStart: false,
       controller: _refreshController,
       onRefresh: () async {
@@ -1906,6 +1909,7 @@ class SubscribeGrainTabState extends BaseDynamicState<SubscribeGrainTab>
   Widget build(BuildContext context) {
     super.build(context);
     return EasyRefresh.builder(
+      header: buildFloatingNavigationRefreshHeader(),
       refreshOnStart: false,
       controller: _refreshController,
       onRefresh: () async {

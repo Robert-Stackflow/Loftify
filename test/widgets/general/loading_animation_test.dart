@@ -123,24 +123,25 @@ void main() {
     const footer = LottieCupertinoFooter(indicator: indicator);
 
     expect(header.position, IndicatorPosition.above);
-    expect(header.triggerOffset, 48);
-    expect(header.maxOverOffset, 72);
+    expect(header.triggerOffset, 56);
+    expect(header.maxOverOffset, 84);
     expect(header.springRebound, isTrue);
-    expect(header.radius, 15);
+    expect(header.radius, 20);
+    expect(header.indicatorOffset, 0);
     expect(footer.position, IndicatorPosition.above);
-    expect(footer.triggerOffset, 44);
-    expect(footer.maxOverOffset, 64);
+    expect(footer.triggerOffset, 52);
+    expect(footer.maxOverOffset, 76);
     expect(footer.infiniteOffset, 240);
-    expect(footer.radius, 14);
+    expect(footer.radius, 18);
   });
 
   test('nested refresh keeps a compact indicator without a short trigger', () {
     final header = buildNestedRefreshHeader() as LottieCupertinoHeader;
 
     expect(header.position, IndicatorPosition.above);
-    expect(header.triggerOffset, 44);
-    expect(header.maxOverOffset, 64);
-    expect(header.radius, 14);
+    expect(header.triggerOffset, 52);
+    expect(header.maxOverOffset, 76);
+    expect(header.radius, 18);
   });
 
   testWidgets('pulling reveals Lottie while the list follows the gesture',
@@ -186,7 +187,7 @@ void main() {
     final firstScale = indicatorScale();
     final firstGap =
         tester.getTopLeft(find.byKey(firstItemKey)).dy - initialTop;
-    expect(30 * firstScale, lessThanOrEqualTo(firstGap + 0.01));
+    expect(40 * firstScale, lessThanOrEqualTo(firstGap + 0.01));
     await gesture.moveBy(const Offset(0, 32));
     await tester.pump();
     final secondScale = indicatorScale();
@@ -194,7 +195,7 @@ void main() {
         tester.getTopLeft(find.byKey(firstItemKey)).dy - initialTop;
     expect(firstScale, lessThan(secondScale));
     expect(secondScale, lessThanOrEqualTo(1));
-    expect(30 * secondScale, lessThanOrEqualTo(secondGap + 0.01));
+    expect(40 * secondScale, lessThanOrEqualTo(secondGap + 0.01));
     expect(tester.getTopLeft(find.byKey(firstItemKey)).dy,
         greaterThan(initialTop));
     expect(tester.takeException(), isNull);
