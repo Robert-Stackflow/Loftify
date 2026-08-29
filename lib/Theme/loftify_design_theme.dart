@@ -939,11 +939,13 @@ abstract final class LoftifyTheme {
     final surface = isDark ? const Color(0xFF191C1A) : const Color(0xFFF7F8F7);
     final surfaceRaised =
         isDark ? const Color(0xFF202421) : const Color(0xFFFFFFFF);
+    final surfaceMuted =
+        isDark ? const Color(0xFF252A27) : const Color(0xFFF0F3F1);
     final textPrimary =
         isDark ? const Color(0xFFF2F5F3) : const Color(0xFF202522);
     final textMuted = _readableForegroundColor(
       isDark ? const Color(0xFF839089) : const Color(0xFF8D9791),
-      backgrounds: [page, surface],
+      backgrounds: [page, surface, surfaceRaised, surfaceMuted],
       isDark: isDark,
     );
     final accentContainer = Color.alphaBlend(
@@ -981,7 +983,7 @@ abstract final class LoftifyTheme {
       page: page,
       surface: surface,
       surfaceRaised: surfaceRaised,
-      surfaceMuted: isDark ? const Color(0xFF252A27) : const Color(0xFFF0F3F1),
+      surfaceMuted: surfaceMuted,
       textPrimary: textPrimary,
       textSecondary: isDark ? const Color(0xFFAEB8B2) : const Color(0xFF66706B),
       textMuted: textMuted,

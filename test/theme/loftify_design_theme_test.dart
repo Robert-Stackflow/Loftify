@@ -157,7 +157,8 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    test('every semantic text level meets AA contrast on page surfaces', () {
+    test('every semantic text level meets AA contrast on neutral surfaces', () {
+      final failures = <String>[];
       for (final source in <ChewieThemeColorData>[
         ChewieThemeColorData.defaultLightThemes.first,
         ChewieThemeColorData.defaultDarkThemes.first,
@@ -165,21 +166,28 @@ void main() {
         final colors = LoftifyTheme.build(
           source,
         ).extension<LoftifyDesignThemeData>()!.colors;
-        expect(
-            _contrastRatio(colors.textPrimary, colors.page), greaterThan(4.5));
-        expect(
-          _contrastRatio(colors.textSecondary, colors.page),
-          greaterThan(4.5),
-        );
-        expect(
-          _contrastRatio(colors.textMuted, colors.page),
-          greaterThanOrEqualTo(4.5),
-        );
-        expect(
-          _contrastRatio(colors.textMuted, colors.surface),
-          greaterThanOrEqualTo(4.5),
-        );
+        for (final background in <Color>[
+          colors.page,
+          colors.surface,
+          colors.surfaceRaised,
+          colors.surfaceMuted,
+        ]) {
+          for (final foreground in <Color>[
+            colors.textPrimary,
+            colors.textSecondary,
+            colors.textMuted,
+          ]) {
+            final ratio = _contrastRatio(foreground, background);
+            if (ratio < 4.5) {
+              failures.add(
+                '${source.id}: $foreground on $background is '
+                '${ratio.toStringAsFixed(3)}:1',
+              );
+            }
+          }
+        }
       }
+      expect(failures, isEmpty, reason: failures.join('\n'));
     });
 
     test('accent foreground meets AA contrast across built-in themes', () {
