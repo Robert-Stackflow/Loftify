@@ -47,8 +47,12 @@ class _PendingExecutor extends DownloadTaskExecutor {
   Future<void> deleteTemporaryFiles(DownloadTask task) async {}
 }
 
-Widget _host(Widget child) => MaterialApp(
-      locale: const Locale('zh'),
+Widget _host(
+  Widget child, {
+  Locale locale = const Locale('zh'),
+}) =>
+    MaterialApp(
+      locale: locale,
       theme: ChewieThemeColorData.defaultLightThemes.first.toThemeData(),
       localizationsDelegates: const [
         ChewieLocalizations.delegate,
@@ -183,6 +187,83 @@ void main() {
     expect(find.text('资源列表'), findsOneWidget);
     expect(find.byKey(const Key('download-group-pause')), findsOneWidget);
     expect(find.byKey(const Key('download-group-cancel')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('download tiles remain usable at two-times text scale',
+      (tester) async {
+    tester.view.physicalSize = const Size(280, 480);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final manager = DownloadTaskManager(
+      store: _MemoryStore(),
+      executor: _PendingExecutor(),
+      maxConcurrentTasks: 1,
+    );
+    await manager.initialize();
+    await manager.enqueueBatch(
+      const <DownloadRequest>[
+        DownloadRequest(
+          url: 'https://example.com/large-text-group.jpg',
+          fileName: 'large-text-group.jpg',
+          mediaType: DownloadMediaType.image,
+          title: 'A very long child title for the grouped download',
+        ),
+      ],
+      source: const DownloadSourceDescriptor(
+        type: DownloadSourceType.favoriteFolder,
+        sourceId: 'large-text',
+        title: 'A very long favorite folder download title',
+      ),
+    );
+    await manager.enqueue(
+      url: 'https://example.com/large-text-standalone.mp4',
+      fileName: 'a-very-long-standalone-video-file-name.mp4',
+      mediaType: DownloadMediaType.video,
+      title: 'A very long standalone download title',
+    );
+
+    await tester.pumpWidget(
+      _host(
+        MediaQuery(
+          data: const MediaQueryData(
+            size: Size(280, 480),
+            textScaler: TextScaler.linear(2),
+          ),
+          child: DownloadManagementScreen(manager: manager),
+        ),
+        locale: const Locale('en'),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('A very long favorite folder download title'),
+        findsOneWidget);
+    expect(
+      tester.getRect(find.byKey(const ValueKey('download-group-status'))).right,
+      lessThanOrEqualTo(280),
+    );
+    await tester.scrollUntilVisible(
+      find.text('A very long standalone download title'),
+      160,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('download-task-actions')),
+      80,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pump();
+    expect(find.text('A very long standalone download title'), findsOneWidget);
+    expect(
+      tester.getRect(find.byKey(const ValueKey('download-task-status'))).right,
+      lessThanOrEqualTo(280),
+    );
+    expect(
+      tester.getRect(find.byKey(const ValueKey('download-task-actions'))).right,
+      lessThanOrEqualTo(280),
+    );
     expect(tester.takeException(), isNull);
   });
 }

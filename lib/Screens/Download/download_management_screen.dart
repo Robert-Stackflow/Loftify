@@ -168,7 +168,7 @@ class _DownloadGroupTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final source = snapshot.group.source;
+    final compact = _useCompactDownloadTileLayout(context);
     final statusColor = switch (snapshot.status) {
       DownloadGroupStatus.failed ||
       DownloadGroupStatus.partiallyFailed =>
@@ -192,25 +192,10 @@ class _DownloadGroupTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          source.title.trim().isEmpty
-                              ? _sourceTypeText()
-                              : source.title.trim(),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: ChewieTheme.titleSmall.copyWith(
-                            height: 1.35,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      _buildStatusBadge(context, statusColor),
-                    ],
+                  _buildTitleAndStatus(
+                    context,
+                    statusColor,
+                    compact: compact,
                   ),
                   const SizedBox(height: 5),
                   Text(
@@ -254,6 +239,43 @@ class _DownloadGroupTile extends StatelessWidget {
     );
   }
 
+  Widget _buildTitleAndStatus(
+    BuildContext context,
+    Color statusColor, {
+    required bool compact,
+  }) {
+    final title = Text(
+      snapshot.group.source.title.trim().isEmpty
+          ? _sourceTypeText()
+          : snapshot.group.source.title.trim(),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: ChewieTheme.titleSmall.copyWith(
+        height: 1.35,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+    final badge = _buildStatusBadge(context, statusColor);
+    if (compact) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          title,
+          const SizedBox(height: 6),
+          Align(alignment: Alignment.centerLeft, child: badge),
+        ],
+      );
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: title),
+        const SizedBox(width: 8),
+        badge,
+      ],
+    );
+  }
+
   Widget _buildPreview(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final thumbnailUrl = snapshot.group.source.thumbnailUrl?.trim();
@@ -290,6 +312,7 @@ class _DownloadGroupTile extends StatelessWidget {
 
   Widget _buildStatusBadge(BuildContext context, Color color) {
     return Container(
+      key: const ValueKey('download-group-status'),
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.10),
@@ -298,6 +321,7 @@ class _DownloadGroupTile extends StatelessWidget {
       child: Text(
         _statusText(),
         maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: ChewieTheme.labelSmall.copyWith(
           color: color,
           fontWeight: FontWeight.w600,
@@ -359,6 +383,7 @@ class _DownloadTaskTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final compact = _useCompactDownloadTileLayout(context);
     final progressColor = task.status == DownloadTaskStatus.failed ||
             task.status == DownloadTaskStatus.cancelled
         ? colorScheme.outlineVariant
@@ -374,26 +399,7 @@ class _DownloadTaskTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        task.title?.trim().isNotEmpty == true
-                            ? task.title!.trim()
-                            : task.fileName,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: ChewieTheme.titleSmall.copyWith(
-                          height: 1.35,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    _buildStatusBadge(context),
-                  ],
-                ),
+                _buildTitleAndStatus(context, compact: compact),
                 const SizedBox(height: 5),
                 Text(
                   task.fileName,
@@ -415,21 +421,9 @@ class _DownloadTaskTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 7),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        _progressText(),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: ChewieTheme.labelSmall.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    ..._buildActions(context),
-                  ],
+                _buildProgressAndActions(
+                  context,
+                  compact: compact,
                 ),
                 if (task.errorMessage?.isNotEmpty == true) ...[
                   const SizedBox(height: 5),
@@ -448,6 +442,79 @@ class _DownloadTaskTile extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTitleAndStatus(
+    BuildContext context, {
+    required bool compact,
+  }) {
+    final title = Text(
+      task.title?.trim().isNotEmpty == true
+          ? task.title!.trim()
+          : task.fileName,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: ChewieTheme.titleSmall.copyWith(
+        height: 1.35,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+    final badge = _buildStatusBadge(context);
+    if (compact) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          title,
+          const SizedBox(height: 6),
+          Align(alignment: Alignment.centerLeft, child: badge),
+        ],
+      );
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: title),
+        const SizedBox(width: 8),
+        badge,
+      ],
+    );
+  }
+
+  Widget _buildProgressAndActions(
+    BuildContext context, {
+    required bool compact,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final progress = Text(
+      _progressText(),
+      maxLines: compact ? 2 : 1,
+      overflow: TextOverflow.ellipsis,
+      style: ChewieTheme.labelSmall.copyWith(
+        color: colorScheme.onSurfaceVariant,
+      ),
+    );
+    final actions = Row(
+      key: const ValueKey('download-task-actions'),
+      mainAxisSize: MainAxisSize.min,
+      children: _buildActions(context),
+    );
+    if (compact) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          progress,
+          const SizedBox(height: 6),
+          Align(alignment: Alignment.centerRight, child: actions),
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: progress),
+        const SizedBox(width: 8),
+        actions,
+      ],
     );
   }
 
@@ -494,6 +561,7 @@ class _DownloadTaskTile extends StatelessWidget {
     final isError = task.status == DownloadTaskStatus.failed;
     final color = isError ? ChewieTheme.errorColor : colorScheme.primary;
     return Container(
+      key: const ValueKey('download-task-status'),
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.10),
@@ -502,6 +570,7 @@ class _DownloadTaskTile extends StatelessWidget {
       child: Text(
         _statusText(),
         maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: ChewieTheme.labelSmall.copyWith(
           color: color,
           fontWeight: FontWeight.w600,
@@ -598,8 +667,13 @@ class _TaskActionButton extends StatelessWidget {
         tooltip: tooltip,
         style: ChewieIconButtonStyle.soft,
         iconSize: 16,
-        cornerRadius: 8,
+        cornerRadius: 999,
       ),
     );
   }
+}
+
+bool _useCompactDownloadTileLayout(BuildContext context) {
+  return MediaQuery.sizeOf(context).width < 380 ||
+      MediaQuery.textScalerOf(context).scale(1) > 1.35;
 }
