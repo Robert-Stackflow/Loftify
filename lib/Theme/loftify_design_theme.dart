@@ -694,12 +694,15 @@ abstract final class LoftifyTheme {
     Color source, {
     required List<Color> backgrounds,
     required Brightness brightness,
+    double minimumContrast = 4.5,
   }) {
     assert(backgrounds.isNotEmpty);
+    assert(minimumContrast > 1);
     return _readableForegroundColor(
       source,
       backgrounds: backgrounds,
       isDark: brightness == Brightness.dark,
+      minimumContrast: minimumContrast,
     );
   }
 
@@ -971,6 +974,12 @@ abstract final class LoftifyTheme {
       backgrounds: [page, surface, surfaceRaised, surfaceMuted],
       isDark: isDark,
     );
+    final outlineStrong = _readableForegroundColor(
+      isDark ? const Color(0xFF485049) : const Color(0xFFCDD4CF),
+      backgrounds: [page, surface, surfaceRaised, surfaceMuted],
+      isDark: isDark,
+      minimumContrast: 3,
+    );
     final accentContainer = Color.alphaBlend(
       accent.withAlpha(isDark ? 52 : 28),
       surfaceRaised,
@@ -1011,7 +1020,7 @@ abstract final class LoftifyTheme {
       textSecondary: isDark ? const Color(0xFFAEB8B2) : const Color(0xFF66706B),
       textMuted: textMuted,
       outline: isDark ? const Color(0xFF303630) : const Color(0xFFE5E9E6),
-      outlineStrong: isDark ? const Color(0xFF485049) : const Color(0xFFCDD4CF),
+      outlineStrong: outlineStrong,
       accent: accent,
       accentForeground: accentForeground,
       onAccent: ColorUtil.getContrastColor(accent),
@@ -1068,9 +1077,11 @@ abstract final class LoftifyTheme {
     Color source, {
     required List<Color> backgrounds,
     required bool isDark,
+    double minimumContrast = 4.5,
   }) {
     bool isReadable(Color candidate) => backgrounds.every(
-          (background) => _contrastRatio(candidate, background) >= 4.5,
+          (background) =>
+              _contrastRatio(candidate, background) >= minimumContrast,
         );
     if (isReadable(source)) return source;
     final target = isDark ? Colors.white : Colors.black;

@@ -292,6 +292,33 @@ void main() {
           colors.accent);
     });
 
+    test('interactive outlines reach non-text contrast on every surface', () {
+      final failures = <String>[];
+      for (final source in <ChewieThemeColorData>[
+        ...ChewieThemeColorData.defaultLightThemes,
+        ...ChewieThemeColorData.defaultDarkThemes,
+      ]) {
+        final colors = LoftifyTheme.build(
+          source,
+        ).extension<LoftifyDesignThemeData>()!.colors;
+        for (final background in <Color>[
+          colors.page,
+          colors.surface,
+          colors.surfaceRaised,
+          colors.surfaceMuted,
+        ]) {
+          final ratio = _contrastRatio(colors.outlineStrong, background);
+          if (ratio < 3) {
+            failures.add(
+              '${source.id}: ${colors.outlineStrong} on $background is '
+              '${ratio.toStringAsFixed(3)}:1',
+            );
+          }
+        }
+      }
+      expect(failures, isEmpty, reason: failures.join('\n'));
+    });
+
     test('accent container content meets AA contrast in every theme', () {
       final sources = <ChewieThemeColorData>[
         ...ChewieThemeColorData.defaultLightThemes,

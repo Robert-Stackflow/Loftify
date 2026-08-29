@@ -267,6 +267,12 @@ void main() {
         )
         .decoration! as BoxDecoration;
     expect(buttonDecoration.color, const Color(0xFF202421));
+    expect(
+      buttonDecoration.border!.top.color,
+      LoftifyDesignThemeData.of(
+        tester.element(find.byKey(const Key('dark-button'))),
+      ).colors.outlineStrong,
+    );
     expect(fieldDecoration.color, const Color(0xFF191C1A));
     expect(find.text('Dark tag'), findsOneWidget);
     expect(tester.takeException(), isNull);
