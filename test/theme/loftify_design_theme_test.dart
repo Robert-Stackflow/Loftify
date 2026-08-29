@@ -157,7 +157,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    test('primary and secondary text meet AA contrast on page surfaces', () {
+    test('every semantic text level meets AA contrast on page surfaces', () {
       for (final source in <ChewieThemeColorData>[
         ChewieThemeColorData.defaultLightThemes.first,
         ChewieThemeColorData.defaultDarkThemes.first,
@@ -170,6 +170,14 @@ void main() {
         expect(
           _contrastRatio(colors.textSecondary, colors.page),
           greaterThan(4.5),
+        );
+        expect(
+          _contrastRatio(colors.textMuted, colors.page),
+          greaterThanOrEqualTo(4.5),
+        );
+        expect(
+          _contrastRatio(colors.textMuted, colors.surface),
+          greaterThanOrEqualTo(4.5),
         );
       }
     });

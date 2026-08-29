@@ -941,6 +941,11 @@ abstract final class LoftifyTheme {
         isDark ? const Color(0xFF202421) : const Color(0xFFFFFFFF);
     final textPrimary =
         isDark ? const Color(0xFFF2F5F3) : const Color(0xFF202522);
+    final textMuted = _readableForegroundColor(
+      isDark ? const Color(0xFF839089) : const Color(0xFF8D9791),
+      backgrounds: [page, surface],
+      isDark: isDark,
+    );
     final accentContainer = Color.alphaBlend(
       accent.withAlpha(isDark ? 52 : 28),
       surfaceRaised,
@@ -979,7 +984,7 @@ abstract final class LoftifyTheme {
       surfaceMuted: isDark ? const Color(0xFF252A27) : const Color(0xFFF0F3F1),
       textPrimary: textPrimary,
       textSecondary: isDark ? const Color(0xFFAEB8B2) : const Color(0xFF66706B),
-      textMuted: isDark ? const Color(0xFF839089) : const Color(0xFF8D9791),
+      textMuted: textMuted,
       outline: isDark ? const Color(0xFF303630) : const Color(0xFFE5E9E6),
       outlineStrong: isDark ? const Color(0xFF485049) : const Color(0xFFCDD4CF),
       accent: accent,
@@ -1024,6 +1029,23 @@ abstract final class LoftifyTheme {
       return true;
     }
 
+    if (isReadable(source)) return source;
+    final target = isDark ? Colors.white : Colors.black;
+    for (var step = 1; step <= 100; step++) {
+      final candidate = Color.lerp(source, target, step / 100)!;
+      if (isReadable(candidate)) return candidate;
+    }
+    return target;
+  }
+
+  static Color _readableForegroundColor(
+    Color source, {
+    required List<Color> backgrounds,
+    required bool isDark,
+  }) {
+    bool isReadable(Color candidate) => backgrounds.every(
+          (background) => _contrastRatio(candidate, background) >= 4.5,
+        );
     if (isReadable(source)) return source;
     final target = isDark ? Colors.white : Colors.black;
     for (var step = 1; step <= 100; step++) {
