@@ -6,6 +6,7 @@ import '../../Utils/download_task_manager.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import '../Setting/base_setting_screen.dart';
+import 'download_group_detail_screen.dart';
 
 class DownloadManagementScreen extends BaseSettingScreen {
   const DownloadManagementScreen({
@@ -145,14 +146,24 @@ class _DownloadManagementScreenState
   }
 
   Widget _buildGroup(DownloadGroupSnapshot snapshot) {
-    return _DownloadGroupTile(snapshot: snapshot);
+    return _DownloadGroupTile(
+      snapshot: snapshot,
+      onTap: () => RouteUtil.pushPanelCupertinoRoute(
+        context,
+        DownloadGroupDetailScreen(
+          groupId: snapshot.group.id,
+          manager: _manager,
+        ),
+      ),
+    );
   }
 }
 
 class _DownloadGroupTile extends StatelessWidget {
-  const _DownloadGroupTile({required this.snapshot});
+  const _DownloadGroupTile({required this.snapshot, required this.onTap});
 
   final DownloadGroupSnapshot snapshot;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -166,74 +177,79 @@ class _DownloadGroupTile extends StatelessWidget {
       _ => scheme.primary,
     };
     final percent = (snapshot.progress * 100).clamp(0, 100).round();
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildPreview(context),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        source.title.trim().isEmpty
-                            ? _sourceTypeText()
-                            : source.title.trim(),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: ChewieTheme.titleSmall.copyWith(
-                          height: 1.35,
-                          fontWeight: FontWeight.w600,
+    return InkWell(
+      key: ValueKey('download-group-${snapshot.group.id}'),
+      onTap: onTap,
+      splashFactory: NoSplash.splashFactory,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildPreview(context),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          source.title.trim().isEmpty
+                              ? _sourceTypeText()
+                              : source.title.trim(),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: ChewieTheme.titleSmall.copyWith(
+                            height: 1.35,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      _buildStatusBadge(context, statusColor),
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    _sourceTypeText(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: ChewieTheme.labelSmall.copyWith(
+                      color: scheme.onSurfaceVariant,
                     ),
-                    const SizedBox(width: 8),
-                    _buildStatusBadge(context, statusColor),
-                  ],
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  _sourceTypeText(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: ChewieTheme.labelSmall.copyWith(
-                    color: scheme.onSurfaceVariant,
                   ),
-                ),
-                const SizedBox(height: 9),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(99),
-                  child: LinearProgressIndicator(
-                    minHeight: 3,
-                    value: snapshot.progress,
-                    color: statusColor,
-                    backgroundColor:
-                        scheme.surfaceContainerHighest.withValues(alpha: 0.7),
+                  const SizedBox(height: 9),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(99),
+                    child: LinearProgressIndicator(
+                      minHeight: 3,
+                      value: snapshot.progress,
+                      color: statusColor,
+                      backgroundColor:
+                          scheme.surfaceContainerHighest.withValues(alpha: 0.7),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 7),
-                Text(
-                  appLocalizations.downloadGroupProgress(
-                    snapshot.completedCount,
-                    percent,
-                    snapshot.tasks.length,
+                  const SizedBox(height: 7),
+                  Text(
+                    appLocalizations.downloadGroupProgress(
+                      snapshot.completedCount,
+                      percent,
+                      snapshot.tasks.length,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: ChewieTheme.labelSmall.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: ChewieTheme.labelSmall.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

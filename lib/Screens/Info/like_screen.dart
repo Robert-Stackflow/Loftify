@@ -402,7 +402,11 @@ class _LikeScreenState extends BaseDynamicState<LikeScreen>
           title: appLocalizations.myLikes,
           metadata: widget.blogId == null
               ? const <String, String>{}
-              : <String, String>{'blogId': widget.blogId.toString()},
+              : <String, String>{
+                  'blogId': widget.blogId.toString(),
+                  if (widget.blogName?.trim().isNotEmpty == true)
+                    'blogName': widget.blogName!.trim(),
+                },
         ),
         initialItems:
             _likeList.map(CommonInfoItemBuilder.getGeneralPostItem).toList(),

@@ -151,6 +151,33 @@ class DownloadTaskManager extends ChangeNotifier {
 
   List<DownloadGroup> get groups => List<DownloadGroup>.unmodifiable(_groups);
 
+  DownloadGroup? groupById(String groupId) {
+    for (final group in _groups) {
+      if (group.id == groupId) return group;
+    }
+    return null;
+  }
+
+  List<DownloadTask> tasksForGroup(String groupId) {
+    final group = groupById(groupId);
+    if (group == null) return const <DownloadTask>[];
+    final tasksById = <String, DownloadTask>{
+      for (final task in _tasks) task.id: task,
+    };
+    return List<DownloadTask>.unmodifiable(
+      group.taskIds.map((id) => tasksById[id]).whereType<DownloadTask>(),
+    );
+  }
+
+  DownloadGroupSnapshot? snapshotForGroup(String groupId) {
+    final group = groupById(groupId);
+    if (group == null) return null;
+    return DownloadGroupSnapshot(
+      group: group,
+      tasks: tasksForGroup(groupId),
+    );
+  }
+
   int get activeCount => _tasks.where((task) => task.isActive).length;
 
   Future<void> initialize() => _initialization ??= _initialize();
@@ -438,6 +465,46 @@ class DownloadTaskManager extends ChangeNotifier {
     ));
     await _persist();
     _pump();
+  }
+
+  Future<void> pauseGroup(String groupId) async {
+    await initialize();
+    final taskIds = tasksForGroup(groupId)
+        .where((task) =>
+            task.status == DownloadTaskStatus.queued ||
+            task.status == DownloadTaskStatus.downloading)
+        .map((task) => task.id)
+        .toList(growable: false);
+    await Future.wait(taskIds.map(pause));
+  }
+
+  Future<void> resumeGroup(String groupId) async {
+    await initialize();
+    final taskIds = tasksForGroup(groupId)
+        .where((task) => task.status == DownloadTaskStatus.paused)
+        .map((task) => task.id)
+        .toList(growable: false);
+    await Future.wait(taskIds.map(resume));
+  }
+
+  Future<void> cancelGroup(String groupId) async {
+    await initialize();
+    final taskIds = tasksForGroup(groupId)
+        .where((task) => task.isActive)
+        .map((task) => task.id)
+        .toList(growable: false);
+    await Future.wait(taskIds.map(cancel));
+  }
+
+  Future<void> retryFailedGroup(String groupId) async {
+    await initialize();
+    final taskIds = tasksForGroup(groupId)
+        .where((task) =>
+            task.status == DownloadTaskStatus.failed ||
+            task.status == DownloadTaskStatus.cancelled)
+        .map((task) => task.id)
+        .toList(growable: false);
+    await Future.wait(taskIds.map(retry));
   }
 
   Future<void> remove(String taskId) async {

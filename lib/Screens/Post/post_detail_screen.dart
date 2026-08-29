@@ -143,6 +143,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
   InitPhase _inited = InitPhase.haveNotConnected;
   final ValueNotifier<bool> _floatingOperationBarVisible = ValueNotifier(true);
   bool _scrollAllowsFloatingOperationBar = true;
+  bool _floatingOperationBarSyncScheduled = false;
   late final AnimationController _postSwipeAnimationController;
   Animation<double>? _postSwipeAnimation;
   final Map<bool, Future<PostDetailData?>> _adjacentPostLoads = {};
@@ -761,8 +762,17 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
     } else if (delta > 1) {
       _scrollAllowsFloatingOperationBar = false;
     }
-    _syncFloatingOperationBarVisibility();
+    _scheduleFloatingOperationBarVisibilitySync();
     return false;
+  }
+
+  void _scheduleFloatingOperationBarVisibilitySync() {
+    if (!mounted || _floatingOperationBarSyncScheduled) return;
+    _floatingOperationBarSyncScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _floatingOperationBarSyncScheduled = false;
+      if (mounted) _syncFloatingOperationBarVisibility();
+    });
   }
 
   void _syncFloatingOperationBarVisibility() {
@@ -2839,9 +2849,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
 
   Widget _buildFloatingOperationOverlay() {
     if (_postDetailData?.post == null) return const SizedBox.shrink();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _syncFloatingOperationBarVisibility();
-    });
+    _scheduleFloatingOperationBarVisibilitySync();
     return Positioned(
       right: 0,
       bottom: 0,

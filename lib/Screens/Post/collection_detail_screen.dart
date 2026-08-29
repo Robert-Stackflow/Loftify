@@ -627,6 +627,9 @@ class CollectionDetailScreenState
           thumbnailUrl: postCollection?.coverUrl,
           metadata: <String, String>{
             'collectionId': widget.collectionId.toString(),
+            'postId': widget.postId.toString(),
+            'blogId': widget.blogId.toString(),
+            'blogName': widget.blogName,
           },
         ),
         initialItems:

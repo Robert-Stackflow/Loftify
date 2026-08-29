@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Models/download_task.dart';
+import 'package:loftify/Screens/Download/download_group_detail_screen.dart';
 import 'package:loftify/Screens/Download/download_management_screen.dart';
 import 'package:loftify/Utils/download_task_manager.dart';
 import 'package:loftify/generated/app_localizations.dart';
@@ -76,13 +77,17 @@ void main() {
 
   testWidgets('download manager shows one parent instead of flat child tasks',
       (tester) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     final manager = DownloadTaskManager(
       store: _MemoryStore(),
       executor: _PendingExecutor(),
       maxConcurrentTasks: 1,
     );
     await manager.initialize();
-    await manager.enqueueBatch(
+    final result = await manager.enqueueBatch(
       const <DownloadRequest>[
         DownloadRequest(
           url: 'https://example.com/first.jpg',
@@ -116,6 +121,68 @@ void main() {
     expect(find.text('first.jpg'), findsNothing);
     expect(find.text('second.jpg'), findsNothing);
     expect(find.textContaining('/ 2'), findsOneWidget);
+    expect(
+      tester
+          .widget<InkWell>(
+            find.byKey(ValueKey('download-group-${result.group!.id}')),
+          )
+          .onTap,
+      isNotNull,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('group detail shows child progress and controls on narrow phones',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final manager = DownloadTaskManager(
+      store: _MemoryStore(),
+      executor: _PendingExecutor(),
+      maxConcurrentTasks: 1,
+    );
+    await manager.initialize();
+    final result = await manager.enqueueBatch(
+      const <DownloadRequest>[
+        DownloadRequest(
+          url: 'https://example.com/detail-first.jpg',
+          fileName: 'detail-first.jpg',
+          mediaType: DownloadMediaType.image,
+          title: 'First child',
+        ),
+        DownloadRequest(
+          url: 'https://example.com/detail-second.jpg',
+          fileName: 'detail-second.jpg',
+          mediaType: DownloadMediaType.image,
+          title: 'Second child',
+        ),
+      ],
+      source: const DownloadSourceDescriptor(
+        type: DownloadSourceType.collection,
+        sourceId: '42',
+        title: 'Parent collection',
+      ),
+    );
+
+    await tester.pumpWidget(
+      _host(
+        DownloadGroupDetailScreen(
+          groupId: result.group!.id,
+          manager: manager,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('下载任务详情'), findsOneWidget);
+    expect(find.text('查看原内容'), findsOneWidget);
+    expect(find.text('First child'), findsOneWidget);
+    expect(find.text('Second child'), findsOneWidget);
+    expect(find.text('资源列表'), findsOneWidget);
+    expect(find.byKey(const Key('download-group-pause')), findsOneWidget);
+    expect(find.byKey(const Key('download-group-cancel')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

@@ -317,7 +317,11 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
           title: appLocalizations.myRecommends,
           metadata: widget.blogId == null
               ? const <String, String>{}
-              : <String, String>{'blogId': widget.blogId.toString()},
+              : <String, String>{
+                  'blogId': widget.blogId.toString(),
+                  if (widget.blogName?.trim().isNotEmpty == true)
+                    'blogName': widget.blogName!.trim(),
+                },
         ),
         initialItems:
             _shareList.map(CommonInfoItemBuilder.getGeneralPostItem).toList(),

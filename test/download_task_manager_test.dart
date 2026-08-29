@@ -532,6 +532,98 @@ void main() {
     expect(restored.groups.single.taskIds, hasLength(2));
   });
 
+  test('group controls pause resume cancel and retry matching child tasks',
+      () async {
+    final now = DateTime(2026, 8, 29, 16);
+    DownloadTask task(String id, DownloadTaskStatus status) => DownloadTask(
+          id: id,
+          url: 'https://example.com/$id.jpg',
+          fileName: '$id.jpg',
+          mediaType: DownloadMediaType.image,
+          status: status,
+          createdAt: now,
+          updatedAt: now,
+        );
+
+    final store = _MemoryDownloadTaskStore(
+      <DownloadTask>[
+        task('queued', DownloadTaskStatus.queued),
+        task('paused', DownloadTaskStatus.paused),
+        task('failed', DownloadTaskStatus.failed),
+        task('standalone', DownloadTaskStatus.completed),
+      ],
+      <DownloadGroup>[
+        DownloadGroup(
+          id: 'group-controls',
+          source: const DownloadSourceDescriptor(
+            type: DownloadSourceType.collection,
+            sourceId: '42',
+            title: 'Group controls',
+          ),
+          taskIds: const <String>['paused', 'queued', 'failed'],
+          requestedCount: 3,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ],
+    );
+    final executor = _ControlledDownloadTaskExecutor();
+    final manager = DownloadTaskManager(
+      store: store,
+      executor: executor,
+      maxConcurrentTasks: 1,
+    );
+    await manager.initialize();
+    await _settleManager();
+
+    expect(
+      manager.tasksForGroup('group-controls').map((task) => task.id),
+      <String>['paused', 'queued', 'failed'],
+    );
+    expect(manager.snapshotForGroup('missing'), isNull);
+
+    await manager.pauseGroup('group-controls');
+    await _settleManager();
+    expect(
+      manager
+          .tasksForGroup('group-controls')
+          .take(2)
+          .map((task) => task.status),
+      everyElement(DownloadTaskStatus.paused),
+    );
+
+    await manager.resumeGroup('group-controls');
+    await _settleManager();
+    expect(
+      manager
+          .tasksForGroup('group-controls')
+          .take(2)
+          .every((task) => task.isActive),
+      isTrue,
+    );
+
+    await manager.cancelGroup('group-controls');
+    await _settleManager();
+    expect(
+      manager
+          .tasksForGroup('group-controls')
+          .take(2)
+          .map((task) => task.status),
+      everyElement(DownloadTaskStatus.cancelled),
+    );
+
+    await manager.retryFailedGroup('group-controls');
+    await _settleManager();
+    expect(
+      manager.tasksForGroup('group-controls').every((task) => task.isActive),
+      isTrue,
+    );
+    expect(
+      manager.tasks.firstWhere((task) => task.id == 'standalone').status,
+      DownloadTaskStatus.completed,
+    );
+  });
+
   test('batch enqueue skips completed tasks and requeues failed tasks',
       () async {
     final now = DateTime(2026, 8, 24);
