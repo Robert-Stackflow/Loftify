@@ -9,6 +9,29 @@ enum ChewieIconButtonStyle {
   outlined,
 }
 
+class ChewieIconButtonVisualScope extends InheritedWidget {
+  const ChewieIconButtonVisualScope({
+    super.key,
+    required this.visualSize,
+    required this.maximumIconSize,
+    required super.child,
+  });
+
+  static const double appBarVisualSize = 34;
+  static const double appBarIconSize = 18;
+
+  final double visualSize;
+  final double maximumIconSize;
+
+  static ChewieIconButtonVisualScope? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ChewieIconButtonVisualScope>();
+
+  @override
+  bool updateShouldNotify(ChewieIconButtonVisualScope oldWidget) =>
+      visualSize != oldWidget.visualSize ||
+      maximumIconSize != oldWidget.maximumIconSize;
+}
+
 /// The shared Lucide button primitive used by app bars, menus and inline tools.
 class ChewieIconButton extends StatelessWidget {
   const ChewieIconButton({
@@ -22,6 +45,7 @@ class ChewieIconButton extends StatelessWidget {
     this.style = ChewieIconButtonStyle.plain,
     this.iconSize,
     this.tapTargetSize,
+    this.visualSize,
     this.foregroundColor,
     this.selectedColor,
     this.backgroundColor,
@@ -40,6 +64,7 @@ class ChewieIconButton extends StatelessWidget {
   final ChewieIconButtonStyle style;
   final double? iconSize;
   final double? tapTargetSize;
+  final double? visualSize;
   final Color? foregroundColor;
   final Color? selectedColor;
   final Color? backgroundColor;
@@ -54,6 +79,7 @@ class ChewieIconButton extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final highContrast = MediaQuery.highContrastOf(context);
+    final visualScope = ChewieIconButtonVisualScope.maybeOf(context);
     final disabledOpacity = highContrast && specification.disabledOpacity < 0.5
         ? 0.5
         : specification.disabledOpacity;
@@ -62,6 +88,17 @@ class ChewieIconButton extends StatelessWidget {
       specification.minimumTapTarget,
       double.infinity,
     );
+    final requestedIconSize = iconSize ?? specification.regularSize;
+    final effectiveIconSize = visualScope == null
+        ? requestedIconSize
+        : requestedIconSize.clamp(0, visualScope.maximumIconSize).toDouble();
+    final effectiveVisualSize =
+        (visualSize ?? visualScope?.visualSize ?? effectiveTarget)
+            .clamp(
+              effectiveIconSize,
+              effectiveTarget,
+            )
+            .toDouble();
     final baseForeground = foregroundColor ??
         IconTheme.of(context).color ??
         colorScheme.onSurfaceVariant;
@@ -77,12 +114,48 @@ class ChewieIconButton extends StatelessWidget {
         : highContrast && selected
             ? activeForeground
             : Colors.transparent;
+    final visualBackground = onPressed == null
+        ? effectiveBackground.withValues(
+            alpha: effectiveBackground.a * disabledOpacity,
+          )
+        : effectiveBackground;
+    final visualDecoration = BoxDecoration(
+      color: visualBackground,
+      shape: cornerRadius == null ? BoxShape.circle : BoxShape.rectangle,
+      borderRadius:
+          cornerRadius == null ? null : BorderRadius.circular(cornerRadius!),
+      border: effectiveBorder.a == 0
+          ? null
+          : Border.all(
+              color: effectiveBorder,
+              width: highContrast ? 1.2 : 0.8,
+            ),
+    );
+
+    Widget buildVisualIcon(Color color) {
+      return SizedBox.square(
+        key: const ValueKey('chewie-icon-button-visual'),
+        dimension: effectiveVisualSize,
+        child: DecoratedBox(
+          decoration: visualDecoration,
+          child: Center(
+            child: ChewieIcon(
+              icon,
+              size: effectiveIconSize,
+              color: color,
+              enabled: onPressed != null,
+              opticalOffset: opticalOffset,
+            ),
+          ),
+        ),
+      );
+    }
 
     final button = IconButton(
       tooltip: tooltip,
       onPressed: onPressed,
       isSelected: selected,
-      iconSize: iconSize ?? specification.regularSize,
+      iconSize: effectiveIconSize,
       padding: EdgeInsets.zero,
       constraints: BoxConstraints.tightFor(
         width: effectiveTarget,
@@ -100,12 +173,7 @@ class ChewieIconButton extends StatelessWidget {
           return selected ? activeForeground : baseForeground;
         }),
         backgroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.disabled)) {
-            return effectiveBackground.withValues(
-              alpha: effectiveBackground.a * disabledOpacity,
-            );
-          }
-          return effectiveBackground;
+          return Colors.transparent;
         }),
         overlayColor: WidgetStateProperty.resolveWith((states) {
           final overlayBase = selected ? activeForeground : baseForeground;
@@ -120,8 +188,8 @@ class ChewieIconButton extends StatelessWidget {
           }
           return Colors.transparent;
         }),
-        side: WidgetStatePropertyAll(
-          BorderSide(color: effectiveBorder, width: highContrast ? 1.2 : 0.8),
+        side: const WidgetStatePropertyAll(
+          BorderSide.none,
         ),
         shape: WidgetStatePropertyAll(
           cornerRadius == null
@@ -131,20 +199,8 @@ class ChewieIconButton extends StatelessWidget {
                 ),
         ),
       ),
-      icon: ChewieIcon(
-        icon,
-        size: iconSize ?? specification.regularSize,
-        color: selected ? activeForeground : baseForeground,
-        enabled: onPressed != null,
-        opticalOffset: opticalOffset,
-      ),
-      selectedIcon: ChewieIcon(
-        icon,
-        size: iconSize ?? specification.regularSize,
-        color: activeForeground,
-        enabled: onPressed != null,
-        opticalOffset: opticalOffset,
-      ),
+      icon: buildVisualIcon(selected ? activeForeground : baseForeground),
+      selectedIcon: buildVisualIcon(activeForeground),
     );
 
     final label = semanticLabel ?? tooltip;

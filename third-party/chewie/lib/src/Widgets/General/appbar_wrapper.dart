@@ -70,21 +70,25 @@ class AppBarWrapper extends StatelessWidget implements PreferredSizeWidget {
                 )),
     );
 
-    return MyAppBar(
-      backgroundColor: effectiveBackgroundColor,
-      elevation: 0,
-      centerTitle: centerTitle,
-      systemOverlayStyle: effectiveSystemOverlayStyle,
-      primary: primary,
-      scrolledUnderElevation: 0,
-      automaticallyImplyLeading: false,
-      leadingWidth: showLeading ? 56.0 : 0.0,
-      leading: showLeading ? finalLeadingWidget : null,
-      title: centerTitle ? Center(child: finalTitleWidget) : finalTitleWidget,
-      actions: [
-        ...?actions,
-        if (rightSpacing > 0) SizedBox(width: rightSpacing),
-      ],
+    return ChewieIconButtonVisualScope(
+      visualSize: ChewieIconButtonVisualScope.appBarVisualSize,
+      maximumIconSize: ChewieIconButtonVisualScope.appBarIconSize,
+      child: MyAppBar(
+        backgroundColor: effectiveBackgroundColor,
+        elevation: 0,
+        centerTitle: centerTitle,
+        systemOverlayStyle: effectiveSystemOverlayStyle,
+        primary: primary,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+        leadingWidth: showLeading ? 56.0 : 0.0,
+        leading: showLeading ? finalLeadingWidget : null,
+        title: centerTitle ? Center(child: finalTitleWidget) : finalTitleWidget,
+        actions: [
+          ...?actions,
+          if (rightSpacing > 0) SizedBox(width: rightSpacing),
+        ],
+      ),
     );
   }
 

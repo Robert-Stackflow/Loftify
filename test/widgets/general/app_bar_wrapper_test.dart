@@ -65,6 +65,68 @@ void main() {
     final toolButton = find.byType(ToolButton);
     final target = iconButton.evaluate().isNotEmpty ? iconButton : toolButton;
     expect(tester.getSize(target), const Size.square(44));
+    expect(
+      tester.getSize(
+        find.byKey(const ValueKey('chewie-icon-button-visual')),
+      ),
+      const Size.square(34),
+    );
+    expect(
+      tester.widget<Icon>(find.byIcon(LucideIcons.arrowLeft)).size,
+      18,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('app bar caps explicit actions without shrinking tap targets',
+      (tester) async {
+    await tester.pumpWidget(
+      _buildHost(
+        (context) => Scaffold(
+          appBar: ResponsiveAppBar(
+            title: 'Actions',
+            showBack: true,
+            actions: [
+              ChewieIconButton(
+                icon: LucideIcons.ellipsis,
+                iconSize: 24,
+                style: ChewieIconButtonStyle.soft,
+                tooltip: 'More',
+                onPressed: () {},
+              ),
+            ],
+            landscapeActions: [
+              ChewieIconButton(
+                icon: LucideIcons.ellipsis,
+                iconSize: 24,
+                style: ChewieIconButtonStyle.soft,
+                tooltip: 'More',
+                onPressed: () {},
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    for (final button in find.byType(IconButton).evaluate()) {
+      expect(
+        tester.getSize(find.byWidget(button.widget)),
+        const Size.square(44),
+      );
+    }
+    for (final visual
+        in find.byKey(const ValueKey('chewie-icon-button-visual')).evaluate()) {
+      expect(
+        tester.getSize(find.byWidget(visual.widget)),
+        const Size.square(34),
+      );
+    }
+    expect(
+      tester.widget<Icon>(find.byIcon(LucideIcons.ellipsis)).size,
+      18,
+    );
+    expect(find.bySemanticsLabel('More'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -146,6 +208,13 @@ void main() {
                 context: context,
                 backgroundWidget: const ColoredBox(color: Colors.black),
                 title: const Text('Profile'),
+                actions: [
+                  ChewieIconButton(
+                    icon: LucideIcons.ellipsis,
+                    tooltip: 'More',
+                    onPressed: () {},
+                  ),
+                ],
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 600)),
             ],
@@ -160,6 +229,12 @@ void main() {
       Brightness.light,
     );
     expect(appBar.systemOverlayStyle?.statusBarColor, Colors.transparent);
+    expect(
+      tester.getSize(
+        find.byKey(const ValueKey('chewie-icon-button-visual')),
+      ),
+      const Size.square(34),
+    );
     expect(tester.takeException(), isNull);
   });
 

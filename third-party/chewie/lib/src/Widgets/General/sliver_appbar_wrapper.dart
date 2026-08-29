@@ -68,26 +68,30 @@ class SliverAppBarWrapper extends StatelessWidget {
       ),
     );
 
-    return MySliverAppBar(
-      systemOverlayStyle: effectiveSystemOverlayStyle,
-      expandedHeight: expandedHeight,
-      collapsedHeight: collapsedHeight ??
-          max(100, kToolbarHeight + MediaQuery.of(context).padding.top),
-      pinned: true,
-      leadingWidth: showLeading ? 56 : 0,
-      leading: showLeading ? leading : null,
-      automaticallyImplyLeading: false,
-      backgroundWidget: backgroundWidget,
-      title: centerTitle ? Center(child: finalTitleWidget) : finalTitleWidget,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      backgroundColor: backgroundColor,
-      flexibleSpace: flexibleSpace,
-      bottom: bottom,
-      actions: [
-        if (actions != null) ...?actions,
-        SizedBox(width: rightSpacing),
-      ],
+    return ChewieIconButtonVisualScope(
+      visualSize: ChewieIconButtonVisualScope.appBarVisualSize,
+      maximumIconSize: ChewieIconButtonVisualScope.appBarIconSize,
+      child: MySliverAppBar(
+        systemOverlayStyle: effectiveSystemOverlayStyle,
+        expandedHeight: expandedHeight,
+        collapsedHeight: collapsedHeight ??
+            max(100, kToolbarHeight + MediaQuery.of(context).padding.top),
+        pinned: true,
+        leadingWidth: showLeading ? 56 : 0,
+        leading: showLeading ? leading : null,
+        automaticallyImplyLeading: false,
+        backgroundWidget: backgroundWidget,
+        title: centerTitle ? Center(child: finalTitleWidget) : finalTitleWidget,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: backgroundColor,
+        flexibleSpace: flexibleSpace,
+        bottom: bottom,
+        actions: [
+          if (actions != null) ...?actions,
+          SizedBox(width: rightSpacing),
+        ],
+      ),
     );
   }
 }

@@ -47,6 +47,12 @@ void main() {
     final button = tester.widget<IconButton>(find.byType(IconButton));
     expect(icon.size, 20);
     expect(tester.getSize(find.byType(IconButton)), const Size.square(44));
+    expect(
+      tester.getSize(
+        find.byKey(const ValueKey('chewie-icon-button-visual')),
+      ),
+      const Size.square(44),
+    );
     expect(button.style!.shape!.resolve({}), isA<CircleBorder>());
     expect(find.bySemanticsLabel('Search'), findsOneWidget);
 
@@ -179,17 +185,26 @@ void main() {
         ),
       );
 
-      final buttons = tester.widgetList<IconButton>(find.byType(IconButton));
-      final selectedSide = buttons.first.style!.side!.resolve({})!;
-      final selectedBackground =
-          buttons.first.style!.backgroundColor!.resolve({})!;
+      final visuals = find.byKey(
+        const ValueKey('chewie-icon-button-visual'),
+      );
+      final selectedDecoration = tester
+          .widget<DecoratedBox>(
+            find
+                .descendant(
+                  of: visuals.first,
+                  matching: find.byType(DecoratedBox),
+                )
+                .first,
+          )
+          .decoration as BoxDecoration;
       final disabledIcon =
           tester.widget<Icon>(find.byIcon(LucideIcons.download));
 
-      expect(selectedSide.width, 1.2);
-      expect(selectedSide.color,
+      expect(selectedDecoration.border!.top.width, 1.2);
+      expect(selectedDecoration.border!.top.color,
           Theme.of(tester.element(find.byType(Row))).colorScheme.primary);
-      expect(selectedBackground.a, greaterThanOrEqualTo(0.2));
+      expect(selectedDecoration.color!.a, greaterThanOrEqualTo(0.2));
       expect(disabledIcon.color!.a, closeTo(0.5, 0.01));
       expect(
           tester.getSize(find.byType(IconButton).first), const Size.square(44));

@@ -146,23 +146,27 @@ class ResponsiveAppBar extends StatelessWidget implements PreferredSizeWidget {
           context,
           effectiveBackgroundColor,
         );
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: effectiveSystemOverlayStyle,
-      child: ColoredBox(
-        color: effectiveBackgroundColor,
-        child: SafeArea(
-          top: ResponsiveUtil.isMobile(),
-          child: bottomWidget != null && bottomHeight != null
-              ? PreferredSize(
-                  preferredSize: Size.fromHeight(height + bottomHeight!),
-                  child: Column(
-                    children: [
-                      topWidget,
-                      bottomWidget!,
-                    ],
-                  ),
-                )
-              : topWidget,
+    return ChewieIconButtonVisualScope(
+      visualSize: ChewieIconButtonVisualScope.appBarVisualSize,
+      maximumIconSize: ChewieIconButtonVisualScope.appBarIconSize,
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: effectiveSystemOverlayStyle,
+        child: ColoredBox(
+          color: effectiveBackgroundColor,
+          child: SafeArea(
+            top: ResponsiveUtil.isMobile(),
+            child: bottomWidget != null && bottomHeight != null
+                ? PreferredSize(
+                    preferredSize: Size.fromHeight(height + bottomHeight!),
+                    child: Column(
+                      children: [
+                        topWidget,
+                        bottomWidget!,
+                      ],
+                    ),
+                  )
+                : topWidget,
+          ),
         ),
       ),
     );
