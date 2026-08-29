@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,7 +7,7 @@ import 'package:loftify/Models/post_detail_response.dart';
 
 import '../../Api/post_api.dart';
 import '../../l10n/l10n.dart';
-import '../Item/item_builder.dart';
+import '../Design/loftify_surfaces.dart';
 import '../Item/loftify_item_builder.dart';
 
 class CommentBottomSheet extends StatefulWidget {
@@ -29,8 +31,6 @@ class CommentBottomSheet extends StatefulWidget {
 class CommentBottomSheetState extends State<CommentBottomSheet> {
   int l1CommentOffset = 0;
   bool isInited = false;
-  int totalHotComments = 0;
-  List<Comment> hotComments = [];
   List<Comment> newComments = [];
   bool loading = false;
   bool _loadFailed = false;
@@ -51,7 +51,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
     super.dispose();
   }
 
-  _fetchComments({bool refresh = false}) async {
+  Future<IndicatorResult> _fetchComments({bool refresh = false}) async {
     if (loading) return IndicatorResult.none;
     loading = true;
     if (refresh) {
@@ -94,7 +94,7 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
     });
   }
 
-  _fetchL2Comments(Comment currentComment) async {
+  Future<IndicatorResult> _fetchL2Comments(Comment currentComment) async {
     currentComment.l2CommentLoading = true;
     if (mounted) setState(() {});
     return await PostApi.getL2Comments(
@@ -127,36 +127,24 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
     });
   }
 
-  _onRefresh() async {
-    // var t1 = await _fetchHotComments();
-    var t1 = IndicatorResult.success;
-    var t2 = await _fetchComments(refresh: true);
-    return t1 == IndicatorResult.success && t2 == IndicatorResult.success
-        ? IndicatorResult.success
-        : IndicatorResult.fail;
+  Future<IndicatorResult> _onRefresh() async {
+    return _fetchComments(refresh: true);
   }
 
-  _onLoad() async {
+  Future<IndicatorResult> _onLoad() async {
     return await _fetchComments();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: ChewieTheme.getBackground(context),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      height: MediaQuery.sizeOf(context).height * 0.82,
-      child: SafeArea(
-        top: false,
-        child: EasyRefresh(
-          controller: _refreshController,
-          onRefresh: _onRefresh,
-          onLoad: _noMore ? null : _onLoad,
-          triggerAxis: Axis.vertical,
-          child: _buildBody(),
-        ),
+    return LoftifyCommentPanel(
+      title: appLocalizations.latestComment,
+      body: EasyRefresh(
+        controller: _refreshController,
+        onRefresh: _onRefresh,
+        onLoad: _noMore ? null : _onLoad,
+        triggerAxis: Axis.vertical,
+        child: _buildBody(),
       ),
     );
   }
@@ -164,24 +152,6 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
   Widget _buildBody() {
     return CustomScrollView(
       slivers: [
-        // if (hotComments.isNotEmpty)
-        //   SliverPersistentHeader(
-        //     pinned: true,
-        //     delegate: SliverHeaderDelegate(
-        //       maxHeight: 50,
-        //       minHeight: 50,
-        //       child: Container(
-        //         color: AppTheme.getBackground(context),
-        //         child: ItemBuilder.buildTitle(
-        //           context,
-        //           title: "热门评论",
-        //           bottomMargin: 0,
-        //           topMargin: 0,
-        //         ),
-        //       ),
-        //     ),
-        //   ),
-        // if (hotComments.isNotEmpty) _buildComments(hotComments),
         if (newComments.isEmpty)
           SliverToBoxAdapter(
             child: !isInited
@@ -205,28 +175,6 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
                             EmptyPlaceholder(text: appLocalizations.noComment),
                       ),
           ),
-        if (newComments.isNotEmpty)
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: SliverHeaderDelegate(
-              maxHeight: 50,
-              minHeight: 50,
-              child: Container(
-                color: ChewieTheme.getBackground(context),
-                child: ItemBuilder.buildTitle(
-                  context,
-                  title: appLocalizations.latestComment,
-                  left: 8,
-                  bottomMargin: 0,
-                  topMargin: 0,
-                  textStyle: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.apply(fontWeightDelta: 2),
-                ),
-              ),
-            ),
-          ),
         if (newComments.isNotEmpty) _buildComments(newComments),
       ],
     );
@@ -245,6 +193,39 @@ class CommentBottomSheetState extends State<CommentBottomSheet> {
             HapticFeedback.mediumImpact();
             _fetchL2Comments(comment);
           },
+        ),
+      ),
+    );
+  }
+}
+
+/// Responsive frame shared by the live comment sheet and deterministic layout
+/// tests. The body owns the only scroll chain; the panel header remains stable.
+class LoftifyCommentPanel extends StatelessWidget {
+  const LoftifyCommentPanel({
+    super.key,
+    required this.title,
+    required this.body,
+  });
+
+  final String title;
+  final Widget body;
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final visibleHeight = max(0.0, media.size.height - media.viewInsets.bottom);
+    final panelHeight = min(visibleHeight * 0.82, 760.0);
+    return SafeArea(
+      top: false,
+      child: SizedBox(
+        key: const ValueKey('loftify-comment-panel'),
+        height: panelHeight,
+        child: LoftifyPanel(
+          title: title,
+          semanticLabel: title,
+          expandBody: true,
+          body: body,
         ),
       ),
     );
