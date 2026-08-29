@@ -86,7 +86,7 @@ class LoftifyStateView extends StatelessWidget {
       LoftifyStateVisual.warning => colors.warning,
     };
     final semanticsLabel = [
-      if (showTitle) title,
+      if (title.isNotEmpty) title,
       if (message?.isNotEmpty == true) message,
     ].join(', ');
     final stateContent = ConstrainedBox(
@@ -104,21 +104,25 @@ class LoftifyStateView extends StatelessWidget {
               ExcludeSemantics(child: _buildVisual(context, stateColor)),
               if (showTitle) ...[
                 SizedBox(height: design.spacing.lg),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: design.typography.cardTitle.copyWith(
-                    color: foreground,
+                ExcludeSemantics(
+                  child: Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: design.typography.cardTitle.copyWith(
+                      color: foreground,
+                    ),
                   ),
                 ),
               ],
               if (message?.isNotEmpty == true) ...[
                 SizedBox(height: design.spacing.sm),
-                Text(
-                  message!,
-                  textAlign: TextAlign.center,
-                  style: design.typography.body.copyWith(
-                    color: secondary,
+                ExcludeSemantics(
+                  child: Text(
+                    message!,
+                    textAlign: TextAlign.center,
+                    style: design.typography.body.copyWith(
+                      color: secondary,
+                    ),
                   ),
                 ),
               ],

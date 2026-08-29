@@ -257,6 +257,31 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('icon-only loading state keeps its localized semantic label',
+      (tester) async {
+    final previous = chewieProvider.stateWidgetBuilder;
+    chewieProvider.stateWidgetBuilder = LoftifyStateView.fromChewie;
+    addTearDown(() => chewieProvider.stateWidgetBuilder = previous);
+
+    await tester.pumpWidget(
+      const _TestApp(
+        child: LoadingWidget(
+          text: 'Loading the current artwork',
+          showText: false,
+          bottomPadding: 0,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('Loading the current artwork'), findsNothing);
+    expect(
+      find.bySemanticsLabel('Loading the current artwork'),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
       'state visuals cover non-loading feedback without system spinners', (
     tester,
