@@ -1,5 +1,6 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:loftify/Widgets/Design/loftify_media_overlays.dart';
 import 'package:provider/provider.dart';
 import '../../Screens/Post/tag_detail_screen.dart';
 import '../../Utils/app_provider.dart';
@@ -267,6 +268,10 @@ class ItemBuilder {
     double? fontSizeDelta,
     dynamic icon,
   }) {
+    final effectiveOpacity = opacity.clamp(
+      LoftifyCoverScrim.minimumBadgeOpacity,
+      1.0,
+    );
     return Container(
       padding: isCircle
           ? padding ?? const EdgeInsets.all(5)
@@ -274,7 +279,7 @@ class ItemBuilder {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: isCircle ? BoxShape.circle : BoxShape.rectangle,
-        color: Colors.black.withOpacity(opacity),
+        color: Colors.black.withValues(alpha: effectiveOpacity),
         borderRadius: isCircle
             ? null
             : BorderRadius.all(Radius.circular(borderRadius ?? 50)),

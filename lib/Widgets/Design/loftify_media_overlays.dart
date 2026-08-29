@@ -11,6 +11,7 @@ class LoftifyCoverScrim extends StatelessWidget {
   static const topColor = Color.fromRGBO(0, 0, 0, 0.58);
   static const bottomColor = Color.fromRGBO(0, 0, 0, 0.72);
   static const secondaryForeground = Color.fromRGBO(255, 255, 255, 0.88);
+  static const minimumBadgeOpacity = 0.58;
 
   @override
   Widget build(BuildContext context) {
