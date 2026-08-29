@@ -8,6 +8,35 @@ import 'download_task_manager.dart';
 import 'enums.dart';
 import 'hive_util.dart';
 
+/// Aggregates independently downloaded resources into one stable 0–1 value.
+///
+/// Every resource receives equal visual weight so a queued item with an
+/// unknown byte total still reserves its share of the overall progress.
+class DownloadProgressAccumulator {
+  DownloadProgressAccumulator(int itemCount)
+      : assert(itemCount > 0),
+        _progress = List<double>.filled(itemCount, 0);
+
+  final List<double> _progress;
+
+  double update(int index, int receivedBytes, int totalBytes) {
+    if (index < 0 || index >= _progress.length || totalBytes <= 0) {
+      return value;
+    }
+    _progress[index] = (receivedBytes / totalBytes).clamp(0.0, 1.0);
+    return value;
+  }
+
+  double complete(int index) {
+    if (index >= 0 && index < _progress.length) _progress[index] = 1;
+    return value;
+  }
+
+  double get value =>
+      _progress.fold<double>(0, (sum, current) => sum + current) /
+      _progress.length;
+}
+
 class LoftifyFileUtil {
   static void configureDownloadDelegates() {
     FileUtil.saveImageDelegate = saveImage;
@@ -90,6 +119,7 @@ class LoftifyFileUtil {
     BuildContext context,
     Illust illust, {
     bool showToast = true,
+    Function(int, int)? onReceiveProgress,
   }) {
     return _enqueueAndWait(
       context,
@@ -97,6 +127,7 @@ class LoftifyFileUtil {
       fileName: getFileNameByIllust(illust),
       mediaType: DownloadMediaType.image,
       showToast: showToast,
+      onReceiveProgress: onReceiveProgress,
       title: illust.postTitle,
       thumbnailUrl: illust.url,
     );
@@ -106,11 +137,36 @@ class LoftifyFileUtil {
     BuildContext context,
     List<Illust> illusts, {
     bool showToast = true,
+    Function(int, int)? onReceiveProgress,
   }) async {
     try {
+      if (illusts.isEmpty) return false;
+      const progressUnits = 1000000;
+      final accumulator = DownloadProgressAccumulator(illusts.length);
+      void report(double progress) {
+        onReceiveProgress?.call(
+          (progress.clamp(0.0, 1.0) * progressUnits).round(),
+          progressUnits,
+        );
+      }
+
+      report(0);
       final status = await Future.wait(
-        illusts.map(
-          (illust) => saveIllust(context, illust, showToast: false),
+        illusts.asMap().entries.map(
+          (entry) async {
+            final saved = await saveIllust(
+              context,
+              entry.value,
+              showToast: false,
+              onReceiveProgress: (received, total) {
+                report(
+                  accumulator.update(entry.key, received, total),
+                );
+              },
+            );
+            if (saved) report(accumulator.complete(entry.key));
+            return saved;
+          },
         ),
       );
       final success = status.every((saved) => saved);

@@ -11,6 +11,7 @@ import 'package:loftify/Widgets/Item/loftify_item_builder.dart';
 import 'package:loftify/Widgets/PostDetail/comment_item.dart';
 import 'package:loftify/Widgets/PostDetail/detail_bottom_bar.dart';
 import 'package:loftify/Widgets/PostDetail/post_content_section.dart';
+import 'package:loftify/Widgets/PostDetail/post_download_action_icon.dart';
 import 'package:loftify/generated/app_localizations.dart';
 
 void main() {
@@ -456,5 +457,73 @@ void main() {
     await tester.pump();
     expect(attempts, 2);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'post download action reports determinate progress without Lottie',
+      (tester) async {
+    for (final dark in [false, true]) {
+      await tester.pumpWidget(
+        buildApp(
+          const Center(
+            child: PostDownloadActionIcon(
+              state: DownloadState.loading,
+              progress: 0.42,
+              semanticLabel: 'Downloading',
+            ),
+          ),
+          dark: dark,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.getSize(find.byType(PostDownloadActionIcon)),
+        const Size.square(PostDownloadActionIcon.visualSize),
+      );
+      final progress = tester.widget<CircularProgressIndicator>(
+        find.byType(CircularProgressIndicator),
+      );
+      expect(progress.value, closeTo(0.42, 0.001));
+      expect(progress.strokeWidth, PostDownloadActionIcon.progressStrokeWidth);
+      expect(
+          find.byKey(const ValueKey('post-download-progress')), findsOneWidget);
+      final semantics = tester.getSemantics(
+        find.byKey(const ValueKey('post-download-semantics')),
+      );
+      expect(semantics.label, 'Downloading');
+      expect(semantics.value, '42%');
+      expect(tester.takeException(), isNull);
+    }
+  });
+
+  testWidgets('post download action keeps every terminal state in one viewport',
+      (tester) async {
+    const cases = <DownloadState, Key>{
+      DownloadState.none: ValueKey('post-download-idle'),
+      DownloadState.succeed: ValueKey('post-download-success'),
+      DownloadState.failed: ValueKey('post-download-failed'),
+    };
+    for (final entry in cases.entries) {
+      await tester.pumpWidget(
+        buildApp(
+          Center(
+            child: PostDownloadActionIcon(
+              state: entry.key,
+              semanticLabel: entry.key.name,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(entry.value), findsOneWidget);
+      expect(
+        tester.getSize(find.byType(PostDownloadActionIcon)),
+        const Size.square(PostDownloadActionIcon.visualSize),
+      );
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(tester.takeException(), isNull);
+    }
   });
 }

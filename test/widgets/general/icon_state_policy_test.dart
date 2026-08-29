@@ -302,6 +302,9 @@ void main() {
     final source = File(
       'lib/Screens/Post/post_detail_screen.dart',
     ).readAsStringSync();
+    final downloadActionSource = File(
+      'lib/Widgets/PostDetail/post_download_action_icon.dart',
+    ).readAsStringSync();
 
     expect(RegExp(r'\b(?:Icons|CupertinoIcons)\.').hasMatch(source), isFalse);
     expect(source.contains('AssetUtil.collectionLightIcon'), isFalse);
@@ -310,8 +313,11 @@ void main() {
       RegExp(r'LoftifyIcons\.bookmark').allMatches(source).length,
       greaterThanOrEqualTo(2),
     );
-    expect(source, contains('LoftifyIcons.download'));
-    expect(source, contains('CircularProgressIndicator('));
+    expect(source, contains('PostDownloadActionIcon('));
+    expect(source, isNot(contains('CircularProgressIndicator(')));
+    expect(downloadActionSource, contains('LoftifyIcons.download'));
+    expect(downloadActionSource, contains('CircularProgressIndicator('));
+    expect(downloadActionSource, isNot(contains('buildLoadingAnimation')));
   });
 
   test('login screens use semantic Lucide field and method icons', () {

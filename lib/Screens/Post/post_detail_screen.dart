@@ -43,6 +43,7 @@ import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
 import '../../Widgets/PostDetail/detail_bottom_bar.dart';
 import '../../Widgets/PostDetail/post_content_section.dart';
+import '../../Widgets/PostDetail/post_download_action_icon.dart';
 import '../../Widgets/PostDetail/post_swipe_gesture_detector.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
@@ -135,8 +136,8 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
   final GlobalKey _commentEndViewportKey = GlobalKey();
   final GlobalKey _imageSwiperViewportKey = GlobalKey();
   final ResizableController _resizableController = ResizableController();
-  late dynamic downloadIcon;
   DownloadState downloadState = DownloadState.none;
+  double _downloadProgress = 0;
   bool isArticle = false;
   InitPhase _inited = InitPhase.haveNotConnected;
   final ValueNotifier<bool> _floatingOperationBarVisible = ValueNotifier(true);
@@ -1517,12 +1518,18 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
       IToast.showTop(appLocalizations.unsupportDownloadCurrentImageinArticle);
       return;
     }
-    if (downloadState == DownloadState.none) {
+    if (downloadState == DownloadState.none ||
+        downloadState == DownloadState.failed) {
+      final downloadPostId = postId;
       setDownloadState(DownloadState.loading, recover: false);
       LoftifyFileUtil.saveIllust(
         context,
         _getIllusts()[_currentIndex - 1],
+        onReceiveProgress: (received, total) {
+          _setDownloadProgress(received, total, downloadPostId);
+        },
       ).then((res) {
+        if (!mounted || postId != downloadPostId) return;
         if (res) {
           setDownloadState(DownloadState.succeed);
           _handleDownloadSuccessAction();
@@ -1538,9 +1545,18 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
       IToast.showTop(appLocalizations.noImageToDownload);
       return;
     }
-    if (downloadState == DownloadState.none) {
+    if (downloadState == DownloadState.none ||
+        downloadState == DownloadState.failed) {
+      final downloadPostId = postId;
       setDownloadState(DownloadState.loading, recover: false);
-      LoftifyFileUtil.saveIllusts(context, _getIllusts()).then((res) {
+      LoftifyFileUtil.saveIllusts(
+        context,
+        _getIllusts(),
+        onReceiveProgress: (received, total) {
+          _setDownloadProgress(received, total, downloadPostId);
+        },
+      ).then((res) {
+        if (!mounted || postId != downloadPostId) return;
         if (res) {
           _handleDownloadSuccessAction();
           setDownloadState(DownloadState.succeed);
@@ -3032,47 +3048,44 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
   }
 
   void setDownloadState(DownloadState state, {bool recover = true}) {
-    switch (state) {
-      case DownloadState.none:
-        downloadIcon = ChewieIcon(
-          LoftifyIcons.download,
-          color: Theme.of(rootContext).iconTheme.color,
-        );
-        break;
-      case DownloadState.loading:
-        downloadIcon = Container(
-          width: 20,
-          height: 20,
-          padding: const EdgeInsets.all(2),
-          child: CircularProgressIndicator(
-            color: Theme.of(context).iconTheme.color,
-            strokeWidth: 2,
-          ),
-        );
-        break;
-      case DownloadState.succeed:
-        downloadIcon = ChewieIcon(
-          LoftifyIcons.check,
-          color: ChewieTheme.successColor,
-        );
-        break;
-      case DownloadState.failed:
-        downloadIcon = ChewieIcon(
-          LoftifyIcons.warning,
-          color: ChewieTheme.errorColor,
-        );
-        break;
-    }
     downloadState = state;
+    if (state == DownloadState.none || state == DownloadState.loading) {
+      _downloadProgress = 0;
+    } else if (state == DownloadState.succeed) {
+      _downloadProgress = 1;
+    }
     if (mounted) setState(() {});
     if (recover) {
       final recoveryPostId = postId;
       Future.delayed(const Duration(seconds: 2), () {
-        if (!mounted || postId != recoveryPostId) return;
+        if (!mounted || postId != recoveryPostId || downloadState != state) {
+          return;
+        }
         setDownloadState(DownloadState.none, recover: false);
       });
     }
   }
+
+  void _setDownloadProgress(int received, int total, int downloadPostId) {
+    if (!mounted ||
+        postId != downloadPostId ||
+        downloadState != DownloadState.loading ||
+        total <= 0) {
+      return;
+    }
+    final next = (received / total).clamp(0.0, 1.0).toDouble();
+    if (next < 1 && (next - _downloadProgress).abs() < 0.002) return;
+    setState(() => _downloadProgress = next);
+  }
+
+  String get _downloadStateLabel => switch (downloadState) {
+        DownloadState.none => appLocalizations.download,
+        DownloadState.loading =>
+          '${appLocalizations.downloading} ${(_downloadProgress * 100).round()}%',
+        DownloadState.succeed => appLocalizations.downloadComplete,
+        DownloadState.failed =>
+          '${appLocalizations.downloadFailed}, ${appLocalizations.retry}',
+      };
 
   PreferredSizeWidget _buildAppBar() {
     return ResponsiveAppBar(
@@ -3137,12 +3150,17 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
         SizedBox.square(
           dimension: 44,
           child: CircleIconButton(
-            icon: downloadIcon,
+            icon: PostDownloadActionIcon(
+              state: downloadState,
+              progress: _downloadProgress,
+              semanticLabel: _downloadStateLabel,
+            ),
             padding: EdgeInsets.zero,
-            tooltip: appLocalizations.download,
-            onTap: () {
-              _handleDownloadAll();
-            },
+            tooltip: _downloadStateLabel,
+            onTap: downloadState == DownloadState.loading ||
+                    downloadState == DownloadState.succeed
+                ? null
+                : _handleDownloadAll,
           ),
         ),
         const SizedBox(width: 5),
