@@ -77,6 +77,72 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('inline dropdown options use one accessible row target',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final first = StringDropdownItem('First');
+    final second = StringDropdownItem('Second');
+    List<StringDropdownItem>? selection;
+
+    await tester.pumpWidget(
+      _buildHost(
+        MediaQuery(
+          data: const MediaQueryData(
+            size: Size(320, 600),
+            textScaler: TextScaler.linear(2),
+          ),
+          child: Center(
+            child: SizedBox(
+              width: 300,
+              child: InlineSelectionItem<StringDropdownItem>.multiSelect(
+                title: 'Mode',
+                items: [first, second],
+                selectedItems: [first],
+                onListChanged: (items) => selection = items,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byWidgetPredicate(
+      (widget) => widget is CustomDropdown<StringDropdownItem>,
+    ));
+    await tester.pumpAndSettle();
+
+    final firstMarker = find.byKey(
+      const ValueKey('dropdown-selection-First'),
+    );
+    final secondMarker = find.byKey(
+      const ValueKey('dropdown-selection-Second'),
+    );
+    expect(firstMarker, findsOneWidget);
+    expect(secondMarker, findsOneWidget);
+    expect(find.byType(Checkbox), findsNothing);
+
+    final firstRow = find.ancestor(
+      of: firstMarker,
+      matching: find.byType(InkWell),
+    );
+    final secondRow = find.ancestor(
+      of: secondMarker,
+      matching: find.byType(InkWell),
+    );
+    expect(firstRow, findsOneWidget);
+    expect(secondRow, findsOneWidget);
+    expect(tester.getSize(firstRow).height, greaterThanOrEqualTo(48));
+
+    await tester.tap(secondRow);
+    await tester.pumpAndSettle();
+    expect(selection, containsAll(<StringDropdownItem>[first, second]));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('dropdown refreshes an equivalent item with its current label',
       (tester) async {
     var languageLabel = 'Follow system';

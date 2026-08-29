@@ -121,6 +121,19 @@ class _DropdownOverlayState<T extends DropdownMixin>
     bool isSelected,
     VoidCallback onItemSelect,
   ) {
+    final selectedIconColor =
+        widget.decoration?.listItemDecoration?.selectedIconColor ??
+            Theme.of(context).colorScheme.primary;
+    final selectedIconShape =
+        widget.decoration?.listItemDecoration?.selectedIconShape ??
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(6));
+    final selectedIconBorder =
+        widget.decoration?.listItemDecoration?.selectedIconBorder ??
+            BorderSide(
+              color: isSelected
+                  ? selectedIconColor
+                  : Theme.of(context).colorScheme.outlineVariant,
+            );
     return Row(
       children: [
         Expanded(
@@ -135,18 +148,27 @@ class _DropdownOverlayState<T extends DropdownMixin>
             (widget.dropdownType == _DropdownType.singleSelect && isSelected))
           Padding(
             padding: const EdgeInsetsDirectional.only(start: 12.0),
-            child: Checkbox(
-              onChanged: (_) => onItemSelect(),
-              value: isSelected,
-              activeColor:
-                  widget.decoration?.listItemDecoration?.selectedIconColor,
-              splashRadius: 0,
-              side: widget.decoration?.listItemDecoration?.selectedIconBorder,
-              shape: widget.decoration?.listItemDecoration?.selectedIconShape,
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: const VisualDensity(
-                horizontal: VisualDensity.minimumDensity,
-                vertical: VisualDensity.minimumDensity,
+            child: IgnorePointer(
+              child: SizedBox.square(
+                key: ValueKey('dropdown-selection-${result.selection}'),
+                dimension: 22,
+                child: Material(
+                  animationDuration: const Duration(milliseconds: 160),
+                  color: isSelected ? selectedIconColor : Colors.transparent,
+                  shape: selectedIconShape.copyWith(side: selectedIconBorder),
+                  clipBehavior: Clip.antiAlias,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 160),
+                    child: isSelected
+                        ? const Icon(
+                            ChewieIcons.check,
+                            key: ValueKey('selected'),
+                            size: 15,
+                            color: Colors.white,
+                          )
+                        : const SizedBox.shrink(key: ValueKey('unselected')),
+                  ),
+                ),
               ),
             ),
           ),
