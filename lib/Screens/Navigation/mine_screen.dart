@@ -27,6 +27,7 @@ import '../../Widgets/Design/loftify_section.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import '../Info/following_follower_screen.dart';
+import '../Info/system_notice_screen.dart';
 import '../Setting/setting_screen.dart';
 import '../Suit/suit_screen.dart';
 
@@ -560,6 +561,17 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
       LoftifySection(
         title: appLocalizations.contentCenter,
         children: [
+          LoftifyEntryItem(
+            title: appLocalizations.notice,
+            showLeading: true,
+            leading: LoftifyIcons.notifications,
+            onTap: () {
+              RouteUtil.pushPanelCupertinoRoute(
+                context,
+                const SystemNoticeScreen(),
+              );
+            },
+          ),
           LoftifyEntryItem(
             title: appLocalizations.myLikes,
             showLeading: true,
