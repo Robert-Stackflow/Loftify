@@ -37,6 +37,15 @@ void main() {
     });
     RequestUtil.cookieManager = _Cookies();
     appProvider.token = 'test-account';
+    chewieProvider.stateWidgetBuilder = LoftifyStateView.fromChewie;
+    EasyRefresh.defaultFooterBuilder = () => LottieCupertinoFooter(
+          backgroundColor: Colors.transparent,
+          indicator: LottieFiles.buildLoadingAnimation(36, false),
+          triggerOffset: 52,
+          maxOverOffset: 76,
+          infiniteOffset: 240,
+          radius: 18,
+        );
     EasyRefresh.defaultHeaderBuilder = () => LottieCupertinoHeader(
           backgroundColor: Colors.transparent,
           indicator: LottieFiles.buildLoadingAnimation(40, false),
@@ -61,14 +70,30 @@ void main() {
     }
   }
 
-  Future<void> mount(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(390, 844);
+  Future<void> mount(
+    WidgetTester tester, {
+    Size size = const Size(390, 844),
+    Locale locale = const Locale('en'),
+    bool dark = false,
+    double textScale = 1,
+  }) async {
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(MaterialApp(
       navigatorKey: chewieProvider.globalNavigatorKey,
-      theme: ChewieThemeColorData.defaultLightThemes.first.toThemeData(),
+      locale: locale,
+      theme: (dark
+              ? ChewieThemeColorData.defaultDarkThemes
+              : ChewieThemeColorData.defaultLightThemes)
+          .first
+          .toThemeData(),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context)
+            .copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
       localizationsDelegates: const [
         ChewieLocalizations.delegate,
         ...AppLocalizations.localizationsDelegates
@@ -84,6 +109,51 @@ void main() {
 
   void respond(int index, Map<String, dynamic> data) => pending[index]
       .resolve(Response(requestOptions: options[index], data: data));
+  for (final size in [const Size(280, 480), const Size(720, 320)]) {
+    for (final locale in [
+      const Locale('en'),
+      const Locale('zh'),
+      const Locale('zh', 'TW')
+    ]) {
+      for (final dark in [false, true]) {
+        testWidgets('history state layout $size $locale dark=$dark',
+            (tester) async {
+          await mount(tester,
+              size: size, locale: locale, dark: dark, textScale: 2);
+          expect(tester.takeException(), isNull);
+          expect(pending, hasLength(1));
+          respond(0, {
+            'meta': {'status': 503, 'msg': 'Unavailable'}
+          });
+          await frames(tester);
+          final error =
+              tester.widget<LoftifyStateView>(find.byType(LoftifyStateView));
+          expect(error.visual, LoftifyStateVisual.error);
+          expect(tester.takeException(), isNull);
+          final retry = find.text(error.actionLabel!);
+          await tester.ensureVisible(retry);
+          await frames(tester);
+          await tester.tap(retry);
+          await frames(tester);
+          expect(pending, hasLength(2));
+          respond(1, {
+            'meta': {'status': 200},
+            'response': {
+              'count': 0,
+              'recordHistory': 1,
+              'archiveData': [],
+              'items': [],
+            }
+          });
+          await frames(tester);
+          expect(find.byType(EmptyPlaceholder), findsOneWidget);
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox());
+          await tester.pump(const Duration(seconds: 5));
+        });
+      }
+    }
+  }
   for (final categoryCounts in [
     <int>[],
     [1],
