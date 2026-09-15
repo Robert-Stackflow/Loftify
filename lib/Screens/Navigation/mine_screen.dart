@@ -61,6 +61,8 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
   @override
   void dispose() {
     darkModeController.dispose();
+    _refreshController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -69,6 +71,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     super.initState();
     darkModeController = AnimationController(vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       darkModeWidget = LottieFiles.buildAnimation(
         LottieFiles.sunLight,
         size: 25,
@@ -79,53 +82,48 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
       panelScreenState?.refreshScrollControllers();
     });
     _fetchUserInfo();
-    if (appProvider.token.isNotEmpty) {
-      _fetchFollowingOrFolllowerList(FollowingMode.following, refresh: true);
-      _fetchFollowingOrFolllowerList(FollowingMode.follower, refresh: true);
-    }
   }
 
   Future<IndicatorResult> _fetchUserInfo() async {
-    if (appProvider.token.isNotEmpty) {
-      return await UserApi.getUserInfo().then((value) async {
-        try {
-          if (value['meta']['status'] != 200) {
-            IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-            return IndicatorResult.fail;
-          } else {
-            AccountResponse accountResponse =
-                AccountResponse.fromJson(value['response']);
-            await HiveUtil.setUserInfo(accountResponse.blogs[0].blogInfo);
-            setState(() {
-              blogInfo = accountResponse.blogs[0].blogInfo;
-            });
-            return await UserApi.getMeInfo(blogName: blogInfo!.blogName)
-                .then((value) async {
-              try {
-                if (value['meta']['status'] != 200) {
-                  IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-                  return IndicatorResult.fail;
-                } else {
-                  setState(() {
-                    meInfoData = MeInfoData.fromJson(value['response']);
-                  });
-                  return IndicatorResult.success;
-                }
-              } catch (e, t) {
-                IToast.showTop(appLocalizations.loadFailed);
-                ILogger.error("Failed to load me info", e, t);
-                return IndicatorResult.fail;
-              }
-            });
-          }
-        } catch (e, t) {
-          IToast.showTop(appLocalizations.loadFailed);
-          ILogger.error("Failed to load user info", e, t);
-          return IndicatorResult.fail;
-        }
-      });
+    if (appProvider.token.isEmpty) return IndicatorResult.success;
+    final token = appProvider.token;
+    bool isCurrent() => mounted && appProvider.token == token;
+    try {
+      final value = await UserApi.getUserInfo();
+      if (!isCurrent()) return IndicatorResult.fail;
+      if (value['meta']['status'] != 200) {
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+        return IndicatorResult.fail;
+      }
+      final account = AccountResponse.fromJson(value['response']);
+      if (account.blogs.isEmpty) {
+        IToast.showTop(appLocalizations.loadFailed);
+        return IndicatorResult.fail;
+      }
+      final info = account.blogs.first.blogInfo;
+      if (info == null) {
+        IToast.showTop(appLocalizations.loadFailed);
+        return IndicatorResult.fail;
+      }
+      await HiveUtil.setUserInfo(info);
+      if (!isCurrent()) return IndicatorResult.fail;
+      setState(() => blogInfo = info);
+      _fetchFollowingOrFolllowerList(FollowingMode.following, refresh: true);
+      _fetchFollowingOrFolllowerList(FollowingMode.follower, refresh: true);
+      final details = await UserApi.getMeInfo(blogName: info.blogName);
+      if (!isCurrent()) return IndicatorResult.fail;
+      if (details['meta']['status'] != 200) {
+        IToast.showTop(details['meta']['desc'] ?? details['meta']['msg']);
+        return IndicatorResult.fail;
+      }
+      final data = MeInfoData.fromJson(details['response']);
+      setState(() => meInfoData = data);
+      return IndicatorResult.success;
+    } catch (error, stackTrace) {
+      if (isCurrent()) IToast.showTop(appLocalizations.loadFailed);
+      ILogger.error('Failed to load user info', error, stackTrace);
+      return IndicatorResult.fail;
     }
-    return IndicatorResult.success;
   }
 
   Future<IndicatorResult> _onRefresh() async {
@@ -171,10 +169,10 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
             const SizedBox(height: 10),
             _buildUserCard(),
             _buildStatsticRow(),
-            if (blogInfo != null) ..._buildContent(),
+            ..._buildContent(),
             // if (blogInfo != null) ..._buildMessage(),
-            if (blogInfo != null) ..._buildCreation(),
-            if (blogInfo != null) ..._buildAccountActions(),
+            ..._buildCreation(),
+            ..._buildAccountActions(),
             const SizedBox(height: 20),
           ],
         ),
@@ -197,10 +195,10 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                 children: [
                   const SizedBox(height: 20),
                   _buildUserCard(),
-                  if (blogInfo != null) ..._buildContent(),
+                  ..._buildContent(),
                   // if (blogInfo != null) ..._buildMessage(),
-                  if (blogInfo != null) ..._buildCreation(),
-                  if (blogInfo != null) ..._buildAccountActions(),
+                  ..._buildCreation(),
+                  ..._buildAccountActions(),
                   const SizedBox(height: 20),
                 ],
               ),
@@ -293,17 +291,26 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     FollowingMode followingMode, {
     bool refresh = false,
   }) async {
-    int offset = refresh ? 0 : _followingList.length;
-    return await HiveUtil.getUserInfo().then((blogInfo) async {
-      String blogName = blogInfo!.blogName;
-      return await UserApi.getFollowingList(
-        blogName: blogName,
+    final info = blogInfo;
+    if (info == null || !mounted) return IndicatorResult.fail;
+    final token = appProvider.token;
+    final offset = refresh
+        ? 0
+        : followingMode == FollowingMode.following
+            ? _followingList.length
+            : _followerList.length;
+    try {
+      final value = await UserApi.getFollowingList(
+        blogName: info.blogName,
         offset: offset,
         followingMode: followingMode,
-      ).then((value) {
-        return _processResult(value, followingMode, refresh: refresh);
-      });
-    });
+      );
+      if (!mounted || appProvider.token != token) return IndicatorResult.fail;
+      return _processResult(value, followingMode, refresh: refresh);
+    } catch (error, stackTrace) {
+      ILogger.error('Failed to load relationship list', error, stackTrace);
+      return IndicatorResult.fail;
+    }
   }
 
   Widget _buildFollowingCard() {
