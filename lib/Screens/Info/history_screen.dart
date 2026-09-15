@@ -5,6 +5,7 @@ import 'package:loftify/Models/history_response.dart';
 import 'package:loftify/Utils/hive_util.dart';
 
 import '../../Models/post_detail_response.dart';
+import '../../Utils/app_provider.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/Item/item_builder.dart';
@@ -44,6 +45,18 @@ class _HistoryScreenState extends BaseDynamicState<HistoryScreen>
 
   _fetchHistory({bool refresh = false}) async {
     if (_loading || !mounted) return IndicatorResult.none;
+    final token = appProvider.token;
+    bool isCurrentAccount() => mounted && appProvider.token == token;
+    if (token.isEmpty) {
+      setState(() {
+        _histories.clear();
+        _archiveDataList.clear();
+        _total = 0;
+        _recordHistory = 0;
+        _initPhase = InitPhase.failed;
+      });
+      return IndicatorResult.fail;
+    }
     if (refresh) _noMore = false;
     _loading = true;
     int offset = refresh ? 0 : _histories.length;
@@ -53,7 +66,7 @@ class _HistoryScreenState extends BaseDynamicState<HistoryScreen>
     }
     try {
       final blogInfo = await HiveUtil.getUserInfo();
-      if (!mounted) return IndicatorResult.none;
+      if (!isCurrentAccount()) return IndicatorResult.none;
       if (blogInfo == null) {
         if (_histories.isEmpty) _initPhase = InitPhase.failed;
         return IndicatorResult.fail;
@@ -61,7 +74,7 @@ class _HistoryScreenState extends BaseDynamicState<HistoryScreen>
       String domain = Utils.getBlogDomain(blogInfo.blogName);
       final value =
           await UserApi.getHistoryList(blogDomain: domain, offset: offset);
-      if (!mounted) return IndicatorResult.none;
+      if (!isCurrentAccount()) return IndicatorResult.none;
       if (value['meta']['status'] != 200) {
         if (_histories.isEmpty) _initPhase = InitPhase.failed;
         IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
@@ -94,13 +107,24 @@ class _HistoryScreenState extends BaseDynamicState<HistoryScreen>
         }
       }
     } catch (e, t) {
-      if (!mounted) return IndicatorResult.none;
+      if (!isCurrentAccount()) return IndicatorResult.none;
       if (_histories.isEmpty) _initPhase = InitPhase.failed;
       ILogger.error("Failed to load history", e, t);
       if (mounted) IToast.showTop(appLocalizations.loadFailed);
       return IndicatorResult.fail;
     } finally {
-      if (mounted) setState(() {});
+      if (mounted) {
+        setState(() {
+          if (!isCurrentAccount()) {
+            _histories.clear();
+            _archiveDataList.clear();
+            _total = 0;
+            _recordHistory = 0;
+            _noMore = false;
+            _initPhase = InitPhase.failed;
+          }
+        });
+      }
       _loading = false;
     }
   }

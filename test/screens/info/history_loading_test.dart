@@ -456,4 +456,64 @@ void main() {
     await tester.pump(const Duration(seconds: 5));
     expect(tester.takeException(), isNull);
   });
+  for (final nextToken in ['', 'another-test-account']) {
+    testWidgets('history discards old account response token=$nextToken',
+        (tester) async {
+      appProvider.token = 'test-account';
+      addTearDown(() => appProvider.token = 'test-account');
+      await mount(tester);
+      appProvider.token = nextToken;
+      respond(0, {
+        'meta': {'status': 200},
+        'response': {
+          'count': 1,
+          'recordHistory': 1,
+          'archiveData': [
+            {
+              'count': 1,
+              'desc': 'Previous account history',
+              'startTime': 0,
+              'endTime': 1
+            }
+          ],
+          'items': [
+            {
+              'post': {'id': 99}
+            }
+          ],
+        },
+      });
+      await frames(tester);
+      expect(find.byType(GridPostItemWidget), findsNothing);
+      expect(
+          find.textContaining('Previous account history', findRichText: true),
+          findsNothing);
+      expect(
+          tester.widget<LoftifyStateView>(find.byType(LoftifyStateView)).visual,
+          LoftifyStateVisual.error);
+      final refresh = tester.widget<EasyRefresh>(find.byType(EasyRefresh));
+      final result = Future.sync(refresh.onRefresh!);
+      await frames(tester);
+      if (nextToken.isEmpty) {
+        expect(await result, IndicatorResult.fail);
+        expect(pending, hasLength(1));
+      } else {
+        expect(pending, hasLength(2));
+        respond(1, {
+          'meta': {'status': 200},
+          'response': {
+            'count': 0,
+            'recordHistory': 1,
+            'archiveData': [],
+            'items': []
+          }
+        });
+        await frames(tester);
+        expect(await result, IndicatorResult.success);
+      }
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 5));
+    });
+  }
 }
