@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Widgets/Item/setting_management_item.dart';
@@ -63,6 +64,64 @@ void main() {
             expect(tester.takeException(), isNull);
           });
         }
+      }
+    }
+  }
+
+  for (final width in [280.0, 720.0]) {
+    for (final scale in [1.0, 2.0]) {
+      for (final label in ['Remove from Blacklist', '解除黑名单', '解除黑名單']) {
+        testWidgets(
+            'management action remains inside its button $width $scale $label',
+            (tester) async {
+          tester.view.physicalSize = Size(width, 480);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          var calls = 0;
+          await tester.pumpWidget(MaterialApp(
+            theme: ChewieThemeColorData.defaultLightThemes.first.toThemeData(),
+            home: Builder(builder: (context) {
+              chewieProvider.setRootContext(context);
+              return Scaffold(
+                  body: MediaQuery(
+                data: MediaQueryData(
+                    size: Size(width, 480),
+                    textScaler: TextScaler.linear(scale)),
+                child: ListView(children: [
+                  CaptionItem(title: 'Management', children: [
+                    SettingManagementItem(
+                      title: 'A long author nickname / 很长的作者昵称',
+                      description: 'long-author-account-name',
+                      leading: const SizedBox(width: 40, height: 40),
+                      actionLabel: label,
+                      onAction: () => calls++,
+                    )
+                  ])
+                ]),
+              ));
+            }),
+          ));
+          await tester.pumpAndSettle();
+          final button = find.byType(RoundIconTextButton);
+          await tester.ensureVisible(button);
+          await tester.pumpAndSettle();
+          final textRect = tester.getRect(find.text(label));
+          final paragraph =
+              tester.renderObject<RenderParagraph>(find.text(label));
+          final lineBoxes = paragraph.getBoxesForSelection(
+              TextSelection(baseOffset: 0, extentOffset: label.length));
+          for (final box in lineBoxes) {
+            expect(box.bottom, lessThanOrEqualTo(paragraph.size.height));
+          }
+          final buttonRect = tester.getRect(button);
+          expect(textRect.top, greaterThanOrEqualTo(buttonRect.top));
+          expect(textRect.bottom, lessThanOrEqualTo(buttonRect.bottom));
+          expect(buttonRect.right, lessThanOrEqualTo(width));
+          await tester.tap(button);
+          expect(calls, 1);
+          expect(tester.takeException(), isNull);
+        });
       }
     }
   }

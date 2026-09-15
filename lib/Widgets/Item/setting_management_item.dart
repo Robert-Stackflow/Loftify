@@ -58,10 +58,10 @@ class SettingManagementItem extends StatelessWidget {
       onTap: onTap,
       tipWidget: RoundIconTextButton(
         text: actionLabel,
-        height: 32,
+        height: null,
         minHeight: 32,
         radius: 16,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         background: primary.withAlpha(22),
         color: primary,
         border: Border.all(color: primary.withAlpha(72)),
