@@ -434,59 +434,61 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                 size: getAvatarBoxImage().isNotEmpty ? 48 : 72,
               ),
               const SizedBox(width: 15),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.start,
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  ItemBuilder.buildCopyable(
-                    context,
-                    toastText: appLocalizations.haveCopiedNickName,
-                    text: blogInfo != null ? blogInfo!.blogNickName : "",
-                    copyable: blogInfo != null,
-                    child: Text(
-                      blogInfo != null
-                          ? blogInfo!.blogNickName
-                          : appLocalizations.login,
-                      style: Theme.of(context).textTheme.titleLarge?.apply(
-                            fontSizeDelta: 2,
-                          ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    ItemBuilder.buildCopyable(
+                      context,
+                      toastText: appLocalizations.haveCopiedNickName,
+                      text: blogInfo != null ? blogInfo!.blogNickName : "",
+                      copyable: blogInfo != null,
+                      child: Text(
+                        blogInfo != null
+                            ? blogInfo!.blogNickName
+                            : appLocalizations.login,
+                        style: Theme.of(context).textTheme.titleLarge?.apply(
+                              fontSizeDelta: 2,
+                            ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 5),
-                  ItemBuilder.buildCopyable(
-                    context,
-                    toastText: appLocalizations.haveCopiedLofterID,
-                    text: blogInfo != null ? blogInfo!.blogName : "",
-                    copyable: blogInfo != null,
-                    child: Text(
-                      blogInfo != null
-                          ? appLocalizations.lofterId(blogInfo!.blogName)
-                          : appLocalizations.loginToGetPersonalizedService,
+                    const SizedBox(height: 5),
+                    ItemBuilder.buildCopyable(
+                      context,
+                      toastText: appLocalizations.haveCopiedLofterID,
+                      text: blogInfo != null ? blogInfo!.blogName : "",
+                      copyable: blogInfo != null,
+                      child: Text(
+                        blogInfo != null
+                            ? appLocalizations.lofterId(blogInfo!.blogName)
+                            : appLocalizations.loginToGetPersonalizedService,
+                        style: Theme.of(context).textTheme.titleSmall?.apply(
+                              color:
+                                  Theme.of(context).textTheme.labelSmall?.color,
+                              fontSizeDelta: -1,
+                              fontWeightDelta: 2,
+                            ),
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      meInfoData != null
+                          ? appLocalizations.userMeta(
+                              "${meInfoData!.blogInfo.postCount}",
+                              "${meInfoData!.collectionCount}")
+                          : appLocalizations.userMeta("-", "-"),
                       style: Theme.of(context).textTheme.titleSmall?.apply(
-                            color:
-                                Theme.of(context).textTheme.labelSmall?.color,
-                            fontSizeDelta: -1,
+                            color: Theme.of(context).textTheme.bodySmall?.color,
+                            fontSizeDelta: 0,
                             fontWeightDelta: 2,
                           ),
                     ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    meInfoData != null
-                        ? appLocalizations.userMeta(
-                            "${meInfoData!.blogInfo.postCount}",
-                            "${meInfoData!.collectionCount}")
-                        : appLocalizations.userMeta("-", "-"),
-                    style: Theme.of(context).textTheme.titleSmall?.apply(
-                          color: Theme.of(context).textTheme.bodySmall?.color,
-                          fontSizeDelta: 0,
-                          fontWeightDelta: 2,
-                        ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               ChewieIcon(
                 LoftifyIcons.next,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
