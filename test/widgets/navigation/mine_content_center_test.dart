@@ -3,7 +3,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('content center keeps downloads and moves dress after it', () {
+  test('content center keeps downloads without duplicating app bar actions',
+      () {
     final source = File(
       'lib/Screens/Navigation/mine_screen.dart',
     ).readAsStringSync();
@@ -20,13 +21,9 @@ void main() {
     final downloadStart = contentSource.indexOf(
       'title: appLocalizations.downloadManagement',
     );
-    final dressStart = contentSource.indexOf(
-      'title: appLocalizations.dress',
-    );
 
     expect(historyStart, isNonNegative);
     expect(downloadStart, greaterThan(historyStart));
-    expect(dressStart, greaterThan(downloadStart));
     expect(
       contentSource.substring(historyStart, downloadStart),
       isNot(contains('roundBottom: true')),
@@ -40,7 +37,8 @@ void main() {
     );
     expect(contentSource, contains('LoftifySection('));
     expect(contentSource, contains('LoftifyEntryItem('));
-    expect(contentSource, contains('const SuitScreen()'));
+    expect(contentSource, isNot(contains('const SuitScreen()')));
+    expect(contentSource, isNot(contains('const SystemNoticeScreen()')));
   });
 
   test('image settings do not duplicate the download manager entrance', () {

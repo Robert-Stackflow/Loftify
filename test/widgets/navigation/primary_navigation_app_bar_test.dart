@@ -51,15 +51,15 @@ void main() {
     expect(sources['dynamic'], contains('UnderlinedTabIndicator('));
   });
 
-  test('mine keeps only theme and settings in its restored app bar', () {
+  test('mine restores untitled app bar with its original actions', () {
     final appBar = sources['mine']!.split(
       'PreferredSizeWidget _buildAppBar()',
     )[1];
-    expect(appBar, contains('title: appLocalizations.mine'));
+    expect(appBar, isNot(contains('title: appLocalizations.mine')));
     expect(appBar, contains('ItemBuilder.buildDynamicIconButton('));
     expect(appBar, contains('icon: LoftifyIcons.settings'));
-    expect(appBar, isNot(contains('LoftifyIcons.notifications')));
-    expect(appBar, isNot(contains('LoftifyIcons.dress')));
+    expect(appBar, contains('LoftifyIcons.notifications'));
+    expect(appBar, contains('LoftifyIcons.dress'));
   });
 
   test('retired floating navigation header implementation is removed', () {

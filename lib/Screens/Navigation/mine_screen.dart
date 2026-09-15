@@ -562,17 +562,6 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
         title: appLocalizations.contentCenter,
         children: [
           LoftifyEntryItem(
-            title: appLocalizations.notice,
-            showLeading: true,
-            leading: LoftifyIcons.notifications,
-            onTap: () {
-              RouteUtil.pushPanelCupertinoRoute(
-                context,
-                const SystemNoticeScreen(),
-              );
-            },
-          ),
-          LoftifyEntryItem(
             title: appLocalizations.myLikes,
             showLeading: true,
             onTap: () {
@@ -626,22 +615,6 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
               );
             },
             leading: LoftifyIcons.download,
-          ),
-          Consumer<LoftifyControlProvider>(
-            builder: (_, cloudControlProvider, __) =>
-                cloudControlProvider.globalControl.showDress
-                    ? LoftifyEntryItem(
-                        title: appLocalizations.dress,
-                        showLeading: true,
-                        leading: LoftifyIcons.dress,
-                        onTap: () {
-                          RouteUtil.pushPanelCupertinoRoute(
-                            context,
-                            const SuitScreen(),
-                          );
-                        },
-                      )
-                    : emptyWidget,
           ),
         ],
       ),
@@ -721,8 +694,6 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
 
   PreferredSizeWidget _buildAppBar() {
     return ResponsiveAppBar(
-      title: appLocalizations.mine,
-      titleLeftMargin: ResponsiveUtil.isLandscapeLayout() ? 15 : 10,
       actions: [
         ItemBuilder.buildDynamicIconButton(
           context: context,
@@ -739,6 +710,38 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
             } else {
               darkModeController.forward();
             }
+          },
+        ),
+        const SizedBox(width: 5),
+        Consumer<LoftifyControlProvider>(
+          builder: (_, cloudControlProvider, __) =>
+              cloudControlProvider.globalControl.showDress
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ChewieIconButton(
+                          icon: LoftifyIcons.dress,
+                          tooltip: appLocalizations.dress,
+                          onPressed: () {
+                            RouteUtil.pushPanelCupertinoRoute(
+                              context,
+                              const SuitScreen(),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 5),
+                      ],
+                    )
+                  : emptyWidget,
+        ),
+        ChewieIconButton(
+          icon: LoftifyIcons.notifications,
+          tooltip: appLocalizations.notice,
+          onPressed: () {
+            RouteUtil.pushPanelCupertinoRoute(
+              context,
+              const SystemNoticeScreen(),
+            );
           },
         ),
         const SizedBox(width: 5),
