@@ -65,7 +65,7 @@ void main() {
     }
   });
 
-  test('navigation assets morph from outline to a stable filled end frame', () {
+  test('rebuilt navigation assets morph into a stable filled end frame', () {
     for (final asset in <String>[
       LottieFiles.navCompass,
       LottieFiles.navSearch,
@@ -82,15 +82,16 @@ void main() {
       expect(json['w'], 48, reason: asset);
       expect(json['h'], 48, reason: asset);
       expect(json['fr'], 30, reason: asset);
-      expect(json['op'], inInclusiveRange(21, 27), reason: asset);
+      expect(json['op'], 18, reason: asset);
       expect(
           byName.keys,
           containsAll(<String>[
             'Outline',
             'Selected Fill',
-            'Selection Spark',
+            'Accent Trace',
           ]),
           reason: asset);
+      expect(byName.keys, isNot(contains('Selection Spark')), reason: asset);
 
       final fillShapes =
           (byName['Selected Fill']!['shapes'] as List).cast<Map>();
@@ -101,6 +102,9 @@ void main() {
         isTrue,
         reason: asset,
       );
+      final spec = LottieFiles.specFor(asset);
+      expect(spec.effectiveContentBounds, const Rect.fromLTWH(4, 4, 40, 40));
+      expect(spec.opticalFill, 0.9);
 
       List<dynamic> opacityFrames(String layerName) {
         final transform = byName[layerName]!['ks'] as Map<String, dynamic>;
@@ -110,6 +114,7 @@ void main() {
 
       final outlineOpacity = opacityFrames('Outline');
       final fillOpacity = opacityFrames('Selected Fill');
+      final traceOpacity = opacityFrames('Accent Trace');
       expect(
         ((outlineOpacity.first as Map)['s'] as List).first,
         100,
@@ -128,6 +133,11 @@ void main() {
       expect(
         ((fillOpacity.last as Map)['s'] as List).first,
         100,
+        reason: asset,
+      );
+      expect(
+        ((traceOpacity.last as Map)['s'] as List).first,
+        0,
         reason: asset,
       );
     }

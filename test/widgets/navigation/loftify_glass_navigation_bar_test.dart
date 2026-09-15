@@ -341,6 +341,32 @@ void main() {
     expect(tester.widget<AnimatedScale>(scaleFinder).scale, 1);
   });
 
+  testWidgets('selected destination uses a fuller capsule and balanced glyph', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _host(
+        currentIndex: 0,
+        displayStyle: NavigationBarDisplayStyle.iconOnly,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final selection = find.byKey(
+      const ValueKey('loftify-navigation-selection-Home'),
+    );
+    // The render box includes the 6 px top/bottom margin, leaving a restrained
+    // 42 px visible capsule around the icon rather than filling the whole bar.
+    expect(tester.getSize(selection).height, 54);
+    final icon = tester.widget<LoftifyNavigationLottieIcon>(
+      find.descendant(
+        of: selection,
+        matching: find.byType(LoftifyNavigationLottieIcon),
+      ),
+    );
+    expect(icon.size, 22);
+  });
+
   testWidgets('navigation consumes taps without activating content beneath', (
     tester,
   ) async {

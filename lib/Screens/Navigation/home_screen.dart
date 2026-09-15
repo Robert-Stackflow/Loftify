@@ -4,15 +4,11 @@ import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/recommend_api.dart';
 import 'package:loftify/Widgets/PostItem/recommend_flow_item_builder.dart';
-import 'package:provider/provider.dart';
 
 import '../../Models/recommend_response.dart';
-import '../../Screens/Info/system_notice_screen.dart';
 import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/app_provider.dart';
-import '../../Utils/enums.dart';
 import '../../Utils/paged_data_controller.dart';
-import '../../Widgets/Navigation/loftify_floating_navigation_header.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
@@ -158,6 +154,10 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
     final design = context.design;
     return Scaffold(
       backgroundColor: design.colors.page,
+      appBar: ResponsiveAppBar(
+        title: appLocalizations.home,
+        titleLeftMargin: 15,
+      ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           final viewportWidth = constraints.maxWidth;
@@ -179,9 +179,9 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
                   controller: _scrollController,
                   cacheExtent: MediaQuery.sizeOf(context).height,
                   slivers: [
-                    SliverToBoxAdapter(child: _buildNavigationHeader()),
                     SliverPadding(
                       padding: EdgeInsets.only(
+                        top: 8,
                         left: horizontalInset,
                         right: horizontalInset,
                       ),
@@ -232,46 +232,6 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
         },
       ),
     );
-  }
-
-  Widget _buildNavigationHeader() {
-    return LoftifyNavigationHeader(
-      child: Selector<AppProvider, bool>(
-        selector: (_, provider) => provider.reduceTransparency,
-        builder: (context, reduceTransparency, _) => Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            LoftifyNavigationAvatarButton(
-              key: const ValueKey('home-navigation-avatar'),
-              semanticLabel: appLocalizations.mine,
-              enableBlur: !reduceTransparency,
-              onPressed: _openMine,
-            ),
-            LoftifyFloatingHeaderTitle(
-              key: const ValueKey('home-navigation-title'),
-              title: appLocalizations.appName,
-            ),
-            LoftifyFloatingHeaderAction(
-              key: const ValueKey('home-navigation-notice'),
-              icon: LoftifyIcons.notifications,
-              tooltip: appLocalizations.notice,
-              enableBlur: !reduceTransparency,
-              onPressed: () {
-                RouteUtil.pushPanelCupertinoRoute(
-                  context,
-                  const SystemNoticeScreen(),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _openMine() {
-    appProvider.sidebarChoice = SideBarChoice.Mine;
-    panelScreenState?.popAll(false);
   }
 
   void scrollToTopAndRefresh() {

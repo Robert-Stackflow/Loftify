@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:card_swiper/card_swiper.dart';
@@ -19,10 +20,8 @@ import '../../Utils/hive_util.dart';
 import '../../Utils/tab_state_util.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
-import '../../Theme/loftify_design_theme.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
-import '../../Widgets/Navigation/loftify_floating_navigation_header.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
@@ -186,17 +185,15 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
     super.build(context);
     return Scaffold(
       backgroundColor: ChewieTheme.getBackground(context),
-      body: Column(
+      appBar: ResponsiveAppBar(
+        titleWidget: _buildSearchBar(),
+        titleLeftMargin: 0,
+        rightSpacing: 0,
+      ),
+      body: Stack(
         children: [
-          _buildNavigationHeader(),
-          Expanded(
-            child: Stack(
-              children: [
-                _buildMainBody(),
-                if (_sugList.isNotEmpty) _buildSuggestList(),
-              ],
-            ),
-          ),
+          _buildMainBody(),
+          if (_sugList.isNotEmpty) _buildSuggestList(),
         ],
       ),
       extendBody: true,
@@ -237,6 +234,7 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
   _buildSuggestList() {
     return Container(
       color: ChewieTheme.getBackground(context),
+      padding: const EdgeInsets.only(top: 8),
       child: ListView.builder(
         itemCount: _sugList.length,
         itemBuilder: (context, index) {
@@ -688,55 +686,26 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
     );
   }
 
-  Widget _buildNavigationHeader() {
-    return LoftifyNavigationHeader(
-      child: Selector<AppProvider, bool>(
-        selector: (_, provider) => provider.reduceTransparency,
-        builder: (context, reduceTransparency, _) => LayoutBuilder(
-          builder: (context, _) {
-            const gap = 8.0;
-            return Row(
-              children: [
-                LoftifyNavigationAvatarButton(
-                  key: const ValueKey('search-navigation-avatar'),
-                  semanticLabel: appLocalizations.mine,
-                  enableBlur: !reduceTransparency,
-                  onPressed: _openMine,
-                ),
-                const SizedBox(width: gap),
-                Expanded(
-                  child: LoftifyFloatingCapsule(
-                    key: const ValueKey('expanded-search-capsule'),
-                    enableBlur: !reduceTransparency,
-                    padding: const EdgeInsets.only(left: 4),
-                    child: _buildSearchBar(),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  void _openMine() {
-    appProvider.sidebarChoice = SideBarChoice.Mine;
-    panelScreenState?.popAll(false);
-  }
-
   Widget _buildSearchBar() {
-    return ItemBuilder.buildSearchBar(
-      context: context,
-      background: Colors.transparent,
-      borderRadius: context.design.radii.full,
-      hintFontSizeDelta: 0,
-      focusNode: _focusNode,
-      controller: _searchController,
-      hintText: appLocalizations.searchHint,
-      onSubmitted: (text) async {
-        _performSearch(text);
-      },
+    double width = ResponsiveUtil.isLandscapeLayout()
+        ? searchBarWidth - 80
+        : min(MediaQuery.of(context).size.width, searchBarWidth);
+    return Container(
+      margin: const EdgeInsets.all(10),
+      constraints:
+          BoxConstraints(maxWidth: width, minWidth: width, maxHeight: 56),
+      child: ItemBuilder.buildSearchBar(
+        context: context,
+        borderRadius: 8,
+        bottomMargin: 18,
+        hintFontSizeDelta: 1,
+        focusNode: _focusNode,
+        controller: _searchController,
+        hintText: appLocalizations.searchHint,
+        onSubmitted: (text) async {
+          _performSearch(text);
+        },
+      ),
     );
   }
 

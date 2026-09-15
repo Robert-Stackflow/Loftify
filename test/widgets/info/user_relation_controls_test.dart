@@ -35,9 +35,15 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(
-      tester.getSize(find.byType(LoftifyButton)).height,
+      tester.getSize(find.byType(LoftifyCompactToggleButton)).height,
       greaterThanOrEqualTo(48),
     );
+    final surface = tester.widget<AnimatedContainer>(
+      find.byKey(const ValueKey('loftify-compact-toggle-surface')),
+    );
+    final decoration = surface.decoration! as BoxDecoration;
+    expect(decoration.color, Colors.transparent);
+    expect(decoration.border, isNotNull);
     await tester.tap(find.text('Follow this creator'));
     expect(taps, 1);
   });
@@ -58,8 +64,7 @@ void main() {
     final buttonEnd =
         source.indexOf('static buildUnLoginMainBody', buttonStart);
     final buttonSource = source.substring(buttonStart, buttonEnd);
-    expect(buttonSource, contains('LoftifyButton('));
-    expect(buttonSource, contains('LoftifyButtonSize.compact'));
-    expect(buttonSource, isNot(contains('InkWell(')));
+    expect(buttonSource, contains('LoftifyCompactToggleButton('));
+    expect(buttonSource, contains('selected: isFollowed'));
   });
 }

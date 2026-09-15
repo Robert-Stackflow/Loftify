@@ -144,16 +144,26 @@ void main() {
         find.byKey(const ValueKey('content-reference-actions-inline')),
         findsOneWidget,
       );
-      final iconContainer = tester.widget<Container>(
+      final icon = tester.widget<Icon>(
         find.byKey(const ValueKey('loftify-content-reference-icon')),
       );
-      final decoration = iconContainer.decoration! as BoxDecoration;
       final theme = LoftifyTheme.build(
         dark
             ? ChewieThemeColorData.defaultDarkThemes.first
             : ChewieThemeColorData.defaultLightThemes.first,
       ).extension<LoftifyDesignThemeData>()!;
-      expect(decoration.color, theme.colors.accentContainer);
+      expect(icon.color, theme.colors.accentForeground);
+      final cardSurface = tester.widget<AnimatedContainer>(
+        find
+            .descendant(
+              of: find.byKey(const ValueKey('loftify-content-reference-card')),
+              matching: find.byType(AnimatedContainer),
+            )
+            .first,
+      );
+      final decoration = cardSurface.decoration! as BoxDecoration;
+      expect(decoration.color, theme.colors.surfaceMuted);
+      expect(decoration.border, isNull);
       expect(tester.takeException(), isNull);
     }
   });

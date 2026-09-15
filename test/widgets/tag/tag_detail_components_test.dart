@@ -73,8 +73,12 @@ void main() {
     final lightDesign = LoftifyTheme.build(
       ChewieThemeColorData.defaultLightThemes.first,
     ).extension<LoftifyDesignThemeData>()!;
-    final tonalDecoration = _buttonDecoration(tester, 'Subscribe');
-    expect(tonalDecoration.color, lightDesign.colors.accentContainer);
+    final availableDecoration = _buttonDecoration(tester, 'Subscribe');
+    expect(availableDecoration.color, Colors.transparent);
+    expect(
+      (availableDecoration.border! as Border).top.color,
+      lightDesign.colors.accent.withValues(alpha: 0.52),
+    );
 
     await tester.pumpWidget(
       _TestApp(
@@ -91,6 +95,10 @@ void main() {
     await tester.pump();
     final subscribedDecoration = _buttonDecoration(tester, 'Subscribed');
     expect(subscribedDecoration.color, lightDesign.colors.surfaceRaised);
+    expect(
+      (subscribedDecoration.border! as Border).top.color,
+      lightDesign.colors.outlineStrong,
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -180,7 +188,7 @@ BoxDecoration _buttonDecoration(WidgetTester tester, String label) {
       .widget<AnimatedContainer>(
         find
             .descendant(
-              of: find.widgetWithText(LoftifyButton, label),
+              of: find.widgetWithText(LoftifyCompactToggleButton, label),
               matching: find.byType(AnimatedContainer),
             )
             .first,

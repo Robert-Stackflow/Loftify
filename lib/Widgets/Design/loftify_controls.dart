@@ -207,6 +207,106 @@ class LoftifyButton extends StatelessWidget {
   }
 }
 
+/// A compact relationship action used for follow and subscription states.
+///
+/// The visible capsule deliberately stays close to the original Loftify
+/// treatment while the surrounding 48 px box remains an accessible target.
+class LoftifyCompactToggleButton extends StatelessWidget {
+  const LoftifyCompactToggleButton({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onPressed,
+    this.semanticLabel,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback? onPressed;
+  final String? semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final design = context.design;
+    final enabled = onPressed != null;
+    final foreground =
+        selected ? design.colors.textSecondary : design.colors.accentForeground;
+    final borderColor = selected
+        ? design.colors.outlineStrong
+        : design.colors.accent.withValues(alpha: 0.52);
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      enabled: enabled,
+      label: semanticLabel ?? label,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minWidth: design.icons.minimumTapTarget,
+          minHeight: design.icons.minimumTapTarget,
+        ),
+        child: Center(
+          child: AnimatedContainer(
+            key: const ValueKey('loftify-compact-toggle-surface'),
+            duration: design.motion.effective(context, design.motion.state),
+            curve: design.motion.enterCurve,
+            decoration: BoxDecoration(
+              color:
+                  selected ? design.colors.surfaceRaised : Colors.transparent,
+              borderRadius: BorderRadius.circular(design.radii.full),
+              border: Border.all(
+                color: borderColor,
+                width: design.borders.regular,
+              ),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              shape: const StadiumBorder(),
+              child: InkWell(
+                onTap: enabled ? onPressed : null,
+                customBorder: const StadiumBorder(),
+                splashFactory: NoSplash.splashFactory,
+                overlayColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.pressed)) {
+                    return design.colors.accent.withValues(
+                      alpha: design.icons.pressedOpacity,
+                    );
+                  }
+                  if (states.contains(WidgetState.focused)) {
+                    return design.colors.accent.withValues(
+                      alpha: design.icons.focusOpacity,
+                    );
+                  }
+                  if (states.contains(WidgetState.hovered)) {
+                    return design.colors.accent.withValues(
+                      alpha: design.icons.hoverOpacity,
+                    );
+                  }
+                  return Colors.transparent;
+                }),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: design.spacing.lg,
+                    vertical: design.spacing.sm,
+                  ),
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: design.typography.metadata.copyWith(
+                      color: foreground,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Content-driven text field with one semantic state model for login and
 /// settings forms.
 class LoftifyTextField extends StatefulWidget {

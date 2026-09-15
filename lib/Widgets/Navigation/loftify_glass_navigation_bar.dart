@@ -234,6 +234,7 @@ class _LoftifyNavigationItemState extends State<_LoftifyNavigationItem> {
         reduceMotion ? Duration.zero : const Duration(milliseconds: 180);
     final showIcon = widget.displayStyle != NavigationBarDisplayStyle.textOnly;
     final showLabel = widget.displayStyle != NavigationBarDisplayStyle.iconOnly;
+    final selectionHeight = showIcon && showLabel ? 52.0 : 42.0;
 
     final semanticLabel = widget.destination.badgeCount > 0
         ? '${widget.destination.label}, ${widget.destination.badgeCount}'
@@ -259,10 +260,14 @@ class _LoftifyNavigationItemState extends State<_LoftifyNavigationItem> {
                 reduceMotion ? Duration.zero : const Duration(milliseconds: 90),
             curve: Curves.easeOutCubic,
             child: AnimatedContainer(
+              key: ValueKey(
+                'loftify-navigation-selection-${widget.destination.label}',
+              ),
               duration: duration,
               curve: Curves.easeOutCubic,
               margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              constraints: BoxConstraints(minHeight: selectionHeight),
               decoration: BoxDecoration(
                 color: widget.selected
                     ? selectedColor.withValues(alpha: 0.11)
@@ -270,7 +275,7 @@ class _LoftifyNavigationItemState extends State<_LoftifyNavigationItem> {
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: widget.selected
-                      ? selectedColor.withValues(alpha: 0.22)
+                      ? selectedColor.withValues(alpha: 0.18)
                       : Colors.transparent,
                   width: 0.8,
                 ),
@@ -389,6 +394,7 @@ class _NavigationIcon extends StatelessWidget {
               asset: lottieAsset!,
               selected: selected,
               color: color,
+              size: 22,
             ),
           if (badgeCount > 0)
             Positioned(

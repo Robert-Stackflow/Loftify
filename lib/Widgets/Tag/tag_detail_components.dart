@@ -135,12 +135,9 @@ class LoftifyTagHero extends StatelessWidget {
   }
 
   Widget _buildSubscriptionButton() {
-    return LoftifyButton(
+    return LoftifyCompactToggleButton(
       label: subscribed ? subscribedLabel : subscribeLabel,
-      variant: subscribed
-          ? LoftifyButtonVariant.secondary
-          : LoftifyButtonVariant.tonal,
-      size: LoftifyButtonSize.compact,
+      selected: subscribed,
       onPressed: onSubscriptionPressed,
     );
   }

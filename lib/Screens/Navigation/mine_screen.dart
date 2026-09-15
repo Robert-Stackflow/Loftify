@@ -24,7 +24,6 @@ import '../../Utils/cloud_control_provider.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../Widgets/Design/loftify_section.dart';
-import '../../Widgets/Navigation/loftify_floating_navigation_header.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import '../Info/following_follower_screen.dart';
@@ -139,12 +138,8 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
       backgroundColor: appProvider.token.isNotEmpty
           ? Theme.of(context).scaffoldBackgroundColor
           : ChewieTheme.getBackground(context),
-      body: Column(
-        children: [
-          _buildNavigationHeader(),
-          Expanded(child: _buildMainBody()),
-        ],
-      ),
+      appBar: _buildAppBar(),
+      body: _buildMainBody(),
     );
   }
 
@@ -172,6 +167,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
           cacheExtent: MediaQuery.sizeOf(context).height,
           controller: _scrollController,
           children: [
+            const SizedBox(height: 10),
             _buildUserCard(),
             _buildStatsticRow(),
             if (blogInfo != null) ..._buildContent(),
@@ -198,6 +194,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
               child: ListView(
                 cacheExtent: MediaQuery.sizeOf(context).height,
                 children: [
+                  const SizedBox(height: 20),
                   _buildUserCard(),
                   if (blogInfo != null) ..._buildContent(),
                   // if (blogInfo != null) ..._buildMessage(),
@@ -227,6 +224,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
               child: ListView(
                 cacheExtent: MediaQuery.sizeOf(context).height,
                 children: [
+                  const SizedBox(height: 10),
                   if (meInfoData != null) _buildFollowingCard(),
                   const SizedBox(height: 10),
                   if (meInfoData != null) _buildFollowerCard(),
@@ -709,52 +707,41 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     }
   }
 
-  Widget _buildNavigationHeader() {
-    return LoftifyNavigationHeader(
-      child: Selector<AppProvider, bool>(
-        selector: (_, provider) => provider.reduceTransparency,
-        builder: (context, reduceTransparency, _) => Align(
-          alignment: Alignment.centerRight,
-          child: LoftifyFloatingCapsule(
-            key: const ValueKey('mine-navigation-actions'),
-            enableBlur: !reduceTransparency,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ItemBuilder.buildDynamicIconButton(
-                  context: context,
-                  icon: darkModeWidget ??
-                      const ChewieIcon(LoftifyIcons.appearance),
-                  onTap: changeMode,
-                  onChangemode: (context, themeMode, child) {
-                    if (darkModeController.duration == null) return;
-                    if (themeMode == ActiveThemeMode.light) {
-                      darkModeController.forward();
-                    } else if (themeMode == ActiveThemeMode.dark) {
-                      darkModeController.reverse();
-                    } else if (ColorUtil.isDark(context)) {
-                      darkModeController.reverse();
-                    } else {
-                      darkModeController.forward();
-                    }
-                  },
-                ),
-                ChewieIconButton(
-                  icon: LoftifyIcons.settings,
-                  tooltip: appLocalizations.setting,
-                  tapTargetSize: LoftifyNavigationHeader.height,
-                  onPressed: () {
-                    RouteUtil.pushPanelCupertinoRoute(
-                      context,
-                      const SettingScreen(),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
+  PreferredSizeWidget _buildAppBar() {
+    return ResponsiveAppBar(
+      title: appLocalizations.mine,
+      titleLeftMargin: ResponsiveUtil.isLandscapeLayout() ? 15 : 10,
+      actions: [
+        ItemBuilder.buildDynamicIconButton(
+          context: context,
+          icon: darkModeWidget ?? const ChewieIcon(LoftifyIcons.appearance),
+          onTap: changeMode,
+          onChangemode: (context, themeMode, child) {
+            if (darkModeController.duration == null) return;
+            if (themeMode == ActiveThemeMode.light) {
+              darkModeController.forward();
+            } else if (themeMode == ActiveThemeMode.dark) {
+              darkModeController.reverse();
+            } else if (ColorUtil.isDark(context)) {
+              darkModeController.reverse();
+            } else {
+              darkModeController.forward();
+            }
+          },
         ),
-      ),
+        const SizedBox(width: 5),
+        ChewieIconButton(
+          icon: LoftifyIcons.settings,
+          tooltip: appLocalizations.setting,
+          foregroundColor: Theme.of(context).iconTheme.color,
+          onPressed: () {
+            RouteUtil.pushPanelCupertinoRoute(
+              context,
+              const SettingScreen(),
+            );
+          },
+        ),
+      ],
     );
   }
 

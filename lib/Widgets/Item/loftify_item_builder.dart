@@ -660,13 +660,10 @@ class LoftifyItemBuilder {
     final label = isFollowed
         ? positiveText ?? appLocalizations.followed
         : negtiveText ?? appLocalizations.follow;
-    return LoftifyButton(
+    return LoftifyCompactToggleButton(
       label: label,
       semanticLabel: label,
-      size: LoftifyButtonSize.compact,
-      variant: isFollowed
-          ? LoftifyButtonVariant.secondary
-          : LoftifyButtonVariant.tonal,
+      selected: isFollowed,
       onPressed: onTap,
     );
   }

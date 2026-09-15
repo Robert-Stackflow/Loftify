@@ -244,22 +244,26 @@ class LottieFiles {
     navCompass: LoftifyLottieSpec(
       asset: navCompass,
       sourceSize: Size.square(48),
-      opticalFill: 0.88,
+      contentBounds: Rect.fromLTWH(4, 4, 40, 40),
+      opticalFill: 0.9,
     ),
     navHeart: LoftifyLottieSpec(
       asset: navHeart,
       sourceSize: Size.square(48),
-      opticalFill: 0.88,
+      contentBounds: Rect.fromLTWH(4, 4, 40, 40),
+      opticalFill: 0.9,
     ),
     navSearch: LoftifyLottieSpec(
       asset: navSearch,
       sourceSize: Size.square(48),
-      opticalFill: 0.88,
+      contentBounds: Rect.fromLTWH(4, 4, 40, 40),
+      opticalFill: 0.9,
     ),
     navUser: LoftifyLottieSpec(
       asset: navUser,
       sourceSize: Size.square(48),
-      opticalFill: 0.88,
+      contentBounds: Rect.fromLTWH(4, 4, 40, 40),
+      opticalFill: 0.9,
     ),
     recommendBigNormalDark: LoftifyLottieSpec(
       asset: recommendBigNormalDark,

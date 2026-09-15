@@ -26,9 +26,9 @@ class LoftifyContentReferenceAction {
 /// A low-noise content relationship used for collections, grains and other
 /// containers a post belongs to.
 ///
-/// The component grows with localized labels and dynamic text. It deliberately
-/// uses an outline instead of a shadow so it stays behind the work itself in
-/// the visual hierarchy.
+/// The component grows with localized labels and dynamic text. Its quiet
+/// filled surface restores the compact relationship treatment used by post
+/// details without competing with the work itself.
 class LoftifyContentReferenceCard extends StatelessWidget {
   const LoftifyContentReferenceCard({
     super.key,
@@ -54,10 +54,14 @@ class LoftifyContentReferenceCard extends StatelessWidget {
     final design = context.design;
     return LoftifyCard(
       key: const ValueKey('loftify-content-reference-card'),
-      variant: LoftifyCardVariant.outlined,
+      variant: LoftifyCardVariant.muted,
       onTap: onTap,
       semanticLabel: semanticLabel ?? title,
-      padding: EdgeInsets.all(design.spacing.lg),
+      radius: design.radii.control,
+      padding: EdgeInsets.symmetric(
+        horizontal: design.spacing.md,
+        vertical: design.spacing.md,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -82,7 +86,7 @@ class LoftifyContentReferenceCard extends StatelessWidget {
             },
           ),
           if (actions.isNotEmpty) ...[
-            SizedBox(height: design.spacing.lg),
+            SizedBox(height: design.spacing.md),
             LayoutBuilder(
               builder: (context, constraints) {
                 final textScale =
@@ -100,7 +104,7 @@ class LoftifyContentReferenceCard extends StatelessWidget {
                       for (var index = 0; index < children.length; index++) ...[
                         children[index],
                         if (index != children.length - 1)
-                          SizedBox(height: design.spacing.md),
+                          SizedBox(height: design.spacing.sm),
                       ],
                     ],
                   );
@@ -111,7 +115,7 @@ class LoftifyContentReferenceCard extends StatelessWidget {
                     for (var index = 0; index < children.length; index++) ...[
                       Expanded(child: children[index]),
                       if (index != children.length - 1)
-                        SizedBox(width: design.spacing.md),
+                        SizedBox(width: design.spacing.sm),
                     ],
                   ],
                 );
@@ -131,43 +135,58 @@ class LoftifyContentReferenceCard extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(
+        Icon(
           key: const ValueKey('loftify-content-reference-icon'),
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: design.colors.accentContainer,
-            borderRadius: BorderRadius.circular(design.radii.control),
-          ),
-          alignment: Alignment.center,
-          child: Icon(
-            icon,
-            size: design.icons.small,
-            color: design.colors.onAccentContainer,
-          ),
+          icon,
+          size: design.icons.small,
+          color: eyebrow?.isNotEmpty == true
+              ? design.colors.accentForeground
+              : design.colors.textSecondary,
         ),
-        SizedBox(width: design.spacing.lg),
+        SizedBox(width: design.spacing.sm),
         Expanded(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (eyebrow?.isNotEmpty == true) ...[
-                Text(
-                  eyebrow!,
-                  style: design.typography.metadata.copyWith(
-                    color: design.colors.textSecondary,
-                  ),
-                ),
-                SizedBox(height: design.spacing.xxs),
-              ],
-              Text(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final textScale =
+                  MediaQuery.textScalerOf(context).scale(1).clamp(1, 3);
+              final stackText = textScale > 1.35 || constraints.maxWidth < 220;
+              final titleWidget = Text(
                 title,
-                style: design.typography.cardTitle.copyWith(
+                maxLines: stackText ? 3 : 2,
+                overflow: TextOverflow.ellipsis,
+                style: design.typography.label.copyWith(
                   color: design.colors.textPrimary,
                 ),
-              ),
-            ],
+              );
+              if (eyebrow?.isNotEmpty != true) return titleWidget;
+              final eyebrowWidget = Text(
+                eyebrow!,
+                maxLines: stackText ? 2 : 1,
+                overflow: TextOverflow.ellipsis,
+                style: design.typography.metadata.copyWith(
+                  color: design.colors.accentForeground,
+                  fontWeight: FontWeight.w600,
+                ),
+              );
+              if (stackText) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    eyebrowWidget,
+                    SizedBox(height: design.spacing.xxs),
+                    titleWidget,
+                  ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Flexible(child: eyebrowWidget),
+                  SizedBox(width: design.spacing.sm),
+                  Expanded(child: titleWidget),
+                ],
+              );
+            },
           ),
         ),
         if (includeTrailing && trailing != null) ...[
@@ -200,70 +219,74 @@ class _ContentReferenceActionButton extends StatelessWidget {
         : enabled
             ? design.colors.textPrimary
             : design.colors.textMuted;
-    final background = action.emphasized
-        ? design.colors.accentContainer
-        : design.colors.surfaceMuted;
+    final background =
+        action.emphasized ? design.colors.accentContainer : design.colors.page;
     return Semantics(
       button: true,
       enabled: enabled,
       label: action.label,
       child: Opacity(
         opacity: enabled ? 1 : design.icons.disabledOpacity,
-        child: Material(
-          color: background,
-          borderRadius: BorderRadius.circular(design.radii.control),
-          child: InkWell(
-            onTap: enabled ? action.onPressed : action.onDisabledPressed,
-            splashFactory: NoSplash.splashFactory,
-            borderRadius: BorderRadius.circular(design.radii.control),
-            overlayColor: WidgetStateProperty.resolveWith((states) {
-              if (states.contains(WidgetState.pressed)) {
-                return design.colors.accent.withValues(
-                  alpha: design.icons.pressedOpacity,
-                );
-              }
-              if (states.contains(WidgetState.focused)) {
-                return design.colors.accent.withValues(
-                  alpha: design.icons.focusOpacity,
-                );
-              }
-              if (states.contains(WidgetState.hovered)) {
-                return design.colors.accent.withValues(
-                  alpha: design.icons.hoverOpacity,
-                );
-              }
-              return Colors.transparent;
-            }),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: design.icons.minimumTapTarget,
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: design.spacing.lg,
-                  vertical: design.spacing.md,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (action.icon != null) ...[
-                      Icon(
-                        action.icon,
-                        size: design.icons.small,
-                        color: foreground,
-                      ),
-                      SizedBox(width: design.spacing.sm),
-                    ],
-                    Flexible(
-                      child: Text(
-                        action.label,
-                        textAlign: TextAlign.center,
-                        style: design.typography.label.copyWith(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: design.icons.minimumTapTarget,
+          ),
+          child: Center(
+            child: Material(
+              color: background,
+              borderRadius: BorderRadius.circular(design.radii.small),
+              child: InkWell(
+                onTap: enabled ? action.onPressed : action.onDisabledPressed,
+                splashFactory: NoSplash.splashFactory,
+                borderRadius: BorderRadius.circular(design.radii.small),
+                overlayColor: WidgetStateProperty.resolveWith((states) {
+                  if (states.contains(WidgetState.pressed)) {
+                    return design.colors.accent.withValues(
+                      alpha: design.icons.pressedOpacity,
+                    );
+                  }
+                  if (states.contains(WidgetState.focused)) {
+                    return design.colors.accent.withValues(
+                      alpha: design.icons.focusOpacity,
+                    );
+                  }
+                  if (states.contains(WidgetState.hovered)) {
+                    return design.colors.accent.withValues(
+                      alpha: design.icons.hoverOpacity,
+                    );
+                  }
+                  return Colors.transparent;
+                }),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: design.spacing.md,
+                    vertical: design.spacing.sm,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (action.icon != null) ...[
+                        Icon(
+                          action.icon,
+                          size: design.icons.small,
                           color: foreground,
                         ),
+                        SizedBox(width: design.spacing.xs),
+                      ],
+                      Flexible(
+                        child: Text(
+                          action.label,
+                          textAlign: TextAlign.center,
+                          style: design.typography.metadata.copyWith(
+                            color: foreground,
+                            fontWeight: action.emphasized
+                                ? FontWeight.w600
+                                : FontWeight.w500,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

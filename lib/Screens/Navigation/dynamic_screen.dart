@@ -13,7 +13,6 @@ import 'package:loftify/Screens/Post/grain_detail_screen.dart';
 import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Screens/Post/tag_detail_screen.dart';
 import 'package:loftify/Utils/enums.dart';
-import 'package:provider/provider.dart';
 
 import '../../Api/tag_api.dart';
 import '../../Models/grain_response.dart';
@@ -24,7 +23,6 @@ import '../../Utils/tab_state_util.dart';
 import '../../Widgets/Dynamic/dynamic_collection_card_frame.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
-import '../../Widgets/Navigation/loftify_floating_navigation_header.dart';
 import '../../Widgets/PostItem/grain_post_item_builder.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
@@ -206,45 +204,39 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
     super.build(context);
     return Scaffold(
       backgroundColor: ChewieTheme.getBackground(context),
+      appBar: appProvider.token.isNotEmpty ? _buildAppBar() : null,
       body: appProvider.token.isNotEmpty
-          ? Column(
+          ? Stack(
               children: [
-                _buildNavigationTabHeader(),
-                Expanded(
-                  child: Stack(
-                    children: [
-                      TabBarView(
-                        controller: _tabController,
-                        children: [
-                          FollowTab(
-                            key: _followTabKey,
-                            scrollController: _followScrollController,
-                          ),
-                          SubscribeTagTab(
-                            key: _tagTabKey,
-                            scrollController: _tagScrollController,
-                          ),
-                          SubscribeCollectionTab(
-                            key: _collectionTabKey,
-                            scrollController: _collectionScrollController,
-                          ),
-                          SubscribeGrainTab(
-                            key: _grainTabKey,
-                            scrollController: _grainScrollController,
-                          ),
-                        ],
-                      ),
-                      Positioned(
-                        right: ResponsiveUtil.isLandscapeLayout() ? 16 : 12,
-                        bottom: ResponsiveUtil.isLandscapeLayout() ? 16 : 76,
-                        child: ScrollToHide.multi(
-                          controller: _scrollToHideController,
-                          scrollControllers: getScrollControllers(),
-                          hideDirection: Axis.vertical,
-                          child: _buildFloatingButtons(),
-                        ),
-                      ),
-                    ],
+                TabBarView(
+                  controller: _tabController,
+                  children: [
+                    FollowTab(
+                      key: _followTabKey,
+                      scrollController: _followScrollController,
+                    ),
+                    SubscribeTagTab(
+                      key: _tagTabKey,
+                      scrollController: _tagScrollController,
+                    ),
+                    SubscribeCollectionTab(
+                      key: _collectionTabKey,
+                      scrollController: _collectionScrollController,
+                    ),
+                    SubscribeGrainTab(
+                      key: _grainTabKey,
+                      scrollController: _grainScrollController,
+                    ),
+                  ],
+                ),
+                Positioned(
+                  right: ResponsiveUtil.isLandscapeLayout() ? 16 : 12,
+                  bottom: ResponsiveUtil.isLandscapeLayout() ? 16 : 76,
+                  child: ScrollToHide.multi(
+                    controller: _scrollToHideController,
+                    scrollControllers: getScrollControllers(),
+                    hideDirection: Axis.vertical,
+                    child: _buildFloatingButtons(),
                   ),
                 ),
               ],
@@ -380,64 +372,37 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
     _tabLoadState.markLoadFailed(index);
   }
 
-  Widget _buildNavigationTabHeader() {
-    return LoftifyNavigationHeader(
-      child: Selector<AppProvider, bool>(
-        selector: (_, provider) => provider.reduceTransparency,
-        builder: (context, reduceTransparency, _) => Row(
-          children: [
-            LoftifyNavigationAvatarButton(
-              key: const ValueKey('dynamic-navigation-avatar'),
-              semanticLabel: appLocalizations.mine,
-              enableBlur: !reduceTransparency,
-              onPressed: _openMine,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 440),
-                child: LoftifyFloatingCapsule(
-                  enableBlur: !reduceTransparency,
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: TabBar(
-                    controller: _tabController,
-                    padding: EdgeInsets.zero,
-                    labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-                    isScrollable: false,
-                    dividerHeight: 0,
-                    physics: const BouncingScrollPhysics(),
-                    overlayColor: WidgetStateProperty.all(Colors.transparent),
-                    indicator: UnderlinedTabIndicator(
-                      borderColor: Theme.of(context).primaryColor,
-                    ),
-                    tabs: _tabLabelList
-                        .asMap()
-                        .entries
-                        .map(
-                          (entry) => ItemBuilder.buildAnimatedTab(
-                            context,
-                            selected: entry.key == _currentTabIndex,
-                            text: entry.value,
-                            controller: _tabController,
-                            tabIndex: entry.key,
-                            fontSizeDelta: -1,
-                          ),
-                        )
-                        .toList(),
-                    onTap: _setCurrentTab,
-                  ),
-                ),
-              ),
-            ),
-          ],
+  PreferredSizeWidget _buildAppBar() {
+    return ResponsiveAppBar(
+      titleLeftMargin: 15,
+      titleWidget: TabBar(
+        controller: _tabController,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        labelPadding: const EdgeInsets.only(right: 32),
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
+        dividerHeight: 0,
+        physics: const BouncingScrollPhysics(),
+        overlayColor: WidgetStateProperty.all(Colors.transparent),
+        indicator: UnderlinedTabIndicator(
+          borderColor: Theme.of(context).primaryColor,
         ),
+        tabs: _tabLabelList
+            .asMap()
+            .entries
+            .map(
+              (entry) => ItemBuilder.buildAnimatedTab(
+                context,
+                selected: entry.key == _currentTabIndex,
+                text: entry.value,
+                controller: _tabController,
+                tabIndex: entry.key,
+              ),
+            )
+            .toList(),
+        onTap: _setCurrentTab,
       ),
     );
-  }
-
-  void _openMine() {
-    appProvider.sidebarChoice = SideBarChoice.Mine;
-    panelScreenState?.popAll(false);
   }
 }
 
