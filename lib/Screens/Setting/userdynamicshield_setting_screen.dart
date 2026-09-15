@@ -33,32 +33,39 @@ class _UserDynamicShieldSettingScreenState
   final EasyRefreshController _refreshController = EasyRefreshController();
   List<SimpleBlogInfo> shieldList = [];
 
-  _fetchShieldList() async {
-    if (loading) return;
+  @override
+  void dispose() {
+    _refreshController.dispose();
+    super.dispose();
+  }
+
+  Future<IndicatorResult> _fetchShieldList() async {
+    if (loading || !mounted) return IndicatorResult.none;
     loading = true;
-    return await SettingApi.getShieldBloglist().then((value) {
-      try {
-        if (value == null) return IndicatorResult.fail;
-        if (value['code'] != 0) {
-          IToast.showTop(value['desc'] ?? value['msg']);
-          return IndicatorResult.fail;
-        } else {
-          shieldList.clear();
-          var tmp = (value['data']['blogInfos'] as List)
-              .map((e) => SimpleBlogInfo.fromJson(e))
-              .toList();
-          shieldList.addAll(tmp);
-          return IndicatorResult.success;
-        }
-      } catch (e, t) {
-        ILogger.error("Failed to load user dynamic shield list", e, t);
-        IToast.showTop(appLocalizations.loadFailed);
+    try {
+      final value = await SettingApi.getShieldBloglist();
+      if (!mounted) return IndicatorResult.none;
+      if (value == null) return IndicatorResult.fail;
+      if (value['code'] != 0) {
+        IToast.showTop(value['desc'] ?? value['msg']);
         return IndicatorResult.fail;
-      } finally {
-        loading = false;
-        if (mounted) setState(() {});
+      } else {
+        shieldList.clear();
+        var tmp = (value['data']['blogInfos'] as List)
+            .map((e) => SimpleBlogInfo.fromJson(e))
+            .toList();
+        shieldList.addAll(tmp);
+        return IndicatorResult.success;
       }
-    });
+    } catch (e, t) {
+      if (!mounted) return IndicatorResult.none;
+      ILogger.error("Failed to load user dynamic shield list", e, t);
+      IToast.showTop(appLocalizations.loadFailed);
+      return IndicatorResult.fail;
+    } finally {
+      loading = false;
+      if (mounted) setState(() {});
+    }
   }
 
   @override

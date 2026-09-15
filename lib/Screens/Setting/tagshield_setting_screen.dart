@@ -29,30 +29,37 @@ class _TagShieldSettingScreenState
   final EasyRefreshController _refreshController = EasyRefreshController();
   List<String> tags = [];
 
-  _fetchTags() async {
-    if (loading) return;
+  @override
+  void dispose() {
+    _refreshController.dispose();
+    super.dispose();
+  }
+
+  Future<IndicatorResult> _fetchTags() async {
+    if (loading || !mounted) return IndicatorResult.none;
     loading = true;
-    return await SettingApi.getShieldTagList().then((value) {
-      try {
-        if (value == null) return IndicatorResult.fail;
-        if (value['meta']['status'] != 200) {
-          IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-          return IndicatorResult.fail;
-        } else {
-          tags = (value['response']['list'] as List)
-              .map((e) => e.toString())
-              .toList();
-          return IndicatorResult.success;
-        }
-      } catch (e, t) {
-        ILogger.error("Failed to load tag shield list", e, t);
-        IToast.showTop(appLocalizations.loadFailed);
+    try {
+      final value = await SettingApi.getShieldTagList();
+      if (!mounted) return IndicatorResult.none;
+      if (value == null) return IndicatorResult.fail;
+      if (value['meta']['status'] != 200) {
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
         return IndicatorResult.fail;
-      } finally {
-        loading = false;
-        if (mounted) setState(() {});
+      } else {
+        tags = (value['response']['list'] as List)
+            .map((e) => e.toString())
+            .toList();
+        return IndicatorResult.success;
       }
-    });
+    } catch (e, t) {
+      if (!mounted) return IndicatorResult.none;
+      ILogger.error("Failed to load tag shield list", e, t);
+      IToast.showTop(appLocalizations.loadFailed);
+      return IndicatorResult.fail;
+    } finally {
+      loading = false;
+      if (mounted) setState(() {});
+    }
   }
 
   @override

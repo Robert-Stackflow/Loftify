@@ -32,36 +32,43 @@ class _BlacklistSettingScreenState
   final EasyRefreshController _refreshController = EasyRefreshController();
   List<BlacklistItem> blacklist = [];
 
-  _fetchBlacklist({bool refresh = false}) async {
-    if (loading) return;
+  @override
+  void dispose() {
+    _refreshController.dispose();
+    super.dispose();
+  }
+
+  Future<IndicatorResult> _fetchBlacklist({bool refresh = false}) async {
+    if (loading || !mounted) return IndicatorResult.none;
     loading = true;
-    return await SettingApi.getBlacklist(offset: refresh ? 0 : blacklist.length)
-        .then((value) {
-      try {
-        if (value == null) return IndicatorResult.fail;
-        if (value['meta']['status'] != 200) {
-          IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-          return IndicatorResult.fail;
-        } else {
-          var tmp = (value['response']['blogs'] as List)
-              .map((e) => BlacklistItem.fromJson(e))
-              .toList();
-          if (refresh) blacklist.clear();
-          blacklist.addAll(tmp);
-          if (tmp.isEmpty && !refresh) {
-            return IndicatorResult.noMore;
-          }
-          return IndicatorResult.success;
-        }
-      } catch (e, t) {
-        ILogger.error("Failed to load blacklist", e, t);
-        IToast.showTop(appLocalizations.loadBlacklistFailed);
+    try {
+      final value =
+          await SettingApi.getBlacklist(offset: refresh ? 0 : blacklist.length);
+      if (!mounted) return IndicatorResult.none;
+      if (value == null) return IndicatorResult.fail;
+      if (value['meta']['status'] != 200) {
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
         return IndicatorResult.fail;
-      } finally {
-        loading = false;
-        if (mounted) setState(() {});
+      } else {
+        var tmp = (value['response']['blogs'] as List)
+            .map((e) => BlacklistItem.fromJson(e))
+            .toList();
+        if (refresh) blacklist.clear();
+        blacklist.addAll(tmp);
+        if (tmp.isEmpty && !refresh) {
+          return IndicatorResult.noMore;
+        }
+        return IndicatorResult.success;
       }
-    });
+    } catch (e, t) {
+      if (!mounted) return IndicatorResult.none;
+      ILogger.error("Failed to load blacklist", e, t);
+      IToast.showTop(appLocalizations.loadBlacklistFailed);
+      return IndicatorResult.fail;
+    } finally {
+      loading = false;
+      if (mounted) setState(() {});
+    }
   }
 
   @override
