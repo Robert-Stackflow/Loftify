@@ -11,6 +11,7 @@ import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/post_batch_download_resolver.dart';
 import 'package:loftify/Widgets/PostItem/general_post_item.dart';
 import 'package:loftify/generated/app_localizations.dart';
+import 'package:loftify/Widgets/Design/loftify_state_view.dart';
 
 class _FakeResolver extends PostBatchDownloadResolver {
   _FakeResolver()
@@ -83,10 +84,20 @@ GeneralPostItem _item(int id) => GeneralPostItem(
 Widget _host(
   Widget child, {
   Locale locale = const Locale('zh'),
+  bool dark = false,
+  double textScale = 1,
 }) =>
     MaterialApp(
       locale: locale,
-      theme: ChewieThemeColorData.defaultLightThemes.first.toThemeData(),
+      theme: (dark
+              ? ChewieThemeColorData.defaultDarkThemes.first
+              : ChewieThemeColorData.defaultLightThemes.first)
+          .toThemeData(),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context)
+            .copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
       navigatorKey: chewieProvider.globalNavigatorKey,
       localizationsDelegates: const [
         ChewieLocalizations.delegate,
@@ -112,6 +123,65 @@ void main() {
       await Hive.openBox(ChewieHiveUtil.settingsBox);
     }
   });
+
+  for (final size in [const Size(280, 480), const Size(720, 320)]) {
+    for (final locale in [
+      const Locale('en'),
+      const Locale('zh'),
+      const Locale('zh', 'TW')
+    ]) {
+      for (final dark in [false, true]) {
+        testWidgets('empty batch can load posts $size $locale dark=$dark',
+            (tester) async {
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final previousBuilder = chewieProvider.stateWidgetBuilder;
+          chewieProvider.stateWidgetBuilder = LoftifyStateView.fromChewie;
+          addTearDown(
+              () => chewieProvider.stateWidgetBuilder = previousBuilder);
+          var loadCount = 0;
+          final manager = _FakeManager();
+          await tester.pumpWidget(_host(
+              BatchDownloadScreen(
+                sourceTitle: 'Empty collection',
+                source: const DownloadSourceDescriptor(
+                    type: DownloadSourceType.collection,
+                    sourceId: '42',
+                    title: 'Empty collection'),
+                initialItems: const [],
+                loadAllItems: () async {
+                  loadCount++;
+                  return [_item(1)];
+                },
+                resolver: _FakeResolver(),
+                manager: manager,
+              ),
+              locale: locale,
+              dark: dark,
+              textScale: 2));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          await tester.ensureVisible(find.byType(CheckboxItem));
+          await tester.pumpAndSettle();
+          await tester.tap(find.byType(CheckboxItem));
+          await tester.pumpAndSettle();
+          expect(loadCount, 1);
+          expect(find.text('Post 1'), findsOneWidget);
+          final l10n = AppLocalizations.of(
+              tester.element(find.byType(BatchDownloadScreen)))!;
+          final download = find.text(l10n.download).last;
+          await tester.ensureVisible(download);
+          await tester.pumpAndSettle();
+          await tester.tap(download);
+          await tester.pumpAndSettle();
+          expect(manager.requests, hasLength(1));
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
+  }
 
   testWidgets('partial selection and select-all loading stay synchronized',
       (tester) async {

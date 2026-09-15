@@ -6,6 +6,7 @@ import '../../Utils/download_task_manager.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/post_batch_download_resolver.dart';
 import '../../Widgets/PostItem/general_post_item.dart';
+import '../../Widgets/Design/loftify_state_view.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import 'download_management_screen.dart';
@@ -185,10 +186,12 @@ class _BatchDownloadScreenState extends State<BatchDownloadScreen> {
         if (_items.isEmpty)
           SliverFillRemaining(
             hasScrollBody: false,
-            child: EmptyPlaceholder(
-              text: appLocalizations.noArticle,
+            child: LoftifyStateView(
+              visual: LoftifyStateVisual.empty,
+              title: appLocalizations.noArticle,
               icon: LoftifyIcons.download,
-              shrinkWrap: false,
+              scrollWhenConstrained: false,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             ),
           )
         else
