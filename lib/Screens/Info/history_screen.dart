@@ -157,7 +157,7 @@ class _HistoryScreenState extends BaseDynamicState<HistoryScreen>
                 ],
               );
             }
-            return _archiveDataList.isNotEmpty && _histories.isNotEmpty
+            return _histories.isNotEmpty
                 ? _buildNineGridGroup(physics)
                 : EmptyPlaceholder(
                     text: appLocalizations.noHistory,
@@ -180,10 +180,10 @@ class _HistoryScreenState extends BaseDynamicState<HistoryScreen>
     List<Widget> widgets = [];
     int startIndex = 0;
     for (var e in _archiveDataList) {
-      if (_histories.length < startIndex) {
+      if (_histories.length <= startIndex) {
         break;
       }
-      if (e.count == 0) continue;
+      if (e.count <= 0) continue;
       int count = e.count;
       if (_histories.length < startIndex + count) {
         count = _histories.length - startIndex;
@@ -197,6 +197,11 @@ class _HistoryScreenState extends BaseDynamicState<HistoryScreen>
       ));
       widgets.add(_buildNineGrid(startIndex, count));
       startIndex += e.count;
+    }
+    // Category metadata may be absent or lag behind the returned posts. Keep
+    // those posts visible without inventing a date/category for them.
+    if (startIndex < _histories.length) {
+      widgets.add(_buildNineGrid(startIndex, _histories.length - startIndex));
     }
     return LoadMoreNotification(
       noMore: _noMore,

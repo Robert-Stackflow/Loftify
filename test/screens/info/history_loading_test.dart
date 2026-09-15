@@ -12,6 +12,8 @@ import 'package:loftify/Utils/lottie_files.dart';
 import 'package:loftify/Utils/request_util.dart';
 import 'package:loftify/Widgets/Design/loftify_state_view.dart';
 import 'package:loftify/generated/app_localizations.dart';
+import 'package:loftify/Widgets/PostItem/general_post_item_builder.dart';
+import 'package:loftify/Widgets/PostItem/loftify_post_archive_grid.dart';
 
 class _Cookies extends Fake implements CookieManager {}
 
@@ -82,6 +84,81 @@ void main() {
 
   void respond(int index, Map<String, dynamic> data) => pending[index]
       .resolve(Response(requestOptions: options[index], data: data));
+  for (final categoryCounts in [
+    <int>[],
+    [1],
+    [2, 1]
+  ]) {
+    testWidgets('history retains all rows with categories $categoryCounts',
+        (tester) async {
+      Map<String, dynamic> post(int id) => {
+            'post': {
+              'id': id,
+              'blogId': 1,
+              'publisherUserId': 1,
+              'type': 1,
+              'title': 'Story $id',
+              'blogInfo': {
+                'blogId': 1,
+                'blogName': 'author',
+                'blogNickName': 'Author',
+                'bigAvaImg': '',
+                'homePageUrl': '',
+                'imageDigitStamp': false,
+                'imageProtected': false,
+                'imageStamp': false,
+                'isOriginalAuthor': false
+              },
+            }
+          };
+      Map<String, dynamic> response(List<int> ids,
+              {bool includeCategories = true}) =>
+          {
+            'meta': {'status': 200},
+            'response': {
+              'count': 3,
+              'recordHistory': 1,
+              if (includeCategories)
+                'archiveData': [
+                  for (var i = 0; i < categoryCounts.length; i++)
+                    {
+                      'count': categoryCounts[i],
+                      'desc': 'Category $i',
+                      'startTime': 0,
+                      'endTime': 1
+                    }
+                ],
+              'items': ids.map(post).toList(),
+            },
+          };
+      List<int> visibleIds() => tester
+          .widgetList<GridPostItemWidget>(find.byType(GridPostItemWidget))
+          .map((item) => item.item.postId)
+          .toList();
+      await mount(tester);
+      respond(0, response([1, 2]));
+      await frames(tester);
+      expect(visibleIds(), [1, 2]);
+      expect(
+          tester
+              .widgetList<LoftifyPostArchiveGrid>(
+                  find.byType(LoftifyPostArchiveGrid))
+              .every((grid) => grid.itemCount > 0),
+          isTrue);
+      final refresh = tester.widget<EasyRefresh>(find.byType(EasyRefresh));
+      final load = Future.sync(refresh.onLoad!);
+      await frames(tester);
+      expect(pending, hasLength(2));
+      respond(1, response([3], includeCategories: false));
+      await frames(tester);
+      expect(await load, IndicatorResult.noMore);
+      expect(visibleIds(), [1, 2, 3]);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 5));
+    });
+  }
+
   for (final timeout in [false, true]) {
     testWidgets(
         'history retries without restarting initial refresh timeout=$timeout',
