@@ -572,8 +572,8 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
           );
         }
         return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: items,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [for (final item in items) Expanded(child: item)],
         );
       }),
     );

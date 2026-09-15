@@ -102,6 +102,8 @@ void main() {
     WidgetTester tester, {
     Size size = const Size(390, 844),
     double textScale = 1,
+    Locale locale = const Locale('en'),
+    bool dark = false,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -111,9 +113,12 @@ void main() {
       ChangeNotifierProvider.value(
         value: controlProvider,
         child: MaterialApp(
-          locale: const Locale('en'),
+          locale: locale,
           navigatorKey: chewieProvider.globalNavigatorKey,
-          theme: ChewieThemeColorData.defaultLightThemes.first.toThemeData(),
+          theme: (dark
+                  ? ChewieThemeColorData.defaultDarkThemes.first
+                  : ChewieThemeColorData.defaultLightThemes.first)
+              .toThemeData(),
           localizationsDelegates: const [
             ChewieLocalizations.delegate,
             ...AppLocalizations.localizationsDelegates,
@@ -138,32 +143,47 @@ void main() {
     expect(options.path, '/v1.1/usercounts.api');
   }
 
-  testWidgets(
-      'loaded long profile and large counts fit a narrow large-text page',
-      (tester) async {
-    await mount(tester, size: const Size(280, 480), textScale: 2);
-    final dynamic state = tester.state(find.byType(MineScreen));
-    state.setState(() {
-      state.blogInfo = _LongProfile();
-      state.meInfoData = _LoadedStatistics();
-    });
-    await tester.pump();
-    expect(find.text(_LongProfile().blogNickName), findsOneWidget);
-    final label = AppLocalizations.of(tester.element(find.byType(MineScreen)))!
-        .downloadManagement;
-    await tester.scrollUntilVisible(find.text(label), 180,
-        scrollable: find.byType(Scrollable).first);
-    await tester.pump(const Duration(seconds: 1));
-    await tester.ensureVisible(find.text(label));
-    await tester.pump(const Duration(seconds: 1));
-    expect(find.text(label).hitTestable(), findsOneWidget);
-    expect(tester.takeException(), isNull);
-    await tester.pumpWidget(const SizedBox.shrink());
-    pending.resolve(Response(requestOptions: options, statusCode: 200, data: {
-      'meta': {'status': 503, 'desc': 'Unavailable'}
-    }));
-    await tester.pump(const Duration(seconds: 5));
-  });
+  for (final locale in [
+    const Locale('en'),
+    const Locale('zh'),
+    const Locale('zh', 'TW')
+  ]) {
+    for (final dark in [false, true]) {
+      for (final size in [const Size(280, 480), const Size(720, 480)]) {
+        for (final scale in [1.0, 2.0]) {
+          testWidgets(
+              'loaded profile fits $size $locale dark=$dark at ${scale}x text',
+              (tester) async {
+            await mount(tester,
+                size: size, textScale: scale, locale: locale, dark: dark);
+            final dynamic state = tester.state(find.byType(MineScreen));
+            state.setState(() {
+              state.blogInfo = _LongProfile();
+              state.meInfoData = _LoadedStatistics();
+            });
+            await tester.pump();
+            expect(find.text(_LongProfile().blogNickName), findsOneWidget);
+            final label =
+                AppLocalizations.of(tester.element(find.byType(MineScreen)))!
+                    .downloadManagement;
+            await tester.scrollUntilVisible(find.text(label), 180,
+                scrollable: find.byType(Scrollable).first);
+            await tester.pump(const Duration(seconds: 1));
+            await tester.ensureVisible(find.text(label));
+            await tester.pump(const Duration(seconds: 1));
+            expect(find.text(label).hitTestable(), findsOneWidget);
+            expect(tester.takeException(), isNull);
+            await tester.pumpWidget(const SizedBox.shrink());
+            pending.resolve(
+                Response(requestOptions: options, statusCode: 200, data: {
+              'meta': {'status': 503, 'desc': 'Unavailable'}
+            }));
+            await tester.pump(const Duration(seconds: 5));
+          });
+        }
+      }
+    }
+  }
 
   testWidgets('narrow large-text profile keeps its actions reachable',
       (tester) async {
