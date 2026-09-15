@@ -167,6 +167,9 @@ class _BatchDownloadScreenState extends State<BatchDownloadScreen> {
         result.queuedCount,
         result.skippedCount,
       ));
+    } catch (error, stackTrace) {
+      ILogger.error('Failed to prepare batch download', error, stackTrace);
+      if (mounted) IToast.showTop(appLocalizations.downloadFailed);
     } finally {
       if (mounted) setState(() => _resolving = false);
     }

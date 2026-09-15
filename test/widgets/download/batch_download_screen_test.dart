@@ -15,6 +15,7 @@ import 'package:loftify/generated/app_localizations.dart';
 import 'package:loftify/Widgets/Design/loftify_state_view.dart';
 
 class _FakeResolver extends PostBatchDownloadResolver {
+  int failuresRemaining = 0;
   _FakeResolver()
       : super(
           detailLoader: (
@@ -26,6 +27,10 @@ class _FakeResolver extends PostBatchDownloadResolver {
 
   @override
   Future<PostDownloadResolution> resolve(GeneralPostItem item) async {
+    if (failuresRemaining > 0) {
+      failuresRemaining--;
+      throw StateError('Unable to resolve resources');
+    }
     return PostDownloadResolution(
       postId: item.postId,
       requests: <DownloadRequest>[
@@ -40,6 +45,7 @@ class _FakeResolver extends PostBatchDownloadResolver {
 }
 
 class _FakeManager extends DownloadTaskManager {
+  int failuresRemaining = 0;
   List<DownloadRequest> requests = <DownloadRequest>[];
   DownloadSourceDescriptor? source;
 
@@ -49,6 +55,10 @@ class _FakeManager extends DownloadTaskManager {
     DownloadSourceDescriptor? source,
     int unavailableCount = 0,
   }) async {
+    if (failuresRemaining > 0) {
+      failuresRemaining--;
+      throw StateError('Unable to persist download queue');
+    }
     this.requests = requests.toList(growable: false);
     this.source = source;
     return DownloadBatchResult(
@@ -250,6 +260,40 @@ void main() {
     expect(manager.requests, hasLength(2));
     expect(tester.takeException(), isNull);
   });
+
+  for (final failure in ['resolver', 'queue']) {
+    testWidgets('batch submission recovers from $failure failures',
+        (tester) async {
+      final manager = _FakeManager()
+        ..failuresRemaining = failure == 'queue' ? 1 : 0;
+      final resolver = _FakeResolver()
+        ..failuresRemaining = failure == 'resolver' ? 1 : 0;
+      await tester.pumpWidget(_host(BatchDownloadScreen(
+        sourceTitle: 'Collection',
+        source: const DownloadSourceDescriptor(
+            type: DownloadSourceType.collection,
+            sourceId: '42',
+            title: 'Collection'),
+        initialItems: [_item(1), _item(2)],
+        manager: manager,
+        resolver: resolver,
+      )));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(CheckboxItem));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('batch-download-primary')));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining('已选择 2 / 2'), findsWidgets);
+      expect(manager.requests, isEmpty);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+      await tester.tap(find.byKey(const Key('batch-download-primary')));
+      await tester.pumpAndSettle();
+      expect(manager.requests, hasLength(2));
+      expect(manager.source?.stableKey, 'collection:42');
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('partial selection and select-all loading stay synchronized',
       (tester) async {
