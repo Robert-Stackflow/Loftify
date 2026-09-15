@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
@@ -182,6 +183,73 @@ void main() {
       }
     }
   }
+
+  testWidgets('load-all failure preserves selection and the next tap retries',
+      (tester) async {
+    var attempts = 0;
+    await tester.pumpWidget(_host(BatchDownloadScreen(
+      sourceTitle: 'Collection',
+      source: const DownloadSourceDescriptor(
+          type: DownloadSourceType.collection,
+          sourceId: '42',
+          title: 'Collection'),
+      initialItems: [_item(1), _item(2)],
+      loadAllItems: () async {
+        if (++attempts == 1) throw StateError('offline');
+        return [_item(1), _item(2), _item(3)];
+      },
+      resolver: _FakeResolver(),
+      manager: _FakeManager(),
+    )));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Post 1'));
+    await tester.tap(find.byType(CheckboxItem));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('已选择 1 / 2'), findsWidgets);
+    await tester.tap(find.byType(CheckboxItem));
+    await tester.pumpAndSettle();
+    expect(attempts, 2);
+    expect(find.textContaining('已选择 3 / 3'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'select-all loads beyond the selected first page and blocks early submission',
+      (tester) async {
+    final loaded = Completer<List<GeneralPostItem>>();
+    final manager = _FakeManager();
+    var attempts = 0;
+    await tester.pumpWidget(_host(BatchDownloadScreen(
+      sourceTitle: 'Collection',
+      source: const DownloadSourceDescriptor(
+          type: DownloadSourceType.collection,
+          sourceId: '42',
+          title: 'Collection'),
+      initialItems: [_item(1)],
+      loadAllItems: () {
+        attempts++;
+        return loaded.future;
+      },
+      resolver: _FakeResolver(),
+      manager: manager,
+    )));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Post 1'));
+    await tester.pump();
+    await tester.tap(find.byType(CheckboxItem));
+    await tester.pump();
+    expect(attempts, 1);
+    await tester.tap(find.byKey(const Key('batch-download-primary')));
+    await tester.pump();
+    expect(manager.requests, isEmpty);
+    loaded.complete([_item(1), _item(2)]);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('已选择 2 / 2'), findsWidgets);
+    await tester.tap(find.byKey(const Key('batch-download-primary')));
+    await tester.pumpAndSettle();
+    expect(manager.requests, hasLength(2));
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('partial selection and select-all loading stay synchronized',
       (tester) async {

@@ -71,7 +71,8 @@ class _BatchDownloadScreenState extends State<BatchDownloadScreen> {
 
   bool get _allSelected {
     final selectable = _selectableItems;
-    return selectable.isNotEmpty &&
+    return _loadedAll &&
+        selectable.isNotEmpty &&
         selectable.every((item) => _selectedPostIds.contains(item.postId));
   }
 
@@ -92,6 +93,7 @@ class _BatchDownloadScreenState extends State<BatchDownloadScreen> {
         });
       } catch (_) {
         if (mounted) IToast.showTop(appLocalizations.loadFailed);
+        return;
       } finally {
         if (mounted) setState(() => _loadingAll = false);
       }
@@ -106,7 +108,7 @@ class _BatchDownloadScreenState extends State<BatchDownloadScreen> {
   }
 
   void _toggleItem(GeneralPostItem item) {
-    if (_resolving || item.type == PostType.invalid) return;
+    if (_resolving || _loadingAll || item.type == PostType.invalid) return;
     setState(() {
       if (!_selectedPostIds.add(item.postId)) {
         _selectedPostIds.remove(item.postId);
@@ -116,7 +118,7 @@ class _BatchDownloadScreenState extends State<BatchDownloadScreen> {
   }
 
   Future<void> _submit() async {
-    if (_resolving) return;
+    if (_resolving || _loadingAll) return;
     final selected = _items
         .where((item) => _selectedPostIds.contains(item.postId))
         .toList(growable: false);
@@ -333,6 +335,7 @@ class _BatchDownloadScreenState extends State<BatchDownloadScreen> {
                     height: 46,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     disabled: _resolving ||
+                        _loadingAll ||
                         (result == null && _selectedPostIds.isEmpty),
                     onPressed: result == null ? _submit : _openDownloadManager,
                   );
