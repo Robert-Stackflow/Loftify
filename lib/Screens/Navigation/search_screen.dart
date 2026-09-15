@@ -419,9 +419,18 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
     );
   }
 
+  double get _rankRowHeight =>
+      max(32, MediaQuery.textScalerOf(context).scale(24));
+
+  List<RankItem> _visibleRankItems(RankListItem item) => item.hotLists
+      .where((entry) => entry.pv != 0 || entry.score != null)
+      .toList();
+
   _buildRankList() {
+    final count = _rankList.fold<int>(
+        0, (count, item) => max(count, _visibleRankItems(item).length));
     return SizedBox(
-      height: 945,
+      height: count * (_rankRowHeight + 16) + 32,
       child: Swiper(
         controller: _swiperController,
         index: _currentTabIndex,
@@ -442,7 +451,7 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
   }
 
   Widget _buildRankListItem(int rankIndex, RankListItem item) {
-    item.hotLists.removeWhere((e) => e.pv == 0 && e.score == null);
+    final hotLists = _visibleRankItems(item);
     return Container(
       margin:
           EdgeInsets.only(right: rankIndex == _rankList.length - 1 ? 0 : 16),
@@ -454,12 +463,13 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
       child: ScrollConfiguration(
         behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
         child: ListView.builder(
+          padding: EdgeInsets.zero,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: item.hotLists.length,
+          itemCount: hotLists.length,
           itemBuilder: (context, index) {
             return ClickableWrapper(
-                child: _buildRankItem(
-                    index, item.rankListType, item.hotLists[index]));
+                child:
+                    _buildRankItem(index, item.rankListType, hotLists[index]));
           },
         ),
       ),
@@ -526,7 +536,7 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
       },
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 8),
-        height: 30,
+        height: _rankRowHeight,
         child: Row(
           children: [
             if (item.icon.isNotEmpty)
@@ -545,7 +555,7 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
               ),
             if (item.icon.isEmpty)
               Container(
-                width: 20,
+                width: max(20, MediaQuery.textScalerOf(context).scale(20)),
                 alignment: Alignment.center,
                 child: Text(
                   "${index + 1}",
@@ -605,9 +615,8 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
                     ),
               ),
             ),
-            const SizedBox(width: 20),
-            Align(
-              alignment: Alignment.centerRight,
+            const SizedBox(width: 8),
+            Flexible(
               child: Text(
                 item.pv != 0
                     ? appLocalizations

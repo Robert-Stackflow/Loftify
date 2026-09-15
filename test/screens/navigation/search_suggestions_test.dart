@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Screens/Navigation/search_screen.dart';
 import 'package:loftify/Utils/request_util.dart';
+import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/generated/app_localizations.dart';
 
 class _UnusedCookieManager extends Fake implements CookieManager {}
@@ -21,6 +22,7 @@ void main() {
     await dir.create(recursive: true);
     Hive.init(dir.absolute.path);
     await Hive.openBox(ChewieHiveUtil.settingsBox);
+    await ChewieHiveUtil.put(HiveUtil.showSearchRankKey, true);
     RequestUtil.cookieManager = _UnusedCookieManager();
   });
   setUp(() {
@@ -315,6 +317,61 @@ void main() {
     expect(pending.length, 2);
     expect(tester.takeException(), isNull);
   });
+
+  for (final locale in [
+    const Locale('en'),
+    const Locale('zh'),
+    const Locale('zh', 'TW')
+  ]) {
+    for (final scale in [1.0, 2.0]) {
+      testWidgets(
+          'all thirty ranking entries remain reachable $locale / $scale',
+          (tester) async {
+        holdInitial = true;
+        await mount(tester,
+            size: const Size(280, 480), textScale: scale, locale: locale);
+        for (final (options, handler) in initial) {
+          handler.resolve(Response(requestOptions: options, data: {
+            'code': 0,
+            'data': options.path.contains('ranklist')
+                ? {
+                    'rankList': [
+                      {
+                        'listName': 'Ranking',
+                        'ruleUrl': '',
+                        'sortNo': 0,
+                        'type': 0,
+                        'hotLists': List.generate(
+                            30,
+                            (index) => {
+                                  'title': 'Ranked entry $index',
+                                  'interactionCount': 0,
+                                  'isAuth': false,
+                                  'isVerify': false,
+                                  'postType': 0,
+                                  'pv': 123456789,
+                                  'resource': 0,
+                                  'trend': 1,
+                                  'url': '',
+                                }),
+                      }
+                    ],
+                  }
+                : <String, dynamic>{},
+          }));
+        }
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+        final state =
+            tester.state<SearchScreenState>(find.byType(SearchScreen));
+        state.getScrollControllers().single.jumpTo(
+            state.getScrollControllers().single.position.maxScrollExtent);
+        await tester.pump();
+        expect(find.text('Ranked entry 29').hitTestable(), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
 
   testWidgets('late suggestion cannot replace the newer query', (tester) async {
     await mount(tester);
