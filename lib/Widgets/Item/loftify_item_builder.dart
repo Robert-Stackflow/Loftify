@@ -907,8 +907,8 @@ class LoftifyItemBuilder {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: SizedBox(
-                    height: 80,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 80),
                     child: Column(
                       mainAxisSize: MainAxisSize.max,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -929,11 +929,11 @@ class LoftifyItemBuilder {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        SizedBox(
-                          height: 20,
-                          child: ListView(
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
-                            children: [
+                            child: Row(children: [
                               ...List.generate(
                                 collection.tags.length,
                                 (index) => Container(
@@ -945,7 +945,7 @@ class LoftifyItemBuilder {
                                   ),
                                 ),
                               ),
-                            ],
+                            ]),
                           ),
                         ),
                       ],
@@ -989,8 +989,8 @@ class LoftifyItemBuilder {
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: SizedBox(
-                    height: 80,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 80),
                     child: Column(
                       mainAxisSize: MainAxisSize.max,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1012,11 +1012,11 @@ class LoftifyItemBuilder {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 1),
-                        SizedBox(
-                          height: 20,
-                          child: ListView(
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
-                            children: [
+                            child: Row(children: [
                               ...List.generate(
                                 grain.tags.length,
                                 (index) => Container(
@@ -1028,7 +1028,7 @@ class LoftifyItemBuilder {
                                   ),
                                 ),
                               ),
-                            ],
+                            ]),
                           ),
                         ),
                       ],
