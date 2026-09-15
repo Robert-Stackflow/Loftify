@@ -14,6 +14,8 @@ class _UnusedCookieManager extends Fake implements CookieManager {}
 
 void main() {
   final pending = <(RequestOptions, RequestInterceptorHandler)>[];
+  final initial = <(RequestOptions, RequestInterceptorHandler)>[];
+  bool holdInitial = false;
   setUpAll(() async {
     final dir = Directory('build/test_hive/search_suggestions');
     await dir.create(recursive: true);
@@ -23,11 +25,15 @@ void main() {
   });
   setUp(() {
     pending.clear();
+    initial.clear();
+    holdInitial = false;
     RequestUtil.instance.dio.interceptors.clear();
     RequestUtil.instance.dio.interceptors.add(
       InterceptorsWrapper(onRequest: (options, handler) {
         if (options.path.endsWith('/sug.json')) {
           pending.add((options, handler));
+        } else if (holdInitial) {
+          initial.add((options, handler));
         } else {
           handler.resolve(Response(requestOptions: options, data: {
             'code': 0,
@@ -90,6 +96,54 @@ void main() {
     expect(find.text('new result'), findsOneWidget);
     expect(find.text('old result'), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('initial requests completing after disposal do not create tabs',
+      (tester) async {
+    holdInitial = true;
+    await mount(tester);
+    expect(initial.length, 2);
+    await tester.pumpWidget(const SizedBox());
+    for (final (options, handler) in initial) {
+      handler.resolve(Response(requestOptions: options, data: {
+        'code': 0,
+        'data': {'guessKeywords': [], 'rankList': [], 'configList': []},
+      }));
+    }
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('failed initial requests can be retried successfully',
+      (tester) async {
+    holdInitial = true;
+    await mount(tester);
+    for (final (options, handler) in initial) {
+      handler.reject(DioException(
+        requestOptions: options,
+        type: DioExceptionType.connectionTimeout,
+      ));
+    }
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tester.takeException(), isNull);
+    final state = tester.state<SearchScreenState>(find.byType(SearchScreen));
+    final retries =
+        Future.wait([state.fetchGuessList(), state.fetchRankList()]);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(initial.length, 4);
+    for (final (options, handler) in initial.skip(2)) {
+      handler.resolve(Response(requestOptions: options, data: {
+        'code': 0,
+        'data': {'guessKeywords': [], 'rankList': [], 'configList': []},
+      }));
+    }
+    await tester.pump(const Duration(milliseconds: 100));
+    await retries;
+    expect(find.byType(SearchScreen), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 5));
   });
   testWidgets('clearing and retyping invalidates even the same query',
       (tester) async {

@@ -49,6 +49,8 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
   List<SearchSuggestItem> _sugList = [];
   int _suggestRequest = 0;
   String _suggestQuery = '';
+  int _guessRequest = 0;
+  int _rankRequest = 0;
   TabController? _tabController;
   final SwiperController _swiperController = SwiperController();
   final ScrollController _scrollController = ScrollController();
@@ -147,25 +149,35 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
     });
   }
 
-  fetchGuessList() {
-    SearchApi.getGuessList().then((value) {
+  Future<void> fetchGuessList() async {
+    final request = ++_guessRequest;
+    bool isCurrent() => mounted && request == _guessRequest;
+    try {
+      final value = await SearchApi.getGuessList();
+      if (!isCurrent()) return;
       if (value['code'] != 0) {
-        IToast.showTop(value['msg']);
+        IToast.showTop(value['msg'] ?? appLocalizations.loadFailed);
       } else {
         if (value['data']['guessKeywords'] != null) {
           _guessList = (value['data']['guessKeywords'] as List)
               .map((e) => GuessKeyword.fromJson(e))
               .toList();
         }
-        if (mounted) setState(() {});
+        setState(() {});
       }
-    });
+    } catch (_) {
+      if (isCurrent()) IToast.showTop(appLocalizations.loadFailed);
+    }
   }
 
-  fetchRankList() {
-    SearchApi.getRankList().then((value) {
+  Future<void> fetchRankList() async {
+    final request = ++_rankRequest;
+    bool isCurrent() => mounted && request == _rankRequest;
+    try {
+      final value = await SearchApi.getRankList();
+      if (!isCurrent()) return;
       if (value['code'] != 0) {
-        IToast.showTop(value['msg']);
+        IToast.showTop(value['msg'] ?? appLocalizations.loadFailed);
       } else {
         if (value['data']['rankList'] != null) {
           _rankList = (value['data']['rankList'] as List)
@@ -178,9 +190,11 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
               .map((e) => ConfigListItem.fromJson(e))
               .toList();
         }
-        if (mounted) setState(() {});
+        setState(() {});
       }
-    });
+    } catch (_) {
+      if (isCurrent()) IToast.showTop(appLocalizations.loadFailed);
+    }
   }
 
   @override
@@ -207,6 +221,7 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
     if (str.isEmpty) return;
     Utils.addSearchHistory(str);
     bool processed = await UriUtil.processUrl(context, str, quiet: true);
+    if (!mounted) return;
     if (!processed) {
       RouteUtil.pushPanelCupertinoRoute(
           context, SearchResultScreen(searchKey: str));
