@@ -11,6 +11,7 @@ import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
 import '../../Widgets/PostItem/loftify_post_archive_grid.dart';
 import '../../Widgets/loftify_icons.dart';
+import '../../Widgets/Design/loftify_state_view.dart';
 import '../../l10n/l10n.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -33,61 +34,75 @@ class _HistoryScreenState extends BaseDynamicState<HistoryScreen>
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
-  InitPhase _initPhase = InitPhase.successful;
+  InitPhase _initPhase = InitPhase.connecting;
+
+  @override
+  void dispose() {
+    _refreshController.dispose();
+    super.dispose();
+  }
 
   _fetchHistory({bool refresh = false}) async {
-    if (_loading) return;
+    if (_loading || !mounted) return IndicatorResult.none;
     if (refresh) _noMore = false;
     _loading = true;
     int offset = refresh ? 0 : _histories.length;
-    if (_initPhase != InitPhase.successful) {
+    if (_histories.isEmpty) {
       _initPhase = InitPhase.connecting;
       setState(() {});
     }
-    return await HiveUtil.getUserInfo().then((blogInfo) async {
-      String domain = Utils.getBlogDomain(blogInfo?.blogName);
-      return await UserApi.getHistoryList(blogDomain: domain, offset: offset)
-          .then((value) {
-        try {
-          if (value['meta']['status'] != 200) {
-            IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-            return IndicatorResult.fail;
-          } else {
-            _total = value['response']['count'];
-            _recordHistory = value['response']['recordHistory'];
-            if (value['response']['archiveData'] != null) {
-              _archiveDataList.clear();
-              List<dynamic> t = value['response']['archiveData'];
-              for (var e in t) {
-                _archiveDataList.add(ArchiveData.fromJson(e));
-              }
-            }
-            List<dynamic> t = value['response']['items'];
-            if (refresh) _histories.clear();
-            for (var e in t) {
-              if (e != null) {
-                _histories.add(PostDetailData.fromJson(e));
-              }
-            }
-            _initPhase = InitPhase.successful;
-            if (_histories.length >= _total && !refresh) {
-              _noMore = true;
-              return IndicatorResult.noMore;
-            } else {
-              return IndicatorResult.success;
-            }
-          }
-        } catch (e, t) {
-          _initPhase = InitPhase.failed;
-          ILogger.error("Failed to load history", e, t);
-          if (mounted) IToast.showTop(appLocalizations.loadFailed);
-          return IndicatorResult.fail;
-        } finally {
-          if (mounted) setState(() {});
-          _loading = false;
+    try {
+      final blogInfo = await HiveUtil.getUserInfo();
+      if (!mounted) return IndicatorResult.none;
+      if (blogInfo == null) {
+        if (_histories.isEmpty) _initPhase = InitPhase.failed;
+        return IndicatorResult.fail;
+      }
+      String domain = Utils.getBlogDomain(blogInfo.blogName);
+      final value =
+          await UserApi.getHistoryList(blogDomain: domain, offset: offset);
+      if (!mounted) return IndicatorResult.none;
+      if (value['meta']['status'] != 200) {
+        if (_histories.isEmpty) _initPhase = InitPhase.failed;
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+        return IndicatorResult.fail;
+      } else {
+        final int total = value['response']['count'];
+        final int recordHistory = value['response']['recordHistory'];
+        final archives = (value['response']['archiveData'] as List?)
+            ?.map((e) => ArchiveData.fromJson(e))
+            .toList();
+        final posts = (value['response']['items'] as List)
+            .where((e) => e != null)
+            .map((e) => PostDetailData.fromJson(e))
+            .toList();
+        _total = total;
+        _recordHistory = recordHistory;
+        if (archives != null) {
+          _archiveDataList
+            ..clear()
+            ..addAll(archives);
         }
-      });
-    });
+        if (refresh) _histories.clear();
+        _histories.addAll(posts);
+        _initPhase = InitPhase.successful;
+        if (_histories.length >= _total && !refresh) {
+          _noMore = true;
+          return IndicatorResult.noMore;
+        } else {
+          return IndicatorResult.success;
+        }
+      }
+    } catch (e, t) {
+      if (!mounted) return IndicatorResult.none;
+      if (_histories.isEmpty) _initPhase = InitPhase.failed;
+      ILogger.error("Failed to load history", e, t);
+      if (mounted) IToast.showTop(appLocalizations.loadFailed);
+      return IndicatorResult.fail;
+    } finally {
+      if (mounted) setState(() {});
+      _loading = false;
+    }
   }
 
   _onRefresh() async {
@@ -108,43 +123,57 @@ class _HistoryScreenState extends BaseDynamicState<HistoryScreen>
     );
   }
 
-  _buildBody() {
-    switch (_initPhase) {
-      case InitPhase.connecting:
-        return const LoadingWidget(background: Colors.transparent);
-      case InitPhase.failed:
-        return CustomErrorWidget(
-          onTap: _onRefresh,
-        );
-      case InitPhase.successful:
-        return Stack(
-          children: [
-            EasyRefresh.builder(
-              refreshOnStart: true,
-              controller: _refreshController,
-              onRefresh: _onRefresh,
-              onLoad: _onLoad,
-              triggerAxis: Axis.vertical,
-              childBuilder: (context, physics) {
-                return _archiveDataList.isNotEmpty && _histories.isNotEmpty
-                    ? _buildNineGridGroup(physics)
-                    : EmptyPlaceholder(
-                        text: appLocalizations.noHistory,
-                        physics: physics,
-                        shrinkWrap: false,
-                      );
-              },
-            ),
-            Positioned(
-              right: ResponsiveUtil.isLandscapeLayout() ? 16 : 12,
-              bottom: ResponsiveUtil.isLandscapeLayout() ? 16 : 76,
-              child: _buildFloatingButtons(),
-            ),
-          ],
-        );
-      default:
-        return Container();
-    }
+  Widget _buildBody() {
+    return Stack(
+      children: [
+        EasyRefresh.builder(
+          refreshOnStart: true,
+          controller: _refreshController,
+          onRefresh: _onRefresh,
+          onLoad: _onLoad,
+          triggerAxis: Axis.vertical,
+          childBuilder: (context, physics) {
+            if (_initPhase != InitPhase.successful) {
+              final loading = _initPhase == InitPhase.connecting;
+              return CustomScrollView(
+                physics: physics,
+                slivers: [
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: LoftifyStateView(
+                      visual: loading
+                          ? LoftifyStateVisual.loading
+                          : LoftifyStateVisual.error,
+                      title: loading
+                          ? appLocalizations.loading
+                          : appLocalizations.loadFailed,
+                      scrollWhenConstrained: false,
+                      actionLabel: loading ? null : chewieLocalizations.retry,
+                      onAction: loading
+                          ? null
+                          : () => _refreshController.callRefresh(),
+                    ),
+                  )
+                ],
+              );
+            }
+            return _archiveDataList.isNotEmpty && _histories.isNotEmpty
+                ? _buildNineGridGroup(physics)
+                : EmptyPlaceholder(
+                    text: appLocalizations.noHistory,
+                    physics: physics,
+                    shrinkWrap: false,
+                  );
+          },
+        ),
+        if (_initPhase == InitPhase.successful)
+          Positioned(
+            right: ResponsiveUtil.isLandscapeLayout() ? 16 : 12,
+            bottom: ResponsiveUtil.isLandscapeLayout() ? 16 : 76,
+            child: _buildFloatingButtons(),
+          ),
+      ],
+    );
   }
 
   Widget _buildNineGridGroup(ScrollPhysics physics) {
