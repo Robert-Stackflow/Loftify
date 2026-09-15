@@ -109,6 +109,66 @@ void main() {
 
   void respond(int index, Map<String, dynamic> data) => pending[index]
       .resolve(Response(requestOptions: options[index], data: data));
+  testWidgets('long history builds only nearby grid cells', (tester) async {
+    await mount(tester, size: const Size(280, 480), textScale: 2);
+    respond(0, {
+      'meta': {'status': 200},
+      'response': {
+        'count': 300,
+        'recordHistory': 1,
+        'archiveData': [
+          {
+            'count': 300,
+            'desc': 'September 2026 previously viewed creative works',
+            'startTime': 0,
+            'endTime': 1
+          },
+        ],
+        'items': [
+          for (var id = 1; id <= 300; id++)
+            {
+              'post': {
+                'id': id,
+                'blogId': 1,
+                'publisherUserId': 1,
+                'type': 1,
+                'title': 'Story $id',
+                'blogInfo': {
+                  'blogId': 1,
+                  'blogName': 'author',
+                  'blogNickName': 'Author',
+                  'bigAvaImg': '',
+                  'homePageUrl': '',
+                  'imageDigitStamp': false,
+                  'imageProtected': false,
+                  'imageStamp': false,
+                  'isOriginalAuthor': false,
+                },
+              }
+            }
+        ],
+      },
+    });
+    await frames(tester);
+    final cells = find.byType(GridPostItemWidget);
+    expect(cells.evaluate().length, greaterThan(0));
+    expect(cells.evaluate().length, lessThan(60));
+    expect(tester.takeException(), isNull);
+    final last = find.byWidgetPredicate(
+        (widget) => widget is GridPostItemWidget && widget.item.postId == 300);
+    await tester.scrollUntilVisible(last, 800,
+        scrollable: find
+            .descendant(
+                of: find.byType(EasyRefresh), matching: find.byType(Scrollable))
+            .first,
+        maxScrolls: 50);
+    await frames(tester);
+    expect(last, findsOneWidget);
+    expect(cells.evaluate().length, lessThan(60));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 5));
+  });
   for (final size in [const Size(280, 480), const Size(720, 320)]) {
     for (final locale in [
       const Locale('en'),
@@ -211,8 +271,8 @@ void main() {
       expect(visibleIds(), [1, 2]);
       expect(
           tester
-              .widgetList<LoftifyPostArchiveGrid>(
-                  find.byType(LoftifyPostArchiveGrid))
+              .widgetList<LoftifyPostArchiveSliverGrid>(
+                  find.byType(LoftifyPostArchiveSliverGrid))
               .every((grid) => grid.itemCount > 0),
           isTrue);
       final refresh = tester.widget<EasyRefresh>(find.byType(EasyRefresh));
@@ -332,8 +392,8 @@ void main() {
       await frames(tester);
       expect(
           tester
-              .widgetList<LoftifyPostArchiveGrid>(
-                  find.byType(LoftifyPostArchiveGrid))
+              .widgetList<LoftifyPostArchiveSliverGrid>(
+                  find.byType(LoftifyPostArchiveSliverGrid))
               .map((grid) => grid.itemCount),
           [2]);
       expect(pending, hasLength(1));

@@ -188,13 +188,14 @@ class _HistoryScreenState extends BaseDynamicState<HistoryScreen>
       if (_histories.length < startIndex + count) {
         count = _histories.length - startIndex;
       }
-      widgets.add(ItemBuilder.buildTitle(
+      widgets.add(SliverToBoxAdapter(
+          child: ItemBuilder.buildTitle(
         context,
         title: appLocalizations.descriptionWithPostCount(
             e.desc, e.count.toString()),
         topMargin: 16,
         bottomMargin: 0,
-      ));
+      )));
       widgets.add(_buildNineGrid(startIndex, count));
       startIndex += e.count;
     }
@@ -206,18 +207,21 @@ class _HistoryScreenState extends BaseDynamicState<HistoryScreen>
     return LoadMoreNotification(
       noMore: _noMore,
       onLoad: _onLoad,
-      child: ListView(
+      child: CustomScrollView(
         physics: physics,
-        padding: const EdgeInsets.only(bottom: 20),
-        children: widgets,
+        slivers: [
+          ...widgets,
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
+        ],
       ),
     );
   }
 
   Widget _buildNineGrid(int startIndex, int count) {
-    return LoftifyPostArchiveGrid(
+    return LoftifyPostArchiveSliverGrid(
       padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
       itemCount: count,
+      addAutomaticKeepAlives: false,
       itemBuilder: (context, index, tileExtent) {
         return CommonInfoItemBuilder.buildNineGridPostItem(
           context,
