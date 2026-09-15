@@ -54,6 +54,7 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
   TabController? _tabController;
   final SwiperController _swiperController = SwiperController();
   final ScrollController _scrollController = ScrollController();
+  final ScrollController _suggestScrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   final List<String> _tabLabelList = [];
   final List<String> _tabIdList = [];
@@ -80,7 +81,7 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
       if (query == _suggestQuery) return;
       _suggestQuery = query;
       final request = ++_suggestRequest;
-      setState(() => _sugList = []);
+      _setSuggestions([]);
       if (query.isNotEmpty) _performSuggest(query, request);
     });
     if (ResponsiveUtil.isDesktop()) {
@@ -137,6 +138,7 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
     _tabController?.dispose();
     _swiperController.dispose();
     _scrollController.dispose();
+    _suggestScrollController.dispose();
     _searchController.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -244,10 +246,20 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
         final items = (value['data']?['items'] as List? ?? [])
             .map((e) => SearchSuggestItem.fromJson(e))
             .toList();
-        setState(() => _sugList = items);
+        _setSuggestions(items);
       }
     } catch (_) {
       if (isCurrent()) IToast.showTop(appLocalizations.loadFailed);
+    }
+  }
+
+  void _setSuggestions(List<SearchSuggestItem> items) {
+    final visibilityChanged = _sugList.isNotEmpty != items.isNotEmpty;
+    setState(() => _sugList = items);
+    if (visibilityChanged) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) panelScreenState?.refreshScrollControllers();
+      });
     }
   }
 
@@ -256,6 +268,7 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
       color: ChewieTheme.getBackground(context),
       padding: const EdgeInsets.only(top: 8),
       child: ListView.builder(
+        controller: _suggestScrollController,
         itemCount: _sugList.length,
         itemBuilder: (context, index) {
           return ClickableWrapper(
@@ -731,6 +744,8 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
 
   @override
   List<ScrollController> getScrollControllers() {
-    return [_scrollController];
+    // The covered landing list must not counteract suggestion scroll events
+    // when the navigation bar changes the viewport padding.
+    return [_sugList.isNotEmpty ? _suggestScrollController : _scrollController];
   }
 }

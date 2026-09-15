@@ -202,6 +202,72 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('suggestion scrolling reaches the navigation scroll listeners',
+      (tester) async {
+    await mount(tester);
+    await type(tester, 'art');
+    final (options, handler) = pending.single;
+    handler.resolve(Response(requestOptions: options, data: {
+      'code': 0,
+      'data': {
+        'items': List.generate(
+            30,
+            (index) => {
+                  'type': 1,
+                  'tagInfo': {
+                    'tagName': 'Suggestion $index',
+                    'subscribed': false,
+                    'recommendReport': {'algInfo': '', 'recId': ''},
+                  },
+                })
+      },
+    }));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    final state = tester.state<SearchScreenState>(find.byType(SearchScreen));
+    var scrollUpdates = 0;
+    void onScroll() => scrollUpdates++;
+    final controllers = state.getScrollControllers();
+    expect(controllers, hasLength(1));
+    final navigation = OverlayEntry(
+        builder: (_) => Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: ScrollToHide.multi(
+                scrollControllers: controllers,
+                hideDirection: Axis.vertical,
+                child:
+                    const SizedBox(height: 50, child: Text('Navigation test')),
+              ),
+            ));
+    Overlay.of(tester.element(find.byType(SearchScreen))).insert(navigation);
+    await tester.pump();
+    for (final controller in controllers) {
+      controller.addListener(onScroll);
+    }
+    await tester.drag(find.text('Suggestion 1'), const Offset(0, -350));
+    await tester.pump(const Duration(seconds: 1));
+    expect(scrollUpdates, greaterThan(0));
+    final visibility =
+        tester.state<ScrollToHideState>(find.byType(ScrollToHide));
+    expect(visibility.isShown, isFalse);
+    await tester.drag(find.byType(ListView), const Offset(0, 100));
+    await tester.pump(const Duration(seconds: 1));
+    expect(visibility.isShown, isTrue);
+    for (final controller in controllers) {
+      controller.removeListener(onScroll);
+    }
+    navigation.remove();
+    await tester.pump();
+    navigation.dispose();
+    await type(tester, '');
+    expect(state.getScrollControllers(), hasLength(1));
+    expect(
+        state.getScrollControllers().single, isNot(same(controllers.single)));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('late suggestion cannot replace the newer query', (tester) async {
     await mount(tester);
     await type(tester, 'old');
