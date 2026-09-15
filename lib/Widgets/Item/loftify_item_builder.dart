@@ -1046,6 +1046,9 @@ class LoftifyItemBuilder {
   static buildUserRow(BuildContext context, SearchBlogData blog,
       {Function()? onTap}) {
     final theme = Theme.of(context);
+    final metadataStyle = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
     return Material(
       color: theme.colorScheme.surface,
       shape: RoundedRectangleBorder(
@@ -1083,13 +1086,30 @@ class LoftifyItemBuilder {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "ID: ${blog.blogInfo.blogName}${blog.blogCount != null && blog.blogCount!.publicPostCount > 0 ? "   ${appLocalizations.article}: ${blog.blogCount!.publicPostCount}" : ""}${blog.blogCount != null && blog.blogCount!.followerCount > 0 ? "   ${appLocalizations.follower}: ${blog.blogCount!.followerCount}" : ""}",
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      'ID: ${blog.blogInfo.blogName}',
+                      style: metadataStyle,
                     ),
+                    if (blog.blogCount != null &&
+                        (blog.blogCount!.publicPostCount > 0 ||
+                            blog.blogCount!.followerCount > 0)) ...[
+                      const SizedBox(height: 4),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 4,
+                        children: [
+                          if (blog.blogCount!.publicPostCount > 0)
+                            Text(
+                              '${appLocalizations.article}: ${blog.blogCount!.publicPostCount}',
+                              style: metadataStyle,
+                            ),
+                          if (blog.blogCount!.followerCount > 0)
+                            Text(
+                              '${appLocalizations.follower}: ${blog.blogCount!.followerCount}',
+                              style: metadataStyle,
+                            ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

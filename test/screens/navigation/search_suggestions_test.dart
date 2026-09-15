@@ -109,6 +109,52 @@ void main() {
     const Locale('zh'),
     const Locale('zh', 'TW')
   ]) {
+    for (final width in [280.0, 720.0]) {
+      for (final scale in [1.0, 2.0]) {
+        testWidgets(
+            'user statistics remain visible at $width / $scale / $locale',
+            (tester) async {
+          await mount(tester,
+              size: Size(width, 480), textScale: scale, locale: locale);
+          await type(tester, 'author');
+          final (options, handler) = pending.single;
+          handler.resolve(Response(requestOptions: options, data: {
+            'code': 0,
+            'data': {
+              'items': [
+                {
+                  'type': 2,
+                  'blogData': {
+                    'blogInfo': {
+                      'blogName': 'a-very-long-creative-author-identifier',
+                      'blogNickName':
+                          'A creative author with a very long display name',
+                    },
+                    'blogCount': {
+                      'publicPostCount': 123456789,
+                      'followerCount': 987654321
+                    },
+                    'recommendReport': {'algInfo': '', 'recId': ''},
+                  },
+                }
+              ]
+            },
+          }));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 100));
+          final l10n =
+              AppLocalizations.of(tester.element(find.byType(SearchScreen)))!;
+          final followers = find.text('${l10n.follower}: 987654321');
+          final posts = find.text('${l10n.article}: 123456789');
+          expect(posts, findsOneWidget);
+          expect(followers, findsOneWidget);
+          await tester.ensureVisible(followers);
+          await tester.pump();
+          expect(followers.hitTestable(), findsOneWidget);
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
     testWidgets('ranked subscribed tag fits narrow large text in $locale',
         (tester) async {
       await mount(tester,
