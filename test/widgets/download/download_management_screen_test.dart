@@ -11,6 +11,7 @@ import 'package:loftify/Screens/Download/download_group_detail_screen.dart';
 import 'package:loftify/Screens/Download/download_management_screen.dart';
 import 'package:loftify/Utils/download_task_manager.dart';
 import 'package:loftify/generated/app_localizations.dart';
+import 'package:loftify/Widgets/Design/loftify_state_view.dart';
 
 class _MemoryStore implements DownloadTaskStore {
   List<DownloadTask> tasks = <DownloadTask>[];
@@ -50,10 +51,20 @@ class _PendingExecutor extends DownloadTaskExecutor {
 Widget _host(
   Widget child, {
   Locale locale = const Locale('zh'),
+  bool dark = false,
+  double textScale = 1,
 }) =>
     MaterialApp(
       locale: locale,
-      theme: ChewieThemeColorData.defaultLightThemes.first.toThemeData(),
+      theme: (dark
+              ? ChewieThemeColorData.defaultDarkThemes.first
+              : ChewieThemeColorData.defaultLightThemes.first)
+          .toThemeData(),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context)
+            .copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
       localizationsDelegates: const [
         ChewieLocalizations.delegate,
         ...AppLocalizations.localizationsDelegates,
@@ -78,6 +89,54 @@ void main() {
       await Hive.openBox(ChewieHiveUtil.settingsBox);
     }
   });
+
+  for (final detail in [false, true]) {
+    for (final size in [const Size(280, 320), const Size(720, 320)]) {
+      for (final locale in [
+        const Locale('en'),
+        const Locale('zh'),
+        const Locale('zh', 'TW')
+      ]) {
+        for (final dark in [false, true]) {
+          testWidgets(
+              'download empty state is initially visible detail=$detail $size $locale dark=$dark',
+              (tester) async {
+            tester.view.physicalSize = size;
+            tester.view.devicePixelRatio = 1;
+            addTearDown(tester.view.resetPhysicalSize);
+            addTearDown(tester.view.resetDevicePixelRatio);
+            final previousBuilder = chewieProvider.stateWidgetBuilder;
+            chewieProvider.stateWidgetBuilder = LoftifyStateView.fromChewie;
+            addTearDown(
+                () => chewieProvider.stateWidgetBuilder = previousBuilder);
+            final manager = DownloadTaskManager(
+                store: _MemoryStore(), executor: _PendingExecutor());
+            await manager.initialize();
+            await tester.pumpWidget(_host(
+              detail
+                  ? DownloadGroupDetailScreen(
+                      groupId: 'missing', manager: manager)
+                  : DownloadManagementScreen(manager: manager),
+              locale: locale,
+              dark: dark,
+              textScale: 2,
+            ));
+            await tester.pumpAndSettle();
+            final state =
+                tester.widget<LoftifyStateView>(find.byType(LoftifyStateView));
+            expect(state.visual, LoftifyStateVisual.empty);
+            final label = find.text(state.title);
+            expect(
+                tester.getRect(label).bottom, lessThanOrEqualTo(size.height));
+            expect(label.hitTestable(), findsOneWidget);
+            expect(tester.takeException(), isNull);
+            await tester.pumpWidget(const SizedBox());
+            manager.dispose();
+          });
+        }
+      }
+    }
+  }
 
   testWidgets('download manager shows one parent instead of flat child tasks',
       (tester) async {

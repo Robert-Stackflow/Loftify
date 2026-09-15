@@ -58,7 +58,7 @@ class _DownloadGroupDetailScreenState extends State<DownloadGroupDetailScreen> {
                   text: appLocalizations.noDownloadTasks,
                   icon: LoftifyIcons.download,
                   shrinkWrap: false,
-                  topPadding: 120,
+                  topPadding: 0,
                 )
               : _buildBody(snapshot),
         );
