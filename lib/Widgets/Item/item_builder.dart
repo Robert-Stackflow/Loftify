@@ -704,28 +704,27 @@ class ItemBuilder {
           child: Column(
             children: [
               count != null
-                  ? Row(
-                      children: [
-                        Text(
-                          countWithScale['count'],
-                          style: Theme.of(context).textTheme.titleLarge?.apply(
-                              color: countColor,
-                              fontWeightDelta: countFontWeightDelta),
-                        ),
-                        if (countWithScale.containsKey("scale"))
-                          const SizedBox(width: 2),
-                        if (countWithScale.containsKey("scale"))
-                          Text(
-                            countWithScale['scale'],
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall
-                                ?.apply(
-                                    fontSizeDelta: -2,
-                                    color: countColor,
-                                    fontWeightDelta: countFontWeightDelta),
-                          ),
-                      ],
+                  ? Text.rich(
+                      TextSpan(
+                        text: countWithScale['count'],
+                        children: [
+                          if (countWithScale.containsKey('scale'))
+                            TextSpan(
+                              text: '\u2009${countWithScale['scale']}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall
+                                  ?.apply(
+                                      fontSizeDelta: -2,
+                                      color: countColor,
+                                      fontWeightDelta: countFontWeightDelta),
+                            ),
+                        ],
+                      ),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleLarge?.apply(
+                          color: countColor,
+                          fontWeightDelta: countFontWeightDelta),
                     )
                   : Text(
                       "-",
@@ -736,6 +735,7 @@ class ItemBuilder {
               const SizedBox(height: 4),
               Text(
                 title,
+                textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.labelMedium?.apply(
                       fontSizeDelta: -1,
                       color: labelColor,

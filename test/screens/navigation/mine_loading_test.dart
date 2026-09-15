@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Screens/Navigation/mine_screen.dart';
+import 'package:loftify/Models/account_response.dart';
 import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/cloud_control_provider.dart';
 import 'package:loftify/Utils/request_util.dart';
@@ -17,6 +18,41 @@ import 'package:provider/provider.dart';
 // RequestUtil requires a cookie interceptor at construction. These tests replace
 // all interceptors before making requests, so no cookie storage is used.
 class _UnusedCookieManager extends Fake implements CookieManager {}
+
+class _LongProfile extends Fake implements FullBlogInfo {
+  @override
+  String get blogNickName =>
+      'A very long author name with several creative interests';
+  @override
+  String get blogName => 'a-very-long-author-id-with-many-characters';
+  @override
+  String get bigAvaImg => '';
+  @override
+  String get avatarBoxImage => '';
+}
+
+class _LargeCounts extends Fake implements MeInfoCount {
+  @override
+  int get hotCount => 987654321;
+}
+
+class _ProfileStatistics extends Fake implements MeInfoBlogInfo {
+  @override
+  int get attentionCount => 123456789;
+  @override
+  int get followerCount => 987654321;
+  @override
+  int get postCount => 123456789;
+  @override
+  MeInfoCount get hot => _LargeCounts();
+}
+
+class _LoadedStatistics extends Fake implements MeInfoData {
+  @override
+  MeInfoBlogInfo get blogInfo => _ProfileStatistics();
+  @override
+  int get collectionCount => 123456789;
+}
 
 void main() {
   late RequestInterceptorHandler pending;
@@ -101,6 +137,33 @@ void main() {
     expect(requests, 1);
     expect(options.path, '/v1.1/usercounts.api');
   }
+
+  testWidgets(
+      'loaded long profile and large counts fit a narrow large-text page',
+      (tester) async {
+    await mount(tester, size: const Size(280, 480), textScale: 2);
+    final dynamic state = tester.state(find.byType(MineScreen));
+    state.setState(() {
+      state.blogInfo = _LongProfile();
+      state.meInfoData = _LoadedStatistics();
+    });
+    await tester.pump();
+    expect(find.text(_LongProfile().blogNickName), findsOneWidget);
+    final label = AppLocalizations.of(tester.element(find.byType(MineScreen)))!
+        .downloadManagement;
+    await tester.scrollUntilVisible(find.text(label), 180,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pump(const Duration(seconds: 1));
+    await tester.ensureVisible(find.text(label));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text(label).hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    pending.resolve(Response(requestOptions: options, statusCode: 200, data: {
+      'meta': {'status': 503, 'desc': 'Unavailable'}
+    }));
+    await tester.pump(const Duration(seconds: 5));
+  });
 
   testWidgets('narrow large-text profile keeps its actions reachable',
       (tester) async {
