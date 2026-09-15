@@ -10,7 +10,9 @@ import 'package:loftify/Screens/Info/system_notice_screen.dart';
 import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/request_util.dart';
+import 'package:loftify/Utils/lottie_files.dart';
 import 'package:loftify/generated/app_localizations.dart';
+import 'package:loftify/Widgets/Design/loftify_state_view.dart';
 
 class _UnusedCookieManager extends Fake implements CookieManager {}
 
@@ -25,6 +27,24 @@ void noticeLoadingTests(String tab, {bool missingCache = false}) {
     await Hive.openBox(ChewieHiveUtil.settingsBox);
     RequestUtil.cookieManager = _UnusedCookieManager();
     appProvider.token = 'test-account';
+    // Match the application's refresh indicators instead of the package's
+    // text-based defaults, which are not used by Loftify.
+    EasyRefresh.defaultHeaderBuilder = () => LottieCupertinoHeader(
+          backgroundColor: Colors.transparent,
+          indicator: LottieFiles.buildLoadingAnimation(40, false),
+          hapticFeedback: true,
+          triggerOffset: 56,
+          maxOverOffset: 84,
+          radius: 20,
+        );
+    EasyRefresh.defaultFooterBuilder = () => LottieCupertinoFooter(
+          backgroundColor: Colors.transparent,
+          indicator: LottieFiles.buildLoadingAnimation(36, false),
+          triggerOffset: 52,
+          maxOverOffset: 76,
+          infiniteOffset: 240,
+          radius: 18,
+        );
   });
 
   Future<void> pumpFrames(WidgetTester tester) async {
@@ -33,14 +53,27 @@ void noticeLoadingTests(String tab, {bool missingCache = false}) {
     }
   }
 
-  Future<void> mount(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(390, 844);
+  Future<void> mount(
+    WidgetTester tester, {
+    Size size = const Size(390, 844),
+    double textScale = 1,
+    bool dark = false,
+  }) async {
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(MaterialApp(
       navigatorKey: chewieProvider.globalNavigatorKey,
-      theme: ChewieThemeColorData.defaultLightThemes.first.toThemeData(),
+      theme: (dark
+              ? ChewieThemeColorData.defaultDarkThemes.first
+              : ChewieThemeColorData.defaultLightThemes.first)
+          .toThemeData(),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context)
+            .copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
       localizationsDelegates: const [
         ChewieLocalizations.delegate,
         ...AppLocalizations.localizationsDelegates,
@@ -97,6 +130,58 @@ void noticeLoadingTests(String tab, {bool missingCache = false}) {
         await tester.pump(const Duration(seconds: 5));
       });
       return;
+    }
+
+    for (final size in [const Size(280, 320), const Size(720, 360)]) {
+      for (final dark in [false, true]) {
+        testWidgets('loading failure retry and empty fit $size dark=$dark',
+            (tester) async {
+          final pending = <RequestInterceptorHandler>[];
+          final options = <RequestOptions>[];
+          RequestUtil.instance.dio.interceptors.clear();
+          RequestUtil.instance.dio.interceptors.add(InterceptorsWrapper(
+            onRequest: (request, handler) {
+              options.add(request);
+              pending.add(handler);
+            },
+          ));
+          await mount(tester, size: size, textScale: 2, dark: dark);
+          expect(
+              tester
+                  .widget<LoftifyStateView>(find.byType(LoftifyStateView))
+                  .visual,
+              LoftifyStateVisual.loading);
+          pending.first.resolve(Response(requestOptions: options.first, data: {
+            'meta': {'status': 503, 'desc': 'Unavailable'},
+          }));
+          await pumpFrames(tester);
+          final error =
+              tester.widget<LoftifyStateView>(find.byType(LoftifyStateView));
+          expect(error.visual, LoftifyStateVisual.error);
+          expect(find.byType(SystemNoticeTabPlaceholder), findsNothing);
+          final retry = find.text(error.actionLabel!);
+          await tester.ensureVisible(retry);
+          await pumpFrames(tester);
+          expect(retry.hitTestable(), findsOneWidget);
+          await tester.tap(retry);
+          await pumpFrames(tester);
+          expect(pending.length, 2);
+          expect(
+              tester
+                  .widget<LoftifyStateView>(find.byType(LoftifyStateView))
+                  .visual,
+              LoftifyStateVisual.loading);
+          pending.last.resolve(Response(requestOptions: options.last, data: {
+            'meta': {'status': 200},
+            'response': [],
+          }));
+          await pumpFrames(tester);
+          expect(find.byType(SystemNoticeTabPlaceholder), findsOneWidget);
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox());
+          await tester.pump(const Duration(seconds: 5));
+        });
+      }
     }
 
     testWidgets('timeout releases loading lock and allows refresh',

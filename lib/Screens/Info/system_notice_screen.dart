@@ -7,6 +7,7 @@ import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Utils/hive_util.dart';
 
 import '../../Utils/tab_state_util.dart';
+import '../../Widgets/Design/loftify_state_view.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../l10n/l10n.dart';
 
@@ -206,6 +207,41 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
   final List<MessageItem> _collectionMessages = [];
   final List<MessageItem> _otherMessages = [];
   final Set<String> _loadingTabs = <String>{};
+  final Set<String> _completedTabs = <String>{};
+  final Set<String> _failedTabs = <String>{};
+
+  IndicatorResult _noticeFailure(String key) {
+    _failedTabs.add(key);
+    return IndicatorResult.fail;
+  }
+
+  Widget _buildPlaceholder(int index) {
+    final key = _tabIdList[index];
+    final loading = _loadingTabs.contains(key) || !_completedTabs.contains(key);
+    if (!loading && !_failedTabs.contains(key)) {
+      return SystemNoticeTabPlaceholder(text: appLocalizations.noNotice);
+    }
+    return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: LoftifyStateView(
+            visual:
+                loading ? LoftifyStateVisual.loading : LoftifyStateVisual.error,
+            title: loading
+                ? appLocalizations.loading
+                : appLocalizations.loadFailed,
+            scrollWhenConstrained: false,
+            actionLabel: loading ? null : chewieLocalizations.retry,
+            onAction:
+                loading ? null : () => _refreshControllers[index].callRefresh(),
+          ),
+        ),
+      ],
+    );
+  }
+
   // A refresh supersedes in-flight pagination; only its own request may update
   // the list or release the tab's loading lock.
   final Map<String, int> _requestVersions = <String, int>{};
@@ -339,6 +375,8 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       return IndicatorResult.none;
     }
     _loadingTabs.add(loadingKey);
+    _failedTabs.remove(loadingKey);
+    if (mounted) setState(() {});
     final version = (_requestVersions[loadingKey] ?? 0) + 1;
     _requestVersions[loadingKey] = version;
     if (refresh) _likeNoMore = false;
@@ -346,13 +384,13 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
     try {
       final blogInfo = await HiveUtil.getUserInfo();
       if (!_isCurrentRequest(loadingKey, version)) return IndicatorResult.none;
-      if (blogInfo == null) return IndicatorResult.fail;
+      if (blogInfo == null) return _noticeFailure(loadingKey);
       final value = await MessageApi.getLikeMessages(
           blogId: blogInfo.blogId, offset: offset);
       if (!_isCurrentRequest(loadingKey, version)) return IndicatorResult.none;
       if (value['meta']['status'] != 200) {
         IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-        return IndicatorResult.fail;
+        return _noticeFailure(loadingKey);
       } else {
         List<MessageItem> t = [];
         t = (value['response'] as List)
@@ -372,10 +410,11 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       if (!_isCurrentRequest(loadingKey, version)) return IndicatorResult.none;
       ILogger.error("Failed to load system notice list", e, t);
       if (mounted) IToast.showTop(appLocalizations.loadFailed);
-      return IndicatorResult.fail;
+      return _noticeFailure(loadingKey);
     } finally {
       if (_requestVersions[loadingKey] == version) {
         _loadingTabs.remove(loadingKey);
+        _completedTabs.add(loadingKey);
         if (mounted) setState(() {});
       }
     }
@@ -393,6 +432,8 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       return IndicatorResult.none;
     }
     _loadingTabs.add(loadingKey);
+    _failedTabs.remove(loadingKey);
+    if (mounted) setState(() {});
     final version = (_requestVersions[loadingKey] ?? 0) + 1;
     _requestVersions[loadingKey] = version;
     if (refresh) resetNoMore?.call();
@@ -400,7 +441,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
     try {
       final blogInfo = await HiveUtil.getUserInfo();
       if (!_isCurrentRequest(loadingKey, version)) return IndicatorResult.none;
-      if (blogInfo == null) return IndicatorResult.fail;
+      if (blogInfo == null) return _noticeFailure(loadingKey);
       final value = await MessageApi.getSystemNoticeList(
         blogId: blogInfo.blogId,
         type: type,
@@ -409,7 +450,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       if (!_isCurrentRequest(loadingKey, version)) return IndicatorResult.none;
       if (value['meta']['status'] != 200) {
         IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-        return IndicatorResult.fail;
+        return _noticeFailure(loadingKey);
       } else {
         List<MessageItem> t = [];
         t = (value['response'] as List)
@@ -429,10 +470,11 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       if (!_isCurrentRequest(loadingKey, version)) return IndicatorResult.none;
       ILogger.error("Failed to load system notice list", e, t);
       if (mounted) IToast.showTop(appLocalizations.loadFailed);
-      return IndicatorResult.fail;
+      return _noticeFailure(loadingKey);
     } finally {
       if (_requestVersions[loadingKey] == version) {
         _loadingTabs.remove(loadingKey);
+        _completedTabs.add(loadingKey);
         if (mounted) setState(() {});
       }
     }
@@ -487,7 +529,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       },
       triggerAxis: Axis.vertical,
       child: _allMessages.isEmpty
-          ? SystemNoticeTabPlaceholder(text: appLocalizations.noNotice)
+          ? _buildPlaceholder(0)
           : LoadMoreNotification(
               noMore: _allNoMore,
               onLoad: () {
@@ -517,7 +559,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       },
       triggerAxis: Axis.vertical,
       child: _likeMessages.isEmpty
-          ? SystemNoticeTabPlaceholder(text: appLocalizations.noNotice)
+          ? _buildPlaceholder(1)
           : LoadMoreNotification(
               noMore: _likeNoMore,
               onLoad: () {
@@ -556,7 +598,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       },
       triggerAxis: Axis.vertical,
       child: _recommendMessages.isEmpty
-          ? SystemNoticeTabPlaceholder(text: appLocalizations.noNotice)
+          ? _buildPlaceholder(2)
           : LoadMoreNotification(
               noMore: _recommendNoMore,
               onLoad: () {
@@ -597,7 +639,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       },
       triggerAxis: Axis.vertical,
       child: _giftMessages.isEmpty
-          ? SystemNoticeTabPlaceholder(text: appLocalizations.noNotice)
+          ? _buildPlaceholder(3)
           : LoadMoreNotification(
               noMore: _giftNoMore,
               onLoad: () {
@@ -638,7 +680,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       },
       triggerAxis: Axis.vertical,
       child: _atMessages.isEmpty
-          ? SystemNoticeTabPlaceholder(text: appLocalizations.noNotice)
+          ? _buildPlaceholder(4)
           : LoadMoreNotification(
               noMore: _atNoMore,
               onLoad: () {
@@ -678,7 +720,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       },
       triggerAxis: Axis.vertical,
       child: _subscribeMessages.isEmpty
-          ? SystemNoticeTabPlaceholder(text: appLocalizations.noNotice)
+          ? _buildPlaceholder(5)
           : LoadMoreNotification(
               noMore: _subscribeNoMore,
               onLoad: () {
@@ -719,7 +761,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       },
       triggerAxis: Axis.vertical,
       child: _collectionMessages.isEmpty
-          ? SystemNoticeTabPlaceholder(text: appLocalizations.noNotice)
+          ? _buildPlaceholder(6)
           : LoadMoreNotification(
               noMore: _collectionNoMore,
               onLoad: () {
@@ -760,7 +802,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
       },
       triggerAxis: Axis.vertical,
       child: _otherMessages.isEmpty
-          ? SystemNoticeTabPlaceholder(text: appLocalizations.noNotice)
+          ? _buildPlaceholder(7)
           : LoadMoreNotification(
               noMore: _otherNoMore,
               onLoad: () {
