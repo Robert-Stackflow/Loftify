@@ -13,6 +13,7 @@ import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/lottie_files.dart';
 import 'package:loftify/Utils/request_util.dart';
 import 'package:loftify/generated/app_localizations.dart';
+import 'package:loftify/Widgets/Item/setting_management_item.dart';
 
 class _UnusedCookieManager extends Fake implements CookieManager {}
 
@@ -60,6 +61,58 @@ void main() {
     ));
     await frames(tester);
   }
+
+  testWidgets('dynamic shield keeps rows until a complete refresh succeeds',
+      (tester) async {
+    Finder authorRow(int id) => find.byWidgetPredicate((widget) =>
+        widget is SettingManagementItem && widget.title == 'Author $id');
+    final pending = <RequestInterceptorHandler>[];
+    final options = <RequestOptions>[];
+    RequestUtil.instance.dio.interceptors.clear();
+    RequestUtil.instance.dio.interceptors
+        .add(InterceptorsWrapper(onRequest: (request, handler) {
+      pending.add(handler);
+      options.add(request);
+    }));
+    Map<String, dynamic> author(int id) => {
+          'blogId': id,
+          'blogName': 'author$id',
+          'blogNickName': 'Author $id',
+        };
+    void respond(List<dynamic> rows) =>
+        pending.last.resolve(Response(requestOptions: options.last, data: {
+          'code': 0,
+          'data': {'blogInfos': rows},
+        }));
+    await mount(tester, const UserDynamicShieldSettingScreen());
+    respond([author(1)]);
+    await frames(tester);
+    expect(authorRow(1), findsOneWidget);
+    final refresh = tester.widget<EasyRefresh>(find.byType(EasyRefresh));
+    final invalid = Future.sync(refresh.onRefresh!);
+    await frames(tester);
+    respond([author(2), <String, dynamic>{}]);
+    await frames(tester);
+    expect(await invalid, IndicatorResult.fail);
+    expect(authorRow(1), findsOneWidget);
+    expect(authorRow(2), findsNothing);
+    final retry = Future.sync(refresh.onRefresh!);
+    await frames(tester);
+    respond([author(2)]);
+    await frames(tester);
+    expect(await retry, IndicatorResult.success);
+    expect(authorRow(1), findsNothing);
+    expect(authorRow(2), findsOneWidget);
+    final empty = Future.sync(refresh.onRefresh!);
+    await frames(tester);
+    respond([]);
+    await frames(tester);
+    expect(await empty, IndicatorResult.success);
+    expect(authorRow(2), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 5));
+  });
 
   for (final screen in [
     const BlacklistSettingScreen(),

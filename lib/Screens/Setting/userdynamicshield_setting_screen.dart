@@ -50,11 +50,10 @@ class _UserDynamicShieldSettingScreenState
         IToast.showTop(value['desc'] ?? value['msg']);
         return IndicatorResult.fail;
       } else {
-        shieldList.clear();
         var tmp = (value['data']['blogInfos'] as List)
             .map((e) => SimpleBlogInfo.fromJson(e))
             .toList();
-        shieldList.addAll(tmp);
+        shieldList = tmp;
         return IndicatorResult.success;
       }
     } catch (e, t) {
