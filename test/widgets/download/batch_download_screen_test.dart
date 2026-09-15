@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Models/download_task.dart';
@@ -188,6 +189,22 @@ void main() {
           await tester.tap(download);
           await tester.pumpAndSettle();
           expect(manager.requests, hasLength(1));
+          final buttonTexts = find.descendant(
+            of: find.byType(RoundIconTextButton),
+            matching: find.byType(Text),
+          );
+          for (final element in buttonTexts.evaluate()) {
+            final widget = element.widget as Text;
+            final paragraph = element.renderObject! as RenderParagraph;
+            final boxes = paragraph.getBoxesForSelection(TextSelection(
+              baseOffset: 0,
+              extentOffset: widget.data!.length,
+            ));
+            for (final box in boxes) {
+              expect(box.bottom, lessThanOrEqualTo(paragraph.size.height),
+                  reason: widget.data);
+            }
+          }
           expect(tester.takeException(), isNull);
         });
       }

@@ -321,8 +321,10 @@ class _BatchDownloadScreenState extends State<BatchDownloadScreen> {
                     key: const Key('batch-download-retry'),
                     text: appLocalizations.retry,
                     onPressed: _submit,
-                    height: 46,
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    height: null,
+                    minHeight: 46,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   );
                   final primaryButton = RoundIconTextButton(
                     key: const Key('batch-download-primary'),
@@ -335,8 +337,10 @@ class _BatchDownloadScreenState extends State<BatchDownloadScreen> {
                       color: Colors.white,
                     ),
                     background: scheme.primary,
-                    height: 46,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    height: null,
+                    minHeight: 46,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     disabled: _resolving ||
                         _loadingAll ||
                         (result == null && _selectedPostIds.isEmpty),
