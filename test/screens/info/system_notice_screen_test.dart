@@ -19,6 +19,84 @@ void main() {
     }
   });
 
+  for (final size in [const Size(280, 480), const Size(720, 360)]) {
+    for (final scale in [1.0, 2.0]) {
+      for (final dark in [false, true]) {
+        for (final nickname in [
+          'Long creator name with several interests',
+          '很长的创作者昵称与兴趣描述',
+          '很長的創作者暱稱與興趣描述'
+        ]) {
+          testWidgets(
+              'notification actions fit $size scale=$scale dark=$dark $nickname',
+              (tester) async {
+            tester.view.physicalSize = size;
+            tester.view.devicePixelRatio = 1;
+            addTearDown(tester.view.resetPhysicalSize);
+            addTearDown(tester.view.resetDevicePixelRatio);
+            var profileTaps = 0;
+            var postTaps = 0;
+            await tester.pumpWidget(MaterialApp(
+              theme: (dark
+                      ? ChewieThemeColorData.defaultDarkThemes.first
+                      : ChewieThemeColorData.defaultLightThemes.first)
+                  .toThemeData(),
+              home: Builder(builder: (context) {
+                chewieProvider.setRootContext(context);
+                return Scaffold(
+                    body: MediaQuery(
+                  data: MediaQueryData(
+                      size: size, textScaler: TextScaler.linear(scale)),
+                  child: SingleChildScrollView(
+                      child: SystemNoticeMessageTile(
+                    nickname: nickname,
+                    message:
+                        '$nickname recommended your illustrated story / 推荐了你的作品 / 推薦了你的作品',
+                    timestamp: 1724918400000,
+                    avatarUrl: '',
+                    thumbnailUrl: '',
+                    onTap: () => postTaps++,
+                    onAvatarTap: () => profileTaps++,
+                  )),
+                ));
+              }),
+            ));
+            final action = find.byKey(const Key('system-notice-avatar-action'));
+            final semantics = tester.ensureSemantics();
+            expect(
+                tester.getSemantics(action),
+                matchesSemantics(
+                  label: nickname,
+                  isButton: true,
+                  hasTapAction: true,
+                ));
+            semantics.dispose();
+            final actionRect = tester.getRect(action);
+            expect(actionRect.width, greaterThanOrEqualTo(48));
+            expect(actionRect.height, greaterThanOrEqualTo(48));
+            // The newly available bottom-right edge opens the author, not the post.
+            await tester.tapAt(actionRect.bottomRight - const Offset(1, 1));
+            expect(profileTaps, 1);
+            expect(postTaps, 0);
+            final message = find.byKey(const Key('system-notice-message'));
+            expect(
+                tester.getRect(message).right, lessThanOrEqualTo(size.width));
+            final thumbnail = find.byKey(const Key('system-notice-thumbnail'));
+            await tester.pumpAndSettle();
+            await tester.ensureVisible(thumbnail);
+            await tester.pumpAndSettle();
+            expect(
+                tester.getRect(thumbnail).right, lessThanOrEqualTo(size.width));
+            await tester.tap(thumbnail);
+            expect(postTaps, 1);
+            expect(profileTaps, 1);
+            expect(tester.takeException(), isNull);
+          });
+        }
+      }
+    }
+  }
+
   testWidgets('notification placeholder fills and remains scrollable', (
     tester,
   ) async {

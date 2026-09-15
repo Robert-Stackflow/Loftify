@@ -57,6 +57,7 @@ class SystemNoticeMessageTile extends StatelessWidget {
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 360 || textScale > 1.35;
         final avatarSize = compact ? 44.0 : 50.0;
+        final avatarTapSize = compact ? 48.0 : 50.0;
         final messageText = Text.rich(
           key: const Key('system-notice-message'),
           TextSpan(
@@ -138,14 +139,29 @@ class SystemNoticeMessageTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 GestureDetector(
+                  key: const Key('system-notice-avatar-action'),
+                  behavior: HitTestBehavior.opaque,
                   onTap: onAvatarTap,
-                  child: ItemBuilder.buildAvatar(
-                    context: context,
-                    size: avatarSize,
-                    imageUrl: avatarUrl,
+                  child: Semantics(
+                    button: true,
+                    label: nickname,
+                    child: SizedBox(
+                      width: avatarTapSize,
+                      height: avatarTapSize,
+                      child: Align(
+                        alignment: Alignment.topLeft,
+                        child: ExcludeSemantics(
+                          child: ItemBuilder.buildAvatar(
+                            context: context,
+                            size: avatarSize,
+                            imageUrl: avatarUrl,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                SizedBox(width: compact ? 8 : 10),
+                SizedBox(width: compact ? 4 : 10),
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
