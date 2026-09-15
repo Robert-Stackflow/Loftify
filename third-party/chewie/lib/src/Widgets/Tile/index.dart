@@ -25,5 +25,6 @@ export 'input_item.dart';
 export 'radio_item.dart';
 export 'searchable_stateful_widget.dart';
 export 'selection_item.dart';
+export 'selection_indicator.dart';
 export 'theme_item.dart';
 export 'tip_banner.dart';

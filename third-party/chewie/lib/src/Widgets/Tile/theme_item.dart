@@ -26,58 +26,67 @@ class _ThemeItemState extends State<ThemeItem> {
   Widget build(BuildContext context) {
     final textScale = MediaQuery.textScalerOf(context).scale(1);
     final responsiveHeight = 166.4 + 24 * (textScale - 1).clamp(0.0, 2.0);
-    return GestureDetector(
+    final selected = widget.index == widget.groupIndex;
+    void selectTheme() => widget.onChanged?.call(widget.index);
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      selected: selected,
+      button: true,
+      label: widget.themeColorData.i18nName,
+      onTap: selectTheme,
       onLongPress: widget.onLongPress,
-      onTap: () => widget.onChanged?.call(widget.index),
-      child: Container(
-        width: 107.3,
-        height: responsiveHeight,
-        margin: EdgeInsets.only(left: widget.index == 0 ? 10 : 0, right: 10),
-        child: Column(
-          children: [
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.only(
-                    top: 10, bottom: 0, left: 8, right: 8),
-                decoration: BoxDecoration(
-                  color: widget.themeColorData.scaffoldBackgroundColor,
-                  borderRadius: BorderRadius.circular(10),
-                  border: ChewieTheme.border,
-                ),
-                child: Column(
-                  children: [
-                    _buildCardRow(widget.themeColorData),
-                    const SizedBox(height: 5),
-                    _buildCardRow(widget.themeColorData),
-                    const SizedBox(height: 15),
-                    Semantics(
-                      selected: widget.index == widget.groupIndex,
-                      button: true,
-                      child: SizedBox.square(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        excludeFromSemantics: true,
+        onLongPress: widget.onLongPress,
+        onTap: selectTheme,
+        child: Container(
+          width: 107.3,
+          height: responsiveHeight,
+          margin: EdgeInsets.only(left: widget.index == 0 ? 10 : 0, right: 10),
+          child: Column(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.only(
+                      top: 10, bottom: 0, left: 8, right: 8),
+                  decoration: BoxDecoration(
+                    color: widget.themeColorData.scaffoldBackgroundColor,
+                    borderRadius: BorderRadius.circular(10),
+                    border: ChewieTheme.border,
+                  ),
+                  child: Column(
+                    children: [
+                      _buildCardRow(widget.themeColorData),
+                      const SizedBox(height: 5),
+                      _buildCardRow(widget.themeColorData),
+                      const SizedBox(height: 15),
+                      SizedBox.square(
                         dimension: 48,
-                        child: Icon(
-                          widget.index == widget.groupIndex
-                              ? Icons.radio_button_checked
-                              : Icons.radio_button_unchecked,
-                          size: 24,
-                          color: widget.index == widget.groupIndex
-                              ? widget.themeColorData.primaryColor
-                              : widget.themeColorData.textLightGreyColor,
+                        child: Center(
+                          child: ChewieSelectionIndicator(
+                            key: ValueKey('theme-selection-${widget.index}'),
+                            selected: selected,
+                            selectedColor: widget.themeColorData.primaryColor,
+                            unselectedColor:
+                                widget.themeColorData.textLightGreyColor,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              widget.themeColorData.i18nName,
-              style: ChewieTheme.bodySmall,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                widget.themeColorData.i18nName,
+                style: ChewieTheme.bodySmall,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -156,38 +165,45 @@ class _EmptyThemeItemState extends State<EmptyThemeItem> {
   Widget build(BuildContext context) {
     final textScale = MediaQuery.textScalerOf(context).scale(1);
     final responsiveHeight = 166.4 + 24 * (textScale - 1).clamp(0.0, 2.0);
-    return GestureDetector(
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      button: true,
+      label: chewieLocalizations.newTheme,
       onTap: widget.onTap,
-      child: Container(
-        width: 107.3,
-        height: responsiveHeight,
-        margin: const EdgeInsets.only(right: 10),
-        child: Column(
-          children: [
-            Expanded(
-              child: Container(
-                width: 107.3,
-                padding: const EdgeInsets.only(
-                    top: 10, bottom: 0, left: 8, right: 8),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  border: ChewieTheme.border,
-                ),
-                child: Icon(
-                  ChewieIcons.add,
-                  size: 30,
-                  color: ChewieTheme.bodySmall.color,
+      child: ClickableGestureDetector(
+        onTap: widget.onTap,
+        child: Container(
+          width: 107.3,
+          height: responsiveHeight,
+          margin: const EdgeInsets.only(right: 10),
+          child: Column(
+            children: [
+              Expanded(
+                child: Container(
+                  width: 107.3,
+                  padding: const EdgeInsets.only(
+                      top: 10, bottom: 0, left: 8, right: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: ChewieTheme.border,
+                  ),
+                  child: Icon(
+                    ChewieIcons.add,
+                    size: 30,
+                    color: ChewieTheme.bodySmall.color,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              chewieLocalizations.newTheme,
-              style: ChewieTheme.bodySmall,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                chewieLocalizations.newTheme,
+                style: ChewieTheme.bodySmall,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );

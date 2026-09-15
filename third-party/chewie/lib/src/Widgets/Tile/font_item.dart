@@ -34,9 +34,11 @@ class FontItemState extends State<FontItem> {
   Widget build(BuildContext context) {
     final selected = widget.font == widget.currentFont;
     return Semantics(
+      container: true,
       selected: selected,
       button: true,
       label: widget.font.intlFontName,
+      onTap: () => widget.onChanged?.call(widget.font),
       child: ClickableGestureDetector(
         onTap: () => widget.onChanged?.call(widget.font),
         child: SizedBox(
@@ -122,18 +124,14 @@ class FontItemState extends State<FontItem> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         SizedBox.square(
-                          key: ValueKey(
-                            'font-selection-${widget.font.fontFamily}',
-                          ),
                           dimension: 32,
-                          child: Icon(
-                            selected
-                                ? Icons.radio_button_checked
-                                : Icons.radio_button_unchecked,
-                            size: 24,
-                            color: selected
-                                ? ChewieTheme.primaryColor
-                                : ChewieTheme.bodySmall.color,
+                          child: ChewieSelectionIndicator(
+                            key: ValueKey(
+                              'font-selection-${widget.font.fontFamily}',
+                            ),
+                            selected: selected,
+                            selectedColor: ChewieTheme.primaryColor,
+                            unselectedColor: ChewieTheme.bodySmall.color,
                           ),
                         ),
                         if (widget.showDelete) const SizedBox(width: 5),
@@ -192,36 +190,42 @@ class EmptyFontItem extends StatefulWidget {
 class EmptyFontItemState extends State<EmptyFontItem> {
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: widget.width,
-      child: Column(
-        children: [
-          ClickableGestureDetector(
-            onTap: widget.onTap,
-            child: Container(
-              width: widget.width,
-              height: widget.height,
-              padding:
-                  const EdgeInsets.only(top: 5, bottom: 5, left: 10, right: 10),
-              decoration: BoxDecoration(
-                color: ChewieTheme.canvasColor,
-                border: ChewieTheme.border,
-                borderRadius: ChewieDimens.borderRadius8,
+    return Semantics(
+      container: true,
+      button: true,
+      label: chewieLocalizations.loadFontFamily,
+      onTap: widget.onTap,
+      child: ClickableGestureDetector(
+        onTap: widget.onTap,
+        child: SizedBox(
+          width: widget.width,
+          child: Column(
+            children: [
+              Container(
+                width: widget.width,
+                height: widget.height,
+                padding: const EdgeInsets.only(
+                    top: 5, bottom: 5, left: 10, right: 10),
+                decoration: BoxDecoration(
+                  color: ChewieTheme.canvasColor,
+                  border: ChewieTheme.border,
+                  borderRadius: ChewieDimens.borderRadius8,
+                ),
+                child: Icon(
+                  LucideIcons.plus,
+                  size: 40,
+                  color: ChewieTheme.labelSmall.color,
+                ),
               ),
-              child: Icon(
-                LucideIcons.plus,
-                size: 40,
-                color: ChewieTheme.labelSmall.color,
+              const SizedBox(height: 8),
+              Text(
+                chewieLocalizations.loadFontFamily,
+                style: ChewieTheme.bodySmall,
+                textAlign: TextAlign.center,
               ),
-            ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            chewieLocalizations.loadFontFamily,
-            style: ChewieTheme.bodySmall,
-            textAlign: TextAlign.center,
-          ),
-        ],
+        ),
       ),
     );
   }

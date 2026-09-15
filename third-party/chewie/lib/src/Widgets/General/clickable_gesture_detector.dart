@@ -8,6 +8,7 @@ class ClickableGestureDetector extends StatelessWidget {
   final GestureLongPressStartCallback? onLongPressStart;
   final GestureLongPressEndCallback? onLongPressEnd;
   final bool clickable;
+  final HitTestBehavior behavior;
 
   const ClickableGestureDetector({
     super.key,
@@ -18,6 +19,7 @@ class ClickableGestureDetector extends StatelessWidget {
     this.onLongPressStart,
     this.onLongPressEnd,
     this.clickable = true,
+    this.behavior = HitTestBehavior.opaque,
   });
 
   @override
@@ -25,6 +27,7 @@ class ClickableGestureDetector extends StatelessWidget {
     return MouseRegion(
       cursor: clickable ? SystemMouseCursors.click : SystemMouseCursors.basic,
       child: GestureDetector(
+        behavior: behavior,
         onTap: onTap,
         onLongPress: onLongPress,
         onSecondaryTap: onSecondaryTap,

@@ -66,4 +66,82 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 1));
   });
+
+  testWidgets('theme and add cards expose one full-card action',
+      (tester) async {
+    tester.view.physicalSize = const Size(280, 480);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final semantics = tester.ensureSemantics();
+    final themeData = ChewieThemeColorData.defaultLightThemes.first;
+    int? selectedIndex;
+    var longPresses = 0;
+    var addTaps = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        theme: themeData.toThemeData(),
+        navigatorKey: chewieProvider.globalNavigatorKey,
+        localizationsDelegates: const [ChewieLocalizations.delegate],
+        supportedLocales: ChewieLocalizations.supportedLocales,
+        home: Builder(
+          builder: (context) {
+            chewieProvider.setRootContext(context);
+            return MediaQuery(
+              data: const MediaQueryData(
+                size: Size(280, 480),
+                textScaler: TextScaler.linear(2),
+              ),
+              child: Scaffold(
+                body: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ThemeItem(
+                      themeColorData: themeData,
+                      index: 0,
+                      groupIndex: 0,
+                      onChanged: (index) => selectedIndex = index,
+                      onLongPress: () => longPresses++,
+                    ),
+                    EmptyThemeItem(onTap: () => addTaps++),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ChewieSelectionIndicator), findsOneWidget);
+    expect(find.byIcon(Icons.radio_button_checked), findsNothing);
+    expect(find.byIcon(Icons.radio_button_unchecked), findsNothing);
+    expect(
+      tester.getSemantics(find.byType(ThemeItem)),
+      matchesSemantics(
+        label: themeData.i18nName,
+        isButton: true,
+        hasSelectedState: true,
+        isSelected: true,
+        hasTapAction: true,
+        hasLongPressAction: true,
+      ),
+    );
+
+    final themeRect = tester.getRect(find.byType(ThemeItem));
+    await tester.tapAt(Offset(themeRect.center.dx, themeRect.bottom - 4));
+    await tester.longPress(find.byType(ThemeItem));
+    final addRect = tester.getRect(find.byType(EmptyThemeItem));
+    await tester.tapAt(Offset(addRect.center.dx, addRect.bottom - 4));
+    await tester.pump();
+
+    expect(selectedIndex, 0);
+    expect(longPresses, 1);
+    expect(addTaps, 1);
+    expect(tester.takeException(), isNull);
+    semantics.dispose();
+  });
 }
