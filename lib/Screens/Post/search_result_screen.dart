@@ -63,6 +63,7 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
   TextEditingController? _searchController;
   int _searchIntent = 0;
   int _suggestIntent = 0;
+  String _suggestQuery = '';
   final EasyRefreshController _allResultRefreshController =
       EasyRefreshController();
   final EasyRefreshController _tagResultRefreshController =
@@ -354,12 +355,12 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
   }
 
   _bindSuggest() {
-    if (_searchController!.text.isEmpty) {
-      _sugList.clear();
-      if (mounted) setState(() {});
-    } else {
-      _performSuggest(_searchController!.text);
-    }
+    final query = _searchController!.text;
+    if (query == _suggestQuery) return;
+    _suggestQuery = query;
+    final intent = ++_suggestIntent;
+    setState(() => _sugList = []);
+    if (query.isNotEmpty) _performSuggest(query, intent);
   }
 
   Future<PagedDataPage<PostListItem, int, _AllSearchMetadata>>
@@ -571,6 +572,7 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
   }
 
   _performSearch(String str, {bool init = false}) async {
+    ++_suggestIntent;
     final searchIntent = ++_searchIntent;
     bool processed = await UriUtil.processUrl(context, str, quiet: true);
     if (!mounted || searchIntent != _searchIntent) return;
@@ -578,6 +580,7 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
       _searchController?.removeListener(_bindSuggest);
       _searchController ??= TextEditingController();
       _searchController!.text = str;
+      _suggestQuery = str;
       _sugList.clear();
       final targetTab = init ? _currentTabIndex : 0;
       _tabLoadState.reset(index: targetTab);
@@ -608,26 +611,25 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
     RouteUtil.pushPanelCupertinoRoute(context, TagDetailScreen(tag: tag));
   }
 
-  _performSuggest(String str) {
-    final suggestIntent = ++_suggestIntent;
-    SearchApi.getSuggestList(key: str).then((value) {
-      if (!mounted ||
-          suggestIntent != _suggestIntent ||
-          _searchController?.text != str) {
-        return;
-      }
+  Future<void> _performSuggest(String str, int suggestIntent) async {
+    bool isCurrent() =>
+        mounted &&
+        suggestIntent == _suggestIntent &&
+        _searchController?.text == str;
+    try {
+      final value = await SearchApi.getSuggestList(key: str);
+      if (!isCurrent()) return;
       if (value['code'] != 0) {
-        IToast.showTop(value['msg']);
+        IToast.showTop(value['msg'] ?? appLocalizations.loadFailed);
       } else {
-        if (value['data']['items'] != null &&
-            _searchController!.text.isNotEmpty) {
-          _sugList = (value['data']['items'] as List)
-              .map((e) => SearchSuggestItem.fromJson(e))
-              .toList();
-        }
-        setState(() {});
+        final items = (value['data']?['items'] as List? ?? [])
+            .map((e) => SearchSuggestItem.fromJson(e))
+            .toList();
+        setState(() => _sugList = items);
       }
-    });
+    } catch (_) {
+      if (isCurrent()) IToast.showTop(appLocalizations.loadFailed);
+    }
   }
 
   _buildSuggestList() {

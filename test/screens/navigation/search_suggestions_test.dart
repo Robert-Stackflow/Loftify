@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Screens/Navigation/search_screen.dart';
+import 'package:loftify/Screens/Post/search_result_screen.dart';
 import 'package:loftify/Utils/request_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/generated/app_localizations.dart';
@@ -51,6 +52,7 @@ void main() {
     double textScale = 1,
     Locale locale = const Locale('en'),
     bool dark = false,
+    bool resultsPage = false,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -75,7 +77,9 @@ void main() {
       ],
       home: Builder(builder: (context) {
         chewieProvider.setRootContext(context);
-        return const SearchScreen();
+        return resultsPage
+            ? const SearchResultScreen(searchKey: 'initial')
+            : const SearchScreen();
       }),
     ));
     await tester.pump(const Duration(milliseconds: 100));
@@ -412,6 +416,49 @@ void main() {
       }
     }
   }
+
+  testWidgets('submitted search ignores its still-pending suggestions',
+      (tester) async {
+    await mount(tester, resultsPage: true);
+    await tester.pump(const Duration(seconds: 1));
+    await type(tester, 'submitted');
+    expect(pending, isNotEmpty);
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pump(const Duration(seconds: 1));
+    for (var index = 0; index < pending.length; index++) {
+      await respond(tester, index, 'late suggestion');
+    }
+    expect(find.text('late suggestion'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('result suggestions recover from timeout and ignore disposal',
+      (tester) async {
+    await mount(tester, resultsPage: true);
+    await tester.pump(const Duration(seconds: 1));
+    await type(tester, 'timeout');
+    expect(pending, hasLength(1));
+    final field = tester.widget<TextField>(find.byType(TextField));
+    field.controller!.selection = const TextSelection.collapsed(offset: 0);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(pending, hasLength(1));
+    final (options, handler) = pending.single;
+    handler.reject(DioException(
+        requestOptions: options, type: DioExceptionType.connectionTimeout));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(tester.takeException(), isNull);
+    await type(tester, 'retry');
+    await respond(tester, 1, 'recovered suggestion');
+    expect(find.text('recovered suggestion'), findsOneWidget);
+    await type(tester, 'disposal');
+    expect(find.text('recovered suggestion'), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+    final (lastOptions, lastHandler) = pending.last;
+    lastHandler.reject(DioException(
+        requestOptions: lastOptions, type: DioExceptionType.connectionTimeout));
+    await tester.pump(const Duration(seconds: 5));
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('late suggestion cannot replace the newer query', (tester) async {
     await mount(tester);
