@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Models/download_task.dart';
@@ -134,6 +135,87 @@ void main() {
             manager.dispose();
           });
         }
+      }
+    }
+  }
+
+  for (final width in [280.0, 720.0]) {
+    for (final locale in [
+      const Locale('en'),
+      const Locale('zh'),
+      const Locale('zh', 'TW')
+    ]) {
+      for (final dark in [false, true]) {
+        testWidgets(
+            'group actions retain text and work $width $locale dark=$dark',
+            (tester) async {
+          tester.view.physicalSize = Size(width, 480);
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final manager = DownloadTaskManager(
+              store: _MemoryStore(), executor: _PendingExecutor());
+          await manager.initialize();
+          final result = await manager.enqueueBatch(const [
+            DownloadRequest(
+              url: 'https://example.com/group-actions.jpg',
+              fileName: 'group-actions.jpg',
+              mediaType: DownloadMediaType.image,
+            )
+          ],
+              source: const DownloadSourceDescriptor(
+                  type: DownloadSourceType.collection,
+                  sourceId: '42',
+                  title: 'Collection'));
+          await tester.pumpWidget(_host(
+              DownloadGroupDetailScreen(
+                  groupId: result.group!.id, manager: manager),
+              locale: locale,
+              dark: dark,
+              textScale: 2));
+          Future<void> pumpFrames() async {
+            for (var frame = 0; frame < 5; frame++) {
+              await tester.pump(const Duration(milliseconds: 200));
+            }
+          }
+
+          await pumpFrames();
+          Future<void> checkButton(String key, {bool tap = true}) async {
+            final button = find.byKey(Key(key));
+            await tester.scrollUntilVisible(button, 160,
+                scrollable: find.byType(Scrollable).first);
+            await tester.ensureVisible(button);
+            await pumpFrames();
+            final texts =
+                find.descendant(of: button, matching: find.byType(Text));
+            expect(texts, findsOneWidget);
+            final text = tester.widget<Text>(texts);
+            final paragraph = tester.renderObject<RenderParagraph>(texts);
+            for (final box in paragraph.getBoxesForSelection(TextSelection(
+                baseOffset: 0, extentOffset: text.data!.length))) {
+              expect(box.bottom, lessThanOrEqualTo(paragraph.size.height),
+                  reason: text.data);
+            }
+            expect(button.hitTestable(), findsOneWidget);
+            if (tap) {
+              await tester.tap(button);
+              await pumpFrames();
+            }
+          }
+
+          await checkButton('download-view-original', tap: false);
+          await checkButton('download-group-pause');
+          expect(manager.tasks.single.status, DownloadTaskStatus.paused);
+          await checkButton('download-group-resume');
+          expect(manager.tasks.single.isActive, isTrue);
+          await checkButton('download-group-cancel');
+          expect(manager.tasks.single.status, DownloadTaskStatus.cancelled);
+          await checkButton('download-group-retry');
+          expect(manager.tasks.single.isActive, isTrue);
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox());
+          manager.dispose();
+        });
       }
     }
   }
