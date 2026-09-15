@@ -18,21 +18,25 @@ void main() {
   final pending = <(RequestOptions, RequestInterceptorHandler)>[];
   final initial = <(RequestOptions, RequestInterceptorHandler)>[];
   bool holdInitial = false;
+  int requestCount = 0;
   setUpAll(() async {
     final dir = Directory('build/test_hive/search_suggestions');
     await dir.create(recursive: true);
     Hive.init(dir.absolute.path);
     await Hive.openBox(ChewieHiveUtil.settingsBox);
     await ChewieHiveUtil.put(HiveUtil.showSearchRankKey, true);
+    await ChewieHiveUtil.put(HiveUtil.searchResultTabIdKey, 'all');
     RequestUtil.cookieManager = _UnusedCookieManager();
   });
   setUp(() {
     pending.clear();
     initial.clear();
     holdInitial = false;
+    requestCount = 0;
     RequestUtil.instance.dio.interceptors.clear();
     RequestUtil.instance.dio.interceptors.add(
       InterceptorsWrapper(onRequest: (options, handler) {
+        requestCount++;
         if (options.path.endsWith('/sug.json')) {
           pending.add((options, handler));
         } else if (holdInitial) {
@@ -416,6 +420,48 @@ void main() {
       }
     }
   }
+
+  testWidgets('open result tabs update when the locale changes',
+      (tester) async {
+    await mount(tester, resultsPage: true, locale: const Locale('en'));
+    await tester.pump(const Duration(seconds: 1));
+    final state = tester.state(find.byType(SearchResultScreen));
+    final english =
+        AppLocalizations.of(tester.element(find.byType(SearchResultScreen)))!;
+    expect(find.text(english.comprehensive), findsOneWidget);
+    final tabs = tester.widget<TabBar>(find.byType(TabBar)).controller!;
+    expect(tabs.index, 0);
+    final loadedRequests = requestCount;
+    await mount(tester, resultsPage: true, locale: const Locale('zh'));
+    await tester.pump(const Duration(seconds: 1));
+    expect(tester.state(find.byType(SearchResultScreen)), same(state));
+    final chinese =
+        AppLocalizations.of(tester.element(find.byType(SearchResultScreen)))!;
+    expect(chinese.comprehensive, isNot(english.comprehensive));
+    for (final label in [
+      chinese.comprehensive,
+      chinese.tag,
+      chinese.collection,
+      chinese.grain,
+      chinese.article,
+      chinese.user
+    ]) {
+      expect(find.text(label), findsOneWidget);
+    }
+    expect(tester.widget<TabBar>(find.byType(TabBar)).controller, same(tabs));
+    expect(tabs.index, 0);
+    expect(requestCount, loadedRequests);
+    await mount(tester, resultsPage: true, locale: const Locale('zh', 'TW'));
+    await tester.pump(const Duration(seconds: 1));
+    final traditional =
+        AppLocalizations.of(tester.element(find.byType(SearchResultScreen)))!;
+    expect(find.text(traditional.comprehensive), findsOneWidget);
+    expect(tabs.index, 0);
+    expect(requestCount, loadedRequests);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 1));
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('submitted search ignores its still-pending suggestions',
       (tester) async {

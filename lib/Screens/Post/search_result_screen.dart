@@ -77,14 +77,18 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
   final EasyRefreshController _userResultRefreshController =
       EasyRefreshController();
 
-  final List<String> _tabLabelList = [
-    appLocalizations.comprehensive,
-    appLocalizations.tag,
-    appLocalizations.collection,
-    appLocalizations.grain,
-    appLocalizations.article,
-    appLocalizations.user
-  ];
+  List<String> get _tabLabelList {
+    final localizations = AppLocalizations.of(context)!;
+    return [
+      localizations.comprehensive,
+      localizations.tag,
+      localizations.collection,
+      localizations.grain,
+      localizations.article,
+      localizations.user,
+    ];
+  }
+
   static const List<String> _tabIdList = [
     'all',
     'tag',
@@ -278,7 +282,7 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
 
   void initTab() {
     _tabController = TabController(
-      length: _tabLabelList.length,
+      length: _tabIdList.length,
       initialIndex: _currentTabIndex,
       vsync: this,
     );
