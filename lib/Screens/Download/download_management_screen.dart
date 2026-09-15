@@ -631,7 +631,7 @@ class _DownloadTaskTile extends StatelessWidget {
 
   String _progressText() {
     if (task.totalBytes <= 0) return appLocalizations.downloadUnknownSize;
-    final percent = (task.progress * 100).clamp(0, 100).round();
+    final percent = (task.displayProgress * 100).round();
     return '${_formatBytes(task.receivedBytes)} / '
         '${_formatBytes(task.totalBytes)} · $percent%';
   }

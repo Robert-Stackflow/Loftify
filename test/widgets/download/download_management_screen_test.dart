@@ -227,56 +227,66 @@ void main() {
       DownloadTaskStatus.failed,
       DownloadTaskStatus.completed
     ]) {
-      testWidgets(
-          'unknown-size stopped task has static progress detail=$detail $status',
-          (tester) async {
-        final now = DateTime(2026, 9, 16);
-        final task = DownloadTask(
-            id: 'stopped',
-            url: 'https://example.com/stopped.jpg',
-            fileName: 'stopped.jpg',
-            mediaType: DownloadMediaType.image,
-            status: status,
-            createdAt: now,
-            updatedAt: now);
-        final store = _MemoryStore()..tasks = [task];
-        if (detail) {
-          store.groups = [
-            DownloadGroup(
-                id: 'group',
-                source: const DownloadSourceDescriptor(
-                    type: DownloadSourceType.collection,
-                    sourceId: '42',
-                    title: 'Collection'),
-                taskIds: [task.id],
-                requestedCount: 1,
-                createdAt: now,
-                updatedAt: now)
-          ];
-        }
-        final manager =
-            DownloadTaskManager(store: store, executor: _PendingExecutor());
-        await manager.initialize();
-        await tester.pumpWidget(_host(detail
-            ? DownloadGroupDetailScreen(groupId: 'group', manager: manager)
-            : DownloadManagementScreen(manager: manager)));
-        await tester.pump(const Duration(milliseconds: 200));
-        if (detail) {
-          await tester.scrollUntilVisible(
-              find.byKey(const ValueKey('download-resource-stopped')), 150,
-              scrollable: find.byType(Scrollable).first);
+      for (final total in [0, 100]) {
+        testWidgets(
+            'stopped task has consistent progress detail=$detail $status total=$total',
+            (tester) async {
+          final now = DateTime(2026, 9, 16);
+          final task = DownloadTask(
+              id: 'stopped',
+              url: 'https://example.com/stopped.jpg',
+              fileName: 'stopped.jpg',
+              mediaType: DownloadMediaType.image,
+              status: status,
+              totalBytes: total,
+              receivedBytes: status == DownloadTaskStatus.completed ? total : 0,
+              createdAt: now,
+              updatedAt: now);
+          final store = _MemoryStore()..tasks = [task];
+          if (detail) {
+            store.groups = [
+              DownloadGroup(
+                  id: 'group',
+                  source: const DownloadSourceDescriptor(
+                      type: DownloadSourceType.collection,
+                      sourceId: '42',
+                      title: 'Collection'),
+                  taskIds: [task.id],
+                  requestedCount: 1,
+                  createdAt: now,
+                  updatedAt: now)
+            ];
+          }
+          final manager =
+              DownloadTaskManager(store: store, executor: _PendingExecutor());
+          await manager.initialize();
+          await tester.pumpWidget(_host(detail
+              ? DownloadGroupDetailScreen(groupId: 'group', manager: manager)
+              : DownloadManagementScreen(manager: manager)));
           await tester.pump(const Duration(milliseconds: 200));
-        }
-        final bars = tester.widgetList<LinearProgressIndicator>(
-            find.byType(LinearProgressIndicator));
-        expect(bars, isNotEmpty);
-        for (final bar in bars) {
-          expect(bar.value, isNotNull);
-        }
-        expect(tester.takeException(), isNull);
-        await tester.pumpWidget(const SizedBox());
-        manager.dispose();
-      });
+          if (detail) {
+            await tester.scrollUntilVisible(
+                find.byKey(const ValueKey('download-resource-stopped')), 150,
+                scrollable: find.byType(Scrollable).first);
+            await tester.pump(const Duration(milliseconds: 200));
+          }
+          final bars = tester.widgetList<LinearProgressIndicator>(
+              find.byType(LinearProgressIndicator));
+          expect(bars, isNotEmpty);
+          for (final bar in bars) {
+            expect(bar.value, isNotNull);
+          }
+          if (total > 0 && status == DownloadTaskStatus.completed) {
+            expect(find.text('100 B / 100 B · 100%'), findsOneWidget);
+            for (final bar in bars) {
+              expect(bar.value, 1);
+            }
+          }
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox());
+          manager.dispose();
+        });
+      }
     }
   }
 

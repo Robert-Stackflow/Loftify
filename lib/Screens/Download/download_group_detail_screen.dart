@@ -789,7 +789,7 @@ Color _taskStatusColor(BuildContext context, DownloadTaskStatus status) {
 
 String _taskProgressText(DownloadTask task) {
   if (task.totalBytes <= 0) return appLocalizations.downloadUnknownSize;
-  final percent = (task.progress * 100).clamp(0, 100).round();
+  final percent = (task.displayProgress * 100).round();
   return '${_formatBytes(task.receivedBytes)} / '
       '${_formatBytes(task.totalBytes)} · $percent%';
 }

@@ -321,12 +321,16 @@ class DownloadTask {
 
   /// Unknown totals animate only while bytes are actively being transferred.
   double? get indicatorProgress {
-    if (status == DownloadTaskStatus.completed) return 1;
     if (status == DownloadTaskStatus.downloading && totalBytes <= 0) {
       return null;
     }
-    return progress.clamp(0.0, 1.0).toDouble();
+    return displayProgress;
   }
+
+  /// Old completed records may omit progress; keep labels and bars consistent.
+  double get displayProgress => status == DownloadTaskStatus.completed
+      ? 1
+      : progress.clamp(0.0, 1.0).toDouble();
 
   bool get isTerminal =>
       status == DownloadTaskStatus.completed ||
