@@ -135,6 +135,68 @@ void noticeLoadingTests(String tab, {bool missingCache = false}) {
       expect(tester.takeException(), isNull);
     });
 
+    for (final oldResponseFirst in [false, true]) {
+      testWidgets(
+          'refresh supersedes pending pagination oldFirst=$oldResponseFirst',
+          (tester) async {
+        final pending = <RequestInterceptorHandler>[];
+        final options = <RequestOptions>[];
+        RequestUtil.instance.dio.interceptors.clear();
+        RequestUtil.instance.dio.interceptors.add(InterceptorsWrapper(
+          onRequest: (request, handler) {
+            options.add(request);
+            pending.add(handler);
+          },
+        ));
+        void respond(int index) => pending[index].resolve(Response(
+              requestOptions: options[index],
+              data: {
+                'meta': {'status': 200},
+                'response': []
+              },
+            ));
+        await mount(tester);
+        respond(0);
+        await pumpFrames(tester);
+        final refresh =
+            tester.widget<EasyRefresh>(find.byType(EasyRefresh).first);
+        final oldLoad = Future.sync(refresh.onLoad!);
+        await pumpFrames(tester);
+        expect(pending.length, 2);
+        final newRefresh = Future.sync(refresh.onRefresh!);
+        await pumpFrames(tester);
+        expect(pending.length, 3);
+        if (oldResponseFirst) {
+          respond(1);
+          await pumpFrames(tester);
+          expect(await oldLoad, IndicatorResult.none);
+          // The obsolete request must not release the new refresh's lock.
+          final duplicateLoad = Future.sync(refresh.onLoad!);
+          await pumpFrames(tester);
+          expect(await duplicateLoad, IndicatorResult.none);
+          expect(pending.length, 3);
+          respond(2);
+        } else {
+          respond(2);
+          await pumpFrames(tester);
+          respond(1);
+        }
+        await pumpFrames(tester);
+        expect(await newRefresh, IndicatorResult.success);
+        expect(await oldLoad, IndicatorResult.none);
+        // Pagination can run again after the fresh first page has completed.
+        final nextLoad = Future.sync(refresh.onLoad!);
+        await pumpFrames(tester);
+        expect(pending.length, 4);
+        respond(3);
+        await pumpFrames(tester);
+        expect(await nextLoad, IndicatorResult.noMore);
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(seconds: 5));
+        expect(tester.takeException(), isNull);
+      });
+    }
+
     testWidgets('response after dispose is ignored', (tester) async {
       late RequestInterceptorHandler pending;
       late RequestOptions options;

@@ -190,6 +190,12 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
   final List<MessageItem> _collectionMessages = [];
   final List<MessageItem> _otherMessages = [];
   final Set<String> _loadingTabs = <String>{};
+  // A refresh supersedes in-flight pagination; only its own request may update
+  // the list or release the tab's loading lock.
+  final Map<String, int> _requestVersions = <String, int>{};
+
+  bool _isCurrentRequest(String key, int version) =>
+      mounted && _requestVersions[key] == version;
   final EasyRefreshController _allRefreshController = EasyRefreshController();
   final EasyRefreshController _likeRefreshController = EasyRefreshController();
   final EasyRefreshController _recommendRefreshController =
@@ -313,16 +319,21 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
 
   Future<IndicatorResult> _fetchLikeMessages({bool refresh = false}) async {
     const loadingKey = 'like';
-    if (!_loadingTabs.add(loadingKey)) return IndicatorResult.none;
+    if (!refresh && _loadingTabs.contains(loadingKey)) {
+      return IndicatorResult.none;
+    }
+    _loadingTabs.add(loadingKey);
+    final version = (_requestVersions[loadingKey] ?? 0) + 1;
+    _requestVersions[loadingKey] = version;
     if (refresh) _likeNoMore = false;
     int offset = refresh ? 0 : _likeMessages.length;
     try {
       final blogInfo = await HiveUtil.getUserInfo();
-      if (!mounted) return IndicatorResult.none;
+      if (!_isCurrentRequest(loadingKey, version)) return IndicatorResult.none;
       if (blogInfo == null) return IndicatorResult.fail;
       final value = await MessageApi.getLikeMessages(
           blogId: blogInfo.blogId, offset: offset);
-      if (!mounted) return IndicatorResult.none;
+      if (!_isCurrentRequest(loadingKey, version)) return IndicatorResult.none;
       if (value['meta']['status'] != 200) {
         IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
         return IndicatorResult.fail;
@@ -342,12 +353,15 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
         }
       }
     } catch (e, t) {
+      if (!_isCurrentRequest(loadingKey, version)) return IndicatorResult.none;
       ILogger.error("Failed to load system notice list", e, t);
       if (mounted) IToast.showTop(appLocalizations.loadFailed);
       return IndicatorResult.fail;
     } finally {
-      if (mounted) setState(() {});
-      _loadingTabs.remove(loadingKey);
+      if (_requestVersions[loadingKey] == version) {
+        _loadingTabs.remove(loadingKey);
+        if (mounted) setState(() {});
+      }
     }
   }
 
@@ -359,19 +373,24 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
     Function()? onNoMore,
   }) async {
     final loadingKey = type.name;
-    if (!_loadingTabs.add(loadingKey)) return IndicatorResult.none;
+    if (!refresh && _loadingTabs.contains(loadingKey)) {
+      return IndicatorResult.none;
+    }
+    _loadingTabs.add(loadingKey);
+    final version = (_requestVersions[loadingKey] ?? 0) + 1;
+    _requestVersions[loadingKey] = version;
     if (refresh) resetNoMore?.call();
     int offset = refresh ? 0 : list.length;
     try {
       final blogInfo = await HiveUtil.getUserInfo();
-      if (!mounted) return IndicatorResult.none;
+      if (!_isCurrentRequest(loadingKey, version)) return IndicatorResult.none;
       if (blogInfo == null) return IndicatorResult.fail;
       final value = await MessageApi.getSystemNoticeList(
         blogId: blogInfo.blogId,
         type: type,
         offset: offset,
       );
-      if (!mounted) return IndicatorResult.none;
+      if (!_isCurrentRequest(loadingKey, version)) return IndicatorResult.none;
       if (value['meta']['status'] != 200) {
         IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
         return IndicatorResult.fail;
@@ -391,12 +410,15 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
         }
       }
     } catch (e, t) {
+      if (!_isCurrentRequest(loadingKey, version)) return IndicatorResult.none;
       ILogger.error("Failed to load system notice list", e, t);
       if (mounted) IToast.showTop(appLocalizations.loadFailed);
       return IndicatorResult.fail;
     } finally {
-      if (mounted) setState(() {});
-      _loadingTabs.remove(loadingKey);
+      if (_requestVersions[loadingKey] == version) {
+        _loadingTabs.remove(loadingKey);
+        if (mounted) setState(() {});
+      }
     }
   }
 
