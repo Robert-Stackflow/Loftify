@@ -763,37 +763,26 @@ class LoftifyItemBuilder {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  Text(
+                    "#${tag.tagName}",
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 5),
+                  Wrap(
+                    spacing: 5,
+                    runSpacing: 5,
                     children: [
-                      Flexible(
-                        child: Text(
-                          "#${tag.tagName}",
-                          style: Theme.of(context).textTheme.titleMedium,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 5),
                       if (StringUtil.isNotEmpty(tag.rankName))
-                        RoundIconTextButton(
-                          text: tag.rankName!,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 3,
-                            vertical: 2,
-                          ),
-                          radius: 3,
-                          color: ChewieColors.likeButtonColor,
-                          fontSizeDelta: -2,
+                        _buildTagStatus(
+                          context,
+                          tag.rankName!,
+                          ChewieColors.likeButtonColor,
                         ),
-                      if (tag.subscribed) const SizedBox(width: 5),
                       if (tag.subscribed)
-                        RoundIconTextButton(
-                          text: appLocalizations.subscribed,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 3, vertical: 2),
-                          radius: 3,
-                          color: Theme.of(context).primaryColor,
-                          fontSizeDelta: -2,
+                        _buildTagStatus(
+                          context,
+                          appLocalizations.subscribed,
+                          Theme.of(context).primaryColor,
                         ),
                     ],
                   ),
@@ -804,20 +793,43 @@ class LoftifyItemBuilder {
                         .textTheme
                         .bodySmall
                         ?.apply(fontWeightDelta: 1),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: RoundIconTextButton(
+                      text: appLocalizations.enter,
+                      height: null,
+                      minHeight: 48,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 6),
+                      color: Theme.of(context).primaryColor,
+                      onPressed: onTap,
+                    ),
                   ),
                 ],
               ),
             ),
-            RoundIconTextButton(
-              text: appLocalizations.enter,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              color: Theme.of(context).primaryColor,
-              onPressed: onTap,
-            ),
           ],
         ),
+      ),
+    );
+  }
+
+  static Widget _buildTagStatus(
+      BuildContext context, String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(3),
+        color: ChewieTheme.cardColor,
+      ),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.titleSmall?.apply(
+              color: color,
+              fontWeightDelta: 2,
+              fontSizeDelta: -2,
+            ),
       ),
     );
   }

@@ -81,18 +81,19 @@ void main() {
   }
 
   Future<void> respond(WidgetTester tester, int index, String label,
-      {int joinCount = -1}) async {
+      {int joinCount = -1, bool ranked = false}) async {
     final (options, handler) = pending[index];
     handler.resolve(Response(requestOptions: options, data: {
       'code': 0,
       'data': {
         'items': [
           {
-            'type': 1,
+            'type': ranked ? 0 : 1,
             'tagInfo': {
               'tagName': label,
               'joinCount': joinCount,
-              'subscribed': false,
+              'subscribed': ranked,
+              'rankName': ranked ? 'Popular creative community' : null,
               'recommendReport': {'algInfo': '', 'recId': ''},
             }
           },
@@ -108,6 +109,21 @@ void main() {
     const Locale('zh'),
     const Locale('zh', 'TW')
   ]) {
+    testWidgets('ranked subscribed tag fits narrow large text in $locale',
+        (tester) async {
+      await mount(tester,
+          size: const Size(280, 480), textScale: 2, locale: locale);
+      await type(tester, 'art');
+      await respond(tester, 0, 'Long creative tag name',
+          joinCount: 123456789, ranked: true);
+      expect(find.text('#Long creative tag name'), findsOneWidget);
+      final context = tester.element(find.byType(SearchScreen));
+      final enter = find.text(AppLocalizations.of(context)!.enter);
+      await tester.ensureVisible(enter);
+      await tester.pump();
+      expect(enter.hitTestable(), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
     testWidgets('long tag suggestion fits narrow large-text layout in $locale',
         (tester) async {
       await mount(tester,
