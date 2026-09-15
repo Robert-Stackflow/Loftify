@@ -843,16 +843,23 @@ class LoftifyItemBuilder {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(
-                tag.tagName,
-                style: Theme.of(context).textTheme.titleMedium,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tag.tagName,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  if (tag.joinCount != -1) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      appLocalizations.joinCount(tag.joinCount.toString()),
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                  ],
+                ],
               ),
             ),
-            if (tag.joinCount != -1)
-              Text(
-                appLocalizations.joinCount(tag.joinCount.toString()),
-                style: Theme.of(context).textTheme.labelMedium,
-              ),
           ],
         ),
       ),

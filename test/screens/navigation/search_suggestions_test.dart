@@ -43,8 +43,24 @@ void main() {
       }),
     );
   });
-  Future<void> mount(WidgetTester tester) async {
+  Future<void> mount(
+    WidgetTester tester, {
+    Size size = const Size(390, 844),
+    double textScale = 1,
+    Locale locale = const Locale('en'),
+  }) async {
+    tester.view.physicalSize = size;
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(MaterialApp(
+      locale: locale,
+      supportedLocales: AppLocalizations.supportedLocales,
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context)
+            .copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
       navigatorKey: chewieProvider.globalNavigatorKey,
       theme: ChewieThemeColorData.defaultLightThemes.first.toThemeData(),
       localizationsDelegates: const [
@@ -64,7 +80,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
   }
 
-  Future<void> respond(WidgetTester tester, int index, String label) async {
+  Future<void> respond(WidgetTester tester, int index, String label,
+      {int joinCount = -1}) async {
     final (options, handler) = pending[index];
     handler.resolve(Response(requestOptions: options, data: {
       'code': 0,
@@ -74,6 +91,7 @@ void main() {
             'type': 1,
             'tagInfo': {
               'tagName': label,
+              'joinCount': joinCount,
               'subscribed': false,
               'recommendReport': {'algInfo': '', 'recId': ''},
             }
@@ -83,6 +101,23 @@ void main() {
     }));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
+  }
+
+  for (final locale in [
+    const Locale('en'),
+    const Locale('zh'),
+    const Locale('zh', 'TW')
+  ]) {
+    testWidgets('long tag suggestion fits narrow large-text layout in $locale',
+        (tester) async {
+      await mount(tester,
+          size: const Size(280, 480), textScale: 2, locale: locale);
+      await type(tester, 'art');
+      const label = 'A long creative community tag with multiple interests';
+      await respond(tester, 0, label, joinCount: 123456789);
+      expect(find.text(label).hitTestable(), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
   }
 
   testWidgets('late suggestion cannot replace the newer query', (tester) async {
