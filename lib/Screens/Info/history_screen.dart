@@ -244,22 +244,24 @@ class _HistoryScreenState extends BaseDynamicState<HistoryScreen>
   }
 
   void clearInvalidHistory() {
-    for (var e in _histories) {
-      if (CommonInfoItemBuilder.isInvalid(e)) {
-        int index = _histories.indexOf(e);
-        int archiveIndex = 0;
-        int count = 0;
-        for (var element in _archiveDataList) {
-          if (count + element.count < index) {
-            count++;
-          } else {
-            archiveIndex = _archiveDataList.indexOf(element);
-          }
-        }
-        _archiveDataList[archiveIndex].count--;
+    // Use original category ranges; decrementing counts during lookup would
+    // shift later boundaries and attribute removals to the wrong category.
+    var start = 0;
+    for (final archive in _archiveDataList) {
+      if (start >= _histories.length) break;
+      final originalCount = archive.count;
+      if (originalCount <= 0) continue;
+      final end = (start + originalCount).clamp(0, _histories.length);
+      var removed = 0;
+      for (var index = start; index < end; index++) {
+        if (CommonInfoItemBuilder.isInvalid(_histories[index])) removed++;
       }
+      archive.count -= removed;
+      start += originalCount;
     }
-    _histories.removeWhere((e) => CommonInfoItemBuilder.isInvalid(e));
+    final previousLength = _histories.length;
+    _histories.removeWhere(CommonInfoItemBuilder.isInvalid);
+    _total = (_total - (previousLength - _histories.length)).clamp(0, _total);
     setState(() {});
   }
 

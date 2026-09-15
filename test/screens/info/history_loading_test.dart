@@ -159,6 +159,88 @@ void main() {
     });
   }
 
+  for (final withCategories in [false, true]) {
+    testWidgets(
+        'clearing invalid history preserves categories present=$withCategories',
+        (tester) async {
+      await mount(tester);
+      respond(0, {
+        'meta': {'status': 200},
+        'response': {
+          'count': 4,
+          'recordHistory': 1,
+          'archiveData': withCategories
+              ? [
+                  for (var i = 0; i < 2; i++)
+                    {
+                      'count': 2,
+                      'desc': 'Category $i',
+                      'startTime': 0,
+                      'endTime': 1
+                    }
+                ]
+              : [],
+          'items': [
+            {
+              'post': {'id': 1}
+            },
+            {
+              'post': {'id': 2}
+            },
+            for (final id in [3, 4])
+              {
+                'post': {
+                  'id': id,
+                  'blogId': 1,
+                  'publisherUserId': 1,
+                  'title': 'Story $id',
+                  'blogInfo': {
+                    'blogId': 1,
+                    'blogName': 'author',
+                    'blogNickName': 'Author',
+                    'bigAvaImg': '',
+                    'homePageUrl': '',
+                    'imageDigitStamp': false,
+                    'imageProtected': false,
+                    'imageStamp': false,
+                    'isOriginalAuthor': false
+                  },
+                }
+              },
+          ],
+        }
+      });
+      await frames(tester);
+      final dynamic state = tester.state(find.byType(HistoryScreen));
+      // Exercise local cleanup only; do not invoke the server's delete API.
+      state.clearInvalidHistory();
+      await frames(tester);
+      expect(
+          tester
+              .widgetList<GridPostItemWidget>(find.byType(GridPostItemWidget))
+              .map((widget) => widget.item.postId),
+          [3, 4]);
+      if (withCategories) {
+        expect(find.textContaining('Category 0', findRichText: true),
+            findsNothing);
+        expect(find.textContaining('Category 1', findRichText: true),
+            findsOneWidget);
+      }
+      state.clearInvalidHistory();
+      await frames(tester);
+      expect(
+          tester
+              .widgetList<LoftifyPostArchiveGrid>(
+                  find.byType(LoftifyPostArchiveGrid))
+              .map((grid) => grid.itemCount),
+          [2]);
+      expect(pending, hasLength(1));
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 5));
+    });
+  }
+
   for (final timeout in [false, true]) {
     testWidgets(
         'history retries without restarting initial refresh timeout=$timeout',
