@@ -50,6 +50,7 @@ void main() {
     Size size = const Size(390, 844),
     double textScale = 1,
     Locale locale = const Locale('en'),
+    bool dark = false,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -64,7 +65,10 @@ void main() {
         child: child!,
       ),
       navigatorKey: chewieProvider.globalNavigatorKey,
-      theme: ChewieThemeColorData.defaultLightThemes.first.toThemeData(),
+      theme: (dark
+              ? ChewieThemeColorData.defaultDarkThemes.first
+              : ChewieThemeColorData.defaultLightThemes.first)
+          .toThemeData(),
       localizationsDelegates: const [
         ChewieLocalizations.delegate,
         ...AppLocalizations.localizationsDelegates,
@@ -113,77 +117,108 @@ void main() {
     const Locale('zh'),
     const Locale('zh', 'TW')
   ]) {
-    for (final width in [280.0, 720.0]) {
-      for (final scale in [1.0, 2.0]) {
-        testWidgets(
-            'user statistics remain visible at $width / $scale / $locale',
-            (tester) async {
-          await mount(tester,
-              size: Size(width, 480), textScale: scale, locale: locale);
-          await type(tester, 'author');
-          final (options, handler) = pending.single;
-          handler.resolve(Response(requestOptions: options, data: {
-            'code': 0,
-            'data': {
-              'items': [
-                {
-                  'type': 2,
-                  'blogData': {
-                    'blogInfo': {
-                      'blogName': 'a-very-long-creative-author-identifier',
-                      'blogNickName':
-                          'A creative author with a very long display name',
+    for (final dark in [false, true]) {
+      for (final width in [280.0, 720.0]) {
+        for (final scale in [1.0, 2.0]) {
+          testWidgets(
+              'user statistics remain visible at $width / $scale / $locale dark=$dark',
+              (tester) async {
+            await mount(tester,
+                size: Size(width, 480),
+                textScale: scale,
+                locale: locale,
+                dark: dark);
+            await type(tester, 'author');
+            final (options, handler) = pending.single;
+            handler.resolve(Response(requestOptions: options, data: {
+              'code': 0,
+              'data': {
+                'items': [
+                  {
+                    'type': 2,
+                    'blogData': {
+                      'blogInfo': {
+                        'blogName': 'a-very-long-creative-author-identifier',
+                        'blogNickName':
+                            'A creative author with a very long display name',
+                      },
+                      'blogCount': {
+                        'publicPostCount': 123456789,
+                        'followerCount': 987654321
+                      },
+                      'recommendReport': {'algInfo': '', 'recId': ''},
                     },
-                    'blogCount': {
-                      'publicPostCount': 123456789,
-                      'followerCount': 987654321
-                    },
-                    'recommendReport': {'algInfo': '', 'recId': ''},
-                  },
-                }
-              ]
-            },
-          }));
-          await tester.pump();
-          await tester.pump(const Duration(milliseconds: 100));
-          final l10n =
-              AppLocalizations.of(tester.element(find.byType(SearchScreen)))!;
-          final followers = find.text('${l10n.follower}: 987654321');
-          final posts = find.text('${l10n.article}: 123456789');
-          expect(posts, findsOneWidget);
-          expect(followers, findsOneWidget);
-          await tester.ensureVisible(followers);
-          await tester.pump();
-          expect(followers.hitTestable(), findsOneWidget);
-          expect(tester.takeException(), isNull);
-        });
+                  }
+                ]
+              },
+            }));
+            await tester.pump();
+            await tester.pump(const Duration(milliseconds: 100));
+            final l10n =
+                AppLocalizations.of(tester.element(find.byType(SearchScreen)))!;
+            final followers = find.text('${l10n.follower}: 987654321');
+            final posts = find.text('${l10n.article}: 123456789');
+            expect(posts, findsOneWidget);
+            expect(followers, findsOneWidget);
+            await tester.ensureVisible(followers);
+            await tester.pump();
+            expect(followers.hitTestable(), findsOneWidget);
+            final foreground = tester.widget<Text>(followers).style!.color!;
+            final surface = tester
+                .widget<Material>(find
+                    .ancestor(
+                      of: followers,
+                      matching: find.byType(Material),
+                    )
+                    .first)
+                .color!;
+            final textLuminance =
+                Color.alphaBlend(foreground, surface).computeLuminance();
+            final backgroundLuminance = surface.computeLuminance();
+            final contrast = textLuminance > backgroundLuminance
+                ? (textLuminance + 0.05) / (backgroundLuminance + 0.05)
+                : (backgroundLuminance + 0.05) / (textLuminance + 0.05);
+            expect(contrast, greaterThanOrEqualTo(4.5),
+                reason:
+                    'Small user statistics must remain readable on their card surface');
+            expect(tester.takeException(), isNull);
+          });
+        }
       }
+      testWidgets(
+          'ranked subscribed tag fits narrow large text in $locale dark=$dark',
+          (tester) async {
+        await mount(tester,
+            size: const Size(280, 480),
+            textScale: 2,
+            locale: locale,
+            dark: dark);
+        await type(tester, 'art');
+        await respond(tester, 0, 'Long creative tag name',
+            joinCount: 123456789, ranked: true);
+        expect(find.text('#Long creative tag name'), findsOneWidget);
+        final context = tester.element(find.byType(SearchScreen));
+        final enter = find.text(AppLocalizations.of(context)!.enter);
+        await tester.ensureVisible(enter);
+        await tester.pump();
+        expect(enter.hitTestable(), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+      testWidgets(
+          'long tag suggestion fits narrow large-text layout in $locale dark=$dark',
+          (tester) async {
+        await mount(tester,
+            size: const Size(280, 480),
+            textScale: 2,
+            locale: locale,
+            dark: dark);
+        await type(tester, 'art');
+        const label = 'A long creative community tag with multiple interests';
+        await respond(tester, 0, label, joinCount: 123456789);
+        expect(find.text(label).hitTestable(), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
     }
-    testWidgets('ranked subscribed tag fits narrow large text in $locale',
-        (tester) async {
-      await mount(tester,
-          size: const Size(280, 480), textScale: 2, locale: locale);
-      await type(tester, 'art');
-      await respond(tester, 0, 'Long creative tag name',
-          joinCount: 123456789, ranked: true);
-      expect(find.text('#Long creative tag name'), findsOneWidget);
-      final context = tester.element(find.byType(SearchScreen));
-      final enter = find.text(AppLocalizations.of(context)!.enter);
-      await tester.ensureVisible(enter);
-      await tester.pump();
-      expect(enter.hitTestable(), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-    testWidgets('long tag suggestion fits narrow large-text layout in $locale',
-        (tester) async {
-      await mount(tester,
-          size: const Size(280, 480), textScale: 2, locale: locale);
-      await type(tester, 'art');
-      const label = 'A long creative community tag with multiple interests';
-      await respond(tester, 0, label, joinCount: 123456789);
-      expect(find.text(label).hitTestable(), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
   }
 
   testWidgets(
@@ -323,53 +358,58 @@ void main() {
     const Locale('zh'),
     const Locale('zh', 'TW')
   ]) {
-    for (final scale in [1.0, 2.0]) {
-      testWidgets(
-          'all thirty ranking entries remain reachable $locale / $scale',
-          (tester) async {
-        holdInitial = true;
-        await mount(tester,
-            size: const Size(280, 480), textScale: scale, locale: locale);
-        for (final (options, handler) in initial) {
-          handler.resolve(Response(requestOptions: options, data: {
-            'code': 0,
-            'data': options.path.contains('ranklist')
-                ? {
-                    'rankList': [
-                      {
-                        'listName': 'Ranking',
-                        'ruleUrl': '',
-                        'sortNo': 0,
-                        'type': 0,
-                        'hotLists': List.generate(
-                            30,
-                            (index) => {
-                                  'title': 'Ranked entry $index',
-                                  'interactionCount': 0,
-                                  'isAuth': false,
-                                  'isVerify': false,
-                                  'postType': 0,
-                                  'pv': 123456789,
-                                  'resource': 0,
-                                  'trend': 1,
-                                  'url': '',
-                                }),
-                      }
-                    ],
-                  }
-                : <String, dynamic>{},
-          }));
-        }
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 100));
-        final state =
-            tester.state<SearchScreenState>(find.byType(SearchScreen));
-        state.getScrollControllers().single.jumpTo(
-            state.getScrollControllers().single.position.maxScrollExtent);
-        await tester.pump();
-        expect(find.text('Ranked entry 29').hitTestable(), findsOneWidget);
-        expect(tester.takeException(), isNull);
-      });
+    for (final dark in [false, true]) {
+      for (final scale in [1.0, 2.0]) {
+        testWidgets(
+            'all thirty ranking entries remain reachable $locale / $scale dark=$dark',
+            (tester) async {
+          holdInitial = true;
+          await mount(tester,
+              size: const Size(280, 480),
+              textScale: scale,
+              locale: locale,
+              dark: dark);
+          for (final (options, handler) in initial) {
+            handler.resolve(Response(requestOptions: options, data: {
+              'code': 0,
+              'data': options.path.contains('ranklist')
+                  ? {
+                      'rankList': [
+                        {
+                          'listName': 'Ranking',
+                          'ruleUrl': '',
+                          'sortNo': 0,
+                          'type': 0,
+                          'hotLists': List.generate(
+                              30,
+                              (index) => {
+                                    'title': 'Ranked entry $index',
+                                    'interactionCount': 0,
+                                    'isAuth': false,
+                                    'isVerify': false,
+                                    'postType': 0,
+                                    'pv': 123456789,
+                                    'resource': 0,
+                                    'trend': 1,
+                                    'url': '',
+                                  }),
+                        }
+                      ],
+                    }
+                  : <String, dynamic>{},
+            }));
+          }
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 100));
+          final state =
+              tester.state<SearchScreenState>(find.byType(SearchScreen));
+          state.getScrollControllers().single.jumpTo(
+              state.getScrollControllers().single.position.maxScrollExtent);
+          await tester.pump();
+          expect(find.text('Ranked entry 29').hitTestable(), findsOneWidget);
+          expect(tester.takeException(), isNull);
+        });
+      }
     }
   }
 
