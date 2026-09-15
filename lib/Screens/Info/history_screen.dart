@@ -78,10 +78,10 @@ class _HistoryScreenState extends BaseDynamicState<HistoryScreen>
             .toList();
         _total = total;
         _recordHistory = recordHistory;
-        if (archives != null) {
+        if (refresh || archives != null) {
           _archiveDataList
             ..clear()
-            ..addAll(archives);
+            ..addAll(archives ?? <ArchiveData>[]);
         }
         if (refresh) _histories.clear();
         _histories.addAll(posts);

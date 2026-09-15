@@ -153,6 +153,38 @@ void main() {
       await frames(tester);
       expect(await load, IndicatorResult.noMore);
       expect(visibleIds(), [1, 2, 3]);
+      final invalidRefresh = Future.sync(refresh.onRefresh!);
+      await frames(tester);
+      respond(2, {
+        'meta': {'status': 200},
+        'response': {
+          'count': 9,
+          'recordHistory': 1,
+          'archiveData': [
+            {
+              'count': 9,
+              'desc': 'Invalid replacement category',
+              'startTime': 0,
+              'endTime': 1
+            }
+          ],
+          'items': [post(8), 42],
+        }
+      });
+      await frames(tester);
+      expect(await invalidRefresh, IndicatorResult.fail);
+      expect(visibleIds(), [1, 2, 3]);
+      expect(
+          find.textContaining('Invalid replacement category',
+              findRichText: true),
+          findsNothing);
+      final fresh = Future.sync(refresh.onRefresh!);
+      await frames(tester);
+      respond(3, response([9], includeCategories: false));
+      await frames(tester);
+      expect(await fresh, IndicatorResult.success);
+      expect(visibleIds(), [9]);
+      expect(find.textContaining('Category', findRichText: true), findsNothing);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 5));
