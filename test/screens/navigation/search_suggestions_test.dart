@@ -81,7 +81,9 @@ void main() {
   }
 
   Future<void> respond(WidgetTester tester, int index, String label,
-      {int joinCount = -1, bool ranked = false}) async {
+      {int joinCount = -1,
+      bool ranked = false,
+      String? rankName = 'Popular creative community'}) async {
     final (options, handler) = pending[index];
     handler.resolve(Response(requestOptions: options, data: {
       'code': 0,
@@ -93,7 +95,7 @@ void main() {
               'tagName': label,
               'joinCount': joinCount,
               'subscribed': ranked,
-              'rankName': ranked ? 'Popular creative community' : null,
+              'rankName': ranked ? rankName : null,
               'recommendReport': {'algInfo': '', 'recId': ''},
             }
           },
@@ -181,6 +183,24 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets(
+      'normal-sized ranked suggestion keeps the action beside its content',
+      (tester) async {
+    await mount(tester);
+    await type(tester, 'art');
+    await respond(tester, 0, 'art',
+        joinCount: 15269, ranked: true, rankName: null);
+    final title = find.text('#art');
+    final l10n =
+        AppLocalizations.of(tester.element(find.byType(SearchScreen)))!;
+    final action = find.text(l10n.enter);
+    expect(
+        tester.getRect(action).left, greaterThan(tester.getRect(title).right));
+    expect(tester.getRect(action).bottom - tester.getRect(title).top,
+        lessThan(90));
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('late suggestion cannot replace the newer query', (tester) async {
     await mount(tester);

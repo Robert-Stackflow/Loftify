@@ -719,6 +719,14 @@ class LoftifyItemBuilder {
     Function()? onTap,
     bool useBackground = false,
   }) {
+    Widget buildEnterButton() => RoundIconTextButton(
+          text: appLocalizations.enter,
+          height: null,
+          minHeight: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          color: Theme.of(context).primaryColor,
+          onPressed: onTap,
+        );
     return ClickableGestureDetector(
       onTap: onTap,
       child: Container(
@@ -734,83 +742,84 @@ class LoftifyItemBuilder {
                 )
               : null,
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.all(Radius.circular(12)),
-                image: DecorationImage(
-                  image: AssetImage(AssetUtil.tagIconBgMess),
-                  fit: BoxFit.cover,
+        child: LayoutBuilder(builder: (context, constraints) {
+          final stacked = constraints.maxWidth < 280 ||
+              MediaQuery.textScalerOf(context).scale(14) > 19;
+          return Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.all(Radius.circular(12)),
+                  image: DecorationImage(
+                    image: AssetImage(AssetUtil.tagIconBgMess),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                child: Text(
+                  textAlign: TextAlign.center,
+                  tag.tagName,
+                  style: Theme.of(context).textTheme.titleSmall?.apply(
+                        color: Colors.white,
+                      ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              child: Text(
-                textAlign: TextAlign.center,
-                tag.tagName,
-                style: Theme.of(context).textTheme.titleSmall?.apply(
-                      color: Colors.white,
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "#${tag.tagName}",
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "#${tag.tagName}",
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 5),
-                  Wrap(
-                    spacing: 5,
-                    runSpacing: 5,
-                    children: [
-                      if (StringUtil.isNotEmpty(tag.rankName))
-                        _buildTagStatus(
-                          context,
-                          tag.rankName!,
-                          ChewieColors.likeButtonColor,
-                        ),
-                      if (tag.subscribed)
-                        _buildTagStatus(
-                          context,
-                          appLocalizations.subscribed,
-                          Theme.of(context).primaryColor,
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    appLocalizations.joinCount(tag.joinCount.toString()),
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.apply(fontWeightDelta: 1),
-                  ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: RoundIconTextButton(
-                      text: appLocalizations.enter,
-                      height: null,
-                      minHeight: 48,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 6),
-                      color: Theme.of(context).primaryColor,
-                      onPressed: onTap,
+                    const SizedBox(height: 5),
+                    Wrap(
+                      spacing: 5,
+                      runSpacing: 5,
+                      children: [
+                        if (StringUtil.isNotEmpty(tag.rankName))
+                          _buildTagStatus(
+                            context,
+                            tag.rankName!,
+                            ChewieColors.likeButtonColor,
+                          ),
+                        if (tag.subscribed)
+                          _buildTagStatus(
+                            context,
+                            appLocalizations.subscribed,
+                            Theme.of(context).primaryColor,
+                          ),
+                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 5),
+                    Text(
+                      appLocalizations.joinCount(tag.joinCount.toString()),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.apply(fontWeightDelta: 1),
+                    ),
+                    if (stacked)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: buildEnterButton(),
+                      ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+              if (!stacked) ...[
+                const SizedBox(width: 8),
+                buildEnterButton(),
+              ],
+            ],
+          );
+        }),
       ),
     );
   }
