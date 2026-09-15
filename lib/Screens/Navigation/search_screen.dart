@@ -47,6 +47,8 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
   List<RankListItem> _rankList = [];
   List<ConfigListItem> _configList = [];
   List<SearchSuggestItem> _sugList = [];
+  int _suggestRequest = 0;
+  String _suggestQuery = '';
   TabController? _tabController;
   final SwiperController _swiperController = SwiperController();
   final ScrollController _scrollController = ScrollController();
@@ -71,12 +73,13 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
     fetchGuessList();
     fetchRankList();
     _searchController.addListener(() {
-      if (_searchController.text.isEmpty) {
-        _sugList.clear();
-        if (mounted) setState(() {});
-      } else {
-        _performSuggest(_searchController.text);
-      }
+      final query = _searchController.text;
+      // Selection and composing changes must not repeat the same request.
+      if (query == _suggestQuery) return;
+      _suggestQuery = query;
+      final request = ++_suggestRequest;
+      setState(() => _sugList = []);
+      if (query.isNotEmpty) _performSuggest(query, request);
     });
     if (ResponsiveUtil.isDesktop()) {
       Future.delayed(const Duration(milliseconds: 200), () {
@@ -215,20 +218,22 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
     RouteUtil.pushPanelCupertinoRoute(context, TagDetailScreen(tag: tag));
   }
 
-  _performSuggest(String str) {
-    SearchApi.getSuggestList(key: str).then((value) {
+  Future<void> _performSuggest(String str, int request) async {
+    bool isCurrent() => mounted && request == _suggestRequest;
+    try {
+      final value = await SearchApi.getSuggestList(key: str);
+      if (!isCurrent()) return;
       if (value['code'] != 0) {
-        IToast.showTop(value['msg']);
+        IToast.showTop(value['msg'] ?? appLocalizations.loadFailed);
       } else {
-        if (value['data']['items'] != null &&
-            _searchController.text.isNotEmpty) {
-          _sugList = (value['data']['items'] as List)
-              .map((e) => SearchSuggestItem.fromJson(e))
-              .toList();
-        }
-        if (mounted) setState(() {});
+        final items = (value['data']?['items'] as List? ?? [])
+            .map((e) => SearchSuggestItem.fromJson(e))
+            .toList();
+        setState(() => _sugList = items);
       }
-    });
+    } catch (_) {
+      if (isCurrent()) IToast.showTop(appLocalizations.loadFailed);
+    }
   }
 
   _buildSuggestList() {
