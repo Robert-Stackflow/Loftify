@@ -18,6 +18,55 @@ void main() {
     }
   });
 
+  for (final width in [280.0, 720.0]) {
+    for (final scale in [1.0, 2.0]) {
+      for (final dark in [false, true]) {
+        for (final label in ['No content available', '暂无内容', '暫無內容']) {
+          testWidgets(
+              'management empty state grows without nested scrolling $width $scale $dark $label',
+              (tester) async {
+            tester.view.physicalSize = Size(width, 320);
+            tester.view.devicePixelRatio = 1;
+            addTearDown(tester.view.resetPhysicalSize);
+            addTearDown(tester.view.resetDevicePixelRatio);
+            await tester.pumpWidget(MaterialApp(
+              theme: (dark
+                      ? ChewieThemeColorData.defaultDarkThemes.first
+                      : ChewieThemeColorData.defaultLightThemes.first)
+                  .toThemeData(),
+              home: Builder(builder: (context) {
+                chewieProvider.setRootContext(context);
+                return Scaffold(
+                    body: MediaQuery(
+                  data: MediaQueryData(
+                      size: Size(width, 320),
+                      textScaler: TextScaler.linear(scale)),
+                  child: ListView(children: [
+                    CaptionItem(
+                        title: 'Management',
+                        children: [SettingManagementEmptyState(text: label)])
+                  ]),
+                ));
+              }),
+            ));
+            await tester.pumpAndSettle();
+            final stateRect =
+                tester.getRect(find.byType(SettingManagementEmptyState));
+            final textRect = tester.getRect(find.text(label));
+            expect(stateRect.height, greaterThanOrEqualTo(140));
+            expect(textRect.bottom, lessThanOrEqualTo(stateRect.bottom));
+            expect(textRect.right, lessThanOrEqualTo(stateRect.right));
+            expect(find.byType(Scrollable), findsOneWidget);
+            await tester.ensureVisible(find.text(label));
+            await tester.pumpAndSettle();
+            expect(find.text(label).hitTestable(), findsOneWidget);
+            expect(tester.takeException(), isNull);
+          });
+        }
+      }
+    }
+  }
+
   testWidgets(
       'management items use caption spacing, dividers and theme actions',
       (tester) async {

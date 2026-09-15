@@ -90,14 +90,8 @@ class _BlacklistSettingScreenState
                   '${appLocalizations.blacklistSetting} (${blacklist.length})',
               children: blacklist.isEmpty
                   ? [
-                      SizedBox(
-                        height: 140,
-                        child: EmptyPlaceholder(
-                          text: appLocalizations.noContent,
-                          physics: const NeverScrollableScrollPhysics(),
-                          topPadding: 20,
-                        ),
-                      ),
+                      SettingManagementEmptyState(
+                          text: appLocalizations.noContent),
                     ]
                   : blacklist.map(_buildBlacklistRow).toList(),
             ),

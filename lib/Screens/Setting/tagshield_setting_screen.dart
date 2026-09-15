@@ -109,14 +109,8 @@ class _TagShieldSettingScreenState
               title: '${appLocalizations.tagShieldSetting} (${tags.length})',
               children: tags.isEmpty
                   ? [
-                      SizedBox(
-                        height: 140,
-                        child: EmptyPlaceholder(
-                          text: appLocalizations.noContent,
-                          physics: const NeverScrollableScrollPhysics(),
-                          topPadding: 20,
-                        ),
-                      ),
+                      SettingManagementEmptyState(
+                          text: appLocalizations.noContent),
                     ]
                   : tags.map(_buildTagRow).toList(),
             ),

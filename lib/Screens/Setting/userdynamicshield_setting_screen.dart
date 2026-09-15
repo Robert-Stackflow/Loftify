@@ -84,14 +84,8 @@ class _UserDynamicShieldSettingScreenState
                   '${appLocalizations.userDynamicShieldSetting} (${shieldList.length})',
               children: shieldList.isEmpty
                   ? [
-                      SizedBox(
-                        height: 140,
-                        child: EmptyPlaceholder(
-                          text: appLocalizations.noContent,
-                          physics: const NeverScrollableScrollPhysics(),
-                          topPadding: 20,
-                        ),
-                      ),
+                      SettingManagementEmptyState(
+                          text: appLocalizations.noContent),
                     ]
                   : shieldList.map(_buildShieldlistRow).toList(),
             ),
