@@ -316,39 +316,39 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
     if (!_loadingTabs.add(loadingKey)) return IndicatorResult.none;
     if (refresh) _likeNoMore = false;
     int offset = refresh ? 0 : _likeMessages.length;
-    return await HiveUtil.getUserInfo().then((blogInfo) async {
-      return await MessageApi.getLikeMessages(
-              blogId: blogInfo!.blogId, offset: offset)
-          .then((value) {
-        try {
-          if (value['meta']['status'] != 200) {
-            IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-            return IndicatorResult.fail;
-          } else {
-            List<MessageItem> t = [];
-            t = (value['response'] as List)
-                .map((e) => MessageItem.fromJson(e))
-                .toList();
-            if (refresh) _likeMessages.clear();
-            _likeMessages.addAll(t);
-            if (mounted) setState(() {});
-            if (t.isEmpty && !refresh) {
-              _likeNoMore = true;
-              return IndicatorResult.noMore;
-            } else {
-              return IndicatorResult.success;
-            }
-          }
-        } catch (e, t) {
-          ILogger.error("Failed to load system notice list", e, t);
-          if (mounted) IToast.showTop(appLocalizations.loadFailed);
-          return IndicatorResult.fail;
-        } finally {
-          if (mounted) setState(() {});
-          _loadingTabs.remove(loadingKey);
+    try {
+      final blogInfo = await HiveUtil.getUserInfo();
+      if (!mounted) return IndicatorResult.none;
+      if (blogInfo == null) return IndicatorResult.fail;
+      final value = await MessageApi.getLikeMessages(
+          blogId: blogInfo.blogId, offset: offset);
+      if (!mounted) return IndicatorResult.none;
+      if (value['meta']['status'] != 200) {
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+        return IndicatorResult.fail;
+      } else {
+        List<MessageItem> t = [];
+        t = (value['response'] as List)
+            .map((e) => MessageItem.fromJson(e))
+            .toList();
+        if (refresh) _likeMessages.clear();
+        _likeMessages.addAll(t);
+        if (mounted) setState(() {});
+        if (t.isEmpty && !refresh) {
+          _likeNoMore = true;
+          return IndicatorResult.noMore;
+        } else {
+          return IndicatorResult.success;
         }
-      });
-    });
+      }
+    } catch (e, t) {
+      ILogger.error("Failed to load system notice list", e, t);
+      if (mounted) IToast.showTop(appLocalizations.loadFailed);
+      return IndicatorResult.fail;
+    } finally {
+      if (mounted) setState(() {});
+      _loadingTabs.remove(loadingKey);
+    }
   }
 
   Future<IndicatorResult> _fetchSystemNotices(
@@ -362,41 +362,42 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
     if (!_loadingTabs.add(loadingKey)) return IndicatorResult.none;
     if (refresh) resetNoMore?.call();
     int offset = refresh ? 0 : list.length;
-    return await HiveUtil.getUserInfo().then((blogInfo) async {
-      return await MessageApi.getSystemNoticeList(
-        blogId: blogInfo!.blogId,
+    try {
+      final blogInfo = await HiveUtil.getUserInfo();
+      if (!mounted) return IndicatorResult.none;
+      if (blogInfo == null) return IndicatorResult.fail;
+      final value = await MessageApi.getSystemNoticeList(
+        blogId: blogInfo.blogId,
         type: type,
         offset: offset,
-      ).then((value) {
-        try {
-          if (value['meta']['status'] != 200) {
-            IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-            return IndicatorResult.fail;
-          } else {
-            List<MessageItem> t = [];
-            t = (value['response'] as List)
-                .map((e) => MessageItem.fromJson(e))
-                .toList();
-            if (refresh) list.clear();
-            list.addAll(t);
-            if (mounted) setState(() {});
-            if (t.isEmpty && !refresh) {
-              onNoMore?.call();
-              return IndicatorResult.noMore;
-            } else {
-              return IndicatorResult.success;
-            }
-          }
-        } catch (e, t) {
-          ILogger.error("Failed to load system notice list", e, t);
-          if (mounted) IToast.showTop(appLocalizations.loadFailed);
-          return IndicatorResult.fail;
-        } finally {
-          if (mounted) setState(() {});
-          _loadingTabs.remove(loadingKey);
+      );
+      if (!mounted) return IndicatorResult.none;
+      if (value['meta']['status'] != 200) {
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+        return IndicatorResult.fail;
+      } else {
+        List<MessageItem> t = [];
+        t = (value['response'] as List)
+            .map((e) => MessageItem.fromJson(e))
+            .toList();
+        if (refresh) list.clear();
+        list.addAll(t);
+        if (mounted) setState(() {});
+        if (t.isEmpty && !refresh) {
+          onNoMore?.call();
+          return IndicatorResult.noMore;
+        } else {
+          return IndicatorResult.success;
         }
-      });
-    });
+      }
+    } catch (e, t) {
+      ILogger.error("Failed to load system notice list", e, t);
+      if (mounted) IToast.showTop(appLocalizations.loadFailed);
+      return IndicatorResult.fail;
+    } finally {
+      if (mounted) setState(() {});
+      _loadingTabs.remove(loadingKey);
+    }
   }
 
   Widget _buildTabView() {
