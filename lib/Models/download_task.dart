@@ -319,6 +319,14 @@ class DownloadTask {
       status == DownloadTaskStatus.downloading ||
       status == DownloadTaskStatus.paused;
 
+  /// Unknown totals animate only while bytes are actively being transferred.
+  double? get indicatorProgress {
+    if (status == DownloadTaskStatus.completed) return 1;
+    if (status == DownloadTaskStatus.downloading && totalBytes <= 0)
+      return null;
+    return progress.clamp(0.0, 1.0).toDouble();
+  }
+
   bool get isTerminal =>
       status == DownloadTaskStatus.completed ||
       status == DownloadTaskStatus.failed ||

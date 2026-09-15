@@ -414,7 +414,7 @@ class _DownloadTaskTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(99),
                   child: LinearProgressIndicator(
                     minHeight: 3,
-                    value: task.totalBytes > 0 ? task.progress : null,
+                    value: task.indicatorProgress,
                     color: progressColor,
                     backgroundColor: colorScheme.surfaceContainerHighest
                         .withValues(alpha: 0.7),
