@@ -209,16 +209,20 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
   bool _subscribeNoMore = false;
   bool _collectionNoMore = false;
   bool _otherNoMore = false;
-  final List<String> _tabLabelList = [
-    appLocalizations.all,
-    appLocalizations.like,
-    appLocalizations.recommend,
-    appLocalizations.gift,
-    appLocalizations.atMe,
-    appLocalizations.subscribe,
-    appLocalizations.favorite,
-    appLocalizations.other,
-  ];
+  List<String> get _tabLabelList {
+    final localizations = AppLocalizations.of(context)!;
+    return [
+      localizations.all,
+      localizations.like,
+      localizations.recommend,
+      localizations.gift,
+      localizations.atMe,
+      localizations.subscribe,
+      localizations.favorite,
+      localizations.other,
+    ];
+  }
+
   late TabController _tabController;
   late final LazyTabLoadState _tabLoadState;
   int _currentTabIndex = 0;
@@ -274,7 +278,7 @@ class _SystemNoticeScreenState extends BaseDynamicState<SystemNoticeScreen>
     );
     _currentTabIndex = _tabLoadState.currentIndex;
     _tabController = TabController(
-      length: _tabLabelList.length,
+      length: _tabIdList.length,
       initialIndex: _currentTabIndex,
       vsync: this,
     );
