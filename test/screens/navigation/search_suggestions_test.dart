@@ -268,6 +268,54 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('new query starts at the first suggestion after scrolling',
+      (tester) async {
+    await mount(tester);
+    Future<void> results(String query) async {
+      await type(tester, query);
+      final (options, handler) = pending.last;
+      handler.resolve(Response(requestOptions: options, data: {
+        'code': 0,
+        'data': {
+          'items': List.generate(
+              30,
+              (index) => {
+                    'type': 1,
+                    'tagInfo': {
+                      'tagName': '$query result $index',
+                      'subscribed': false,
+                      'recommendReport': {'algInfo': '', 'recId': ''},
+                    },
+                  })
+        },
+      }));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    await results('old');
+    await tester.drag(find.text('old result 1'), const Offset(0, -500));
+    await tester.pump(const Duration(seconds: 1));
+    final state = tester.state<SearchScreenState>(find.byType(SearchScreen));
+    expect(state.getScrollControllers().single.offset, greaterThan(0));
+    await results('new');
+    expect(state.getScrollControllers().single.offset, 0);
+    expect(find.text('new result 0').hitTestable(), findsOneWidget);
+    await tester.drag(find.text('new result 1'), const Offset(0, -250));
+    await tester.pump(const Duration(seconds: 1));
+    final offset = state.getScrollControllers().single.offset;
+    expect(offset, greaterThan(0));
+    tester.view.viewInsets = const FakeViewPadding(bottom: 250);
+    addTearDown(tester.view.resetViewInsets);
+    await tester.pump();
+    expect(state.getScrollControllers().single.offset, offset);
+    tester.view.resetViewInsets();
+    await tester.pump();
+    expect(state.getScrollControllers().single.offset, offset);
+    expect(pending.length, 2);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('late suggestion cannot replace the newer query', (tester) async {
     await mount(tester);
     await type(tester, 'old');
