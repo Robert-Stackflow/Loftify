@@ -66,12 +66,16 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
   late TabController _tabController;
   late final LazyTabLoadState _tabLoadState;
   int _currentTabIndex = 0;
-  final List<String> _tabLabelList = [
-    appLocalizations.follow,
-    appLocalizations.tag,
-    appLocalizations.collection,
-    appLocalizations.grain
-  ];
+  List<String> get _tabLabelList {
+    final localizations = AppLocalizations.of(context)!;
+    return [
+      localizations.follow,
+      localizations.tag,
+      localizations.collection,
+      localizations.grain,
+    ];
+  }
+
   static const List<String> _tabIdList = [
     'follow',
     'tag',
@@ -283,7 +287,7 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
     );
     _currentTabIndex = _tabLoadState.currentIndex;
     _tabController = TabController(
-      length: _tabLabelList.length,
+      length: _tabIdList.length,
       initialIndex: _currentTabIndex,
       vsync: this,
     );
@@ -296,7 +300,7 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
               : offset < -0.001
                   ? _tabController.index - 1
                   : _tabController.index;
-      if (preloadIndex >= 0 && preloadIndex < _tabLabelList.length) {
+      if (preloadIndex >= 0 && preloadIndex < _tabIdList.length) {
         _ensureTabLoaded(preloadIndex);
       }
       final index =
@@ -308,7 +312,7 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
   void _setCurrentTab(int index) {
     final safeIndex = TabStatePreference.restoreIndex(
       index,
-      _tabLabelList.length,
+      _tabIdList.length,
     );
     final changed = safeIndex != _currentTabIndex;
     if (changed) {
