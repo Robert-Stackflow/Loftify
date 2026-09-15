@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:dio/dio.dart';
@@ -15,6 +16,44 @@ import 'package:loftify/generated/app_localizations.dart';
 import 'package:loftify/Widgets/Design/loftify_state_view.dart';
 
 class _UnusedCookieManager extends Fake implements CookieManager {}
+
+Map<String, dynamic> _message(int id) {
+  final author = {
+    'blogId': id,
+    'blogNickName': 'Creator $id',
+    'blogName': 'creator$id',
+    'bigAvaImg': '',
+    'homePageUrl': '',
+    'imageDigitStamp': false,
+    'imageProtected': false,
+    'imageStamp': false,
+    'isOriginalAuthor': false,
+  };
+  return {
+    'actUserBlogInfo': author,
+    'blogInfo': author,
+    'actUserId': id,
+    'blogId': id,
+    'commentLikeType': 0,
+    'id': id,
+    'publishTime': 1724918400000,
+    'thumbnail': '',
+    'type': 0,
+    'defString': 'Creator $id recommended your story',
+    'content': jsonEncode({
+      'postViewRank': 0,
+      'postUrl': '',
+      'bigAvaImg': '',
+      'blogNickName': 'Creator $id',
+      'blogName': 'creator$id',
+      'postPermalink': '',
+      'postId': id,
+      'postTitle': 'Story $id',
+      'postType': 1,
+      'isReblog': 0,
+    }),
+  };
+}
 
 void main() => noticeLoadingTests('all');
 
@@ -183,6 +222,74 @@ void noticeLoadingTests(String tab, {bool missingCache = false}) {
         });
       }
     }
+
+    testWidgets('loaded rows survive failures and refresh replaces pagination',
+        (tester) async {
+      final pending = <RequestInterceptorHandler>[];
+      final options = <RequestOptions>[];
+      RequestUtil.instance.dio.interceptors.clear();
+      RequestUtil.instance.dio.interceptors.add(InterceptorsWrapper(
+        onRequest: (request, handler) {
+          options.add(request);
+          pending.add(handler);
+        },
+      ));
+      void respond(List<dynamic> rows) => pending.last.resolve(Response(
+            requestOptions: options.last,
+            data: {
+              'meta': {'status': 200},
+              'response': rows
+            },
+          ));
+      List<String> visibleAuthors() => tester
+          .widgetList<SystemNoticeMessageTile>(
+            find.byType(SystemNoticeMessageTile),
+          )
+          .map((tile) => tile.nickname)
+          .toList();
+      Future<dynamic> request({bool refresh = false}) {
+        final widget =
+            tester.widget<EasyRefresh>(find.byType(EasyRefresh).first);
+        return Future.sync(refresh ? widget.onRefresh! : widget.onLoad!);
+      }
+
+      await mount(tester);
+      respond([_message(1)]);
+      await pumpFrames(tester);
+      expect(visibleAuthors(), ['Creator 1']);
+      final failedPage = request();
+      await pumpFrames(tester);
+      expect(options.last.queryParameters['offset'], 1);
+      // A partially valid page must not append its first row before parsing fails.
+      respond([_message(2), <String, dynamic>{}]);
+      await pumpFrames(tester);
+      expect(await failedPage, IndicatorResult.fail);
+      expect(visibleAuthors(), ['Creator 1']);
+      final retryPage = request();
+      await pumpFrames(tester);
+      expect(options.last.queryParameters['offset'], 1);
+      respond([_message(2)]);
+      await pumpFrames(tester);
+      expect(await retryPage, IndicatorResult.success);
+      expect(visibleAuthors(), ['Creator 1', 'Creator 2']);
+      final failedRefresh = request(refresh: true);
+      await pumpFrames(tester);
+      expect(options.last.queryParameters['offset'], 0);
+      respond([<String, dynamic>{}]);
+      await pumpFrames(tester);
+      expect(await failedRefresh, IndicatorResult.fail);
+      expect(visibleAuthors(), ['Creator 1', 'Creator 2']);
+      expect(find.byType(LoftifyStateView), findsNothing);
+      final fresh = request(refresh: true);
+      await pumpFrames(tester);
+      respond([_message(3)]);
+      await pumpFrames(tester);
+      expect(await fresh, IndicatorResult.success);
+      expect(visibleAuthors(), ['Creator 3']);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 5));
+    });
 
     testWidgets('timeout releases loading lock and allows refresh',
         (tester) async {
