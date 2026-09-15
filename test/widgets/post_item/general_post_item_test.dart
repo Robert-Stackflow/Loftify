@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Models/post_detail_response.dart';
@@ -72,8 +73,16 @@ void main() {
     );
   }
 
-  Widget buildHost(Widget child) {
+  Widget buildHost(Widget child,
+      {Locale? locale, bool dark = false, double textScale = 1}) {
     return MaterialApp(
+      locale: locale,
+      theme: dark ? ThemeData.dark() : ThemeData.light(),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context)
+            .copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
       navigatorKey: chewieProvider.globalNavigatorKey,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
@@ -84,6 +93,50 @@ void main() {
         },
       ),
     );
+  }
+
+  for (final extent in [80.0, 120.0, 160.0]) {
+    for (final locale in [
+      const Locale('en'),
+      const Locale('zh'),
+      const Locale('zh', 'TW')
+    ]) {
+      for (final dark in [false, true]) {
+        testWidgets('invalid grid fits $extent $locale dark=$dark',
+            (tester) async {
+          await tester.pumpWidget(buildHost(
+            Center(
+                child: SizedBox.square(
+                    dimension: extent,
+                    child: GridPostItemWidget(
+                        item: buildArticle(type: PostType.invalid),
+                        wh: extent))),
+            locale: locale,
+            dark: dark,
+            textScale: 2,
+          ));
+          await tester.pump();
+          expect(tester.takeException(), isNull);
+          expect(find.byType(ContainerItem), findsOneWidget);
+          final label = AppLocalizations.of(
+                  tester.element(find.byType(GridPostItemWidget)))!
+              .invalidContent;
+          expect(find.text(label), findsOneWidget);
+          final textRect = tester.getRect(find.text(label));
+          final cardRect = tester.getRect(find.byType(GridPostItemWidget));
+          expect(textRect.top, greaterThanOrEqualTo(cardRect.top));
+          expect(textRect.bottom, lessThanOrEqualTo(cardRect.bottom));
+          final paragraph = tester.renderObject<RenderParagraph>(
+            find.descendant(
+                of: find.text(label), matching: find.byType(RichText)),
+          );
+          for (final box in paragraph.getBoxesForSelection(
+              TextSelection(baseOffset: 0, extentOffset: label.length))) {
+            expect(box.bottom, lessThanOrEqualTo(paragraph.size.height + 0.01));
+          }
+        });
+      }
+    }
   }
 
   testWidgets('waterfall text posts keep all four rounded corners',

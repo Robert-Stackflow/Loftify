@@ -55,27 +55,51 @@ Widget _buildInvalidPostCard(
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(12),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ChewieIcon(
-                  LoftifyIcons.invalidContent,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  size: 24,
+            child: LayoutBuilder(builder: (context, constraints) {
+              final label = appLocalizations.invalidContent;
+              final style = Theme.of(context)
+                  .textTheme
+                  .labelSmall
+                  ?.apply(fontWeightDelta: 1);
+              final metrics = TextPainter(
+                text: TextSpan(text: 'Ag', style: style),
+                textDirection: Directionality.of(context),
+                textScaler: MediaQuery.textScalerOf(context),
+              )..layout();
+              final lineHeight = metrics.height;
+              metrics.dispose();
+              final showIcon = !constraints.hasBoundedHeight ||
+                  constraints.maxHeight >= 29 + lineHeight * 2;
+              final availableHeight =
+                  constraints.maxHeight - (showIcon ? 29 : 0);
+              final lines = constraints.hasBoundedHeight && lineHeight > 0
+                  ? (availableHeight / lineHeight).floor().clamp(1, 4)
+                  : 4;
+              return Tooltip(
+                message: label,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (showIcon) ...[
+                      ChewieIcon(
+                        LoftifyIcons.invalidContent,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        size: 24,
+                      ),
+                      const SizedBox(height: 5),
+                    ],
+                    Text(
+                      label,
+                      semanticsLabel: label,
+                      maxLines: lines,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: style,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 5),
-                Text(
-                  appLocalizations.invalidContent,
-                  maxLines: 4,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context)
-                      .textTheme
-                      .labelSmall
-                      ?.apply(fontWeightDelta: 1),
-                ),
-              ],
-            ),
+              );
+            }),
           ),
         ),
       ),
