@@ -501,66 +501,81 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
   }
 
   Widget _buildStatsticRow() {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          ItemBuilder.buildStatisticItem(
-            context,
-            title: appLocalizations.hotCount,
-            count: meInfoData?.blogInfo.hot.hotCount,
-            onTap: () {},
-            labelFontWeightDelta: 2,
-            countColor: Theme.of(context).textTheme.titleLarge?.color,
-            labelColor: Theme.of(context).textTheme.labelSmall?.color,
-          ),
-          ItemBuilder.buildStatisticItem(
-            context,
-            title: appLocalizations.follower,
-            count: meInfoData?.blogInfo.followerCount,
-            onTap: () {
-              if (blogInfo != null && meInfoData != null) {
-                RouteUtil.pushPanelCupertinoRoute(
-                  context,
-                  FollowingFollowerScreen(
-                    infoMode: InfoMode.me,
-                    followingMode: FollowingMode.follower,
-                    blogId: blogInfo!.blogId,
-                    blogName: blogInfo!.blogName,
-                    total: meInfoData!.blogInfo.followerCount,
-                  ),
-                );
-              }
-            },
-            countColor: Theme.of(context).textTheme.titleLarge?.color,
-            labelColor: Theme.of(context).textTheme.labelSmall?.color,
-            labelFontWeightDelta: 2,
-          ),
-          ItemBuilder.buildStatisticItem(
-            context,
-            title: appLocalizations.following,
-            count: meInfoData?.blogInfo.attentionCount,
-            countColor: Theme.of(context).textTheme.titleLarge?.color,
-            labelColor: Theme.of(context).textTheme.labelSmall?.color,
-            labelFontWeightDelta: 2,
-            onTap: () {
-              if (blogInfo != null && meInfoData != null) {
-                RouteUtil.pushPanelCupertinoRoute(
-                  context,
-                  FollowingFollowerScreen(
-                    infoMode: InfoMode.me,
-                    followingMode: FollowingMode.following,
-                    blogId: blogInfo!.blogId,
-                    blogName: blogInfo!.blogName,
-                    total: meInfoData!.blogInfo.attentionCount,
-                  ),
-                );
-              }
-            },
-          ),
-        ],
+    final items = <Widget>[
+      ItemBuilder.buildStatisticItem(
+        context,
+        title: appLocalizations.hotCount,
+        count: meInfoData?.blogInfo.hot.hotCount,
+        onTap: () {},
+        labelFontWeightDelta: 2,
+        countColor: Theme.of(context).textTheme.titleLarge?.color,
+        labelColor: Theme.of(context).textTheme.labelSmall?.color,
       ),
+      ItemBuilder.buildStatisticItem(
+        context,
+        title: appLocalizations.follower,
+        count: meInfoData?.blogInfo.followerCount,
+        onTap: () {
+          if (blogInfo != null && meInfoData != null) {
+            RouteUtil.pushPanelCupertinoRoute(
+              context,
+              FollowingFollowerScreen(
+                infoMode: InfoMode.me,
+                followingMode: FollowingMode.follower,
+                blogId: blogInfo!.blogId,
+                blogName: blogInfo!.blogName,
+                total: meInfoData!.blogInfo.followerCount,
+              ),
+            );
+          }
+        },
+        countColor: Theme.of(context).textTheme.titleLarge?.color,
+        labelColor: Theme.of(context).textTheme.labelSmall?.color,
+        labelFontWeightDelta: 2,
+      ),
+      ItemBuilder.buildStatisticItem(
+        context,
+        title: appLocalizations.following,
+        count: meInfoData?.blogInfo.attentionCount,
+        countColor: Theme.of(context).textTheme.titleLarge?.color,
+        labelColor: Theme.of(context).textTheme.labelSmall?.color,
+        labelFontWeightDelta: 2,
+        onTap: () {
+          if (blogInfo != null && meInfoData != null) {
+            RouteUtil.pushPanelCupertinoRoute(
+              context,
+              FollowingFollowerScreen(
+                infoMode: InfoMode.me,
+                followingMode: FollowingMode.following,
+                blogId: blogInfo!.blogId,
+                blogName: blogInfo!.blogName,
+                total: meInfoData!.blogInfo.attentionCount,
+              ),
+            );
+          }
+        },
+      ),
+    ];
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: LayoutBuilder(builder: (context, constraints) {
+        final largeText = MediaQuery.textScalerOf(context).scale(14) > 19;
+        if (largeText && constraints.maxWidth < 420) {
+          return Column(
+            children: [
+              for (final item in items)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: item,
+                ),
+            ],
+          );
+        }
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: items,
+        );
+      }),
     );
   }
 

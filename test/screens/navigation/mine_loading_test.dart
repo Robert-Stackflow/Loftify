@@ -10,6 +10,7 @@ import 'package:loftify/Screens/Navigation/mine_screen.dart';
 import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/cloud_control_provider.dart';
 import 'package:loftify/Utils/request_util.dart';
+import 'package:loftify/Utils/lottie_files.dart';
 import 'package:loftify/generated/app_localizations.dart';
 import 'package:provider/provider.dart';
 
@@ -30,6 +31,22 @@ void main() {
     Hive.init(directory.path);
     await Hive.openBox(ChewieHiveUtil.settingsBox);
     RequestUtil.cookieManager = _UnusedCookieManager();
+    EasyRefresh.defaultHeaderBuilder = () => LottieCupertinoHeader(
+          backgroundColor: Colors.transparent,
+          indicator: LottieFiles.buildLoadingAnimation(40, false),
+          hapticFeedback: true,
+          triggerOffset: 56,
+          maxOverOffset: 84,
+          radius: 20,
+        );
+    EasyRefresh.defaultFooterBuilder = () => LottieCupertinoFooter(
+          backgroundColor: Colors.transparent,
+          indicator: LottieFiles.buildLoadingAnimation(36, false),
+          triggerOffset: 52,
+          maxOverOffset: 76,
+          infiniteOffset: 240,
+          radius: 18,
+        );
   });
 
   setUp(() {
@@ -45,8 +62,12 @@ void main() {
     );
   });
 
-  Future<void> mount(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(390, 844);
+  Future<void> mount(
+    WidgetTester tester, {
+    Size size = const Size(390, 844),
+    double textScale = 1,
+  }) async {
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -62,6 +83,12 @@ void main() {
             ...AppLocalizations.localizationsDelegates,
           ],
           supportedLocales: AppLocalizations.supportedLocales,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(textScale),
+            ),
+            child: child!,
+          ),
           home: Builder(builder: (context) {
             chewieProvider.setRootContext(context);
             return const MineScreen();
@@ -74,6 +101,26 @@ void main() {
     expect(requests, 1);
     expect(options.path, '/v1.1/usercounts.api');
   }
+
+  testWidgets('narrow large-text profile keeps its actions reachable',
+      (tester) async {
+    await mount(tester, size: const Size(280, 480), textScale: 2);
+    expect(tester.takeException(), isNull);
+    final label = AppLocalizations.of(tester.element(find.byType(MineScreen)))!
+        .downloadManagement;
+    await tester.scrollUntilVisible(find.text(label), 180,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pump(const Duration(seconds: 1));
+    await tester.ensureVisible(find.text(label));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text(label).hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    pending.resolve(Response(requestOptions: options, statusCode: 200, data: {
+      'meta': {'status': 503, 'desc': 'Unavailable'}
+    }));
+    await tester.pump(const Duration(seconds: 5));
+  });
 
   testWidgets(
       'fixed actions remain available while profile is pending or fails',
