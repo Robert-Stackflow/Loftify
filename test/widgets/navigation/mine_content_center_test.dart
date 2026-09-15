@@ -3,6 +3,27 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('my app bar has no title and retains notification and dress actions',
+      () {
+    final source = File(
+      'lib/Screens/Navigation/mine_screen.dart',
+    ).readAsStringSync();
+    final start = source.indexOf('PreferredSizeWidget _buildAppBar()');
+    final end =
+        source.indexOf('List<ScrollController> getScrollControllers()', start);
+    expect(start, isNonNegative);
+    expect(end, greaterThan(start));
+    final appBar = source.substring(start, end);
+
+    expect(appBar, contains('ResponsiveAppBar('));
+    expect(appBar, isNot(contains('title:')));
+    expect(appBar, contains('globalControl.showDress'));
+    expect(appBar, contains('const SuitScreen()'));
+    expect(appBar, contains('const SystemNoticeScreen()'));
+    expect(appBar, contains('LoftifyIcons.dress'));
+    expect(appBar, contains('LoftifyIcons.notifications'));
+  });
+
   test('content center keeps downloads without duplicating app bar actions',
       () {
     final source = File(
