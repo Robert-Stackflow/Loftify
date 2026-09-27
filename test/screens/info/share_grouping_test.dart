@@ -488,4 +488,144 @@ void main() {
     await failed;
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('clearing invalid recommendations preserves month grouping',
+      (tester) async {
+    await mount(tester);
+    final localizations =
+        AppLocalizations.of(tester.element(find.byType(ShareScreen)))!;
+    respond(0, {
+      'meta': {'status': 200},
+      'response': {
+        'count': 2,
+        'archives': [
+          {
+            'year': 2024,
+            'monthCount': [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+          }
+        ],
+        'items': [
+          {
+            'post': {...post(1)['post'] as Map<String, dynamic>, 'blogId': 0}
+          },
+          post(2),
+        ],
+      },
+    });
+    await frames(tester);
+    expect(find.textContaining(localizations.yearAndMonth(2, 2024)),
+        findsOneWidget);
+    tester.widget<ShadowIconButton>(find.byType(ShadowIconButton)).onTap!();
+    await frames(tester);
+    await tester.tap(find.text(localizations.clearInvalidContent));
+    await frames(tester);
+    expect(options[1].path, '/v2.0/batchData.api');
+    respond(1, {
+      'meta': {'status': 200}
+    });
+    await frames(tester);
+    expect(
+        find.textContaining(localizations.yearAndMonth(2, 2024)), findsNothing);
+    expect(find.textContaining(localizations.yearAndMonth(1, 2024)),
+        findsOneWidget);
+    expect(
+      tester
+          .widget<LoftifyPostArchiveSliverGrid>(
+            find.byType(LoftifyPostArchiveSliverGrid),
+          )
+          .itemCount,
+      1,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('clear invalid ignores an older pagination response',
+      (tester) async {
+    await mount(tester);
+    respond(0, {
+      'meta': {'status': 200},
+      'response': {
+        'count': 3,
+        'archives': [
+          {
+            'year': 2024,
+            'monthCount': [2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+          }
+        ],
+        'items': [
+          {
+            'post': {...post(1)['post'] as Map<String, dynamic>, 'blogId': 0}
+          },
+          post(2),
+        ],
+      },
+    });
+    await frames(tester);
+    final refresh = tester.widget<EasyRefresh>(find.byType(EasyRefresh));
+    final pagination = Future.sync(refresh.onLoad!);
+    await frames(tester);
+    expect(pending, hasLength(2));
+    tester.widget<ShadowIconButton>(find.byType(ShadowIconButton)).onTap!();
+    await frames(tester);
+    final clearLabel = AppLocalizations.of(
+      tester.element(find.byType(ShareScreen)),
+    )!
+        .clearInvalidContent;
+    await tester.tap(find.text(clearLabel));
+    await frames(tester);
+    expect(options[2].path, '/v2.0/batchData.api');
+    respond(2, {
+      'meta': {'status': 200}
+    });
+    await frames(tester);
+    respond(1, {
+      'meta': {'status': 200},
+      'response': {
+        'count': 3,
+        'items': [post(3)]
+      },
+    });
+    await frames(tester);
+    expect(await pagination, IndicatorResult.none);
+    expect(
+      tester
+          .widgetList<GridPostItemWidget>(find.byType(GridPostItemWidget))
+          .map((item) => item.item.postId),
+      [2],
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('clear invalid timeout keeps the existing recommendations',
+      (tester) async {
+    await mount(tester);
+    respond(0, {
+      'meta': {'status': 200},
+      'response': {
+        'count': 2,
+        'items': [
+          {
+            'post': {...post(1)['post'] as Map<String, dynamic>, 'blogId': 0}
+          },
+          post(2),
+        ],
+      },
+    });
+    await frames(tester);
+    tester.widget<ShadowIconButton>(find.byType(ShadowIconButton)).onTap!();
+    await frames(tester);
+    final clearLabel = AppLocalizations.of(
+      tester.element(find.byType(ShareScreen)),
+    )!
+        .clearInvalidContent;
+    await tester.tap(find.text(clearLabel));
+    await frames(tester);
+    pending[1].reject(DioException(
+      requestOptions: options[1],
+      type: DioExceptionType.connectionTimeout,
+    ));
+    await frames(tester);
+    expect(find.byType(GridPostItemWidget), findsNWidgets(2));
+    expect(tester.takeException(), isNull);
+  });
 }

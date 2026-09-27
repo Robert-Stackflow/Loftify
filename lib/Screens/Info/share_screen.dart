@@ -10,6 +10,7 @@ import '../../Models/download_task.dart';
 import '../../Screens/Download/batch_download_screen.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/enums.dart';
+import '../../Utils/like_archive_util.dart';
 import '../../Widgets/Design/loftify_state_view.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
@@ -57,6 +58,8 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
   int _total = 0;
+  int _dataRevision = 0;
+  bool _clearingInvalid = false;
   InitPhase _initPhase = InitPhase.connecting;
 
   @override
@@ -85,7 +88,9 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
   Future<IndicatorResult> _fetchShare({bool refresh = false}) async {
     if (_loading || !mounted) return IndicatorResult.none;
     final token = appProvider.token;
+    final revision = _dataRevision;
     bool isCurrentAccount() => mounted && appProvider.token == token;
+    bool isCurrentRequest() => isCurrentAccount() && _dataRevision == revision;
     _loading = true;
     final offset = refresh ? 0 : _shareList.length;
     if (_shareList.isEmpty) {
@@ -95,7 +100,7 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
     try {
       final blogInfo =
           widget.infoMode == InfoMode.me ? await HiveUtil.getUserInfo() : null;
-      if (!isCurrentAccount()) return IndicatorResult.none;
+      if (!isCurrentRequest()) return IndicatorResult.none;
       final blogName =
           widget.infoMode == InfoMode.me ? blogInfo?.blogName : widget.blogName;
       if (blogName == null || blogName.isEmpty) {
@@ -106,7 +111,7 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
         blogName: blogName,
         offset: offset,
       );
-      if (!isCurrentAccount()) return IndicatorResult.none;
+      if (!isCurrentRequest()) return IndicatorResult.none;
       if (value['meta']['status'] != 200) {
         if (_shareList.isEmpty) _initPhase = InitPhase.failed;
         IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
@@ -157,7 +162,7 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
           ? IndicatorResult.noMore
           : IndicatorResult.success;
     } catch (error, stackTrace) {
-      if (!isCurrentAccount()) return IndicatorResult.none;
+      if (!isCurrentRequest()) return IndicatorResult.none;
       if (_shareList.isEmpty) _initPhase = InitPhase.failed;
       ILogger.error('Failed to load share list', error, stackTrace);
       IToast.showTop(appLocalizations.loadFailed);
@@ -327,26 +332,50 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
           iconData: LoftifyIcons.download,
           onPressed: _openBatchDownload,
         ),
-        FlutterContextMenuItem(
-          appLocalizations.clearInvalidContent,
-          iconData: LoftifyIcons.delete,
-          status: MenuItemStatus.error,
-          onPressed: () async {
-            UserApi.deleteInvalidShare(blogId: await HiveUtil.getUserId())
-                .then((value) {
-              if (value['meta']['status'] != 200) {
-                IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-              } else {
-                _shareList
-                    .removeWhere((e) => CommonInfoItemBuilder.isInvalid(e));
-                setState(() {});
-                IToast.showTop(appLocalizations.clearSuccess);
-              }
-            });
-          },
-        ),
+        if (widget.infoMode == InfoMode.me)
+          FlutterContextMenuItem(
+            appLocalizations.clearInvalidContent,
+            iconData: LoftifyIcons.delete,
+            status: MenuItemStatus.error,
+            onPressed: _clearInvalidShare,
+          ),
       ],
     );
+  }
+
+  Future<void> _clearInvalidShare() async {
+    if (_clearingInvalid || !mounted) return;
+    _clearingInvalid = true;
+    final token = appProvider.token;
+    bool isCurrentAccount() => mounted && appProvider.token == token;
+    try {
+      final blogId = await HiveUtil.getUserId();
+      if (!isCurrentAccount()) return;
+      final value = await UserApi.deleteInvalidShare(blogId: blogId);
+      if (!isCurrentAccount()) return;
+      if (value['meta']['status'] != 200) {
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+        return;
+      }
+      final removedIndices = <int>[];
+      for (var index = 0; index < _shareList.length; index++) {
+        if (CommonInfoItemBuilder.isInvalid(_shareList[index])) {
+          removedIndices.add(index);
+        }
+      }
+      _dataRevision++;
+      decrementLikeArchives(_archiveDataList, removedIndices);
+      _shareList.removeWhere(CommonInfoItemBuilder.isInvalid);
+      _total = (_total - removedIndices.length).clamp(0, _total);
+      setState(() {});
+      IToast.showTop(appLocalizations.clearSuccess);
+    } catch (error, stackTrace) {
+      ILogger.error(
+          'Failed to clear invalid recommendations', error, stackTrace);
+      if (isCurrentAccount()) IToast.showTop(appLocalizations.loadFailed);
+    } finally {
+      _clearingInvalid = false;
+    }
   }
 
   void _openBatchDownload() {
