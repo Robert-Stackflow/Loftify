@@ -4,7 +4,10 @@ import 'package:loftify/Api/user_api.dart';
 import 'package:loftify/Models/favorites_response.dart';
 import 'package:loftify/Screens/Info/favorite_folder_detail_screen.dart';
 
+import '../../Utils/app_provider.dart';
+import '../../Utils/enums.dart';
 import '../../Utils/utils.dart';
+import '../../Widgets/Design/loftify_state_view.dart';
 import '../../Widgets/Favorite/favorite_folder_card.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
@@ -27,52 +30,83 @@ class _FavoriteFolderListScreenState
   final List<FavoriteFolder> _favoriteFolderList = [];
   int _createCount = 0;
   bool _loading = false;
+  InitPhase _initPhase = InitPhase.connecting;
   final EasyRefreshController _refreshController = EasyRefreshController();
 
   @override
-  void initState() {
-    super.initState();
+  void dispose() {
+    _refreshController.dispose();
+    super.dispose();
   }
 
-  _fetchFavoriteFolderList({bool refresh = false}) async {
-    if (_loading) return;
+  Future<IndicatorResult> _fetchFavoriteFolderList(
+      {bool refresh = false}) async {
+    if (_loading || !mounted) return IndicatorResult.none;
+    final token = appProvider.token;
+    bool isCurrentAccount() => mounted && appProvider.token == token;
+    if (token.isEmpty) {
+      setState(() {
+        _favoriteFolderList.clear();
+        _createCount = 0;
+        _initPhase = InitPhase.failed;
+      });
+      return IndicatorResult.fail;
+    }
     _loading = true;
-    int offset = refresh ? 0 : _favoriteFolderList.length;
-    return await UserApi.getFavoriteFolderList(offset: offset).then((value) {
-      try {
-        if (value['code'] != 0) {
-          IToast.showTop(value['msg']);
-          return IndicatorResult.fail;
-        } else {
-          _createCount = value['data']['createCount'];
-          _favoriteFolderList.clear();
-          for (var e in value['data']['folders']) {
-            _favoriteFolderList.add(FavoriteFolder.fromJson(e));
-          }
-          if (_favoriteFolderList.length == _createCount && !refresh) {
-            return IndicatorResult.noMore;
-          } else {
-            return IndicatorResult.success;
-          }
-        }
-      } catch (e, t) {
-        ILogger.error("Failed to load folder list", e, t);
-        if (mounted) IToast.showTop(appLocalizations.loadFailed);
+    final offset = refresh ? 0 : _favoriteFolderList.length;
+    if (_favoriteFolderList.isEmpty) {
+      _initPhase = InitPhase.connecting;
+      setState(() {});
+    }
+    try {
+      final value = await UserApi.getFavoriteFolderList(offset: offset);
+      if (!isCurrentAccount()) return IndicatorResult.none;
+      if (value['code'] != 0) {
+        if (_favoriteFolderList.isEmpty) _initPhase = InitPhase.failed;
+        IToast.showTop(value['msg']);
         return IndicatorResult.fail;
-      } finally {
-        if (mounted) setState(() {});
-        _loading = false;
       }
-    });
+      final count = value['data']['createCount'] as int;
+      final folders = (value['data']['folders'] as List)
+          .map((item) => FavoriteFolder.fromJson(item))
+          .toList();
+      _createCount = count;
+      if (refresh) _favoriteFolderList.clear();
+      final existingIds =
+          _favoriteFolderList.map((folder) => folder.id).toSet();
+      for (final folder in folders) {
+        if (existingIds.add(folder.id)) _favoriteFolderList.add(folder);
+      }
+      _initPhase = InitPhase.successful;
+      if (!refresh &&
+          (folders.isEmpty || _favoriteFolderList.length >= _createCount)) {
+        return IndicatorResult.noMore;
+      }
+      return IndicatorResult.success;
+    } catch (error, stackTrace) {
+      if (!isCurrentAccount()) return IndicatorResult.none;
+      if (_favoriteFolderList.isEmpty) _initPhase = InitPhase.failed;
+      ILogger.error('Failed to load folder list', error, stackTrace);
+      IToast.showTop(appLocalizations.loadFailed);
+      return IndicatorResult.fail;
+    } finally {
+      if (mounted) {
+        setState(() {
+          if (!isCurrentAccount()) {
+            _favoriteFolderList.clear();
+            _createCount = 0;
+            _initPhase = InitPhase.failed;
+          }
+        });
+      }
+      _loading = false;
+    }
   }
 
-  _onRefresh() async {
-    return await _fetchFavoriteFolderList(refresh: true);
-  }
+  Future<IndicatorResult> _onRefresh() =>
+      _fetchFavoriteFolderList(refresh: true);
 
-  _onLoad() async {
-    return await _fetchFavoriteFolderList();
-  }
+  Future<IndicatorResult> _onLoad() => _fetchFavoriteFolderList();
 
   @override
   Widget build(BuildContext context) {
@@ -82,26 +116,61 @@ class _FavoriteFolderListScreenState
       appBar: _buildAppBar(),
       body: Stack(
         children: [
-          EasyRefresh(
+          EasyRefresh.builder(
             refreshOnStart: true,
             controller: _refreshController,
             onRefresh: _onRefresh,
             onLoad: _onLoad,
             triggerAxis: Axis.vertical,
-            child: _buildBody(),
+            childBuilder: (context, physics) {
+              if (_initPhase != InitPhase.successful) {
+                final loading = _initPhase == InitPhase.connecting;
+                return CustomScrollView(
+                  physics: physics,
+                  slivers: [
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: LoftifyStateView(
+                        visual: loading
+                            ? LoftifyStateVisual.loading
+                            : LoftifyStateVisual.error,
+                        title: loading
+                            ? appLocalizations.loading
+                            : appLocalizations.loadFailed,
+                        scrollWhenConstrained: false,
+                        actionLabel: loading ? null : chewieLocalizations.retry,
+                        onAction: loading
+                            ? null
+                            : () => _refreshController.callRefresh(),
+                      ),
+                    ),
+                  ],
+                );
+              }
+              if (_favoriteFolderList.isEmpty) {
+                return EmptyPlaceholder(
+                  text: appLocalizations.noFavoriteFolder,
+                  physics: physics,
+                  shrinkWrap: false,
+                );
+              }
+              return _buildBody(physics);
+            },
           ),
-          Positioned(
-            right: ResponsiveUtil.isLandscapeLayout() ? 16 : 12,
-            bottom: ResponsiveUtil.isLandscapeLayout() ? 16 : 76,
-            child: _buildFloatingButtons(),
-          ),
+          if (_initPhase == InitPhase.successful)
+            Positioned(
+              right: ResponsiveUtil.isLandscapeLayout() ? 16 : 12,
+              bottom: ResponsiveUtil.isLandscapeLayout() ? 16 : 76,
+              child: _buildFloatingButtons(),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(ScrollPhysics physics) {
     return WaterfallFlow.extent(
+      physics: physics,
       maxCrossAxisExtent: 600,
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
@@ -193,7 +262,7 @@ class _FavoriteFolderListScreenState
     );
   }
 
-  handleAdd() {
+  void handleAdd() {
     BottomSheetBuilder.showBottomSheet(
       context,
       (sheetContext) => InputBottomSheet(
@@ -230,7 +299,7 @@ class _FavoriteFolderListScreenState
     );
   }
 
-  _buildFloatingButtons() {
+  Widget _buildFloatingButtons() {
     return ResponsiveUtil.isLandscapeLayout()
         ? Column(
             children: [
