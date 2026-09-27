@@ -12,6 +12,7 @@ import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/cloud_control_provider.dart';
 import 'package:loftify/Utils/request_util.dart';
 import 'package:loftify/Utils/lottie_files.dart';
+import 'package:loftify/Widgets/Design/loftify_lottie.dart';
 import 'package:loftify/Widgets/loftify_icons.dart';
 import 'package:loftify/generated/app_localizations.dart';
 import 'package:provider/provider.dart';
@@ -254,6 +255,58 @@ void main() {
       );
     }
     expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    pending.resolve(Response(requestOptions: options, statusCode: 200, data: {
+      'meta': {'status': 503, 'desc': 'Unavailable'}
+    }));
+    await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets('mine app bar uses balanced Lucide actions and animated theme',
+      (tester) async {
+    appProvider.themeMode = ActiveThemeMode.light;
+    await mount(tester);
+    for (final icon in [
+      LoftifyIcons.dress,
+      LoftifyIcons.notifications,
+      LoftifyIcons.settings,
+    ]) {
+      final button = tester.widget<ChewieIconButton>(
+        find.byWidgetPredicate(
+          (widget) => widget is ChewieIconButton && widget.icon == icon,
+        ),
+      );
+      expect(button.iconSize, 20);
+      expect(button.foregroundColor, isNull);
+    }
+    final themeIcon = tester.widget<LoftifyLottie>(
+      find.byType(LoftifyLottie).first,
+    );
+    expect(themeIcon.spec.asset, LottieFiles.sunLight);
+    expect(themeIcon.controller, isNotNull);
+    await tester.pump(const Duration(seconds: 1));
+    final controller = tester
+        .widget<LoftifyLottie>(
+          find.byType(LoftifyLottie).first,
+        )
+        .controller!;
+    expect(controller.value, 1);
+    final themeLabel = AppLocalizations.of(
+      tester.element(find.byType(MineScreen)),
+    )!
+        .themeMode;
+    await tester.tap(find.byTooltip(themeLabel));
+    await tester.pump();
+    expect(appProvider.themeMode, ActiveThemeMode.dark);
+    expect(controller.status, AnimationStatus.reverse);
+    await tester.pump(const Duration(seconds: 1));
+    expect(controller.value, 0);
+    await tester.tap(find.byTooltip(themeLabel));
+    await tester.pump();
+    expect(appProvider.themeMode, ActiveThemeMode.light);
+    expect(controller.status, AnimationStatus.forward);
+    await tester.pump(const Duration(seconds: 1));
+    expect(controller.value, 1);
     await tester.pumpWidget(const SizedBox.shrink());
     pending.resolve(Response(requestOptions: options, statusCode: 200, data: {
       'meta': {'status': 503, 'desc': 'Unavailable'}

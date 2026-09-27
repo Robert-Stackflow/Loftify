@@ -24,6 +24,7 @@ import '../../Utils/cloud_control_provider.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../Widgets/Design/loftify_section.dart';
+import '../../Widgets/Design/loftify_lottie.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import '../Info/following_follower_screen.dart';
@@ -41,10 +42,7 @@ class MineScreen extends StatefulWidget {
 }
 
 class _MineScreenState extends BaseDynamicState<MineScreen>
-    with
-        TickerProviderStateMixin,
-        AutomaticKeepAliveClientMixin,
-        ScrollToHideMixin {
+    with AutomaticKeepAliveClientMixin, ScrollToHideMixin {
   @override
   bool get wantKeepAlive => true;
   FullBlogInfo? blogInfo;
@@ -55,12 +53,8 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
 
   final ScrollController _scrollController = ScrollController();
 
-  late AnimationController darkModeController;
-  Widget? darkModeWidget;
-
   @override
   void dispose() {
-    darkModeController.dispose();
     _refreshController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -69,16 +63,8 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
   @override
   void initState() {
     super.initState();
-    darkModeController = AnimationController(vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      darkModeWidget = LottieFiles.buildAnimation(
-        LottieFiles.sunLight,
-        size: 25,
-        autoForward: !ColorUtil.isDark(context),
-        controller: darkModeController,
-      );
-      if (mounted) setState(() {});
       panelScreenState?.refreshScrollControllers();
     });
     _fetchUserInfo();
@@ -709,31 +695,22 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
   void changeMode() {
     if (ColorUtil.isDark(context)) {
       appProvider.themeMode = ActiveThemeMode.light;
-      darkModeController.forward();
     } else {
       appProvider.themeMode = ActiveThemeMode.dark;
-      darkModeController.reverse();
     }
   }
 
   PreferredSizeWidget _buildAppBar() {
     final actions = <Widget>[
-      ItemBuilder.buildDynamicIconButton(
-        context: context,
-        icon: darkModeWidget ?? const ChewieIcon(LoftifyIcons.appearance),
-        onTap: changeMode,
-        onChangemode: (context, themeMode, child) {
-          if (darkModeController.duration == null) return;
-          if (themeMode == ActiveThemeMode.light) {
-            darkModeController.forward();
-          } else if (themeMode == ActiveThemeMode.dark) {
-            darkModeController.reverse();
-          } else if (ColorUtil.isDark(context)) {
-            darkModeController.reverse();
-          } else {
-            darkModeController.forward();
-          }
-        },
+      Selector<AppProvider, ActiveThemeMode>(
+        selector: (_, provider) => provider.themeMode,
+        builder: (context, themeMode, _) => _MineThemeModeButton(
+          isDark: themeMode == ActiveThemeMode.dark ||
+              (themeMode == ActiveThemeMode.system &&
+                  MediaQuery.platformBrightnessOf(context) == Brightness.dark),
+          tooltip: appLocalizations.themeMode,
+          onPressed: changeMode,
+        ),
       ),
       const SizedBox(width: 5),
       Consumer<LoftifyControlProvider>(
@@ -742,42 +719,35 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                 ? Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      ChewieIconButton(
+                      _mineAppBarIconButton(
                         icon: LoftifyIcons.dress,
                         tooltip: appLocalizations.dress,
-                        onPressed: () {
-                          RouteUtil.pushPanelCupertinoRoute(
-                            context,
-                            const SuitScreen(),
-                          );
-                        },
+                        onPressed: () => RouteUtil.pushPanelCupertinoRoute(
+                          context,
+                          const SuitScreen(),
+                        ),
                       ),
                       const SizedBox(width: 5),
                     ],
                   )
                 : emptyWidget,
       ),
-      ChewieIconButton(
+      _mineAppBarIconButton(
         icon: LoftifyIcons.notifications,
         tooltip: appLocalizations.notice,
-        onPressed: () {
-          RouteUtil.pushPanelCupertinoRoute(
-            context,
-            const SystemNoticeScreen(),
-          );
-        },
+        onPressed: () => RouteUtil.pushPanelCupertinoRoute(
+          context,
+          const SystemNoticeScreen(),
+        ),
       ),
       const SizedBox(width: 5),
-      ChewieIconButton(
+      _mineAppBarIconButton(
         icon: LoftifyIcons.settings,
         tooltip: appLocalizations.setting,
-        foregroundColor: Theme.of(context).iconTheme.color,
-        onPressed: () {
-          RouteUtil.pushPanelCupertinoRoute(
-            context,
-            const SettingScreen(),
-          );
-        },
+        onPressed: () => RouteUtil.pushPanelCupertinoRoute(
+          context,
+          const SettingScreen(),
+        ),
       ),
     ];
     return ResponsiveAppBar(
@@ -787,8 +757,92 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     );
   }
 
+  Widget _mineAppBarIconButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
+  }) =>
+      ChewieIconButtonVisualScope(
+        visualSize: ChewieIconButtonVisualScope.appBarVisualSize,
+        maximumIconSize: 20,
+        child: ChewieIconButton(
+          icon: icon,
+          iconSize: 20,
+          tooltip: tooltip,
+          onPressed: onPressed,
+        ),
+      );
+
   @override
   List<ScrollController> getScrollControllers() {
     return [_scrollController];
   }
+}
+
+/// Keeps the theme Lottie mounted while the app theme and its colors change.
+class _MineThemeModeButton extends StatefulWidget {
+  const _MineThemeModeButton({
+    required this.isDark,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final bool isDark;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  @override
+  State<_MineThemeModeButton> createState() => _MineThemeModeButtonState();
+}
+
+class _MineThemeModeButtonState extends State<_MineThemeModeButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(vsync: this);
+  bool _loaded = false;
+
+  @override
+  void didUpdateWidget(covariant _MineThemeModeButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_loaded && oldWidget.isDark != widget.isDark) {
+      if (LoftifyLottie.shouldReduceMotion(context)) {
+        _controller.value = widget.isDark ? 0 : 1;
+      } else if (widget.isDark) {
+        _controller.reverse();
+      } else {
+        _controller.forward();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+        tooltip: widget.tooltip,
+        onPressed: widget.onPressed,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+        style: const ButtonStyle(
+          shape: WidgetStatePropertyAll(CircleBorder()),
+        ),
+        icon: SizedBox.square(
+          dimension: ChewieIconButtonVisualScope.appBarVisualSize,
+          child: Center(
+            child: LottieFiles.buildAnimation(
+              LottieFiles.sunLight,
+              size: 25,
+              controller: _controller,
+              onLoaded: () {
+                if (_loaded) return;
+                _loaded = true;
+                _controller.value = widget.isDark ? 0 : 1;
+              },
+            ),
+          ),
+        ),
+      );
 }
