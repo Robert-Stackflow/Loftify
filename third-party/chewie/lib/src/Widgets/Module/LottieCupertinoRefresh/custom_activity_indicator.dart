@@ -13,6 +13,7 @@ class _CustomActivityIndicator extends StatelessWidget {
         progress = 1.0;
 
   const _CustomActivityIndicator.partiallyRevealed({
+    super.key,
     this.color,
     this.radius = _kDefaultIndicatorRadius,
     this.progress = 1.0,

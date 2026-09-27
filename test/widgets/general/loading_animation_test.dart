@@ -190,6 +190,7 @@ void main() {
     final firstGap =
         tester.getTopLeft(find.byKey(firstItemKey)).dy - initialTop;
     expect(40 * firstScale, lessThanOrEqualTo(firstGap + 0.01));
+    expect(40 * firstScale, closeTo(firstGap, 1));
     await gesture.moveBy(const Offset(0, 32));
     await tester.pump();
     final secondScale = indicatorScale();
@@ -198,12 +199,53 @@ void main() {
     expect(firstScale, lessThan(secondScale));
     expect(secondScale, lessThanOrEqualTo(1));
     expect(40 * secondScale, lessThanOrEqualTo(secondGap + 0.01));
+    expect(40 * secondScale, closeTo(secondGap, 1));
     expect(tester.getTopLeft(find.byKey(firstItemKey)).dy,
         greaterThan(initialTop));
     expect(tester.takeException(), isNull);
 
     await gesture.up();
     refreshCompleter.complete(IndicatorResult.success);
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('processing animation stays fitted when the gap contracts',
+      (tester) async {
+    final pending = Completer<IndicatorResult>();
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: EasyRefresh.builder(
+          header: const LottieCupertinoHeader(
+            triggerOffset: 28,
+            safeArea: false,
+            radius: 20,
+            indicator: SizedBox(width: 40, height: 40),
+          ),
+          onRefresh: () => pending.future,
+          childBuilder: (context, physics) => ListView(
+            physics: physics,
+            children: const [SizedBox(height: 900)],
+          ),
+        ),
+      ),
+    ));
+    final gesture = await tester.startGesture(const Offset(200, 100));
+    await gesture.moveBy(const Offset(0, 300));
+    await tester.pump();
+    await gesture.up();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    final scale = tester
+        .widget<Transform>(find.byKey(const ValueKey('indicatorPullScale')))
+        .transform
+        .storage[0];
+    final revealedHeight = tester
+        .getSize(find.byKey(const ValueKey('refresh-indicator-viewport')))
+        .height;
+    expect(find.byKey(const ValueKey('indicatorReady')), findsOneWidget);
+    expect(40 * scale, lessThanOrEqualTo(revealedHeight + 0.01));
+    expect(tester.takeException(), isNull);
+    pending.complete(IndicatorResult.success);
     await tester.pumpAndSettle();
   });
 

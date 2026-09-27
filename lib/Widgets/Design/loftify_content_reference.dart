@@ -60,33 +60,35 @@ class LoftifyContentReferenceCard extends StatelessWidget {
       radius: design.radii.control,
       padding: EdgeInsets.symmetric(
         horizontal: design.spacing.md,
-        vertical: design.spacing.md,
+        vertical: 0,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final textScale =
-                  MediaQuery.textScalerOf(context).scale(1).clamp(1, 3);
-              final stackTrailing = trailing != null &&
-                  (constraints.maxWidth < 300 || textScale > 1.35);
-              if (!stackTrailing) {
-                return _buildHeaderRow(context, includeTrailing: true);
-              }
-              return Column(
-                key: const ValueKey('content-reference-header-stacked'),
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildHeaderRow(context, includeTrailing: false),
-                  SizedBox(height: design.spacing.xs),
-                  Align(alignment: Alignment.centerRight, child: trailing!),
-                ],
-              );
-            },
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 40),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final textScale =
+                    MediaQuery.textScalerOf(context).scale(1).clamp(1, 3);
+                final stackTrailing = trailing != null &&
+                    (constraints.maxWidth < 300 || textScale > 1.35);
+                if (!stackTrailing) {
+                  return _buildHeaderRow(context, includeTrailing: true);
+                }
+                return Column(
+                  key: const ValueKey('content-reference-header-stacked'),
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildHeaderRow(context, includeTrailing: false),
+                    SizedBox(height: design.spacing.xs),
+                    Align(alignment: Alignment.centerRight, child: trailing!),
+                  ],
+                );
+              },
+            ),
           ),
           if (actions.isNotEmpty) ...[
-            SizedBox(height: design.spacing.md),
             LayoutBuilder(
               builder: (context, constraints) {
                 final textScale =
@@ -149,10 +151,10 @@ class LoftifyContentReferenceCard extends StatelessWidget {
             builder: (context, constraints) {
               final textScale =
                   MediaQuery.textScalerOf(context).scale(1).clamp(1, 3);
-              final stackText = textScale > 1.35 || constraints.maxWidth < 220;
+              final stackText = textScale > 1.35;
               final titleWidget = Text(
                 title,
-                maxLines: stackText ? 3 : 2,
+                maxLines: stackText ? 3 : 1,
                 overflow: TextOverflow.ellipsis,
                 style: design.typography.label.copyWith(
                   color: design.colors.textPrimary,
@@ -219,8 +221,9 @@ class _ContentReferenceActionButton extends StatelessWidget {
         : enabled
             ? design.colors.textPrimary
             : design.colors.textMuted;
-    final background =
-        action.emphasized ? design.colors.accentContainer : design.colors.page;
+    final background = action.emphasized
+        ? Color.lerp(design.colors.accentContainer, design.colors.accent, 0.25)!
+        : design.colors.surface;
     return Semantics(
       button: true,
       enabled: enabled,
@@ -229,7 +232,7 @@ class _ContentReferenceActionButton extends StatelessWidget {
         opacity: enabled ? 1 : design.icons.disabledOpacity,
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            minHeight: design.icons.minimumTapTarget,
+            minHeight: 40,
           ),
           child: Center(
             child: Material(
@@ -260,7 +263,7 @@ class _ContentReferenceActionButton extends StatelessWidget {
                 child: Padding(
                   padding: EdgeInsets.symmetric(
                     horizontal: design.spacing.md,
-                    vertical: design.spacing.sm,
+                    vertical: design.spacing.xs,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,

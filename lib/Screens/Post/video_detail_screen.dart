@@ -811,6 +811,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
       ),
       enableDrag: false,
       backgroundColor: ChewieTheme.getBackground(context),
+      topRadius: const Radius.circular(24),
     );
   }
 

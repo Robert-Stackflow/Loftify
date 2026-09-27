@@ -19,7 +19,8 @@ class PostDownloadActionIcon extends StatelessWidget {
 
   static const double visualSize = 20;
   static const double iconSize = 18;
-  static const double progressStrokeWidth = 2;
+  static const double progressSize = 14;
+  static const double progressStrokeWidth = 1.8;
 
   final DownloadState state;
   final String semanticLabel;
@@ -64,10 +65,10 @@ class PostDownloadActionIcon extends StatelessWidget {
                   curve: Curves.easeOutCubic,
                   tween: Tween<double>(begin: 0, end: normalizedProgress),
                   builder: (context, value, child) {
-                    return Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        CircularProgressIndicator(
+                    return Center(
+                      child: SizedBox.square(
+                        dimension: progressSize,
+                        child: CircularProgressIndicator(
                           value: value,
                           strokeWidth: progressStrokeWidth,
                           strokeCap: StrokeCap.round,
@@ -77,12 +78,7 @@ class PostDownloadActionIcon extends StatelessWidget {
                                 MediaQuery.highContrastOf(context) ? 0.72 : 0.4,
                           ),
                         ),
-                        ChewieIcon(
-                          LoftifyIcons.download,
-                          size: 10,
-                          color: design.colors.textPrimary,
-                        ),
-                      ],
+                      ),
                     );
                   },
                 ),

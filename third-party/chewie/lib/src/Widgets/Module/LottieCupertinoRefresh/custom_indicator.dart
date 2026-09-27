@@ -82,34 +82,16 @@ class _CustomIndicatorState extends State<_CustomIndicator>
   Widget _buildIndicator() {
     final progress =
         (_offset / math.max(1, _actualTriggerOffset)).clamp(0.0, 1.0);
-    final availableExtent = math.max(0.0, _offset - 2);
-    final fittedScale =
-        (availableExtent / math.max(1, _radius * 2)).clamp(0.0, 1.0);
-    // Never let the painted indicator become larger than the revealed gap.
-    // Otherwise its lower edge is clipped by the returning list and looks as
-    // if the content is covering the refresh animation.
-    // Keep the visual size on the same proportion as the pull gesture. The
-    // fitted cap only protects custom configurations whose trigger distance is
-    // smaller than the indicator diameter.
-    final scale = math.min(progress, fittedScale);
     Widget indicator;
     switch (_mode) {
       case IndicatorMode.drag:
       case IndicatorMode.armed:
-        const Curve opacityCurve = Interval(0.04, 0.72, curve: Curves.easeOut);
-        indicator = Opacity(
+        indicator = _CustomActivityIndicator.partiallyRevealed(
           key: const ValueKey('indicatorArmed'),
-          opacity: opacityCurve.transform(progress),
-          child: Transform.scale(
-            key: const ValueKey('indicatorPullScale'),
-            scale: scale,
-            child: _CustomActivityIndicator.partiallyRevealed(
-              radius: _radius,
-              progress: progress,
-              color: widget.foregroundColor,
-              indicator: widget.indicator,
-            ),
-          ),
+          radius: _radius,
+          progress: progress,
+          color: widget.foregroundColor,
+          indicator: widget.indicator,
         );
         break;
       case IndicatorMode.ready:
@@ -126,7 +108,7 @@ class _CustomIndicatorState extends State<_CustomIndicator>
       case IndicatorMode.done:
         indicator = _CustomActivityIndicator(
           key: const ValueKey('indicatorDone'),
-          radius: _radius * progress,
+          radius: _radius,
           color: widget.foregroundColor,
           animating: true,
           indicator: widget.indicator,
@@ -184,7 +166,15 @@ class _CustomIndicatorState extends State<_CustomIndicator>
                   : Offset(widget.indicatorOffset, 0),
               child: Align(
                 alignment: Alignment.center,
-                child: _buildIndicator(),
+                child: Transform.scale(
+                  key: const ValueKey('indicatorPullScale'),
+                  // Match the visible gap itself, not the trigger threshold.
+                  // The original Lottie already has transparent canvas around
+                  // its artwork, so it remains clear of the list edge while
+                  // becoming legible early in the pull.
+                  scale: (_offset / math.max(1, _radius * 2)).clamp(0.0, 1.0),
+                  child: _buildIndicator(),
+                ),
               ),
             ),
           ),

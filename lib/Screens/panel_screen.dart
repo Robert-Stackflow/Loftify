@@ -328,7 +328,7 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
           destinations: [
             LoftifyNavigationDestination(
               icon: LoftifyIcons.home,
-              lottieAsset: LottieFiles.navCompass,
+              lottieAsset: LottieFiles.navHome,
               label: appLocalizations.home,
             ),
             LoftifyNavigationDestination(

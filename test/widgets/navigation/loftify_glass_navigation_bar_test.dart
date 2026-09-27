@@ -12,7 +12,7 @@ import 'package:loftify/Widgets/loftify_icons.dart';
 const _destinations = <LoftifyNavigationDestination>[
   LoftifyNavigationDestination(
     icon: LoftifyIcons.home,
-    lottieAsset: LottieFiles.navCompass,
+    lottieAsset: LottieFiles.navHome,
     label: 'Home',
   ),
   LoftifyNavigationDestination(

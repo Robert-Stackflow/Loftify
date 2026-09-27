@@ -224,6 +224,7 @@ class LoftifyCommentPanel extends StatelessWidget {
         child: LoftifyPanel(
           title: title,
           semanticLabel: title,
+          compactHeader: true,
           expandBody: true,
           body: body,
         ),

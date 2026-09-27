@@ -326,6 +326,7 @@ class LoftifyPanel extends StatelessWidget {
     this.bodyPadding,
     this.footerPadding,
     this.showHandle = true,
+    this.compactHeader = false,
     this.expandBody = false,
     this.semanticLabel,
   });
@@ -339,6 +340,7 @@ class LoftifyPanel extends StatelessWidget {
   final EdgeInsetsGeometry? bodyPadding;
   final EdgeInsetsGeometry? footerPadding;
   final bool showHandle;
+  final bool compactHeader;
   final bool expandBody;
   final String? semanticLabel;
 
@@ -349,7 +351,9 @@ class LoftifyPanel extends StatelessWidget {
     final wide =
         design.grid.windowClassFor(width) != LoftifyWindowClass.compact;
     final borderRadius = BorderRadius.vertical(
-      top: Radius.circular(design.radii.panel),
+      top: Radius.circular(
+        compactHeader ? design.radii.panel + 4 : design.radii.panel,
+      ),
       bottom: wide ? Radius.circular(design.radii.panel) : Radius.zero,
     );
     final bodyWidget = bodyPadding == null
@@ -386,10 +390,11 @@ class LoftifyPanel extends StatelessWidget {
                     leading != null ||
                     trailing != null)
                   _buildHeader(context),
-                if (title != null ||
-                    subtitle != null ||
-                    leading != null ||
-                    trailing != null)
+                if (!compactHeader &&
+                    (title != null ||
+                        subtitle != null ||
+                        leading != null ||
+                        trailing != null))
                   _divider(context),
                 if (expandBody) Flexible(child: bodyWidget) else bodyWidget,
                 if (footer != null) ...[
@@ -414,14 +419,16 @@ class LoftifyPanel extends StatelessWidget {
   Widget _buildHandle(BuildContext context) {
     final design = context.design;
     return SizedBox(
-      height: design.spacing.xxxl,
+      height: compactHeader ? 16 : design.spacing.xxxl,
       child: Center(
         child: Container(
           key: const ValueKey('loftify-panel-handle'),
-          width: 36,
+          width: compactHeader ? 32 : 36,
           height: 4,
           decoration: BoxDecoration(
-            color: design.colors.outlineStrong,
+            color: compactHeader
+                ? design.colors.outlineStrong.withValues(alpha: 0.7)
+                : design.colors.outlineStrong,
             borderRadius: BorderRadius.circular(design.radii.full),
           ),
         ),
@@ -433,14 +440,16 @@ class LoftifyPanel extends StatelessWidget {
     final design = context.design;
     return ConstrainedBox(
       constraints: BoxConstraints(
-        minHeight: design.density.minimumHeight(
-          LoftifyDensityRole.contentComfortable,
-        ),
+        minHeight: compactHeader
+            ? 40
+            : design.density.minimumHeight(
+                LoftifyDensityRole.contentComfortable,
+              ),
       ),
       child: Padding(
         padding: EdgeInsets.symmetric(
           horizontal: design.spacing.xl,
-          vertical: design.spacing.lg,
+          vertical: compactHeader ? design.spacing.sm : design.spacing.lg,
         ),
         child: Row(
           crossAxisAlignment: subtitle?.isNotEmpty == true
@@ -454,10 +463,18 @@ class LoftifyPanel extends StatelessWidget {
             Expanded(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: compactHeader
+                    ? CrossAxisAlignment.center
+                    : CrossAxisAlignment.start,
                 children: [
                   if (title != null)
-                    Text(title!, style: design.typography.pageTitle),
+                    Text(
+                      title!,
+                      textAlign: compactHeader ? TextAlign.center : null,
+                      style: compactHeader
+                          ? design.typography.sectionTitle
+                          : design.typography.pageTitle,
+                    ),
                   if (subtitle?.isNotEmpty == true) ...[
                     SizedBox(height: design.spacing.xs),
                     Text(

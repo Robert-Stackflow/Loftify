@@ -1708,6 +1708,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
                     ),
                     enableDrag: false,
                     backgroundColor: ChewieTheme.getBackground(context),
+                    topRadius: const Radius.circular(24),
                   );
                 },
               ),
@@ -2457,7 +2458,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
       padding: EdgeInsets.only(
         left: context.design.spacing.xl,
         right: context.design.spacing.xl,
-        top: context.design.spacing.md,
+        top: context.design.spacing.sm,
       ),
       child: LoftifyContentReferenceCard(
         icon: LoftifyIcons.grain,
@@ -2482,51 +2483,13 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
       padding: EdgeInsets.only(
         left: context.design.spacing.xl,
         right: context.design.spacing.xl,
-        top: context.design.spacing.md,
+        top: context.design.spacing.sm,
       ),
       child: LoftifyContentReferenceCard(
         icon: LoftifyIcons.collection,
         eyebrow: appLocalizations.collection,
         title: _postDetailData!.post!.postCollection!.name,
-        trailing: Semantics(
-          button: true,
-          child: TextButton(
-            onPressed: () {
-              HapticFeedback.mediumImpact();
-              CollectionApi.subscribeOrUnSubscribe(
-                collectionId: collectionId,
-                isSubscribe:
-                    !(_postDetailData!.post!.postCollection!.subscribed),
-              ).then((value) {
-                if (value['meta']['status'] != 200) {
-                  IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-                } else {
-                  _postDetailData!.post!.postCollection!.subscribed =
-                      !(_postDetailData!.post!.postCollection!.subscribed);
-                  setState(() {});
-                }
-              });
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: _postDetailData!.post!.postCollection!.subscribed
-                  ? context.design.colors.textSecondary
-                  : context.design.colors.accentForeground,
-              textStyle: context.design.typography.label,
-              minimumSize: Size(
-                context.design.icons.minimumTapTarget,
-                context.design.icons.minimumTapTarget,
-              ),
-              padding:
-                  EdgeInsets.symmetric(horizontal: context.design.spacing.md),
-              splashFactory: NoSplash.splashFactory,
-            ),
-            child: Text(
-              _postDetailData!.post!.postCollection!.subscribed
-                  ? appLocalizations.subscribed
-                  : appLocalizations.subscribeCollection,
-            ),
-          ),
-        ),
+        trailing: _buildCollectionSubscribeAction(),
         actions: [
           LoftifyContentReferenceAction(
             label: _postDetailData!.post!.pos > 1
@@ -2562,6 +2525,79 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
             },
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCollectionSubscribeAction() {
+    final design = context.design;
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final subscribed = _postDetailData!.post!.postCollection!.subscribed;
+    final color = subscribed
+        ? design.colors.textSecondary
+        : design.colors.accentForeground;
+    final label = subscribed
+        ? appLocalizations.subscribed
+        : appLocalizations.subscribeCollection;
+    return Semantics(
+      button: true,
+      label: label,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          customBorder: const StadiumBorder(),
+          splashFactory: NoSplash.splashFactory,
+          overlayColor: WidgetStateProperty.all(
+            design.colors.accent.withValues(alpha: design.icons.pressedOpacity),
+          ),
+          onTap: () {
+            HapticFeedback.mediumImpact();
+            CollectionApi.subscribeOrUnSubscribe(
+              collectionId: collectionId,
+              isSubscribe: !subscribed,
+            ).then((value) {
+              if (!mounted) return;
+              if (value['meta']['status'] != 200) {
+                IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+              } else {
+                _postDetailData!.post!.postCollection!.subscribed = !subscribed;
+                setState(() {});
+              }
+            });
+          },
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 40),
+            child: Center(
+              child: Container(
+                height: textScale <= 1.15 ? 24 : null,
+                constraints: const BoxConstraints(minHeight: 24),
+                alignment: Alignment.center,
+                padding: EdgeInsets.symmetric(
+                  horizontal: design.spacing.md,
+                  vertical: textScale <= 1.15 ? 0 : design.spacing.xs,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: subscribed
+                        ? design.colors.outlineStrong
+                        : color.withValues(alpha: 0.7),
+                    width: design.borders.hairline,
+                  ),
+                ),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: design.typography.metadata.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

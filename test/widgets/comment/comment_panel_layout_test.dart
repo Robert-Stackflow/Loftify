@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loftify/Widgets/BottomSheet/comment_bottom_sheet.dart';
+import 'package:loftify/Widgets/Design/loftify_surfaces.dart';
 
 void main() {
   testWidgets('short large-text panel keeps header stable and list scrollable',
@@ -27,6 +28,15 @@ void main() {
     );
 
     expect(find.byKey(const ValueKey('loftify-panel-handle')), findsOneWidget);
+    expect(tester.getSize(find.byKey(const ValueKey('loftify-panel-handle'))),
+        const Size(32, 4));
+    final panelClip = tester.widget<ClipRRect>(
+      find.descendant(
+        of: find.byType(LoftifyPanel),
+        matching: find.byType(ClipRRect),
+      ),
+    );
+    expect((panelClip.borderRadius! as BorderRadius).topLeft.x, 24);
     expect(find.textContaining('Latest comments'), findsOneWidget);
     expect(tester.takeException(), isNull);
 

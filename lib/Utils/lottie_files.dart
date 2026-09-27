@@ -60,7 +60,7 @@ class LottieFiles {
   static const String loadingGradient = "assets/lottie/loading_gradient.json";
   static const String loadingLight = "assets/lottie/loading_light.json";
   static const String moonLight = "assets/lottie/moon_light.json";
-  static const String navCompass = "assets/lottie/nav_compass.json";
+  static const String navHome = "assets/lottie/nav_home.json";
   static const String navHeart = "assets/lottie/nav_heart.json";
   static const String navSearch = "assets/lottie/nav_search.json";
   static const String navUser = "assets/lottie/nav_user.json";
@@ -241,8 +241,8 @@ class LottieFiles {
       sourceSize: Size.square(48),
       tintRole: LoftifyLottieTintRole.foreground,
     ),
-    navCompass: LoftifyLottieSpec(
-      asset: navCompass,
+    navHome: LoftifyLottieSpec(
+      asset: navHome,
       sourceSize: Size.square(48),
       contentBounds: Rect.fromLTWH(4, 4, 40, 40),
       opticalFill: 0.9,
@@ -376,6 +376,7 @@ class LottieFiles {
       ),
     );
   }
+
 
   static String getLoadingPath(
     BuildContext context, {
