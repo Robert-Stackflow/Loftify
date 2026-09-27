@@ -77,7 +77,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
         ? (includesAppBar ? 350.0 : 240.0)
         : wide
             ? (includesAppBar ? 390.0 : 285.0)
-            : (includesAppBar ? 524.0 : 412.0);
+            : (includesAppBar ? 540.0 : 412.0);
     final accessibilityGrowth =
         ((scale - 1).clamp(0, 1.25) * 128) + (scale > 1.45 ? 96 : 0);
     return base + accessibilityGrowth;
@@ -222,10 +222,22 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
           centerTitle: !ResponsiveUtil.isLandscapeLayout(),
           title: Text(
             appLocalizations.personalHomepage,
-            style: Theme.of(context).textTheme.titleMedium?.apply(
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.apply(
                   color: Colors.white,
                   fontWeightDelta: 2,
+                )
+                .copyWith(
+              shadows: const [
+                Shadow(
+                  color: Color(0x99000000),
+                  blurRadius: 5,
+                  offset: Offset(0, 1),
                 ),
+              ],
+            ),
           ),
           flexibleSpace: FlexibleSpaceBar(
             background: Stack(
@@ -548,7 +560,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
     return Padding(
       padding: EdgeInsets.fromLTRB(
         design.spacing.xl,
-        topMargin ?? kToolbarHeight + MediaQuery.paddingOf(context).top + 8,
+        topMargin ?? MediaQuery.paddingOf(context).top + design.spacing.xl,
         design.spacing.xl,
         design.spacing.lg,
       ),
@@ -1203,7 +1215,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
       children: [
         Blur(
           blur: 10,
-          blurColor: Colors.black12,
+          blurColor: Colors.transparent,
           child: SizedBox.expand(
             child: ChewieItemBuilder.buildCachedImage(
               context: context,
@@ -1216,7 +1228,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
             ),
           ),
         ),
-        const LoftifyCoverScrim(),
+        const Opacity(opacity: 0.6, child: LoftifyCoverScrim()),
       ],
     );
   }

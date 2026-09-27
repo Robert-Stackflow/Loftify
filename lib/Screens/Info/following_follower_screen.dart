@@ -221,7 +221,7 @@ class _FollowingFollowerScreenState
     }
     return WaterfallFlow.builder(
       physics: physics,
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
+      padding: const EdgeInsets.only(bottom: 20),
       gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 560,
         mainAxisSpacing: 0,

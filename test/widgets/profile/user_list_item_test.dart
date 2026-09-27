@@ -7,7 +7,6 @@ import 'package:hive/hive.dart';
 import 'package:loftify/Models/account_response.dart';
 import 'package:loftify/Models/user_response.dart';
 import 'package:loftify/Widgets/Design/loftify_controls.dart';
-import 'package:loftify/Widgets/Design/loftify_surfaces.dart';
 import 'package:loftify/Widgets/Item/loftify_item_builder.dart';
 import 'package:loftify/generated/app_localizations.dart';
 
@@ -88,14 +87,15 @@ void main() {
       ),
     );
 
-    expect(find.byType(LoftifyCard), findsOneWidget);
+    final row = find.byKey(const ValueKey('loftify-relation-row-7'));
+    expect(row, findsOneWidget);
     expect(find.byType(LoftifyCompactToggleButton), findsOneWidget);
     expect(
       tester.getSize(find.byType(LoftifyCompactToggleButton)).height,
       greaterThanOrEqualTo(48),
     );
     expect(
-      tester.getSize(find.byType(LoftifyCard)).height,
+      tester.getSize(row).height,
       greaterThan(150),
     );
     expect(find.textContaining('ID:'), findsOneWidget);

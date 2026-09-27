@@ -4,6 +4,14 @@ import '../../Theme/loftify_design_theme.dart';
 import '../Design/loftify_surfaces.dart';
 import '../loftify_icons.dart';
 
+const _coverTextShadows = <Shadow>[
+  Shadow(
+    color: Color(0x99000000),
+    blurRadius: 5,
+    offset: Offset(0, 1),
+  ),
+];
+
 /// Content-width and reflow contract for the complete profile heading.
 class LoftifyProfileHeaderLayout extends StatelessWidget {
   const LoftifyProfileHeaderLayout({
@@ -145,6 +153,7 @@ class LoftifyProfileIdentity extends StatelessWidget {
                       style: design.typography.pageTitle.copyWith(
                         color: foregroundColor,
                         fontWeight: FontWeight.w700,
+                        shadows: _coverTextShadows,
                       ),
                     ),
                   ),
@@ -158,6 +167,7 @@ class LoftifyProfileIdentity extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: design.typography.metadata.copyWith(
                         color: foregroundColor.withValues(alpha: 0.88),
+                        shadows: _coverTextShadows,
                       ),
                     ),
                   ),
@@ -173,6 +183,7 @@ class LoftifyProfileIdentity extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: design.typography.metadata.copyWith(
                           color: foregroundColor.withValues(alpha: 0.88),
+                          shadows: _coverTextShadows,
                         ),
                       ),
                       if (descriptionLabel != null &&

@@ -21,7 +21,6 @@ import '../../Utils/asset_util.dart';
 import '../../Utils/enums.dart';
 import '../PostDetail/comment_item.dart';
 import '../Design/loftify_controls.dart';
-import '../Design/loftify_surfaces.dart';
 import '../../l10n/l10n.dart';
 import '../loftify_icons.dart';
 import 'item_builder.dart';
@@ -413,45 +412,55 @@ class LoftifyItemBuilder {
         final textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
         final stacked = constraints.maxWidth < 280 ||
             (constraints.maxWidth < 520 && textScale > 1.4);
-        return DecoratedBox(
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: design.colors.outline,
-                width: design.borders.hairline,
+        return Semantics(
+          key: ValueKey('loftify-relation-row-${item.blogInfo.blogId}'),
+          button: true,
+          label: item.blogInfo.blogNickName,
+          explicitChildNodes: true,
+          child: Material(
+            color: design.colors.page,
+            child: InkWell(
+              splashFactory: NoSplash.splashFactory,
+              overlayColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.pressed)) {
+                  return design.colors.textPrimary.withValues(alpha: 0.045);
+                }
+                if (states.contains(WidgetState.focused)) {
+                  return design.colors.accent.withValues(alpha: 0.08);
+                }
+                if (states.contains(WidgetState.hovered)) {
+                  return design.colors.textPrimary.withValues(alpha: 0.025);
+                }
+                return Colors.transparent;
+              }),
+              onTap: () {
+                panelScreenState?.pushPage(
+                  UserDetailScreen(
+                    blogId: item.blogInfo.blogId,
+                    blogName: item.blogInfo.blogName,
+                  ),
+                );
+              },
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: design.spacing.lg,
+                  vertical: design.spacing.md,
+                ),
+                child: stacked
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          buildSummary(),
+                          SizedBox(height: design.spacing.md),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: relationButton,
+                          ),
+                        ],
+                      )
+                    : buildSummary(trailing: relationButton),
               ),
             ),
-          ),
-          child: LoftifyCard(
-            variant: LoftifyCardVariant.flat,
-            backgroundColor: design.colors.page,
-            radius: 0,
-            semanticLabel: item.blogInfo.blogNickName,
-            padding: EdgeInsets.symmetric(
-              horizontal: design.spacing.md,
-              vertical: design.spacing.lg,
-            ),
-            onTap: () {
-              panelScreenState?.pushPage(
-                UserDetailScreen(
-                  blogId: item.blogInfo.blogId,
-                  blogName: item.blogInfo.blogName,
-                ),
-              );
-            },
-            child: stacked
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      buildSummary(),
-                      SizedBox(height: design.spacing.md),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: relationButton,
-                      ),
-                    ],
-                  )
-                : buildSummary(trailing: relationButton),
           ),
         );
       },

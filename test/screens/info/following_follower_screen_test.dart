@@ -14,7 +14,6 @@ import 'package:loftify/Utils/lottie_files.dart';
 import 'package:loftify/Utils/request_util.dart';
 import 'package:loftify/Widgets/Design/loftify_controls.dart';
 import 'package:loftify/Widgets/Design/loftify_state_view.dart';
-import 'package:loftify/Widgets/Design/loftify_surfaces.dart';
 import 'package:loftify/generated/app_localizations.dart';
 
 class _Cookies extends Fake implements CookieManager {}
@@ -180,15 +179,24 @@ void main() {
     await mount(tester);
     respond(0, [user(1)]);
     await frames(tester);
-    final card = find.byType(LoftifyCard);
+    final card = find.byKey(const ValueKey('loftify-relation-row-1'));
     final action = find.byType(LoftifyCompactToggleButton);
     expect(card, findsOneWidget);
     expect(action, findsOneWidget);
+    expect(tester.getTopLeft(card).dx, 0);
+    expect(find.byType(Divider), findsNothing);
     expect(tester.getSize(card).height, lessThan(150));
     expect(tester.getTopLeft(action).dx,
         greaterThan(tester.getTopLeft(find.text('Creator 1')).dx));
     expect(tester.getTopLeft(action).dy,
         lessThan(tester.getBottomLeft(card).dy - 40));
+    final rowInk = tester.widget<InkWell>(
+      find.descendant(of: card, matching: find.byType(InkWell)).first,
+    );
+    expect(rowInk.splashFactory, NoSplash.splashFactory);
+    final pressed = rowInk.overlayColor!.resolve({WidgetState.pressed});
+    expect(pressed!.a, greaterThan(0));
+    expect(pressed.a, lessThan(0.1));
     expect(tester.takeException(), isNull);
   });
 
