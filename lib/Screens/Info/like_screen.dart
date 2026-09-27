@@ -10,6 +10,7 @@ import 'package:loftify/Utils/hive_util.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Models/download_task.dart';
 import '../../Screens/Download/batch_download_screen.dart';
+import '../../Utils/app_provider.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/like_archive_util.dart';
 import '../../Utils/paged_data_controller.dart';
@@ -55,6 +56,7 @@ class _LikeScreenState extends BaseDynamicState<LikeScreen>
   @override
   bool get wantKeepAlive => true;
   final EasyRefreshController _refreshController = EasyRefreshController();
+  bool _clearingInvalid = false;
   late final PagedDataController<PostDetailData, int, int, List<ArchiveData>>
       _pagingController;
   InitPhase _initPhase = InitPhase.haveNotConnected;
@@ -350,34 +352,42 @@ class _LikeScreenState extends BaseDynamicState<LikeScreen>
           iconData: LoftifyIcons.download,
           onPressed: _openBatchDownload,
         ),
-        FlutterContextMenuItem(
-          appLocalizations.clearInvalidContent,
-          iconData: LoftifyIcons.delete,
-          status: MenuItemStatus.error,
-          onPressed: () async {
-            try {
-              final value = await UserApi.deleteInvalidLike(
-                blogId: await HiveUtil.getUserId(),
-              );
-              if (!mounted) return;
-              if (value['meta']['status'] != 200) {
-                IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-              } else {
-                final invalidItems = Set<PostDetailData>.identity()
-                  ..addAll(
-                    _likeList.where(CommonInfoItemBuilder.isInvalid),
-                  );
-                _removeLocalItems(invalidItems);
-                IToast.showTop(appLocalizations.clearSuccess);
-              }
-            } catch (error, stackTrace) {
-              ILogger.error('Failed to clear invalid likes', error, stackTrace);
-              if (mounted) IToast.showTop(appLocalizations.loadFailed);
-            }
-          },
-        ),
+        if (widget.infoMode == InfoMode.me)
+          FlutterContextMenuItem(
+            appLocalizations.clearInvalidContent,
+            iconData: LoftifyIcons.delete,
+            status: MenuItemStatus.error,
+            onPressed: _clearInvalidLikes,
+          ),
       ],
     );
+  }
+
+  Future<void> _clearInvalidLikes() async {
+    if (_clearingInvalid || !mounted) return;
+    _clearingInvalid = true;
+    final token = appProvider.token;
+    bool isCurrentAccount() => mounted && appProvider.token == token;
+    try {
+      final blogId = await HiveUtil.getUserId();
+      if (!isCurrentAccount()) return;
+      final value = await UserApi.deleteInvalidLike(blogId: blogId);
+      if (!isCurrentAccount()) return;
+      if (value['meta']['status'] != 200) {
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+        return;
+      }
+      _pagingController.cancelPending();
+      final invalidItems = Set<PostDetailData>.identity()
+        ..addAll(_likeList.where(CommonInfoItemBuilder.isInvalid));
+      _removeLocalItems(invalidItems);
+      IToast.showTop(appLocalizations.clearSuccess);
+    } catch (error, stackTrace) {
+      ILogger.error('Failed to clear invalid likes', error, stackTrace);
+      if (isCurrentAccount()) IToast.showTop(appLocalizations.loadFailed);
+    } finally {
+      _clearingInvalid = false;
+    }
   }
 
   void _openBatchDownload() {

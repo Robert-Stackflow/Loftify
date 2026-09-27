@@ -115,6 +115,60 @@ void main() {
       controller.dispose();
     });
 
+    test('cancel pending keeps current items and ignores the stale page',
+        () async {
+      final stalePage = Completer<PagedDataPage<int, int, void>>();
+      var calls = 0;
+      final cursors = <int>[];
+      final controller = PagedDataController<int, int, int, void>(
+        initialCursor: 0,
+        keyOf: (item) => item,
+        loader: (cursor, refresh) {
+          cursors.add(cursor);
+          calls++;
+          if (calls == 1) {
+            return Future.value(const PagedDataPage(
+              items: [1, 2],
+              nextCursor: 2,
+              hasMore: true,
+              total: 4,
+            ));
+          }
+          if (calls == 2) return stalePage.future;
+          return Future.value(const PagedDataPage(
+            items: [3],
+            nextCursor: 2,
+            hasMore: false,
+            total: 2,
+          ));
+        },
+      );
+
+      expect(await controller.refresh(), IndicatorResult.success);
+      final stale = controller.load();
+      controller.cancelPending();
+      expect(controller.items, [1, 2]);
+      expect(controller.loading, isFalse);
+      expect(
+        controller.removeWhere(
+          (item) => item == 1,
+          updateCursor: (cursor, removedCount) => cursor - removedCount,
+        ),
+        1,
+      );
+      expect(await controller.load(), IndicatorResult.noMore);
+      stalePage.complete(const PagedDataPage(
+        items: [99],
+        nextCursor: 3,
+        hasMore: false,
+        total: 4,
+      ));
+      expect(await stale, IndicatorResult.none);
+      expect(cursors, [0, 2, 1]);
+      expect(controller.items, [2, 3]);
+      controller.dispose();
+    });
+
     test('item parser isolates one malformed payload', () {
       final errors = <Object>[];
       final result = parsePagedDataItems<int>(

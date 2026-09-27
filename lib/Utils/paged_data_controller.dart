@@ -151,6 +151,14 @@ class PagedDataController<T, K, C, M> extends ChangeNotifier {
     if (notify) _notifySafely();
   }
 
+  /// Discards an in-flight response without clearing the current page.
+  void cancelPending() {
+    if (_disposed || !_loading) return;
+    _generation++;
+    _loading = false;
+    _notifySafely();
+  }
+
   int removeWhere(
     bool Function(T item) test, {
     C Function(C cursor, int removedCount)? updateCursor,

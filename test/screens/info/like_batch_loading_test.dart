@@ -9,9 +9,11 @@ import 'package:hive/hive.dart';
 import 'package:loftify/Screens/Download/batch_download_screen.dart';
 import 'package:loftify/Screens/Info/like_screen.dart';
 import 'package:loftify/Utils/app_provider.dart';
+import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/lottie_files.dart';
 import 'package:loftify/Utils/request_util.dart';
+import 'package:loftify/Widgets/PostItem/loftify_post_archive_grid.dart';
 import 'package:loftify/generated/app_localizations.dart';
 
 class _Cookies extends Fake implements CookieManager {}
@@ -77,6 +79,7 @@ void main() {
     Size size = const Size(390, 844),
     Locale locale = const Locale('en'),
     double textScale = 1,
+    InfoMode infoMode = InfoMode.me,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1;
@@ -99,7 +102,7 @@ void main() {
       supportedLocales: AppLocalizations.supportedLocales,
       home: Builder(builder: (context) {
         chewieProvider.setRootContext(context);
-        return LikeScreen();
+        return LikeScreen(infoMode: infoMode, blogName: 'author');
       }),
     ));
     await frames(tester);
@@ -248,6 +251,118 @@ void main() {
     });
     await frames(tester);
     await failed;
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('other authors likes do not offer current account cleanup',
+      (tester) async {
+    await mount(tester, infoMode: InfoMode.other);
+    respond(0, {
+      'meta': {'status': 200},
+      'response': {
+        'count': 1,
+        'items': [post(1)]
+      },
+    });
+    await frames(tester);
+    tester.widget<ShadowIconButton>(find.byType(ShadowIconButton)).onTap!();
+    await frames(tester);
+    final labels =
+        AppLocalizations.of(tester.element(find.byType(LikeScreen)))!;
+    expect(find.text(labels.batchDownload), findsOneWidget);
+    expect(find.text(labels.clearInvalidContent), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('late cleanup response from old account does not mutate likes',
+      (tester) async {
+    await mount(tester);
+    respond(0, {
+      'meta': {'status': 200},
+      'response': {
+        'count': 1,
+        'items': [<String, dynamic>{}],
+      },
+    });
+    await frames(tester);
+    expect(
+      tester
+          .widget<LoftifyPostArchiveSliverGrid>(
+            find.byType(LoftifyPostArchiveSliverGrid),
+          )
+          .itemCount,
+      1,
+    );
+    tester.widget<ShadowIconButton>(find.byType(ShadowIconButton)).onTap!();
+    await frames(tester);
+    final clearLabel = AppLocalizations.of(
+      tester.element(find.byType(LikeScreen)),
+    )!
+        .clearInvalidContent;
+    await tester.tap(find.text(clearLabel));
+    await frames(tester);
+    expect(options[1].path, '/v2.0/batchData.api');
+    appProvider.token = 'another-account';
+    respond(1, {
+      'meta': {'status': 200}
+    });
+    await frames(tester);
+    expect(
+      tester
+          .widget<LoftifyPostArchiveSliverGrid>(
+            find.byType(LoftifyPostArchiveSliverGrid),
+          )
+          .itemCount,
+      1,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('cleanup does not restore items from an older page request',
+      (tester) async {
+    await mount(tester);
+    respond(0, {
+      'meta': {'status': 200},
+      'response': {
+        'count': 3,
+        'items': [<String, dynamic>{}, post(2)],
+      },
+    });
+    await frames(tester);
+    final refresh = tester.widget<EasyRefresh>(find.byType(EasyRefresh));
+    final stalePage = Future.sync(refresh.onLoad!);
+    await frames(tester);
+    expect(pending, hasLength(2));
+    tester.widget<ShadowIconButton>(find.byType(ShadowIconButton)).onTap!();
+    await frames(tester);
+    final clearLabel = AppLocalizations.of(
+      tester.element(find.byType(LikeScreen)),
+    )!
+        .clearInvalidContent;
+    await tester.tap(find.text(clearLabel));
+    await frames(tester);
+    expect(options[2].path, '/v2.0/batchData.api');
+    respond(2, {
+      'meta': {'status': 200}
+    });
+    await frames(tester);
+    respond(1, {
+      'meta': {'status': 200},
+      'response': {
+        'count': 3,
+        'items': [post(3)]
+      },
+    });
+    await frames(tester);
+    expect(await stalePage, IndicatorResult.none);
+    expect(
+      tester
+          .widget<LoftifyPostArchiveSliverGrid>(
+            find.byType(LoftifyPostArchiveSliverGrid),
+          )
+          .itemCount,
+      1,
+    );
     expect(tester.takeException(), isNull);
   });
 }
