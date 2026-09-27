@@ -19,8 +19,8 @@ class PostDownloadActionIcon extends StatelessWidget {
 
   static const double visualSize = 20;
   static const double iconSize = 18;
-  static const double progressSize = 14;
-  static const double progressStrokeWidth = 1.8;
+  static const double progressSize = 18;
+  static const double progressStrokeWidth = 2;
 
   final DownloadState state;
   final String semanticLabel;

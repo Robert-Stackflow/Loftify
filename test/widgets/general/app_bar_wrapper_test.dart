@@ -198,6 +198,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(tester.widget<MyAppBar>(find.byType(MyAppBar)).leadingWidth, 52);
     expect(tester.takeException(), isNull);
     expect(
       tester

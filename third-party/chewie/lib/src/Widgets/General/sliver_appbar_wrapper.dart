@@ -77,7 +77,7 @@ class SliverAppBarWrapper extends StatelessWidget {
         collapsedHeight: collapsedHeight ??
             max(100, kToolbarHeight + MediaQuery.of(context).padding.top),
         pinned: true,
-        leadingWidth: showLeading ? 56 : 0,
+        leadingWidth: showLeading ? 52 : 0,
         leading: showLeading ? leading : null,
         automaticallyImplyLeading: false,
         backgroundWidget: backgroundWidget,

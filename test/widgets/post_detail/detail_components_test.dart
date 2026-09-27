@@ -487,7 +487,7 @@ void main() {
       expect(progress.value, closeTo(0.42, 0.001));
       expect(progress.strokeWidth, PostDownloadActionIcon.progressStrokeWidth);
       expect(tester.getSize(find.byType(CircularProgressIndicator)),
-          const Size.square(PostDownloadActionIcon.progressSize));
+          const Size.square(18));
       expect(find.byType(ChewieIcon), findsNothing);
       expect(
           find.byKey(const ValueKey('post-download-progress')), findsOneWidget);

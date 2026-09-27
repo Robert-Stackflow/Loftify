@@ -3063,8 +3063,18 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
       };
 
   PreferredSizeWidget _buildAppBar() {
+    final collection = _isPostContentReady && hasCollection()
+        ? _postDetailData!.post!.postCollection
+        : null;
+    final collectionPosition = _postDetailData?.post?.pos ?? 0;
+    final collectionCount = collection?.postCount ?? 0;
+    final compactCollectionLabel =
+        collectionPosition >= 100 || collectionCount >= 100;
+    final collectionLabel =
+        '${appLocalizations.collection} $collectionPosition/$collectionCount';
     return ResponsiveAppBar(
       showBack: true,
+      rightSpacing: 4,
       titleWidget: Text(
         appLocalizations.postDetail,
         maxLines: 1,
@@ -3075,11 +3085,13 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
       ),
       actions: _isPostContentReady
           ? [
-              if (hasCollection())
+              if (collection != null)
                 LoftifyContextPill(
                   icon: LoftifyIcons.collection,
-                  label:
-                      "${appLocalizations.collection} ${_postDetailData!.post!.pos}/${_postDetailData!.post!.postCollection!.postCount}",
+                  label: compactCollectionLabel
+                      ? '$collectionPosition/$collectionCount'
+                      : collectionLabel,
+                  semanticLabel: collectionLabel,
                   onPressed: showCollectionBottomSheet,
                 ),
               ..._buildButtons(),
@@ -3096,7 +3108,6 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
                     ChewieHiveUtil.getBool(HiveUtil.showDownloadKey,
                         defaultValue: true));
     return [
-      const SizedBox(width: 5),
       if (showDownloadButton) ...[
         SizedBox.square(
           dimension: 44,
@@ -3114,7 +3125,6 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
                 : _handleDownloadAll,
           ),
         ),
-        const SizedBox(width: 5),
       ],
       ChewieIconButton(
         icon: LoftifyIcons.moreVertical,

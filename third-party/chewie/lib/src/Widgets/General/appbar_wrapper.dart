@@ -81,7 +81,7 @@ class AppBarWrapper extends StatelessWidget implements PreferredSizeWidget {
         primary: primary,
         scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
-        leadingWidth: showLeading ? 56.0 : 0.0,
+        leadingWidth: showLeading ? 52.0 : 0.0,
         leading: showLeading ? finalLeadingWidget : null,
         title: centerTitle ? Center(child: finalTitleWidget) : finalTitleWidget,
         actions: [
