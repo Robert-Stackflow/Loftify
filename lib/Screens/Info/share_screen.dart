@@ -8,7 +8,9 @@ import 'package:loftify/Utils/hive_util.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Models/download_task.dart';
 import '../../Screens/Download/batch_download_screen.dart';
+import '../../Utils/app_provider.dart';
 import '../../Utils/enums.dart';
+import '../../Widgets/Design/loftify_state_view.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
 import '../../Widgets/PostItem/loftify_post_archive_grid.dart';
@@ -51,11 +53,10 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
   bool get wantKeepAlive => true;
   final List<PostDetailData> _shareList = [];
   List<ArchiveData> _archiveDataList = [];
-  int _total = 0;
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
-  InitPhase _initPhase = InitPhase.haveNotConnected;
+  InitPhase _initPhase = InitPhase.connecting;
 
   @override
   void initState() {
@@ -70,9 +71,6 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _onRefresh();
       });
-    } else {
-      _initPhase = InitPhase.successful;
-      setState(() {});
     }
   }
 
@@ -84,85 +82,97 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
   }
 
   Future<IndicatorResult> _fetchShare({bool refresh = false}) async {
-    if (_loading) return IndicatorResult.none;
-    if (refresh) _noMore = false;
+    if (_loading || !mounted) return IndicatorResult.none;
+    final token = appProvider.token;
+    bool isCurrentAccount() => mounted && appProvider.token == token;
     _loading = true;
-    int offset = refresh ? 0 : _shareList.length;
-    if (_initPhase != InitPhase.successful) {
+    final offset = refresh ? 0 : _shareList.length;
+    if (_shareList.isEmpty) {
       _initPhase = InitPhase.connecting;
       setState(() {});
     }
-    return await HiveUtil.getUserInfo().then((blogInfo) async {
-      String blogName = widget.infoMode == InfoMode.me
-          ? blogInfo!.blogName
-          : widget.blogName!;
-      return await UserApi.getShareList(blogName: blogName, offset: offset)
-          .then((value) {
-        try {
-          if (value['meta']['status'] != 200) {
-            IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-            return IndicatorResult.fail;
-          } else {
-            _total = value['response']['count'];
-            if (value['response']['archives'] != null) {
-              final archiveData = <ArchiveData>[];
-              List<ArchiveItem> archiveItems = [];
-              List<dynamic> t = value['response']['archives'];
-              for (var e in t) {
-                archiveItems.add(ArchiveItem.fromJson(e));
-              }
-              final months = <({int year, int month, int count})>[];
-              for (var e in archiveItems) {
-                for (var month = 0; month < e.monthCount.length; month++) {
-                  final count = e.monthCount[month];
-                  if (count > 0) {
-                    months.add((year: e.year, month: month + 1, count: count));
-                  }
-                }
-              }
-              months.sort((a, b) {
-                final yearOrder = b.year.compareTo(a.year);
-                return yearOrder != 0 ? yearOrder : b.month.compareTo(a.month);
-              });
-              for (final month in months) {
-                archiveData.add(ArchiveData(
-                  desc: appLocalizations.yearAndMonth(month.month, month.year),
-                  count: month.count,
-                  endTime: 0,
-                  startTime: 0,
-                ));
-              }
-              _archiveDataList = archiveData;
-            } else if (refresh) {
-              _archiveDataList = [];
-            }
-            List<dynamic> t = value['response']['items'];
-            if (refresh) _shareList.clear();
-            for (var e in t) {
-              if (e != null) {
-                _shareList.add(PostDetailData.fromJson(e));
-              }
-            }
-            if (mounted) setState(() {});
-            _initPhase = InitPhase.successful;
-            _noMore = _shareList.length >= _total;
-            if (_noMore && !refresh) {
-              return IndicatorResult.noMore;
-            } else {
-              return IndicatorResult.success;
+    try {
+      final blogInfo =
+          widget.infoMode == InfoMode.me ? await HiveUtil.getUserInfo() : null;
+      if (!isCurrentAccount()) return IndicatorResult.none;
+      final blogName =
+          widget.infoMode == InfoMode.me ? blogInfo?.blogName : widget.blogName;
+      if (blogName == null || blogName.isEmpty) {
+        if (_shareList.isEmpty) _initPhase = InitPhase.failed;
+        return IndicatorResult.fail;
+      }
+      final value = await UserApi.getShareList(
+        blogName: blogName,
+        offset: offset,
+      );
+      if (!isCurrentAccount()) return IndicatorResult.none;
+      if (value['meta']['status'] != 200) {
+        if (_shareList.isEmpty) _initPhase = InitPhase.failed;
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+        return IndicatorResult.fail;
+      }
+      final response = value['response'];
+      final total = response['count'] as int;
+      var archiveData = refresh ? <ArchiveData>[] : _archiveDataList;
+      if (response['archives'] != null) {
+        final months = <({int year, int month, int count})>[];
+        for (final archive in response['archives'] as List) {
+          final item = ArchiveItem.fromJson(archive);
+          for (var month = 0; month < item.monthCount.length; month++) {
+            final count = item.monthCount[month];
+            if (count > 0) {
+              months.add((year: item.year, month: month + 1, count: count));
             }
           }
-        } catch (e, t) {
-          _initPhase = InitPhase.failed;
-          ILogger.error("Failed to load share list", e, t);
-          if (mounted) IToast.showTop(appLocalizations.loadFailed);
-          return IndicatorResult.fail;
-        } finally {
-          if (mounted) setState(() {});
-          _loading = false;
         }
-      });
-    });
+        months.sort((a, b) {
+          final yearOrder = b.year.compareTo(a.year);
+          return yearOrder != 0 ? yearOrder : b.month.compareTo(a.month);
+        });
+        archiveData = [
+          for (final month in months)
+            ArchiveData(
+              desc: appLocalizations.yearAndMonth(month.month, month.year),
+              count: month.count,
+              endTime: 0,
+              startTime: 0,
+            ),
+        ];
+      }
+      final page = (response['items'] as List)
+          .where((item) => item != null)
+          .map((item) => PostDetailData.fromJson(item))
+          .toList();
+      final posts = refresh ? <PostDetailData>[] : [..._shareList];
+      posts.addAll(page);
+      _archiveDataList = archiveData;
+      _shareList
+        ..clear()
+        ..addAll(posts);
+      _initPhase = InitPhase.successful;
+      _noMore = page.isEmpty || posts.length >= total;
+      return !refresh && _noMore
+          ? IndicatorResult.noMore
+          : IndicatorResult.success;
+    } catch (error, stackTrace) {
+      if (!isCurrentAccount()) return IndicatorResult.none;
+      if (_shareList.isEmpty) _initPhase = InitPhase.failed;
+      ILogger.error('Failed to load share list', error, stackTrace);
+      IToast.showTop(appLocalizations.loadFailed);
+      return IndicatorResult.fail;
+    } finally {
+      if (mounted) {
+        setState(() {
+          if (!isCurrentAccount()) {
+            _shareList.clear();
+            _archiveDataList = [];
+            _noMore = false;
+            _initPhase = InitPhase.failed;
+          }
+        });
+      }
+      _loading = false;
+    }
   }
 
   Future<IndicatorResult> _onRefresh() async {
@@ -186,43 +196,58 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
   }
 
   Widget _buildBody() {
-    switch (_initPhase) {
-      case InitPhase.connecting:
-        return const LoadingWidget(background: Colors.transparent);
-      case InitPhase.failed:
-        return CustomErrorWidget(
-          onTap: _onRefresh,
-        );
-      case InitPhase.successful:
-        return Stack(
-          children: [
-            EasyRefresh.builder(
-              header: widget.nested ? buildNestedRefreshHeader() : null,
-              refreshOnStart: !widget.nested,
-              controller: _refreshController,
-              onRefresh: _onRefresh,
-              onLoad: _noMore ? null : _onLoad,
-              triggerAxis: Axis.vertical,
-              childBuilder: (context, physics) {
-                return _shareList.isNotEmpty
-                    ? _buildNineGridGroup(physics)
-                    : EmptyPlaceholder(
-                        text: appLocalizations.noRecommend,
-                        physics: physics,
-                        shrinkWrap: false,
-                      );
-              },
-            ),
-            Positioned(
-              right: ResponsiveUtil.isLandscapeLayout() ? 16 : 12,
-              bottom: ResponsiveUtil.isLandscapeLayout() ? 16 : 76,
-              child: _buildFloatingButtons(),
-            ),
-          ],
-        );
-      default:
-        return Container();
-    }
+    return Stack(
+      children: [
+        EasyRefresh.builder(
+          header: widget.nested ? buildNestedRefreshHeader() : null,
+          refreshOnStart: !widget.nested,
+          controller: _refreshController,
+          onRefresh: _onRefresh,
+          onLoad: _noMore ? null : _onLoad,
+          triggerAxis: Axis.vertical,
+          childBuilder: (context, physics) {
+            if (_initPhase != InitPhase.successful) {
+              final loading = _initPhase == InitPhase.connecting;
+              return CustomScrollView(
+                controller: widget.scrollController,
+                physics: physics,
+                slivers: [
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: LoftifyStateView(
+                      visual: loading
+                          ? LoftifyStateVisual.loading
+                          : LoftifyStateVisual.error,
+                      title: loading
+                          ? appLocalizations.loading
+                          : appLocalizations.loadFailed,
+                      scrollWhenConstrained: false,
+                      actionLabel: loading ? null : chewieLocalizations.retry,
+                      onAction: loading
+                          ? null
+                          : () => _refreshController.callRefresh(),
+                    ),
+                  ),
+                ],
+              );
+            }
+            return _shareList.isNotEmpty
+                ? _buildNineGridGroup(physics)
+                : EmptyPlaceholder(
+                    text: appLocalizations.noRecommend,
+                    physics: physics,
+                    shrinkWrap: false,
+                  );
+          },
+        ),
+        if (_initPhase == InitPhase.successful)
+          Positioned(
+            right: ResponsiveUtil.isLandscapeLayout() ? 16 : 12,
+            bottom: ResponsiveUtil.isLandscapeLayout() ? 16 : 76,
+            child: _buildFloatingButtons(),
+          ),
+      ],
+    );
   }
 
   Widget _buildNineGridGroup(ScrollPhysics physics) {
