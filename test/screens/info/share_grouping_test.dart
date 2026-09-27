@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Screens/Info/share_screen.dart';
+import 'package:loftify/Screens/Download/batch_download_screen.dart';
 import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/lottie_files.dart';
@@ -388,6 +389,103 @@ void main() {
     expect(
         tester.widget<LoftifyStateView>(find.byType(LoftifyStateView)).visual,
         LoftifyStateVisual.error);
+    expect(tester.takeException(), isNull);
+  });
+
+  Future<BatchDownloadScreen> openBatchDownload(WidgetTester tester) async {
+    tester.widget<ShadowIconButton>(find.byType(ShadowIconButton)).onTap!();
+    await frames(tester);
+    final label = AppLocalizations.of(
+      tester.element(find.byType(ShareScreen)),
+    )!
+        .batchDownload;
+    await tester.tap(find.text(label));
+    await frames(tester);
+    return tester.widget<BatchDownloadScreen>(find.byType(BatchDownloadScreen));
+  }
+
+  testWidgets('batch load rejects failed page and retries from same offset',
+      (tester) async {
+    await mount(tester);
+    respond(0, {
+      'meta': {'status': 200},
+      'response': {
+        'count': 3,
+        'items': [post(1)]
+      },
+    });
+    await frames(tester);
+    final batch = await openBatchDownload(tester);
+    expect(batch.initialItems, hasLength(1));
+    final failed = expectLater(batch.loadAllItems!(), throwsStateError);
+    await frames(tester);
+    expect(options[1].queryParameters['offset'], 1);
+    respond(1, {
+      'meta': {'status': 503, 'msg': 'Unavailable'}
+    });
+    await frames(tester);
+    await failed;
+    final retry = batch.loadAllItems!();
+    await frames(tester);
+    expect(options[2].queryParameters['offset'], 1);
+    respond(2, {
+      'meta': {'status': 200},
+      'response': {
+        'count': 3,
+        'items': [post(2), post(3)]
+      },
+    });
+    await frames(tester);
+    expect((await retry).map((item) => item.postId), [1, 2, 3]);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('batch load rejects early empty page with missing posts',
+      (tester) async {
+    await mount(tester);
+    respond(0, {
+      'meta': {'status': 200},
+      'response': {
+        'count': 3,
+        'items': [post(1)]
+      },
+    });
+    await frames(tester);
+    final batch = await openBatchDownload(tester);
+    final failed = expectLater(batch.loadAllItems!(), throwsStateError);
+    await frames(tester);
+    respond(1, {
+      'meta': {'status': 200},
+      'response': {'count': 3, 'items': []},
+    });
+    await frames(tester);
+    await failed;
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('batch load rejects duplicate posts counted as complete',
+      (tester) async {
+    await mount(tester);
+    respond(0, {
+      'meta': {'status': 200},
+      'response': {
+        'count': 3,
+        'items': [post(1)]
+      },
+    });
+    await frames(tester);
+    final batch = await openBatchDownload(tester);
+    final failed = expectLater(batch.loadAllItems!(), throwsStateError);
+    await frames(tester);
+    respond(1, {
+      'meta': {'status': 200},
+      'response': {
+        'count': 3,
+        'items': [post(1), post(2)]
+      },
+    });
+    await frames(tester);
+    await failed;
     expect(tester.takeException(), isNull);
   });
 }

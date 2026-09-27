@@ -56,6 +56,7 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
+  int _total = 0;
   InitPhase _initPhase = InitPhase.connecting;
 
   @override
@@ -151,6 +152,7 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
         ..addAll(posts);
       _initPhase = InitPhase.successful;
       _noMore = page.isEmpty || posts.length >= total;
+      _total = total;
       return !refresh && _noMore
           ? IndicatorResult.noMore
           : IndicatorResult.success;
@@ -167,6 +169,7 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
             _shareList.clear();
             _archiveDataList = [];
             _noMore = false;
+            _total = 0;
             _initPhase = InitPhase.failed;
           }
         });
@@ -371,19 +374,34 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
   }
 
   Future<List<GeneralPostItem>> _loadAllBatchItems() async {
-    if (_shareList.isEmpty) await _onRefresh();
+    if (_shareList.isEmpty) {
+      final result = await _onRefresh();
+      if (result != IndicatorResult.success &&
+          result != IndicatorResult.noMore) {
+        throw StateError('Could not load recommended posts');
+      }
+    }
     while (!_noMore) {
       final previousLength = _shareList.length;
       final result = await _onLoad();
       if (result == IndicatorResult.fail ||
           result == IndicatorResult.none ||
           _shareList.length == previousLength) {
-        break;
+        throw StateError('Could not load all recommended posts');
       }
     }
-    return _shareList
+    final items = _shareList
         .map(CommonInfoItemBuilder.getGeneralPostItem)
         .toList(growable: false);
+    if (items
+            .where((item) => item.postId > 0)
+            .map((item) => item.postId)
+            .toSet()
+            .length <
+        _total) {
+      throw StateError('Recommended posts are incomplete');
+    }
+    return items;
   }
 
   Widget _buildFloatingButtons() {
