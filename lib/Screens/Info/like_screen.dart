@@ -200,7 +200,7 @@ class _LikeScreenState extends BaseDynamicState<LikeScreen>
     );
   }
 
-  _buildBody() {
+  Widget _buildBody() {
     switch (_initPhase) {
       case InitPhase.connecting:
         return const LoadingWidget(background: Colors.transparent);
@@ -342,7 +342,7 @@ class _LikeScreenState extends BaseDynamicState<LikeScreen>
     );
   }
 
-  _buildMoreButtons() {
+  FlutterContextMenu _buildMoreButtons() {
     return FlutterContextMenu(
       entries: [
         FlutterContextMenuItem(
@@ -405,22 +405,37 @@ class _LikeScreenState extends BaseDynamicState<LikeScreen>
   }
 
   Future<List<GeneralPostItem>> _loadAllBatchItems() async {
-    if (_likeList.isEmpty) await _onRefresh();
+    if (_likeList.isEmpty) {
+      final result = await _onRefresh();
+      if (result != IndicatorResult.success &&
+          result != IndicatorResult.noMore) {
+        throw StateError('Could not load liked posts');
+      }
+    }
     while (!_pagingController.noMore) {
       final previousLength = _likeList.length;
       final result = await _pagingController.load();
       if (result == IndicatorResult.fail ||
           result == IndicatorResult.none ||
           _likeList.length == previousLength) {
-        break;
+        throw StateError('Could not load all liked posts');
       }
     }
-    return _likeList
+    final items = _likeList
         .map(CommonInfoItemBuilder.getGeneralPostItem)
         .toList(growable: false);
+    if (items
+            .where((item) => item.postId > 0)
+            .map((item) => item.postId)
+            .toSet()
+            .length <
+        (_pagingController.total ?? 0)) {
+      throw StateError('Liked posts are incomplete');
+    }
+    return items;
   }
 
-  _buildFloatingButtons() {
+  Widget _buildFloatingButtons() {
     return ResponsiveUtil.isLandscapeLayout()
         ? Column(
             children: [
