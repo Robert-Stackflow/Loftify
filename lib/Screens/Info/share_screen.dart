@@ -83,8 +83,8 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
     super.dispose();
   }
 
-  _fetchShare({bool refresh = false}) async {
-    if (_loading) return;
+  Future<IndicatorResult> _fetchShare({bool refresh = false}) async {
+    if (_loading) return IndicatorResult.none;
     if (refresh) _noMore = false;
     _loading = true;
     int offset = refresh ? 0 : _shareList.length;
@@ -105,26 +105,36 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
           } else {
             _total = value['response']['count'];
             if (value['response']['archives'] != null) {
-              _archiveDataList = [];
+              final archiveData = <ArchiveData>[];
               List<ArchiveItem> archiveItems = [];
               List<dynamic> t = value['response']['archives'];
               for (var e in t) {
                 archiveItems.add(ArchiveItem.fromJson(e));
               }
+              final months = <({int year, int month, int count})>[];
               for (var e in archiveItems) {
-                for (var item in e.monthCount) {
-                  if (item > 0) {
-                    int month = e.monthCount.indexOf(item);
-                    _archiveDataList.add(ArchiveData(
-                      desc: appLocalizations.yearAndMonth(month + 1, e.year),
-                      count: item,
-                      endTime: 0,
-                      startTime: 0,
-                    ));
+                for (var month = 0; month < e.monthCount.length; month++) {
+                  final count = e.monthCount[month];
+                  if (count > 0) {
+                    months.add((year: e.year, month: month + 1, count: count));
                   }
                 }
               }
-              _archiveDataList.sort((a, b) => b.desc.compareTo(a.desc));
+              months.sort((a, b) {
+                final yearOrder = b.year.compareTo(a.year);
+                return yearOrder != 0 ? yearOrder : b.month.compareTo(a.month);
+              });
+              for (final month in months) {
+                archiveData.add(ArchiveData(
+                  desc: appLocalizations.yearAndMonth(month.month, month.year),
+                  count: month.count,
+                  endTime: 0,
+                  startTime: 0,
+                ));
+              }
+              _archiveDataList = archiveData;
+            } else if (refresh) {
+              _archiveDataList = [];
             }
             List<dynamic> t = value['response']['items'];
             if (refresh) _shareList.clear();
@@ -155,11 +165,11 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
     });
   }
 
-  _onRefresh() async {
+  Future<IndicatorResult> _onRefresh() async {
     return await _fetchShare(refresh: true);
   }
 
-  _onLoad() async {
+  Future<IndicatorResult> _onLoad() async {
     return await _fetchShare();
   }
 
@@ -175,7 +185,7 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
     );
   }
 
-  _buildBody() {
+  Widget _buildBody() {
     switch (_initPhase) {
       case InitPhase.connecting:
         return const LoadingWidget(background: Colors.transparent);
@@ -194,7 +204,7 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
               onLoad: _noMore ? null : _onLoad,
               triggerAxis: Axis.vertical,
               childBuilder: (context, physics) {
-                return _archiveDataList.isNotEmpty
+                return _shareList.isNotEmpty
                     ? _buildNineGridGroup(physics)
                     : EmptyPlaceholder(
                         text: appLocalizations.noRecommend,
@@ -216,39 +226,45 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
   }
 
   Widget _buildNineGridGroup(ScrollPhysics physics) {
-    List<Widget> widgets = [];
+    final slivers = <Widget>[];
     int startIndex = 0;
     for (var e in _archiveDataList) {
-      if (_shareList.length < startIndex) {
+      if (_shareList.length <= startIndex) {
         break;
       }
-      if (e.count == 0) continue;
+      if (e.count <= 0) continue;
       int count = e.count;
       if (_shareList.length < startIndex + count) {
         count = _shareList.length - startIndex;
       }
-      widgets.add(ItemBuilder.buildTitle(
-        context,
-        title: appLocalizations.descriptionWithPostCount(
-            e.desc, e.count.toString()),
-        topMargin: 16,
-        bottomMargin: 0,
+      slivers.add(SliverToBoxAdapter(
+        child: ItemBuilder.buildTitle(
+          context,
+          title: appLocalizations.descriptionWithPostCount(
+              e.desc, e.count.toString()),
+          topMargin: 16,
+          bottomMargin: 0,
+        ),
       ));
-      widgets.add(_buildNineGrid(startIndex, count));
+      slivers.add(_buildNineGrid(startIndex, count));
       startIndex += e.count;
     }
-    return ListView(
+    if (startIndex < _shareList.length) {
+      slivers.add(_buildNineGrid(startIndex, _shareList.length - startIndex));
+    }
+    slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 20)));
+    return CustomScrollView(
       controller: widget.scrollController,
       physics: physics,
-      padding: const EdgeInsets.only(bottom: 20),
-      children: widgets,
+      slivers: slivers,
     );
   }
 
   Widget _buildNineGrid(int startIndex, int count) {
-    return LoftifyPostArchiveGrid(
+    return LoftifyPostArchiveSliverGrid(
       padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
       itemCount: count,
+      addAutomaticKeepAlives: false,
       itemBuilder: (context, index, tileExtent) {
         final trueIndex = startIndex + index;
         return CommonInfoItemBuilder.buildNineGridPostItem(
@@ -275,7 +291,7 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
     );
   }
 
-  _buildMoreButtons() {
+  FlutterContextMenu _buildMoreButtons() {
     return FlutterContextMenu(
       entries: [
         FlutterContextMenuItem(
@@ -345,7 +361,7 @@ class _ShareScreenState extends BaseDynamicState<ShareScreen>
         .toList(growable: false);
   }
 
-  _buildFloatingButtons() {
+  Widget _buildFloatingButtons() {
     return ResponsiveUtil.isLandscapeLayout()
         ? Column(
             children: [
