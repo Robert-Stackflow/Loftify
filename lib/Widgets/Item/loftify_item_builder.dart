@@ -357,7 +357,7 @@ class LoftifyItemBuilder {
 
     Widget buildSummary({Widget? trailing}) {
       return Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           ItemBuilder.buildAvatar(
             context: context,
@@ -410,33 +410,49 @@ class LoftifyItemBuilder {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compact = constraints.maxWidth < 420 ||
-            MediaQuery.textScalerOf(context).scale(1) > 1.35;
-        return LoftifyCard(
-          variant: LoftifyCardVariant.outlined,
-          semanticLabel: item.blogInfo.blogNickName,
-          padding: EdgeInsets.all(design.spacing.lg),
-          onTap: () {
-            panelScreenState?.pushPage(
-              UserDetailScreen(
-                blogId: item.blogInfo.blogId,
-                blogName: item.blogInfo.blogName,
+        final textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+        final stacked = constraints.maxWidth < 280 ||
+            (constraints.maxWidth < 520 && textScale > 1.4);
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: design.colors.outline,
+                width: design.borders.hairline,
               ),
-            );
-          },
-          child: compact
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    buildSummary(),
-                    SizedBox(height: design.spacing.md),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: relationButton,
-                    ),
-                  ],
-                )
-              : buildSummary(trailing: relationButton),
+            ),
+          ),
+          child: LoftifyCard(
+            variant: LoftifyCardVariant.flat,
+            backgroundColor: design.colors.page,
+            radius: 0,
+            semanticLabel: item.blogInfo.blogNickName,
+            padding: EdgeInsets.symmetric(
+              horizontal: design.spacing.md,
+              vertical: design.spacing.lg,
+            ),
+            onTap: () {
+              panelScreenState?.pushPage(
+                UserDetailScreen(
+                  blogId: item.blogInfo.blogId,
+                  blogName: item.blogInfo.blogName,
+                ),
+              );
+            },
+            child: stacked
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      buildSummary(),
+                      SizedBox(height: design.spacing.md),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: relationButton,
+                      ),
+                    ],
+                  )
+                : buildSummary(trailing: relationButton),
+          ),
         );
       },
     );
