@@ -280,33 +280,31 @@ class _DownloadGroupTile extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final thumbnailUrl = snapshot.group.source.thumbnailUrl?.trim();
     final canPreview = thumbnailUrl != null && thumbnailUrl.isNotEmpty;
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        color: scheme.primaryContainer.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.7),
-          width: 0.5,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: scheme.primaryContainer.withValues(alpha: 0.45),
+          borderRadius: BorderRadius.circular(10),
         ),
+        child: canPreview
+            ? ChewieItemBuilder.buildCachedImage(
+                context: context,
+                imageUrl: thumbnailUrl,
+                width: 48,
+                height: 48,
+                fit: BoxFit.cover,
+                showLoading: false,
+                simpleError: true,
+              )
+            : ChewieIcon(
+                _sourceIcon,
+                size: 21,
+                color: scheme.primary,
+              ),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: canPreview
-          ? ChewieItemBuilder.buildCachedImage(
-              context: context,
-              imageUrl: thumbnailUrl,
-              width: 48,
-              height: 48,
-              fit: BoxFit.cover,
-              showLoading: false,
-              simpleError: true,
-            )
-          : ChewieIcon(
-              _sourceIcon,
-              size: 21,
-              color: scheme.primary,
-            ),
     );
   }
 
@@ -522,37 +520,35 @@ class _DownloadTaskTile extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final canPreview = task.mediaType == DownloadMediaType.image &&
         task.thumbnailUrl?.isNotEmpty == true;
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.7),
-          width: 0.5,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: colorScheme.primaryContainer.withValues(alpha: 0.45),
+          borderRadius: BorderRadius.circular(10),
         ),
+        child: canPreview
+            ? ChewieItemBuilder.buildCachedImage(
+                context: context,
+                imageUrl: task.thumbnailUrl!,
+                width: 48,
+                height: 48,
+                fit: BoxFit.cover,
+                showLoading: false,
+                simpleError: true,
+              )
+            : ChewieIcon(
+                switch (task.mediaType) {
+                  DownloadMediaType.image => LoftifyIcons.image,
+                  DownloadMediaType.video => LoftifyIcons.video,
+                  DownloadMediaType.file => LoftifyIcons.file,
+                },
+                size: 21,
+                color: colorScheme.primary,
+              ),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: canPreview
-          ? ChewieItemBuilder.buildCachedImage(
-              context: context,
-              imageUrl: task.thumbnailUrl!,
-              width: 48,
-              height: 48,
-              fit: BoxFit.cover,
-              showLoading: false,
-              simpleError: true,
-            )
-          : ChewieIcon(
-              switch (task.mediaType) {
-                DownloadMediaType.image => LoftifyIcons.image,
-                DownloadMediaType.video => LoftifyIcons.video,
-                DownloadMediaType.file => LoftifyIcons.file,
-              },
-              size: 21,
-              color: colorScheme.primary,
-            ),
     );
   }
 

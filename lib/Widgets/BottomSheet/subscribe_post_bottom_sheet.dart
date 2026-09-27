@@ -117,6 +117,7 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
       title: appLocalizations.selectFolder,
       createLabel: appLocalizations.newOp,
       onCreate: _showCreateFolder,
+      itemCount: _favoriteFolderList.length,
       body: _buildButtons(),
       footer: _buildFooter(),
     );
@@ -154,7 +155,7 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
       child: _favoriteFolderList.isNotEmpty
           ? ListView.builder(
               cacheExtent: MediaQuery.sizeOf(context).height,
-              padding: const EdgeInsets.symmetric(vertical: 6),
+              padding: const EdgeInsets.symmetric(vertical: 4),
               itemCount: _favoriteFolderList.length,
               itemBuilder: (context, index) => KeyedSubtree(
                 key: ValueKey(
@@ -172,19 +173,37 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
 
   Widget _buildFolderItem(BuildContext context, FavoriteFolder item) {
     final design = context.design;
+    final selected = item.postSubscribed == 1;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         splashFactory: NoSplash.splashFactory,
+        borderRadius: BorderRadius.circular(design.radii.control),
         onTap: () {
           item.postSubscribed = item.postSubscribed == 1 ? 0 : 1;
           setState(() {});
         },
-        child: Container(
-          color: Colors.transparent,
+        child: AnimatedContainer(
+          duration: design.motion.effective(context, design.motion.state),
+          margin: EdgeInsets.symmetric(
+            horizontal: design.spacing.lg,
+            vertical: design.spacing.xs,
+          ),
           padding: EdgeInsets.symmetric(
-            horizontal: design.spacing.xl,
-            vertical: design.spacing.lg,
+            horizontal: design.spacing.md,
+            vertical: design.spacing.md,
+          ),
+          decoration: BoxDecoration(
+            color: selected
+                ? design.colors.accentContainer.withValues(alpha: 0.6)
+                : design.colors.surface,
+            borderRadius: BorderRadius.circular(design.radii.control),
+            border: Border.all(
+              color: selected
+                  ? design.colors.accent.withValues(alpha: 0.5)
+                  : design.colors.outline,
+              width: design.borders.hairline,
+            ),
           ),
           child: Row(
             children: <Widget>[
@@ -199,8 +218,8 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(design.radii.control),
                   child: SizedBox(
-                    height: 80,
-                    width: 80,
+                    height: 60,
+                    width: 60,
                     child: ChewieItemBuilder.buildCachedImage(
                       context: context,
                       fit: BoxFit.cover,
@@ -210,42 +229,34 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
                   ),
                 ),
               ),
+              SizedBox(width: design.spacing.md),
               Expanded(
-                child: Container(
-                  padding: const EdgeInsets.only(left: 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    mainAxisSize: MainAxisSize.max,
-                    children: <Widget>[
-                      Text(
-                        item.name ?? "",
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: design.typography.sectionTitle,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      item.name ?? "",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: design.typography.cardTitle,
+                    ),
+                    SizedBox(height: design.spacing.xs),
+                    Text(
+                      "ID: ${item.id}  ·  ${item.postCount}${appLocalizations.chapter}",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: design.typography.metadata.copyWith(
+                        color: design.colors.textMuted,
                       ),
-                      SizedBox(height: design.spacing.md),
-                      Text(
-                        "ID: ${item.id}",
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: design.typography.metadata.copyWith(
-                          color: design.colors.textMuted,
-                        ),
-                      ),
-                      SizedBox(height: design.spacing.xs),
-                      Text(
-                        "${item.postCount}${appLocalizations.chapter}",
-                        style: design.typography.metadata.copyWith(
-                          color: design.colors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               ChewieIconButton(
-                icon: LoftifyIcons.select,
+                icon: item.postSubscribed == 1
+                    ? LoftifyIcons.check
+                    : LoftifyIcons.select,
                 selected: item.postSubscribed == 1,
                 semanticLabel: item.name,
                 onPressed: () {
@@ -291,6 +302,7 @@ class LoftifySubscribePanelFrame extends StatelessWidget {
     required this.onCreate,
     required this.body,
     required this.footer,
+    this.itemCount,
   });
 
   final String title;
@@ -298,6 +310,7 @@ class LoftifySubscribePanelFrame extends StatelessWidget {
   final VoidCallback onCreate;
   final Widget body;
   final Widget footer;
+  final int? itemCount;
 
   @override
   Widget build(BuildContext context) {
@@ -308,8 +321,12 @@ class LoftifySubscribePanelFrame extends StatelessWidget {
     final compactHeader = media.size.width < 380 ||
         media.textScaler.scale(1) > 1.35 ||
         visibleHeight * 0.8 < 420;
-    final panelHeight =
+    final maxPanelHeight =
         (visibleHeight * (compactHeader ? 0.92 : 0.8)).clamp(0.0, 720.0);
+    final desiredHeight = itemCount == null
+        ? maxPanelHeight
+        : (196.0 + itemCount! * 84).clamp(300.0, 720.0);
+    final panelHeight = desiredHeight.clamp(0.0, maxPanelHeight);
     final createAction = LoftifyButton(
       label: createLabel,
       variant: LoftifyButtonVariant.ghost,
@@ -324,6 +341,7 @@ class LoftifySubscribePanelFrame extends StatelessWidget {
         height: panelHeight,
         child: LoftifyPanel(
           title: title,
+          compactHeader: true,
           trailing: compactHeader ? null : createAction,
           expandBody: true,
           body: compactHeader
@@ -336,18 +354,16 @@ class LoftifySubscribePanelFrame extends StatelessWidget {
                       ),
                       child: createAction,
                     ),
-                    Divider(
-                      height: design.borders.hairline,
-                      thickness: design.borders.hairline,
-                      color: design.colors.outline,
-                    ),
                     Expanded(child: body),
                   ],
                 )
               : body,
           footer: footer,
-          footerPadding: EdgeInsets.all(
-            compactHeader ? design.spacing.md : design.spacing.xl,
+          footerPadding: EdgeInsets.fromLTRB(
+            design.spacing.lg,
+            design.spacing.sm,
+            design.spacing.lg,
+            design.spacing.lg,
           ),
         ),
       ),

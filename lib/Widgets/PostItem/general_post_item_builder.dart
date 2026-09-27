@@ -1524,6 +1524,7 @@ class GeneralPostItemBuilder {
       ),
       responsive: true,
       preferMinWidth: 400,
+      topRadius: const Radius.circular(24),
     );
   }
 }

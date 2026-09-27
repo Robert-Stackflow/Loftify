@@ -103,4 +103,18 @@ void main() {
       expect(source, isNot(contains('wh: 160')), reason: path);
     }
   });
+
+  test('tag result grid shares adaptive square archive columns', () {
+    final source =
+        File('lib/Screens/Post/tag_detail_screen.dart').readAsStringSync();
+    expect('_buildTagPostGrid('.allMatches(source), hasLength(4));
+    expect(source, contains('LoftifyArchiveGridGeometry.calculate('));
+    expect(source, contains('wh: geometry.tileExtent'));
+    expect(source, contains('crossAxisCount: geometry.columnCount'));
+
+    expect(LoftifyArchiveGridGeometry.calculate(288).columnCount, 3);
+    expect(LoftifyArchiveGridGeometry.calculate(361).columnCount, 3);
+    expect(LoftifyArchiveGridGeometry.calculate(792).columnCount, 4);
+    expect(LoftifyArchiveGridGeometry.calculate(1152).columnCount, 7);
+  });
 }

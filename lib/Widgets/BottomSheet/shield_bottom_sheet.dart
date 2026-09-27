@@ -35,37 +35,48 @@ class ShieldBottomSheetState extends State<ShieldBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final design = context.design;
     return LoftifyPanel(
       title: appLocalizations.reduceRecommend,
+      compactHeader: true,
       body: _buildButtons(),
       footer: _buildFooter(),
+      footerPadding: EdgeInsets.fromLTRB(
+        design.spacing.xl,
+        design.spacing.sm,
+        design.spacing.xl,
+        design.spacing.xl,
+      ),
     );
   }
 
   Widget _buildButtons() {
     final design = context.design;
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: design.spacing.xl,
-        vertical: design.spacing.xl,
+      padding: EdgeInsets.fromLTRB(
+        design.spacing.xl,
+        design.spacing.md,
+        design.spacing.xl,
+        design.spacing.sm,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Wrap(
-            spacing: design.spacing.md,
-            runSpacing: design.spacing.sm,
-            children: [
-              for (final tag in tags)
-                LoftifyTag(
-                  label: tag,
-                  leading: LoftifyIcons.tag,
-                  showSelectedIcon: false,
-                  onPressed: () => widget.onShieldTag?.call(tag),
-                ),
-            ],
-          ),
+          if (tags.isNotEmpty)
+            Wrap(
+              spacing: design.spacing.sm,
+              runSpacing: design.spacing.sm,
+              children: [
+                for (final tag in tags)
+                  LoftifyTag(
+                    label: tag,
+                    leading: LoftifyIcons.tag,
+                    showSelectedIcon: false,
+                    onPressed: () => widget.onShieldTag?.call(tag),
+                  ),
+              ],
+            ),
         ],
       ),
     );
@@ -76,22 +87,90 @@ class ShieldBottomSheetState extends State<ShieldBottomSheet> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        LoftifyButton(
+        _ShieldActionRow(
           label: appLocalizations.uninterestedInContent,
           icon: LoftifyIcons.block,
-          variant: LoftifyButtonVariant.secondary,
           onPressed: widget.onShieldContent,
-          expand: true,
         ),
-        SizedBox(height: design.spacing.md),
-        LoftifyButton(
+        SizedBox(height: design.spacing.sm),
+        _ShieldActionRow(
           label: appLocalizations.uninterestedInUser,
           icon: LoftifyIcons.unfollow,
-          variant: LoftifyButtonVariant.danger,
+          destructive: true,
           onPressed: widget.onShieldUser,
-          expand: true,
         ),
       ],
+    );
+  }
+}
+
+class _ShieldActionRow extends StatelessWidget {
+  const _ShieldActionRow({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+    this.destructive = false,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final bool destructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final design = context.design;
+    final foreground =
+        destructive ? design.colors.danger : design.colors.textPrimary;
+    final background = destructive
+        ? Color.alphaBlend(
+            design.colors.danger.withValues(alpha: 0.06),
+            design.colors.surfaceRaised,
+          )
+        : design.colors.surfaceMuted;
+    final radius = BorderRadius.circular(design.radii.control);
+    return Semantics(
+      button: true,
+      enabled: onPressed != null,
+      label: label,
+      child: Material(
+        color: background,
+        borderRadius: radius,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: radius,
+          splashFactory: NoSplash.splashFactory,
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.pressed)) {
+              return foreground.withValues(alpha: design.icons.pressedOpacity);
+            }
+            if (states.contains(WidgetState.focused)) {
+              return foreground.withValues(alpha: design.icons.focusOpacity);
+            }
+            return Colors.transparent;
+          }),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: design.spacing.lg),
+              child: Row(
+                children: [
+                  Icon(icon, size: design.icons.regular, color: foreground),
+                  SizedBox(width: design.spacing.md),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: design.typography.label.copyWith(
+                        color: foreground,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

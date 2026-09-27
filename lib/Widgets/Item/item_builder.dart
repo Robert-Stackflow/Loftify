@@ -583,6 +583,7 @@ class ItemBuilder {
                 color: Colors.transparent,
                 child: TextField(
                   focusNode: focusNode,
+                  textAlignVertical: TextAlignVertical.center,
                   contextMenuBuilder: (contextMenuContext, details) =>
                       ChewieItemBuilder.editTextContextMenuBuilder(
                           contextMenuContext, details,
@@ -594,8 +595,9 @@ class ItemBuilder {
                         fontSizeDelta: hintFontSizeDelta,
                       ),
                   decoration: InputDecoration(
+                    isDense: true,
                     filled: false,
-                    contentPadding: const EdgeInsets.only(left: 8),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,

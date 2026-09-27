@@ -547,7 +547,7 @@ class SlideCaptchaBottomSheetState extends State<SlideCaptchaBottomSheet> {
                     ),
                     child: ChewieIcon(
                       _isVerifying ? LoftifyIcons.more : LoftifyIcons.slide,
-                      color: colorScheme.onPrimary,
+                      color: Colors.white,
                     ),
                   ),
                 ),

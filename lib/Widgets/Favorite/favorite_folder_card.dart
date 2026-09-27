@@ -7,9 +7,7 @@ import '../loftify_icons.dart';
 
 /// Responsive folder card shared by the favorite-folder management page.
 ///
-/// It keeps the cover prominent while allowing localized metadata to grow.
-/// On narrow or large-text layouts the actions move below the summary rather
-/// than squeezing the title into an unusable column.
+/// A compact folder row; only large-text layouts move the actions below it.
 class LoftifyFavoriteFolderCard extends StatelessWidget {
   const LoftifyFavoriteFolderCard({
     super.key,
@@ -43,38 +41,41 @@ class LoftifyFavoriteFolderCard extends StatelessWidget {
     final design = context.design;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compact = constraints.maxWidth < 420 ||
+        final stackedActions = constraints.maxWidth < 310 ||
             MediaQuery.textScalerOf(context).scale(1) > 1.35;
         final actions = _buildActions(context);
         final summary = Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(design.radii.control),
               child: SizedBox.square(
-                dimension: compact ? 72 : 80,
+                dimension: 64,
                 child: cover,
               ),
             ),
             SizedBox(width: design.spacing.lg),
             Expanded(child: _buildText(context)),
-            if (!compact) ...[
-              SizedBox(width: design.spacing.md),
+            if (!stackedActions) ...[
+              SizedBox(width: design.spacing.xs),
               actions,
             ],
           ],
         );
         return LoftifyCard(
           variant: LoftifyCardVariant.outlined,
-          padding: EdgeInsets.all(design.spacing.lg),
+          padding: EdgeInsets.symmetric(
+            horizontal: design.spacing.md,
+            vertical: design.spacing.md,
+          ),
           semanticLabel: title,
           onTap: onTap,
-          child: compact
+          child: stackedActions
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     summary,
-                    SizedBox(height: design.spacing.md),
+                    SizedBox(height: design.spacing.xs),
                     Align(alignment: Alignment.centerRight, child: actions),
                   ],
                 )
@@ -102,28 +103,61 @@ class LoftifyFavoriteFolderCard extends StatelessWidget {
             ),
           ),
         ),
-        SizedBox(height: design.spacing.md),
-        GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onLongPress: onCopyFolderId,
-          child: Text(
-            folderIdLabel,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: design.typography.metadata.copyWith(
-              color: design.colors.textMuted,
+        SizedBox(height: design.spacing.xs),
+        if (MediaQuery.textScalerOf(context).scale(1) > 1.35) ...[
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onLongPress: onCopyFolderId,
+            child: Text(
+              folderIdLabel,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: design.typography.metadata.copyWith(
+                color: design.colors.textMuted,
+              ),
             ),
           ),
-        ),
-        SizedBox(height: design.spacing.xs),
-        Text(
-          postCountLabel,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: design.typography.metadata.copyWith(
-            color: design.colors.textSecondary,
+          Text(
+            postCountLabel,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: design.typography.metadata.copyWith(
+              color: design.colors.textSecondary,
+            ),
           ),
-        ),
+        ] else
+          Row(
+            children: [
+              Flexible(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onLongPress: onCopyFolderId,
+                  child: Text(
+                    folderIdLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: design.typography.metadata.copyWith(
+                      color: design.colors.textMuted,
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: design.spacing.xs),
+                child: Text('·',
+                    style: design.typography.metadata.copyWith(
+                      color: design.colors.textMuted,
+                    )),
+              ),
+              Text(
+                postCountLabel,
+                maxLines: 1,
+                style: design.typography.metadata.copyWith(
+                  color: design.colors.textSecondary,
+                ),
+              ),
+            ],
+          ),
       ],
     );
   }

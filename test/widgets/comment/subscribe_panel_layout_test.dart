@@ -5,6 +5,30 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loftify/Widgets/BottomSheet/subscribe_post_bottom_sheet.dart';
 
 void main() {
+  testWidgets('one favorite folder does not stretch the panel to screen height',
+      (tester) async {
+    await tester.pumpWidget(
+      _host(
+        size: const Size(390, 800),
+        child: const LoftifySubscribePanelFrame(
+          title: '选择收藏夹',
+          createLabel: '新建',
+          onCreate: _noop,
+          itemCount: 1,
+          body: SizedBox.expand(),
+          footer: SizedBox(height: 48),
+        ),
+      ),
+    );
+
+    expect(
+      tester.getSize(find.byKey(const ValueKey('loftify-subscribe-panel')))
+          .height,
+      closeTo(300, 0.01),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('short large-text folder panel keeps every action reachable',
       (tester) async {
     var createTaps = 0;

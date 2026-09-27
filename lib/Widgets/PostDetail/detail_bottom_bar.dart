@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:awesome_chewie/awesome_chewie.dart';
+
 import '../../Theme/loftify_design_theme.dart';
 
 class DetailBottomBar extends StatelessWidget {
@@ -109,7 +111,8 @@ class DetailActionButton extends StatelessWidget {
     return DetailActionSlot(
       semanticLabel: label,
       onTap: onTap,
-      child: Padding(
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: design.spacing.xs),
         padding: EdgeInsets.symmetric(
           horizontal: design.spacing.xxs,
           vertical: design.spacing.xxs,
@@ -119,7 +122,7 @@ class DetailActionButton extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             IconTheme(
-              data: IconTheme.of(context).copyWith(color: color, size: 24),
+              data: IconTheme.of(context).copyWith(color: color, size: 22),
               child: icon,
             ),
             SizedBox(height: design.spacing.xxs),
@@ -128,11 +131,7 @@ class DetailActionButton extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: design.typography.metadata.copyWith(
-                color: color,
-                fontWeight: FontWeight.w600,
-                height: 1.2,
-              ),
+              style: ChewieTheme.labelMedium,
             ),
           ],
         ),
@@ -146,8 +145,8 @@ class DetailFloatingActionRail extends StatelessWidget {
   const DetailFloatingActionRail({
     super.key,
     required this.children,
-    this.slotWidth = 54,
-    this.slotHeight = 52,
+    this.slotWidth = 48,
+    this.slotHeight = 48,
   });
 
   final List<Widget> children;

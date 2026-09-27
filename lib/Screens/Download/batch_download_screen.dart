@@ -431,33 +431,35 @@ class _BatchPostTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: scheme.primaryContainer.withValues(alpha: 0.35),
-                  borderRadius: BorderRadius.circular(9),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(9),
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: scheme.primaryContainer.withValues(alpha: 0.35),
+                  ),
+                  child:
+                      imageUrl.startsWith('http') || imageUrl.startsWith('//')
+                          ? ChewieItemBuilder.buildCachedImage(
+                              context: context,
+                              imageUrl: imageUrl,
+                              width: 56,
+                              height: 56,
+                              fit: BoxFit.cover,
+                              showLoading: false,
+                              simpleError: true,
+                            )
+                          : ChewieIcon(
+                              switch (item.type) {
+                                PostType.video => LoftifyIcons.video,
+                                PostType.article => LoftifyIcons.article,
+                                _ => LoftifyIcons.image,
+                              },
+                              size: 21,
+                              color: scheme.primary,
+                            ),
                 ),
-                clipBehavior: Clip.antiAlias,
-                child: imageUrl.startsWith('http') || imageUrl.startsWith('//')
-                    ? ChewieItemBuilder.buildCachedImage(
-                        context: context,
-                        imageUrl: imageUrl,
-                        width: 56,
-                        height: 56,
-                        fit: BoxFit.cover,
-                        showLoading: false,
-                        simpleError: true,
-                      )
-                    : ChewieIcon(
-                        switch (item.type) {
-                          PostType.video => LoftifyIcons.video,
-                          PostType.article => LoftifyIcons.article,
-                          _ => LoftifyIcons.image,
-                        },
-                        size: 21,
-                        color: scheme.primary,
-                      ),
               ),
               const SizedBox(width: 11),
               Expanded(

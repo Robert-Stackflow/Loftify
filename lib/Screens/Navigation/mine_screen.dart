@@ -767,7 +767,6 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
         maximumIconSize: 22,
         child: ChewieIconButton(
           icon: icon,
-          iconSize: 22,
           foregroundColor: Theme.of(context).colorScheme.onSurface,
           tooltip: tooltip,
           onPressed: onPressed,

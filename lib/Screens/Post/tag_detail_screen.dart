@@ -24,6 +24,7 @@ import '../../Utils/uri_util.dart';
 import '../../Widgets/BottomSheet/newest_filter_bottom_sheet.dart';
 import '../../Widgets/Design/loftify_controls.dart';
 import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/PostItem/loftify_post_archive_grid.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
 import '../../Widgets/Tag/tag_detail_components.dart';
 import '../../Widgets/loftify_icons.dart';
@@ -822,6 +823,45 @@ double _tagResultContentInset(BuildContext context, double viewportWidth) {
   return centeredInset + design.grid.pagePaddingFor(viewportWidth);
 }
 
+Widget _buildTagPostGrid(
+  BuildContext context, {
+  required ScrollController? controller,
+  required ScrollPhysics physics,
+  required List<PostListItem> posts,
+}) {
+  final design = context.design;
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      final horizontalInset =
+          _tagResultContentInset(context, constraints.maxWidth);
+      final geometry = LoftifyArchiveGridGeometry.calculate(
+        constraints.maxWidth - horizontalInset * 2,
+      );
+      return GridView.builder(
+        controller: controller,
+        physics: physics,
+        padding: EdgeInsets.only(
+          top: design.spacing.sectionTop,
+          left: horizontalInset,
+          right: horizontalInset,
+        ),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: geometry.columnCount,
+          mainAxisSpacing: geometry.spacing,
+          crossAxisSpacing: geometry.spacing,
+        ),
+        itemCount: posts.length,
+        itemBuilder: (context, index) =>
+            RecommendFlowItemBuilder.buildNineGridPostItem(
+          context,
+          posts[index],
+          wh: geometry.tileExtent,
+        ),
+      );
+    },
+  );
+}
+
 class RecommendTab extends StatefulWidget {
   const RecommendTab({
     super.key,
@@ -955,30 +995,11 @@ class RecommendTabState extends BaseDynamicState<RecommendTab>
               },
               itemCount: _recommendList.length,
             )
-          : GridView.builder(
+          : _buildTagPostGrid(
+              context,
               controller: widget.scrollController,
-              padding: EdgeInsets.only(
-                top: design.spacing.sectionTop,
-                left: horizontalInset,
-                right: horizontalInset,
-              ),
               physics: physics,
-              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: design.grid.maximumDenseCardExtent,
-                mainAxisSpacing: gutter,
-                crossAxisSpacing: gutter,
-              ),
-              itemCount: _recommendList.length,
-              itemBuilder: (context, index) {
-                return LayoutBuilder(
-                  builder: (context, constraints) =>
-                      RecommendFlowItemBuilder.buildNineGridPostItem(
-                    context,
-                    _recommendList[index],
-                    wh: constraints.maxWidth,
-                  ),
-                );
-              },
+              posts: _recommendList,
             ),
     );
   }
@@ -1129,30 +1150,11 @@ class HottestTabState extends BaseDynamicState<HottestTab>
               },
               itemCount: _hottestList.length,
             )
-          : GridView.builder(
+          : _buildTagPostGrid(
+              context,
               controller: widget.scrollController,
-              padding: EdgeInsets.only(
-                top: design.spacing.sectionTop,
-                left: horizontalInset,
-                right: horizontalInset,
-              ),
               physics: physics,
-              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: design.grid.maximumDenseCardExtent,
-                mainAxisSpacing: gutter,
-                crossAxisSpacing: gutter,
-              ),
-              itemCount: _hottestList.length,
-              itemBuilder: (context, index) {
-                return LayoutBuilder(
-                  builder: (context, constraints) =>
-                      RecommendFlowItemBuilder.buildNineGridPostItem(
-                    context,
-                    _hottestList[index],
-                    wh: constraints.maxWidth,
-                  ),
-                );
-              },
+              posts: _hottestList,
             ),
     );
   }
@@ -1304,30 +1306,11 @@ class NewestTabState extends BaseDynamicState<NewestTab>
               },
               itemCount: _newestList.length,
             )
-          : GridView.builder(
+          : _buildTagPostGrid(
+              context,
               controller: widget.scrollController,
-              padding: EdgeInsets.only(
-                top: design.spacing.sectionTop,
-                left: horizontalInset,
-                right: horizontalInset,
-              ),
               physics: physics,
-              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: design.grid.maximumDenseCardExtent,
-                mainAxisSpacing: gutter,
-                crossAxisSpacing: gutter,
-              ),
-              itemCount: _newestList.length,
-              itemBuilder: (context, index) {
-                return LayoutBuilder(
-                  builder: (context, constraints) =>
-                      RecommendFlowItemBuilder.buildNineGridPostItem(
-                    context,
-                    _newestList[index],
-                    wh: constraints.maxWidth,
-                  ),
-                );
-              },
+              posts: _newestList,
             ),
     );
   }

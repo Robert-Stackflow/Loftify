@@ -5,6 +5,33 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loftify/Widgets/Favorite/favorite_folder_card.dart';
 
 void main() {
+  testWidgets('ordinary favorite folder stays a compact single row',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 390,
+            child: LoftifyFavoriteFolderCard(
+              title: '默认收藏夹',
+              folderIdLabel: 'ID: 28243657',
+              postCountLabel: '1篇',
+              cover: const ColoredBox(color: Colors.teal),
+              editLabel: '编辑',
+              onTap: () {},
+              onEdit: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(tester.getSize(find.byType(LoftifyFavoriteFolderCard)).height,
+        lessThan(110));
+    expect(find.byTooltip('编辑'), findsOneWidget);
+  });
+
   testWidgets('favorite folder card grows on a narrow large-text viewport',
       (tester) async {
     var opened = 0;

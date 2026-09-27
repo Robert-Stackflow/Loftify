@@ -1,3 +1,4 @@
+import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Theme/loftify_design_theme.dart';
 import 'package:loftify/Utils/lottie_files.dart';
@@ -359,41 +360,36 @@ class _LoftifySectionState extends State<LoftifySection> {
             }
             return Colors.transparent;
           }),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: design.icons.minimumTapTarget,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: design.spacing.xl,
+              vertical: 8,
             ),
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: design.spacing.xl,
-                vertical: design.spacing.lg,
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      widget.title,
-                      style: design.typography.sectionTitle,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.title,
+                    style: ChewieTheme.labelMedium,
+                  ),
+                ),
+                if (widget.collapsible) ...[
+                  SizedBox(width: design.spacing.md),
+                  AnimatedRotation(
+                    turns: _expanded ? 0.5 : 0,
+                    duration: design.motion.effective(
+                      context,
+                      design.motion.state,
+                    ),
+                    curve: design.motion.enterCurve,
+                    child: Icon(
+                      LoftifyIcons.expand,
+                      size: design.icons.regular,
+                      color: design.colors.textSecondary,
                     ),
                   ),
-                  if (widget.collapsible) ...[
-                    SizedBox(width: design.spacing.md),
-                    AnimatedRotation(
-                      turns: _expanded ? 0.5 : 0,
-                      duration: design.motion.effective(
-                        context,
-                        design.motion.state,
-                      ),
-                      curve: design.motion.enterCurve,
-                      child: Icon(
-                        LoftifyIcons.expand,
-                        size: design.icons.regular,
-                        color: design.colors.textSecondary,
-                      ),
-                    ),
-                  ],
                 ],
-              ),
+              ],
             ),
           ),
         ),

@@ -1,3 +1,4 @@
+import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Theme/loftify_design_theme.dart';
@@ -67,7 +68,8 @@ class LoftifyButton extends StatelessWidget {
             ? colors.onAccentContainer
             : colors.textPrimary;
     final borderColor = switch (variant) {
-      LoftifyButtonVariant.secondary => colors.outlineStrong,
+      LoftifyButtonVariant.secondary =>
+        Colors.grey.shade300, // Use a neutral border for secondary buttons
       LoftifyButtonVariant.ghost => Colors.transparent,
       LoftifyButtonVariant.primary ||
       LoftifyButtonVariant.tonal ||
@@ -195,7 +197,10 @@ class LoftifyButton extends StatelessWidget {
           child: Text(
             label,
             textAlign: TextAlign.center,
-            style: design.typography.label.copyWith(color: foreground),
+            style: design.typography.label.copyWith(
+                color: variant == LoftifyButtonVariant.primary
+                    ? Colors.white
+                    : foreground),
           ),
         ),
         if (trailing != null) ...[

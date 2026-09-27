@@ -326,7 +326,7 @@ class LoftifyPanel extends StatelessWidget {
     this.bodyPadding,
     this.footerPadding,
     this.showHandle = true,
-    this.compactHeader = false,
+    this.compactHeader = true,
     this.expandBody = false,
     this.semanticLabel,
   });
@@ -351,9 +351,7 @@ class LoftifyPanel extends StatelessWidget {
     final wide =
         design.grid.windowClassFor(width) != LoftifyWindowClass.compact;
     final borderRadius = BorderRadius.vertical(
-      top: Radius.circular(
-        compactHeader ? design.radii.panel + 4 : design.radii.panel,
-      ),
+      top: Radius.circular(design.radii.panel),
       bottom: wide ? Radius.circular(design.radii.panel) : Radius.zero,
     );
     final bodyWidget = bodyPadding == null
@@ -398,7 +396,7 @@ class LoftifyPanel extends StatelessWidget {
                   _divider(context),
                 if (expandBody) Flexible(child: bodyWidget) else bodyWidget,
                 if (footer != null) ...[
-                  _divider(context),
+                  if (!compactHeader) _divider(context),
                   Padding(
                     padding: footerPadding ??
                         EdgeInsets.symmetric(
@@ -463,14 +461,18 @@ class LoftifyPanel extends StatelessWidget {
             Expanded(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: compactHeader
-                    ? CrossAxisAlignment.center
-                    : CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    compactHeader && trailing == null && leading == null
+                        ? CrossAxisAlignment.center
+                        : CrossAxisAlignment.start,
                 children: [
                   if (title != null)
                     Text(
                       title!,
-                      textAlign: compactHeader ? TextAlign.center : null,
+                      textAlign:
+                          compactHeader && trailing == null && leading == null
+                              ? TextAlign.center
+                              : null,
                       style: compactHeader
                           ? design.typography.sectionTitle
                           : design.typography.pageTitle,

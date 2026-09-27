@@ -43,7 +43,7 @@ class _TagInsearchScreenState extends BaseDynamicState<TagInsearchScreen>
     });
     _fetchRelatedTag();
     Future.delayed(const Duration(milliseconds: 200), () {
-      FocusScope.of(context).requestFocus(_focusNode);
+      if (mounted) _focusNode.requestFocus();
     });
   }
 
@@ -208,7 +208,7 @@ class _TagInsearchScreenState extends BaseDynamicState<TagInsearchScreen>
 
   Widget _buildSearchBar() {
     return Container(
-      height: 35,
+      height: 48,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: ItemBuilder.buildSearchBar(
         focusNode: _focusNode,

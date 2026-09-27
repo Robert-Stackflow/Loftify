@@ -255,7 +255,7 @@ class LoftifyRadiusTokens {
     this.small = 6,
     this.control = 10,
     this.card = 14,
-    this.panel = 20,
+    this.panel = 12,
     this.dialog = 24,
     this.full = 999,
   });
@@ -336,7 +336,7 @@ class LoftifyIconStateTokens {
     this.small = 16,
     this.regular = 20,
     this.large = 24,
-    this.minimumTapTarget = 48,
+    this.minimumTapTarget = 44,
     this.disabledOpacity = 0.38,
     this.hoverOpacity = 0.08,
     this.focusOpacity = 0.10,

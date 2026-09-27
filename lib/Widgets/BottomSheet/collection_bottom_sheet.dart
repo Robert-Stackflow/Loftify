@@ -206,13 +206,10 @@ class CollectionBottomSheetState extends State<CollectionBottomSheet> {
 
   Widget _buildHeader() {
     final design = context.design;
-    final followButton = LoftifyButton(
+    final followButton = LoftifyCompactToggleButton(
       label:
           subscribed ? appLocalizations.subscribed : appLocalizations.subscribe,
-      variant: subscribed
-          ? LoftifyButtonVariant.secondary
-          : LoftifyButtonVariant.tonal,
-      size: LoftifyButtonSize.compact,
+      selected: subscribed,
       onPressed: _toggleSubscribe,
     );
     return Container(

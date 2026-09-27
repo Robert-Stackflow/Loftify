@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:card_swiper/card_swiper.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Api/post_api.dart';
 import 'package:loftify/Api/user_api.dart';
@@ -44,6 +45,7 @@ import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
 import '../../Widgets/PostDetail/detail_bottom_bar.dart';
+import '../../Widgets/PostDetail/lazy_comment_jump.dart';
 import '../../Widgets/PostDetail/post_content_section.dart';
 import '../../Widgets/PostDetail/post_download_action_icon.dart';
 import '../../Widgets/PostDetail/post_swipe_gesture_detector.dart';
@@ -124,8 +126,6 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
   bool _showDoubleTapLike = true;
   Widget? doubleTapLikeWidget;
   List<Color> mainColors = [];
-  late AnimationController _shareController;
-  late AnimationController _likeController;
   int totalHotOrNewComments = 0;
   List<Comment> hotComments = [];
   List<Comment> newComments = [];
@@ -136,6 +136,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
   final GlobalKey _operationViewportKey = GlobalKey();
   final GlobalKey _commentListViewportKey = GlobalKey();
   final GlobalKey _commentEndViewportKey = GlobalKey();
+  final GlobalKey _commonContentSliverKey = GlobalKey();
   final GlobalKey _imageSwiperViewportKey = GlobalKey();
   final ResizableController _resizableController = ResizableController();
   DownloadState downloadState = DownloadState.none;
@@ -195,8 +196,6 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
     _scrollController.dispose();
     _tabletScrollController.dispose();
     _doubleTapLikeController.dispose();
-    _shareController.dispose();
-    _likeController.dispose();
     _postSwipeAnimationController.dispose();
     _floatingOperationBarVisible.dispose();
     windowManager.removeListener(this);
@@ -211,10 +210,6 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
       size: doubleTapLikeSize,
       controller: _doubleTapLikeController,
     );
-    _shareController =
-        AnimationController(duration: const Duration(seconds: 1), vsync: this);
-    _likeController = AnimationController(
-        duration: const Duration(milliseconds: 2500), vsync: this);
   }
 
   initData() async {
@@ -905,8 +900,6 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
     blogId = _postDetailData!.post!.blogId;
     blogName = _postDetailData!.post!.blogInfo!.blogName;
     final colorPostId = postId;
-    _shareController.value = _postDetailData!.shared == true ? 1 : 0;
-    _likeController.value = _postDetailData!.liked == true ? 1 : 0;
     setDownloadState(DownloadState.none, recover: false);
     if (swipeToFirst) {
       setState(() {
@@ -1301,7 +1294,10 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
         controller: _scrollController,
         physics: physics,
         slivers: [
-          SliverList.list(children: _buildCommonContent(false)),
+          SliverList.list(
+            key: _commonContentSliverKey,
+            children: _buildCommonContent(false),
+          ),
           _buildRecommendFlow(),
         ],
       ),
@@ -1435,11 +1431,6 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
 
     final delta = targetLiked == previousLiked ? 0 : (targetLiked ? 1 : -1);
     _postDetailData!.liked = targetLiked;
-    if (targetLiked) {
-      _likeController.forward();
-    } else {
-      _likeController.value = 0;
-    }
     final postCount = _postDetailData!.post!.postCount!;
     postCount.favoriteCount =
         (postCount.favoriteCount + delta).clamp(0, 100000000000000000);
@@ -1478,11 +1469,6 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
         } else {
           _postDetailData!.shared =
               isRecommend ?? !(_postDetailData!.shared == true);
-          if (_postDetailData!.shared == true) {
-            _shareController.forward();
-          } else {
-            _shareController.value = 0;
-          }
           _postDetailData!.post!.postCount!.shareCount +=
               (_postDetailData!.shared == true) ? 1 : -1;
           if (_postDetailData!.post!.postCount!.postHot != null) {
@@ -1643,7 +1629,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
       ),
       _buildReadingRail(_buildMarkInfo()),
       _buildReadingRail(
-        Stack(
+        Column(
           key: _operationViewportKey,
           children: [
             MyDivider(),
@@ -1735,50 +1721,32 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
   }
 
   Future<void> jumpToComment() async {
-    final visibleContext = commentKey.currentContext;
-    if (visibleContext != null) {
-      await Scrollable.ensureVisible(
-        visibleContext,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
-      );
-      return;
-    }
-
-    final controller = _scrollController.hasClients
-        ? _scrollController
-        : _tabletScrollController.hasClients
-            ? _tabletScrollController
+    final tabletBody = _tabletScrollController.hasClients;
+    final controller = tabletBody
+        ? _tabletScrollController
+        : _scrollController.hasClients
+            ? _scrollController
             : null;
     if (controller == null) return;
+    final requestedPostId = postId;
 
-    // SliverList builds lazily, so a long article can leave the comment
-    // anchor without a context. Move by less than one viewport until the
-    // anchor is materialized, then align it normally.
-    for (var step = 0; step < 80 && mounted; step++) {
-      final anchorContext = commentKey.currentContext;
-      if (anchorContext != null) {
-        await Scrollable.ensureVisible(
-          anchorContext,
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-        );
-        return;
-      }
-      if (!controller.hasClients) return;
-      final position = controller.position;
-      final target = min(
-        position.maxScrollExtent,
-        position.pixels + position.viewportDimension * 0.8,
-      );
-      if (target <= position.pixels + 0.5) return;
-      await controller.animateTo(
-        target,
-        duration: const Duration(milliseconds: 45),
-        curve: Curves.linear,
-      );
-      await WidgetsBinding.instance.endOfFrame;
-    }
+    // The heading may be unmounted by the lazy sliver. Its parent sliver
+    // remains mounted, so approach the end of the post content first. This
+    // works from both a long article above and recommendations below.
+    final mainSliver =
+        _commonContentSliverKey.currentContext?.findRenderObject();
+    final contentExtent = tabletBody
+        ? controller.position.maxScrollExtent +
+            controller.position.viewportDimension
+        : mainSliver is RenderSliver
+            ? mainSliver.geometry?.scrollExtent
+            : null;
+    await revealLazyComment(
+      controller: controller,
+      anchorKey: commentKey,
+      contentExtent: contentExtent,
+      isActive: () => mounted && requestedPostId == postId,
+    );
   }
 
   _buildEggTitle(String tag, String title) {
@@ -1791,9 +1759,14 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
               margin: const EdgeInsets.only(left: 16, right: 8),
               child: RoundIconTextButton(
                 text: tag,
+                textStyle: Theme.of(context).textTheme.labelSmall?.apply(
+                      color: Colors.white,
+                      fontWeightDelta: 1,
+                    ),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 background: ChewieColors.biliPinkPrimaryColor,
                 radius: 4,
+                height: 32,
               ),
             ),
           ),
@@ -2506,7 +2479,6 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
           ),
           LoftifyContentReferenceAction(
             label: appLocalizations.catelog,
-            emphasized: true,
             onPressed: showCollectionBottomSheet,
           ),
           LoftifyContentReferenceAction(
@@ -2716,78 +2688,59 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
   }
 
   Widget _buildOperationRow() {
+    final design = context.design;
     return Container(
-      padding: const EdgeInsets.only(left: 6, right: 16, top: 8, bottom: 8),
-      child: Stack(
-        clipBehavior: Clip.none,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
         children: [
-          Row(
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              Stack(
-                children: [
-                  LoftifyItemBuilder.buildLikedLottieButton(
-                    context,
-                    showCount: true,
-                    iconSize: 52,
-                    animationController: _likeController,
-                    likeCount: _postDetailData!.post!.postCount!.favoriteCount,
-                    isLiked: _postDetailData!.liked,
-                    onTap: () async {
-                      _handleLike();
-                    },
-                  ),
-                  Container(
-                    margin: const EdgeInsets.only(left: 42),
-                    child: LoftifyItemBuilder.buildLottieSharedButton(
-                      context,
-                      showCount: true,
-                      iconSize: 52,
-                      shareCount: _postDetailData!.post!.postCount!.shareCount,
-                      isShared: _postDetailData!.shared,
-                      animationController: _shareController,
-                      onTap: () async {
-                        _handleRecommend();
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-            ],
+          DetailActionButton(
+            label: _postDetailData!.post!.postCount!.favoriteCount > 0
+                ? StringUtil.formatCount(
+                    _postDetailData!.post!.postCount!.favoriteCount,
+                  )
+                : appLocalizations.like,
+            icon: const Icon(LoftifyIcons.favorite),
+            foregroundColor: _postDetailData!.liked == true
+                ? design.colors.accentForeground
+                : null,
+            onTap: _handleLike,
           ),
-          Positioned(
-            top: 12,
-            right: 0,
-            child: ItemBuilder.buildIconTextButton(
-              context,
-              text: _postDetailData!.subscribedNotNull
-                  ? appLocalizations.favorited
-                  : appLocalizations.favorite,
-              icon: ChewieIcon(
-                LoftifyIcons.bookmark,
-                size: 28,
-                color: _postDetailData!.subscribedNotNull
-                    ? Theme.of(context).primaryColor
-                    : null,
-              ),
-              direction: Axis.vertical,
-              spacing: 0,
-              style: Theme.of(context).textTheme.labelSmall,
-              onTap: () {
-                BottomSheetBuilder.showBottomSheet(
-                  context,
-                  enableDrag: false,
-                  (context) => SubscribePostBottomSheet(
-                    postId: postId,
-                    blogId: blogId,
-                    onConfirm: (folderIds) {
-                      _handleSubscribe(folderIds);
-                    },
-                  ),
-                );
-              },
-            ),
+          const SizedBox(width: 8),
+          DetailActionButton(
+            label: _postDetailData!.post!.postCount!.shareCount > 0
+                ? StringUtil.formatCount(
+                    _postDetailData!.post!.postCount!.shareCount,
+                  )
+                : appLocalizations.recommend,
+            icon: const Icon(LoftifyIcons.recommend),
+            foregroundColor: _postDetailData!.shared == true
+                ? design.colors.accentForeground
+                : null,
+            onTap: _handleRecommend,
+          ),
+          const Spacer(),
+          DetailActionButton(
+            label: _postDetailData!.subscribedNotNull
+                ? appLocalizations.favorited
+                : appLocalizations.favorite,
+            icon: const Icon(LoftifyIcons.bookmark),
+            foregroundColor: _postDetailData!.shared == true
+                ? design.colors.accentForeground
+                : null,
+            onTap: () {
+              BottomSheetBuilder.showBottomSheet(
+                context,
+                enableDrag: false,
+                (context) => SubscribePostBottomSheet(
+                  postId: postId,
+                  blogId: blogId,
+                  onConfirm: (folderIds) {
+                    _handleSubscribe(folderIds);
+                  },
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -2839,22 +2792,10 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
                 )
               : appLocalizations.like,
           onTap: _handleLike,
-          icon: IgnorePointer(
-            child: SizedBox.square(
-              dimension: 28,
-              child: OverflowBox(
-                maxWidth: 40,
-                maxHeight: 40,
-                child: LoftifyItemBuilder.buildLikedLottieButton(
-                  context,
-                  showCount: false,
-                  iconSize: 40,
-                  animationController: _likeController,
-                  isLiked: _postDetailData!.liked,
-                ),
-              ),
-            ),
-          ),
+          icon: const Icon(LoftifyIcons.favorite),
+          foregroundColor: _postDetailData!.liked == true
+              ? context.design.colors.accentForeground
+              : null,
         ),
         DetailActionButton(
           label: _postDetailData!.post!.postCount!.shareCount > 0
@@ -2863,22 +2804,10 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
                 )
               : appLocalizations.recommend,
           onTap: _handleRecommend,
-          icon: IgnorePointer(
-            child: SizedBox.square(
-              dimension: 28,
-              child: OverflowBox(
-                maxWidth: 40,
-                maxHeight: 40,
-                child: LoftifyItemBuilder.buildLottieSharedButton(
-                  context,
-                  showCount: false,
-                  iconSize: 40,
-                  isShared: _postDetailData!.shared,
-                  animationController: _shareController,
-                ),
-              ),
-            ),
-          ),
+          icon: const Icon(LoftifyIcons.recommend),
+          foregroundColor: _postDetailData!.shared == true
+              ? context.design.colors.accentForeground
+              : null,
         ),
         DetailActionButton(
           label: _postDetailData!.post!.postCount!.responseCount > 0
@@ -3109,6 +3038,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
                         defaultValue: true));
     return [
       if (showDownloadButton) ...[
+        const SizedBox(width: 8),
         SizedBox.square(
           dimension: 44,
           child: CircleIconButton(

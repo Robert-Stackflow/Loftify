@@ -14,7 +14,7 @@ abstract final class LoftifyIcons {
   static const IconData activity = LucideIcons.heart;
   static const IconData profile = LucideIcons.userRound;
   static const IconData logout = LucideIcons.logOut;
-  static const IconData dress = LucideIcons.shirt;
+  static const IconData dress = LucideIcons.paintbrush;
   static const IconData notifications = LucideIcons.bell;
   static const IconData settings = LucideIcons.settings;
   static const IconData flag = LucideIcons.flag;

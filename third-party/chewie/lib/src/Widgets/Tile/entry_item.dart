@@ -14,13 +14,7 @@ BorderRadius _settingSectionBorderRadius(BuildContext context) {
 
 TextStyle _settingSectionTitleStyle(BuildContext context) {
   final theme = Theme.of(context);
-  return (theme.textTheme.titleMedium ?? const TextStyle()).copyWith(
-    fontSize: 16,
-    height: 1.35,
-    fontWeight: FontWeight.w600,
-    color: theme.colorScheme.onSurface,
-    letterSpacing: 0,
-  );
+  return (theme.textTheme.labelMedium!);
 }
 
 Widget _settingSectionDivider(BuildContext context) {
@@ -597,31 +591,28 @@ class CaptionItemState extends BaseDynamicState<CaptionItem>
       ),
       splashFactory: NoSplash.splashFactory,
       overlayColor: _settingSectionOverlay(context),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 48),
-        child: Padding(
-          padding: widget.padding ??
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  widget.title,
-                  style: _settingSectionTitleStyle(context),
-                ),
+      child: Padding(
+        padding: widget.padding ??
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                widget.title,
+                style: _settingSectionTitleStyle(context),
               ),
-              const SizedBox(width: 8),
-              RotationTransition(
-                turns: _arrowAnimation,
-                child: Icon(
-                  LucideIcons.chevronDown,
-                  size: 20,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+            ),
+            const SizedBox(width: 8),
+            RotationTransition(
+              turns: _arrowAnimation,
+              child: Icon(
+                LucideIcons.chevronDown,
+                size: 20,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

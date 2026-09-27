@@ -17,7 +17,7 @@ class ChewieIconButtonVisualScope extends InheritedWidget {
     required super.child,
   });
 
-  static const double appBarVisualSize = 34;
+  static const double appBarVisualSize = 28;
   static const double appBarIconSize = 18;
 
   final double visualSize;
