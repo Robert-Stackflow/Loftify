@@ -7,12 +7,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Screens/Info/favorite_folder_detail_screen.dart';
+import 'package:loftify/Screens/Download/batch_download_screen.dart';
 import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/lottie_files.dart';
 import 'package:loftify/Utils/request_util.dart';
 import 'package:loftify/Widgets/Design/loftify_state_view.dart';
 import 'package:loftify/Widgets/PostItem/general_post_item_builder.dart';
 import 'package:loftify/Widgets/PostItem/loftify_post_archive_grid.dart';
+import 'package:loftify/Widgets/loftify_icons.dart';
 import 'package:loftify/l10n/l10n.dart';
 
 class _Cookies extends Fake implements CookieManager {}
@@ -249,6 +251,65 @@ void main() {
     expect(
         tester.widget<LoftifyStateView>(find.byType(LoftifyStateView)).visual,
         LoftifyStateVisual.error);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('batch load fails visibly and retries remaining posts',
+      (tester) async {
+    await mount(tester);
+    respond(0, success([post(1, 1704067200)]));
+    await frames(tester);
+    tester
+        .widget<ChewieIconButton>(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is ChewieIconButton &&
+                widget.icon == LoftifyIcons.download,
+          ),
+        )
+        .onPressed!();
+    await frames(tester);
+    final batch = tester.widget<BatchDownloadScreen>(
+      find.byType(BatchDownloadScreen),
+    );
+    expect(batch.initialItems, hasLength(1));
+    final failedLoad = expectLater(batch.loadAllItems!(), throwsStateError);
+    await frames(tester);
+    expect(options[1].queryParameters['offset'], '1');
+    respond(1, {'code': 503, 'msg': 'Unavailable'});
+    await frames(tester);
+    await failedLoad;
+    final retry = batch.loadAllItems!();
+    await frames(tester);
+    expect(options[2].queryParameters['offset'], '1');
+    respond(2, success([post(2, 1706745600), post(3, 1706745600)]));
+    await frames(tester);
+    expect((await retry).map((item) => item.postId), [1, 2, 3]);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('batch load rejects an incomplete server page', (tester) async {
+    await mount(tester);
+    respond(0, success([post(1, 1704067200)]));
+    await frames(tester);
+    tester
+        .widget<ChewieIconButton>(
+          find.byWidgetPredicate(
+            (widget) =>
+                widget is ChewieIconButton &&
+                widget.icon == LoftifyIcons.download,
+          ),
+        )
+        .onPressed!();
+    await frames(tester);
+    final batch = tester.widget<BatchDownloadScreen>(
+      find.byType(BatchDownloadScreen),
+    );
+    final result = expectLater(batch.loadAllItems!(), throwsStateError);
+    await frames(tester);
+    respond(1, success([]));
+    await frames(tester);
+    await result;
     expect(tester.takeException(), isNull);
   });
 }

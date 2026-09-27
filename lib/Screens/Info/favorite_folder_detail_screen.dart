@@ -270,15 +270,16 @@ class _FavoriteFolderDetailScreenState
     return ResponsiveAppBar(
       showBack: true,
       title: _favoriteFolder?.name ?? appLocalizations.favoriteFolderDetail,
-      actions: [
-        ChewieIconButton(
-          icon: LoftifyIcons.download,
-          tooltip: appLocalizations.batchDownload,
-          onPressed: _openBatchDownload,
-        ),
-      ],
+      actions: [_buildBatchDownloadAction()],
+      landscapeActions: [_buildBatchDownloadAction()],
     );
   }
+
+  Widget _buildBatchDownloadAction() => ChewieIconButton(
+        icon: LoftifyIcons.download,
+        tooltip: appLocalizations.batchDownload,
+        onPressed: _openBatchDownload,
+      );
 
   void _openBatchDownload() {
     RouteUtil.pushPanelCupertinoRoute(
@@ -303,15 +304,24 @@ class _FavoriteFolderDetailScreenState
   }
 
   Future<List<GeneralPostItem>> _loadAllBatchItems() async {
-    if (_posts.isEmpty) await _onRefresh();
+    if (_posts.isEmpty) {
+      final result = await _onRefresh();
+      if (result != IndicatorResult.success &&
+          result != IndicatorResult.noMore) {
+        throw StateError('Could not load favorite folder posts');
+      }
+    }
     while (!_noMore) {
       final previousLength = _posts.length;
       final result = await _onLoad();
       if (result == IndicatorResult.fail ||
           result == IndicatorResult.none ||
           _posts.length == previousLength) {
-        break;
+        throw StateError('Could not load all favorite folder posts');
       }
+    }
+    if (_posts.length < (_favoriteFolder?.postCount ?? 0)) {
+      throw StateError('Favorite folder posts are incomplete');
     }
     return _posts
         .map(FavoriteFolderPostItemBuilder.getGeneralPostItem)
