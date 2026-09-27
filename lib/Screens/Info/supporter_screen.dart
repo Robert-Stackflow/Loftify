@@ -8,8 +8,7 @@ import 'package:loftify/Utils/hive_util.dart';
 
 import '../../Models/user_response.dart';
 import '../../Utils/enums.dart';
-import '../../Widgets/Item/item_builder.dart';
-import '../../Widgets/loftify_icons.dart';
+import '../../Widgets/Profile/supporter_list_item.dart';
 import 'user_detail_screen.dart';
 
 class SupporterScreen extends StatefulWidget {
@@ -41,57 +40,53 @@ class _SupporterScreenState extends BaseDynamicState<SupporterScreen>
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
 
-  _fetchList({bool refresh = false}) async {
+  @override
+  void dispose() {
+    _refreshController.dispose();
+    super.dispose();
+  }
+
+  Future<IndicatorResult> _fetchList({bool refresh = false}) async {
     if (_supporterList.isNotEmpty && !refresh) return IndicatorResult.noMore;
-    if (_loading) return;
+    if (_loading) return IndicatorResult.none;
     if (refresh) _noMore = false;
     _loading = true;
-    return await HiveUtil.getUserInfo().then((blogInfo) async {
-      int blogId = widget.infoMode == InfoMode.me
+    try {
+      final blogId = widget.infoMode == InfoMode.me
           ? await HiveUtil.getUserId()
           : widget.blogId!;
-      return await UserApi.getSupporterList(
-        blogId: blogId,
-      ).then((value) {
-        try {
-          if (value['code'] != 200) {
-            IToast.showTop(value['msg']);
-            return IndicatorResult.fail;
-          } else {
-            List<dynamic> t = value['data']['ranks'];
-            if (refresh) _supporterList.clear();
-            for (var e in t) {
-              if (e != null) {
-                _supporterList.add(SupporterItem.fromJson(e));
-              }
-            }
-            if (mounted) setState(() {});
-            if (refresh) {
-              return IndicatorResult.success;
-            } else {
-              _noMore = true;
-              return IndicatorResult.noMore;
-            }
-          }
-        } catch (e, t) {
-          ILogger.error("Failed to load supporter list", e, t);
-          if (mounted) IToast.showTop(appLocalizations.loadFailed);
-          return IndicatorResult.fail;
-        } finally {
-          if (mounted) setState(() {});
-          _loading = false;
-        }
+      if (!mounted) return IndicatorResult.none;
+      final value = await UserApi.getSupporterList(blogId: blogId);
+      if (!mounted) return IndicatorResult.none;
+      if (value['code'] != 200) {
+        IToast.showTop(value['msg']);
+        return IndicatorResult.fail;
+      }
+      final ranks = value['data']['ranks'] as List;
+      final supporters = ranks
+          .whereType<Map>()
+          .map(
+              (rank) => SupporterItem.fromJson(Map<String, dynamic>.from(rank)))
+          .toList();
+      setState(() {
+        _supporterList
+          ..clear()
+          ..addAll(supporters);
+        _noMore = true;
       });
-    });
+      return refresh ? IndicatorResult.success : IndicatorResult.noMore;
+    } catch (error, stackTrace) {
+      ILogger.error('Failed to load supporter list', error, stackTrace);
+      if (mounted) IToast.showTop(appLocalizations.loadFailed);
+      return IndicatorResult.fail;
+    } finally {
+      _loading = false;
+    }
   }
 
-  _onRefresh() async {
-    return await _fetchList(refresh: true);
-  }
+  Future<IndicatorResult> _onRefresh() => _fetchList(refresh: true);
 
-  _onLoad() async {
-    return await _fetchList();
-  }
+  Future<IndicatorResult> _onLoad() => _fetchList();
 
   @override
   Widget build(BuildContext context) {
@@ -103,7 +98,7 @@ class _SupporterScreenState extends BaseDynamicState<SupporterScreen>
         refreshOnStart: true,
         controller: _refreshController,
         onRefresh: _onRefresh,
-        onLoad: _onLoad,
+        onLoad: _noMore ? null : _onLoad,
         triggerAxis: Axis.vertical,
         childBuilder: (context, physics) {
           return _buildBody(physics);
@@ -116,19 +111,27 @@ class _SupporterScreenState extends BaseDynamicState<SupporterScreen>
     return LoadMoreNotification(
       noMore: _noMore,
       onLoad: _onLoad,
-      child: WaterfallFlow.extent(
-        maxCrossAxisExtent: 600,
-        padding: EdgeInsets.zero,
+      child: WaterfallFlow.builder(
         physics: physics,
-        children: List.generate(_supporterList.length, (index) {
-          return _buildItem(index, _supporterList[index]);
-        }),
+        gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 560,
+          mainAxisSpacing: 0,
+          crossAxisSpacing: 8,
+        ),
+        itemCount: _supporterList.length,
+        itemBuilder: (context, index) => _buildItem(_supporterList[index]),
       ),
     );
   }
 
-  _buildItem(int index, SupporterItem item) {
-    return ClickableGestureDetector(
+  Widget _buildItem(SupporterItem item) {
+    return LoftifySupporterListItem(
+      blogId: item.blogInfo.blogId,
+      avatarUrl: item.blogInfo.bigAvaImg,
+      name: item.blogInfo.blogNickName,
+      blogName: item.blogInfo.blogName,
+      intro: item.blogInfo.selfIntro,
+      score: item.score,
       onTap: () {
         RouteUtil.pushPanelCupertinoRoute(
           context,
@@ -138,53 +141,6 @@ class _SupporterScreenState extends BaseDynamicState<SupporterScreen>
           ),
         );
       },
-      child: Container(
-        color: Colors.transparent,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        child: Row(
-          children: [
-            ItemBuilder.buildAvatar(
-              context: context,
-              size: 40,
-              imageUrl: item.blogInfo.bigAvaImg,
-              tagPrefix: "$index",
-            ),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.blogInfo.blogNickName,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  if (item.blogInfo.selfIntro!.isNotEmpty)
-                    const SizedBox(height: 5),
-                  if (item.blogInfo.selfIntro!.isNotEmpty)
-                    Text(
-                      item.blogInfo.selfIntro!,
-                      style: Theme.of(context).textTheme.labelMedium,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                ],
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.only(right: 5),
-              child: ChewieIcon(
-                LoftifyIcons.premium,
-                size: 22,
-                color: ChewieColors.getHotTagTextColor(context),
-              ),
-            ),
-            Text(
-              item.score.toString(),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ],
-        ),
-      ),
     );
   }
 
