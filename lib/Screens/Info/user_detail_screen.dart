@@ -20,6 +20,7 @@ import 'package:loftify/Widgets/Design/loftify_surfaces.dart';
 import 'package:loftify/Widgets/Design/loftify_media_overlays.dart';
 import 'package:loftify/Widgets/Profile/profile_overview_card.dart';
 import 'package:loftify/Widgets/Profile/profile_header_components.dart';
+import 'package:loftify/Widgets/Profile/profile_more_action_sheet.dart';
 import 'package:loftify/Widgets/loftify_icons.dart';
 
 import '../../Api/user_api.dart';
@@ -503,15 +504,42 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
     );
   }
 
+  void _showMoreButtons() {
+    final menu = _buildMoreButtons();
+    if (ResponsiveUtil.isDesktop()) {
+      BottomSheetBuilder.showContextMenu(context, menu);
+      return;
+    }
+    final items = menu.entries.whereType<FlutterContextMenuItem>().toList();
+    BottomSheetBuilder.showBottomSheet(
+      context,
+      (sheetContext) => LoftifyProfileMoreActionSheet(
+        privacyTitle: appLocalizations.privacySetting,
+        cancelLabel: appLocalizations.cancel,
+        actions:
+            items.where((item) => item.status != MenuItemStatus.error).toList(),
+        privacyActions:
+            items.where((item) => item.status == MenuItemStatus.error).toList(),
+        onSelected: (item) {
+          Navigator.of(sheetContext).pop();
+          item.onPressed?.call();
+        },
+        onCancel: () => Navigator.of(sheetContext).pop(),
+      ),
+      responsive: true,
+      backgroundColor: context.design.colors.surfaceRaised,
+      preferMinWidth: 450,
+      topRadius: Radius.circular(context.design.radii.dialog + 4),
+    );
+  }
+
   List<Widget> _appBarActions() {
     return [
       ChewieIconButton(
         icon: LoftifyIcons.moreVertical,
         tooltip: appLocalizations.moreInfo,
         foregroundColor: Colors.white,
-        onPressed: () {
-          BottomSheetBuilder.showContextMenu(context, _buildMoreButtons());
-        },
+        onPressed: _showMoreButtons,
       ),
     ];
   }
@@ -631,10 +659,7 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
               icon: LoftifyIcons.moreVertical,
               tooltip: appLocalizations.moreInfo,
               foregroundColor: Colors.white,
-              onPressed: () => BottomSheetBuilder.showContextMenu(
-                context,
-                _buildMoreButtons(),
-              ),
+              onPressed: _showMoreButtons,
             )
           : null,
     );

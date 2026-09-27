@@ -8,12 +8,14 @@ class BottomSheetWrapperWidget extends StatelessWidget {
   final Widget child;
   final double? preferMinWidth;
   final bool useVerticalMargin;
+  final Radius topRadius;
 
   const BottomSheetWrapperWidget({
     super.key,
     required this.child,
     this.preferMinWidth,
     this.useVerticalMargin = false,
+    this.topRadius = ChewieDimens.defaultRadius,
   });
 
   @override
@@ -25,10 +27,8 @@ class BottomSheetWrapperWidget extends StatelessWidget {
     double preferHeight = min(height, 500);
     final panel = ClipRRect(
       borderRadius: BorderRadius.vertical(
-        top: ChewieDimens.defaultRadius,
-        bottom: useVerticalMargin || isLandScape
-            ? ChewieDimens.defaultRadius
-            : Radius.zero,
+        top: topRadius,
+        bottom: useVerticalMargin || isLandScape ? topRadius : Radius.zero,
       ),
       child: ColoredBox(
         color: ChewieTheme.scaffoldBackgroundColor,

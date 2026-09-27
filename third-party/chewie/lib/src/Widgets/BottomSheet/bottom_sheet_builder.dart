@@ -29,6 +29,7 @@ class BottomSheetBuilder {
     bool responsive = false,
     Color? backgroundColor,
     double? preferMinWidth,
+    Radius? topRadius,
   }) {
     final navigatorContext = chewieProvider.navigatorContextOf(context);
     bool isLandScape = ResponsiveUtil.isWideDevice();
@@ -48,6 +49,7 @@ class BottomSheetBuilder {
             child: BottomSheetWrapperWidget(
               preferMinWidth: preferMinWidth,
               useVerticalMargin: true,
+              topRadius: topRadius ?? ChewieDimens.defaultRadius,
               child: builder(context),
             ),
           );
@@ -61,12 +63,15 @@ class BottomSheetBuilder {
         barrierColor: ChewieTheme.barrierColor,
         duration: ChewieTheme.animationDuration,
         backgroundColor: backgroundColor ?? ChewieTheme.canvasColor,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: ChewieDimens.defaultRadius),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: topRadius ?? ChewieDimens.defaultRadius,
+          ),
         ),
         builder: builder,
         containerWidget: (_, animation, child) => BottomSheetWrapperWidget(
           preferMinWidth: preferMinWidth,
+          topRadius: topRadius ?? ChewieDimens.defaultRadius,
           child: child,
         ),
       );
