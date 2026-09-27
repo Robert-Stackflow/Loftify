@@ -764,10 +764,11 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
   }) =>
       ChewieIconButtonVisualScope(
         visualSize: ChewieIconButtonVisualScope.appBarVisualSize,
-        maximumIconSize: 20,
+        maximumIconSize: 22,
         child: ChewieIconButton(
           icon: icon,
-          iconSize: 20,
+          iconSize: 22,
+          foregroundColor: Theme.of(context).colorScheme.onSurface,
           tooltip: tooltip,
           onPressed: onPressed,
         ),
@@ -799,18 +800,27 @@ class _MineThemeModeButtonState extends State<_MineThemeModeButton>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(vsync: this);
   bool _loaded = false;
+  bool? _tapTargetIsDark;
+
+  void _animateTo(bool isDark) {
+    if (!_loaded) return;
+    if (LoftifyLottie.shouldReduceMotion(context)) {
+      _controller.value = isDark ? 0 : 1;
+    } else if (isDark) {
+      _controller.reverse();
+    } else {
+      _controller.forward();
+    }
+  }
 
   @override
   void didUpdateWidget(covariant _MineThemeModeButton oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_loaded && oldWidget.isDark != widget.isDark) {
-      if (LoftifyLottie.shouldReduceMotion(context)) {
-        _controller.value = widget.isDark ? 0 : 1;
-      } else if (widget.isDark) {
-        _controller.reverse();
-      } else {
-        _controller.forward();
+    if (oldWidget.isDark != widget.isDark) {
+      if (_tapTargetIsDark != widget.isDark) {
+        _animateTo(widget.isDark);
       }
+      _tapTargetIsDark = null;
     }
   }
 
@@ -823,7 +833,13 @@ class _MineThemeModeButtonState extends State<_MineThemeModeButton>
   @override
   Widget build(BuildContext context) => IconButton(
         tooltip: widget.tooltip,
-        onPressed: widget.onPressed,
+        onPressed: () {
+          // Start the Lottie before the app-wide theme rebuilds. The selector
+          // still handles theme changes initiated outside this button.
+          _tapTargetIsDark = !widget.isDark;
+          _animateTo(_tapTargetIsDark!);
+          widget.onPressed();
+        },
         padding: EdgeInsets.zero,
         constraints: const BoxConstraints.tightFor(width: 44, height: 44),
         style: const ButtonStyle(

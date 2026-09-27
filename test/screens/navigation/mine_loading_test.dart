@@ -276,8 +276,8 @@ void main() {
           (widget) => widget is ChewieIconButton && widget.icon == icon,
         ),
       );
-      expect(button.iconSize, 20);
-      expect(button.foregroundColor, isNull);
+      expect(button.iconSize, 22);
+      expect(button.foregroundColor, isNotNull);
     }
     final themeIcon = tester.widget<LoftifyLottie>(
       find.byType(LoftifyLottie).first,
@@ -296,12 +296,14 @@ void main() {
     )!
         .themeMode;
     await tester.tap(find.byTooltip(themeLabel));
+    expect(controller.status, AnimationStatus.reverse);
     await tester.pump();
     expect(appProvider.themeMode, ActiveThemeMode.dark);
     expect(controller.status, AnimationStatus.reverse);
     await tester.pump(const Duration(seconds: 1));
     expect(controller.value, 0);
     await tester.tap(find.byTooltip(themeLabel));
+    expect(controller.status, AnimationStatus.forward);
     await tester.pump();
     expect(appProvider.themeMode, ActiveThemeMode.light);
     expect(controller.status, AnimationStatus.forward);
