@@ -12,6 +12,7 @@ import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/cloud_control_provider.dart';
 import 'package:loftify/Utils/request_util.dart';
 import 'package:loftify/Utils/lottie_files.dart';
+import 'package:loftify/Widgets/loftify_icons.dart';
 import 'package:loftify/generated/app_localizations.dart';
 import 'package:provider/provider.dart';
 
@@ -110,8 +111,11 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
-      ChangeNotifierProvider.value(
-        value: controlProvider,
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: appProvider),
+          ChangeNotifierProvider.value(value: controlProvider),
+        ],
         child: MaterialApp(
           locale: locale,
           navigatorKey: chewieProvider.globalNavigatorKey,
@@ -228,6 +232,33 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 5));
+  });
+
+  testWidgets(
+      'untitled mine app bar keeps notification and dress in both layouts',
+      (tester) async {
+    await mount(tester, size: const Size(720, 480));
+    final appBar =
+        tester.widget<ResponsiveAppBar>(find.byType(ResponsiveAppBar));
+    expect(appBar.title, isEmpty);
+    expect(appBar.titleWidget, isA<SizedBox>());
+    expect(appBar.landscapeActions, same(appBar.actions));
+    for (final icon in [LoftifyIcons.notifications, LoftifyIcons.dress]) {
+      expect(
+        find
+            .byWidgetPredicate(
+              (widget) => widget is ChewieIconButton && widget.icon == icon,
+            )
+            .hitTestable(),
+        findsOneWidget,
+      );
+    }
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    pending.resolve(Response(requestOptions: options, statusCode: 200, data: {
+      'meta': {'status': 503, 'desc': 'Unavailable'}
+    }));
+    await tester.pump(const Duration(seconds: 1));
   });
 
   testWidgets('network timeout ends refresh and permits another attempt',

@@ -717,70 +717,73 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final actions = <Widget>[
+      ItemBuilder.buildDynamicIconButton(
+        context: context,
+        icon: darkModeWidget ?? const ChewieIcon(LoftifyIcons.appearance),
+        onTap: changeMode,
+        onChangemode: (context, themeMode, child) {
+          if (darkModeController.duration == null) return;
+          if (themeMode == ActiveThemeMode.light) {
+            darkModeController.forward();
+          } else if (themeMode == ActiveThemeMode.dark) {
+            darkModeController.reverse();
+          } else if (ColorUtil.isDark(context)) {
+            darkModeController.reverse();
+          } else {
+            darkModeController.forward();
+          }
+        },
+      ),
+      const SizedBox(width: 5),
+      Consumer<LoftifyControlProvider>(
+        builder: (_, cloudControlProvider, __) =>
+            cloudControlProvider.globalControl.showDress
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ChewieIconButton(
+                        icon: LoftifyIcons.dress,
+                        tooltip: appLocalizations.dress,
+                        onPressed: () {
+                          RouteUtil.pushPanelCupertinoRoute(
+                            context,
+                            const SuitScreen(),
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 5),
+                    ],
+                  )
+                : emptyWidget,
+      ),
+      ChewieIconButton(
+        icon: LoftifyIcons.notifications,
+        tooltip: appLocalizations.notice,
+        onPressed: () {
+          RouteUtil.pushPanelCupertinoRoute(
+            context,
+            const SystemNoticeScreen(),
+          );
+        },
+      ),
+      const SizedBox(width: 5),
+      ChewieIconButton(
+        icon: LoftifyIcons.settings,
+        tooltip: appLocalizations.setting,
+        foregroundColor: Theme.of(context).iconTheme.color,
+        onPressed: () {
+          RouteUtil.pushPanelCupertinoRoute(
+            context,
+            const SettingScreen(),
+          );
+        },
+      ),
+    ];
     return ResponsiveAppBar(
-      actions: [
-        ItemBuilder.buildDynamicIconButton(
-          context: context,
-          icon: darkModeWidget ?? const ChewieIcon(LoftifyIcons.appearance),
-          onTap: changeMode,
-          onChangemode: (context, themeMode, child) {
-            if (darkModeController.duration == null) return;
-            if (themeMode == ActiveThemeMode.light) {
-              darkModeController.forward();
-            } else if (themeMode == ActiveThemeMode.dark) {
-              darkModeController.reverse();
-            } else if (ColorUtil.isDark(context)) {
-              darkModeController.reverse();
-            } else {
-              darkModeController.forward();
-            }
-          },
-        ),
-        const SizedBox(width: 5),
-        Consumer<LoftifyControlProvider>(
-          builder: (_, cloudControlProvider, __) =>
-              cloudControlProvider.globalControl.showDress
-                  ? Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ChewieIconButton(
-                          icon: LoftifyIcons.dress,
-                          tooltip: appLocalizations.dress,
-                          onPressed: () {
-                            RouteUtil.pushPanelCupertinoRoute(
-                              context,
-                              const SuitScreen(),
-                            );
-                          },
-                        ),
-                        const SizedBox(width: 5),
-                      ],
-                    )
-                  : emptyWidget,
-        ),
-        ChewieIconButton(
-          icon: LoftifyIcons.notifications,
-          tooltip: appLocalizations.notice,
-          onPressed: () {
-            RouteUtil.pushPanelCupertinoRoute(
-              context,
-              const SystemNoticeScreen(),
-            );
-          },
-        ),
-        const SizedBox(width: 5),
-        ChewieIconButton(
-          icon: LoftifyIcons.settings,
-          tooltip: appLocalizations.setting,
-          foregroundColor: Theme.of(context).iconTheme.color,
-          onPressed: () {
-            RouteUtil.pushPanelCupertinoRoute(
-              context,
-              const SettingScreen(),
-            );
-          },
-        ),
-      ],
+      titleWidget: const SizedBox.shrink(),
+      actions: actions,
+      landscapeActions: actions,
     );
   }
 
