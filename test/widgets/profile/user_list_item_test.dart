@@ -89,9 +89,9 @@ void main() {
     );
 
     expect(find.byType(LoftifyCard), findsOneWidget);
-    expect(find.byType(LoftifyButton), findsOneWidget);
+    expect(find.byType(LoftifyCompactToggleButton), findsOneWidget);
     expect(
-      tester.getSize(find.byType(LoftifyButton)).height,
+      tester.getSize(find.byType(LoftifyCompactToggleButton)).height,
       greaterThanOrEqualTo(48),
     );
     expect(

@@ -56,7 +56,8 @@ void main() {
       'PreferredSizeWidget _buildAppBar()',
     )[1];
     expect(appBar, isNot(contains('title: appLocalizations.mine')));
-    expect(appBar, contains('ItemBuilder.buildDynamicIconButton('));
+    expect(appBar, contains('_MineThemeModeButton('));
+    expect(appBar, contains('LottieFiles.sunLight'));
     expect(appBar, contains('icon: LoftifyIcons.settings'));
     expect(appBar, contains('LoftifyIcons.notifications'));
     expect(appBar, contains('LoftifyIcons.dress'));
