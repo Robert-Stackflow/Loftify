@@ -226,4 +226,108 @@ void main() {
         LoftifyStateVisual.error);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('failed edit keeps the original folder name', (tester) async {
+    await mount(tester);
+    respond(0, success([1], total: 1));
+    await frames(tester);
+    tester
+        .widget<LoftifyFavoriteFolderCard>(
+          find.byType(LoftifyFavoriteFolderCard),
+        )
+        .onEdit();
+    await frames(tester);
+    final sheet =
+        tester.widget<InputBottomSheet>(find.byType(InputBottomSheet));
+    sheet.onConfirm!('Renamed folder');
+    await frames(tester);
+    expect(pending, hasLength(2));
+    expect(find.text('Folder 1'), findsWidgets);
+    respond(1, {'code': 503, 'msg': 'Unavailable'});
+    await frames(tester);
+    expect(find.text('Folder 1'), findsWidgets);
+    expect(find.text('Renamed folder'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('successful edit changes only the matching folder',
+      (tester) async {
+    await mount(tester);
+    respond(0, success([1, 2], total: 2));
+    await frames(tester);
+    tester
+        .widgetList<LoftifyFavoriteFolderCard>(
+          find.byType(LoftifyFavoriteFolderCard),
+        )
+        .first
+        .onEdit();
+    await frames(tester);
+    final sheet =
+        tester.widget<InputBottomSheet>(find.byType(InputBottomSheet));
+    sheet.onConfirm!('Renamed folder');
+    await frames(tester);
+    expect(pending, hasLength(2));
+    respond(1, {'code': 0, 'data': {}});
+    await frames(tester);
+    expect(find.text('Renamed folder'), findsOneWidget);
+    expect(find.text('Folder 2'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('deletion removes the card after server success', (tester) async {
+    await mount(tester);
+    respond(0, success([1, 2], total: 2));
+    await frames(tester);
+    tester
+        .widgetList<LoftifyFavoriteFolderCard>(
+          find.byType(LoftifyFavoriteFolderCard),
+        )
+        .first
+        .onDelete!();
+    await frames(tester);
+    tester
+        .widget<CustomConfirmDialogWidget>(
+            find.byType(CustomConfirmDialogWidget))
+        .onTapConfirm();
+    await frames(tester);
+    expect(pending, hasLength(2));
+    expect(find.text('Folder 1'), findsWidgets);
+    respond(1, {'code': 0, 'data': {}});
+    await frames(tester);
+    expect(find.text('Folder 1'), findsNothing);
+    expect(find.text('Folder 2'), findsOneWidget);
+    expect(pending, hasLength(3));
+    respond(2, success([2], total: 1));
+    await frames(tester);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('failed creation can be retried without duplicate requests',
+      (tester) async {
+    await mount(tester);
+    respond(0, success([], total: 0));
+    await frames(tester);
+    final dynamic state = tester.state(find.byType(FavoriteFolderListScreen));
+    state.handleAdd();
+    await frames(tester);
+    final sheet =
+        tester.widget<InputBottomSheet>(find.byType(InputBottomSheet));
+    sheet.onConfirm!('New folder');
+    sheet.onConfirm!('New folder');
+    await frames(tester);
+    expect(pending, hasLength(2));
+    respond(1, {'code': 503, 'msg': 'Unavailable'});
+    await frames(tester);
+    expect(find.byType(EmptyPlaceholder), findsOneWidget);
+    sheet.onConfirm!('New folder');
+    await frames(tester);
+    expect(pending, hasLength(3));
+    respond(2, {'code': 0, 'data': {}});
+    await frames(tester);
+    expect(pending, hasLength(4));
+    respond(3, success([3], total: 1));
+    await frames(tester);
+    expect(find.text('Folder 3'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

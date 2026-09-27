@@ -30,6 +30,9 @@ class _FavoriteFolderListScreenState
   final List<FavoriteFolder> _favoriteFolderList = [];
   int _createCount = 0;
   bool _loading = false;
+  final Set<int> _pendingEditIds = {};
+  final Set<int> _pendingDeleteIds = {};
+  bool _creatingFolder = false;
   InitPhase _initPhase = InitPhase.connecting;
   final EasyRefreshController _refreshController = EasyRefreshController();
 
@@ -220,25 +223,13 @@ class _FavoriteFolderListScreenState
             title: appLocalizations.editFolderTitle,
             hint: appLocalizations.inputFolderTitle,
             text: item.name ?? "",
-            onConfirm: (text) {
-              var tmp = item;
-              tmp.name = text;
-              UserApi.editFolder(folder: tmp).then((value) {
-                if (value['code'] == 0) {
-                  IToast.showTop(appLocalizations.editSuccess);
-                  item.name = text;
-                  setState(() {});
-                } else {
-                  IToast.showTop(value['msg']);
-                }
-              });
-            },
+            onConfirm: (text) => _editFolder(item, text),
           ),
           preferMinWidth: 400,
           responsive: true,
         );
       },
-      onDelete: item.isDefault == 1
+      onDelete: item.isDefault == 1 || item.id == null
           ? null
           : () {
               DialogBuilder.showConfirmDialog(
@@ -247,19 +238,92 @@ class _FavoriteFolderListScreenState
                 message:
                     appLocalizations.deleteFolderMessage(item.name.toString()),
                 messageTextAlign: TextAlign.center,
-                onTapConfirm: () async {
-                  UserApi.deleteFolder(folderId: item.id ?? 0).then((value) {
-                    if (value['code'] == 0) {
-                      IToast.showTop(appLocalizations.deleteSuccess);
-                      _refreshController.callRefresh();
-                    } else {
-                      IToast.showTop(value['msg']);
-                    }
-                  });
-                },
+                onTapConfirm: () => _deleteFolder(item.id!),
               );
             },
     );
+  }
+
+  Future<void> _editFolder(FavoriteFolder item, String name) async {
+    final id = item.id;
+    if (id == null || !_pendingEditIds.add(id)) return;
+    final token = appProvider.token;
+    final edited = FavoriteFolder.fromJson({
+      ...item.toJson(),
+      'name': name,
+      'tags': item.tags ?? <String>[],
+      'themes': item.themes ?? <String>[],
+    });
+    try {
+      final value = await UserApi.editFolder(folder: edited);
+      if (!mounted || appProvider.token != token) return;
+      if (value['code'] != 0) {
+        IToast.showTop(value['msg']);
+        return;
+      }
+      setState(() {
+        for (final folder in _favoriteFolderList) {
+          if (folder.id == id) folder.name = name;
+        }
+      });
+      IToast.showTop(appLocalizations.editSuccess);
+    } catch (error, stackTrace) {
+      ILogger.error('Failed to edit favorite folder', error, stackTrace);
+      if (mounted && appProvider.token == token) {
+        IToast.showTop(appLocalizations.loadFailed);
+      }
+    } finally {
+      _pendingEditIds.remove(id);
+    }
+  }
+
+  Future<void> _deleteFolder(int id) async {
+    if (!_pendingDeleteIds.add(id)) return;
+    final token = appProvider.token;
+    try {
+      final value = await UserApi.deleteFolder(folderId: id);
+      if (!mounted || appProvider.token != token) return;
+      if (value['code'] != 0) {
+        IToast.showTop(value['msg']);
+        return;
+      }
+      setState(() {
+        _favoriteFolderList.removeWhere((folder) => folder.id == id);
+        _createCount = (_createCount - 1).clamp(0, _createCount);
+      });
+      IToast.showTop(appLocalizations.deleteSuccess);
+      _refreshController.callRefresh();
+    } catch (error, stackTrace) {
+      ILogger.error('Failed to delete favorite folder', error, stackTrace);
+      if (mounted && appProvider.token == token) {
+        IToast.showTop(appLocalizations.loadFailed);
+      }
+    } finally {
+      _pendingDeleteIds.remove(id);
+    }
+  }
+
+  Future<void> _createFolder(String name) async {
+    if (_creatingFolder) return;
+    _creatingFolder = true;
+    final token = appProvider.token;
+    try {
+      final value = await UserApi.createFolder(name: name);
+      if (!mounted || appProvider.token != token) return;
+      if (value['code'] != 0) {
+        IToast.showTop(value['msg']);
+        return;
+      }
+      IToast.showTop(appLocalizations.createSuccess);
+      _refreshController.callRefresh();
+    } catch (error, stackTrace) {
+      ILogger.error('Failed to create favorite folder', error, stackTrace);
+      if (mounted && appProvider.token == token) {
+        IToast.showTop(appLocalizations.loadFailed);
+      }
+    } finally {
+      _creatingFolder = false;
+    }
   }
 
   void handleAdd() {
@@ -269,16 +333,7 @@ class _FavoriteFolderListScreenState
         title: appLocalizations.newFolder,
         hint: appLocalizations.inputFolderTitle,
         text: "",
-        onConfirm: (text) {
-          UserApi.createFolder(name: text).then((value) {
-            if (value['code'] == 0) {
-              IToast.showTop(appLocalizations.createSuccess);
-              _refreshController.callRefresh();
-            } else {
-              IToast.showTop(value['msg']);
-            }
-          });
-        },
+        onConfirm: _createFolder,
       ),
       preferMinWidth: 400,
       responsive: true,
