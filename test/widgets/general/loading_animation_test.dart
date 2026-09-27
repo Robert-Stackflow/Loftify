@@ -141,6 +141,8 @@ void main() {
     expect(header.position, IndicatorPosition.above);
     expect(header.triggerOffset, 52);
     expect(header.maxOverOffset, 76);
+    expect(header.safeArea, isFalse);
+    expect(header.triggerOffset, lessThan(header.maxOverOffset));
     expect(header.radius, 18);
   });
 

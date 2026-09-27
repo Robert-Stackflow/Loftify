@@ -5,6 +5,10 @@ import 'package:loftify/Utils/lottie_files.dart';
 Header buildNestedRefreshHeader() => LottieCupertinoHeader(
       backgroundColor: const Color(0x00000000),
       indicator: LottieFiles.buildLoadingAnimation(36, false),
+      // The nested list starts below the profile tabs, not behind the status
+      // bar. Including the outer safe area made the trigger equal to the
+      // maximum overscroll (52 + 24 = 76), so it could never become ready.
+      safeArea: false,
       hapticFeedback: true,
       triggerOffset: 52,
       maxOverOffset: 76,

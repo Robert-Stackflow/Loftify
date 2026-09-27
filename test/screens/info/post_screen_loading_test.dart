@@ -3,12 +3,14 @@ import 'dart:io';
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Screens/Info/post_screen.dart';
 import 'package:loftify/Utils/app_provider.dart';
 import 'package:loftify/Utils/hive_util.dart';
+import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/lottie_files.dart';
 import 'package:loftify/Utils/request_util.dart';
 import 'package:loftify/Widgets/Design/loftify_state_view.dart';
@@ -111,6 +113,46 @@ void main() {
     await frames(tester);
   }
 
+  Future<void> mountNested(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(MaterialApp(
+      navigatorKey: chewieProvider.globalNavigatorKey,
+      localizationsDelegates: const [
+        ChewieLocalizations.delegate,
+        ...AppLocalizations.localizationsDelegates,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Builder(builder: (context) {
+        chewieProvider.setRootContext(context);
+        return Scaffold(
+          body: ExtendedNestedScrollView(
+            onlyOneScrollInBody: true,
+            headerSliverBuilder: (context, _) => [
+              const SliverAppBar(
+                expandedHeight: 350,
+                pinned: true,
+                bottom: PreferredSize(
+                  preferredSize: Size.fromHeight(56),
+                  child: SizedBox(height: 56, child: Text('Tabs')),
+                ),
+              ),
+            ],
+            body: PostScreen(
+              infoMode: InfoMode.other,
+              blogId: 1,
+              blogName: 'author',
+              nested: true,
+            ),
+          ),
+        );
+      }),
+    ));
+    await frames(tester);
+  }
+
   void respond(int index, Map<String, dynamic> data) => pending[index]
       .resolve(Response(requestOptions: options[index], data: data));
 
@@ -173,6 +215,34 @@ void main() {
     });
     await frames(tester);
     expect(find.byType(LoftifyPostArchiveSliverGrid), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('nested profile pull refreshes posts and ends after response',
+      (tester) async {
+    await mountNested(tester);
+    expect(pending, hasLength(1));
+    respond(0, {
+      'meta': {'status': 200},
+      'response': {
+        'posts': [post(1)]
+      },
+    });
+    await frames(tester);
+    await tester.dragFrom(const Offset(200, 650), const Offset(0, 430));
+    await frames(tester);
+    expect(pending, hasLength(2));
+    respond(1, {
+      'meta': {'status': 200},
+      'response': {
+        'posts': [post(2)]
+      },
+    });
+    await frames(tester);
+    final inner = tester.state<ScrollableState>(
+      find.byType(Scrollable).last,
+    );
+    expect(inner.position.pixels, closeTo(0, 0.1));
     expect(tester.takeException(), isNull);
   });
 
