@@ -59,7 +59,7 @@ void main() {
     final delete = find.byKey(const ValueKey('font-delete-'));
     expect(delete, findsOneWidget);
     expect(tester.getSize(delete), const Size(48, 48));
-    expect(find.byType(ChewieSelectionIndicator), findsOneWidget);
+    expect(find.byType(ChewieSelectionIndicator), findsNothing);
     expect(find.byIcon(Icons.radio_button_checked), findsNothing);
     expect(find.byIcon(Icons.radio_button_unchecked), findsNothing);
     expect(tester.takeException(), isNull);

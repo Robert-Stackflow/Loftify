@@ -171,12 +171,13 @@ void main() {
             final label =
                 AppLocalizations.of(tester.element(find.byType(MineScreen)))!
                     .downloadManagement;
-            await tester.scrollUntilVisible(find.text(label), 180,
+            final downloadItem = find.text(label, findRichText: true);
+            await tester.scrollUntilVisible(downloadItem, 180,
                 scrollable: find.byType(Scrollable).first);
             await tester.pump(const Duration(seconds: 1));
-            await tester.ensureVisible(find.text(label));
+            await tester.ensureVisible(downloadItem);
             await tester.pump(const Duration(seconds: 1));
-            expect(find.text(label).hitTestable(), findsOneWidget);
+            expect(downloadItem.hitTestable(), findsOneWidget);
             expect(tester.takeException(), isNull);
             await tester.pumpWidget(const SizedBox.shrink());
             pending.resolve(
@@ -196,12 +197,13 @@ void main() {
     expect(tester.takeException(), isNull);
     final label = AppLocalizations.of(tester.element(find.byType(MineScreen)))!
         .downloadManagement;
-    await tester.scrollUntilVisible(find.text(label), 180,
+    final downloadItem = find.text(label, findRichText: true);
+    await tester.scrollUntilVisible(downloadItem, 180,
         scrollable: find.byType(Scrollable).first);
     await tester.pump(const Duration(seconds: 1));
-    await tester.ensureVisible(find.text(label));
+    await tester.ensureVisible(downloadItem);
     await tester.pump(const Duration(seconds: 1));
-    expect(find.text(label).hitTestable(), findsOneWidget);
+    expect(downloadItem.hitTestable(), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
     pending.resolve(Response(requestOptions: options, statusCode: 200, data: {
@@ -218,7 +220,7 @@ void main() {
       tester.element(find.byType(MineScreen)),
     )!
         .downloadManagement;
-    expect(find.text(label), findsOneWidget);
+    expect(find.text(label, findRichText: true), findsOneWidget);
     pending.resolve(Response(
       requestOptions: options,
       statusCode: 200,
@@ -228,7 +230,7 @@ void main() {
     ));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
-    expect(find.text(label), findsOneWidget);
+    expect(find.text(label, findRichText: true), findsOneWidget);
     expect(requests, 1);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
@@ -276,7 +278,16 @@ void main() {
           (widget) => widget is ChewieIconButton && widget.icon == icon,
         ),
       );
-      expect(button.iconSize, 22);
+      expect(button.iconSize, isNull);
+      final scope = tester.widget<ChewieIconButtonVisualScope>(
+        find
+            .ancestor(
+              of: find.byWidget(button),
+              matching: find.byType(ChewieIconButtonVisualScope),
+            )
+            .first,
+      );
+      expect(scope.maximumIconSize, 22);
       expect(button.foregroundColor, isNotNull);
     }
     final themeIcon = tester.widget<LoftifyLottie>(

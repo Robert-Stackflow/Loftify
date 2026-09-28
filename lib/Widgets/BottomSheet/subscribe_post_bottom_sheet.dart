@@ -1,6 +1,7 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Models/favorites_response.dart';
+import 'package:loftify/Widgets/Item/loftify_item_builder.dart';
 
 import '../../Api/user_api.dart';
 import '../../Theme/loftify_design_theme.dart';
@@ -327,12 +328,12 @@ class LoftifySubscribePanelFrame extends StatelessWidget {
         ? maxPanelHeight
         : (196.0 + itemCount! * 84).clamp(300.0, 720.0);
     final panelHeight = desiredHeight.clamp(0.0, maxPanelHeight);
-    final createAction = LoftifyButton(
-      label: createLabel,
-      variant: LoftifyButtonVariant.ghost,
-      size: LoftifyButtonSize.compact,
-      expand: compactHeader,
-      onPressed: onCreate,
+    final createAction = LoftifyItemBuilder.buildFramedDoubleButton(
+      context: context,
+      isFollowed: false,
+      onTap: onCreate,
+      positiveText: createLabel,
+      negtiveText: createLabel,
     );
     return SafeArea(
       top: false,

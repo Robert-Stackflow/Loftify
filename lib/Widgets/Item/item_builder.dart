@@ -83,7 +83,7 @@ class ItemBuilder {
     Function(CustomFont?)? onDelete,
     bool showDelete = false,
     double width = 110,
-    double height = 160,
+    double height = 154,
   }) {
     return FontItem(
       font: font,
@@ -100,7 +100,7 @@ class ItemBuilder {
     required BuildContext context,
     required Function()? onTap,
     double width = 110,
-    double height = 160,
+    double height = 154,
   }) {
     return EmptyFontItem(onTap: onTap, width: width, height: height);
   }

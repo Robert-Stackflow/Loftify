@@ -198,7 +198,7 @@ void main() {
       );
       final label = tester.widget<Text>(find.text('Blocked creator'));
 
-      expect(decoration.border!.top.color, design.colors.danger);
+      expect(decoration.border!.top.color, design.colors.outline);
       expect(
         _contrastRatio(label.style!.color!, effectiveBackground),
         greaterThanOrEqualTo(4.5),

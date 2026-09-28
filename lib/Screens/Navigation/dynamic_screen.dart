@@ -25,6 +25,7 @@ import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../Widgets/PostItem/grain_post_item_builder.dart';
 import '../../Widgets/loftify_icons.dart';
+import '../../Widgets/loftify_reaction_icon.dart';
 import '../../l10n/l10n.dart';
 import 'home_screen.dart';
 
@@ -338,7 +339,8 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
   }
 
   Future<void> _startTabRefreshWhenMounted(int index) async {
-    for (var attempt = 0; attempt < 60; attempt++) {
+    for (var attempt = 0; attempt < 8; attempt++) {
+      WidgetsBinding.instance.scheduleFrame();
       await WidgetsBinding.instance.endOfFrame;
       if (!mounted) return;
       final state = switch (index) {
@@ -370,6 +372,16 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
             (state as SubscribeGrainTabState).callRefresh();
             break;
         }
+        return;
+      }
+      if (state != null && attempt == 7) {
+        await switch (state) {
+          FollowTabState state => state.loadInitial(),
+          SubscribeTagTabState state => state.loadInitial(),
+          SubscribeCollectionTabState state => state.loadInitial(),
+          SubscribeGrainTabState state => state.loadInitial(),
+          _ => Future<void>.value(),
+        };
         return;
       }
     }
@@ -437,6 +449,8 @@ class FollowTabState extends BaseDynamicState<FollowTab>
       _pagingController.metadata ?? const <TimelineBlog>[];
   bool get refreshReady => _refreshController.headerState != null;
 
+  Future<void> loadInitial() async => _fetchResult(refresh: true);
+
   callRefresh() {
     if (_scrollController.hasClients &&
         _scrollController.offset > MediaQuery.sizeOf(context).height) {
@@ -463,7 +477,7 @@ class FollowTabState extends BaseDynamicState<FollowTab>
     final rawItems = data['items'];
     final posts = parsePagedDataItems<GrainPostItem>(
       rawItems,
-      GrainPostItem.fromJson,
+      GrainPostItem.fromTimelineJson,
       onMalformed: (error, stackTrace) =>
           ILogger.error('Skipped malformed timeline post', error, stackTrace),
     );
@@ -686,6 +700,8 @@ class SubscribeTagTabState extends BaseDynamicState<SubscribeTagTab>
   List<FullSubscribeTagItem> get _recentVisitList =>
       _pagingController.metadata ?? const <FullSubscribeTagItem>[];
   bool get refreshReady => _refreshController.headerState != null;
+
+  Future<void> loadInitial() async => _fetchResult(refresh: true);
 
   callRefresh() {
     if (_scrollController.hasClients &&
@@ -927,55 +943,53 @@ class SubscribeTagTabState extends BaseDynamicState<SubscribeTagTab>
           children: [
             Row(
               children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).iconTheme.color,
-                    shape: BoxShape.circle,
-                  ),
-                  padding: const EdgeInsets.all(3),
-                  child: ChewieIcon(
-                    LoftifyIcons.tag,
-                    size: 10,
-                    color: Theme.of(context).colorScheme.surface,
-                  ),
+                ChewieIcon(
+                  LoftifyIcons.hash,
+                  size: 18,
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  item.name,
-                  style: Theme.of(context).textTheme.titleLarge?.apply(
-                        fontWeightDelta: 2,
+                Expanded(
+                  child: Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      Text(
+                        item.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
+                      if (StringUtil.isNotEmpty(item.tagRankName))
+                        ItemBuilder.buildTagItem(
+                          context,
+                          item.tagRankName,
+                          TagType.normal,
+                          backgroundColor:
+                              Theme.of(context).primaryColor.withAlpha(30),
+                          color: ChewieColors.likeButtonColor,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          showTagLabel: false,
+                          jumpToTag: false,
+                          fontSizeDelta: -1,
+                        ),
+                      if (item.unreadCount > 0)
+                        ItemBuilder.buildTagItem(
+                          context,
+                          "+${item.unreadCount}",
+                          TagType.normal,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          color: Theme.of(context).textTheme.bodySmall?.color,
+                          showTagLabel: false,
+                          jumpToTag: false,
+                          fontSizeDelta: -1,
+                        ),
+                    ],
+                  ),
                 ),
-                if (StringUtil.isNotEmpty(item.tagRankName))
-                  const SizedBox(width: 8),
-                if (StringUtil.isNotEmpty(item.tagRankName))
-                  ItemBuilder.buildTagItem(
-                    context,
-                    item.tagRankName,
-                    TagType.normal,
-                    backgroundColor:
-                        Theme.of(context).primaryColor.withAlpha(30),
-                    color: ChewieColors.likeButtonColor,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    showTagLabel: false,
-                    jumpToTag: false,
-                    fontSizeDelta: -1,
-                  ),
-                if (item.unreadCount > 0) const SizedBox(width: 8),
-                if (item.unreadCount > 0)
-                  ItemBuilder.buildTagItem(
-                    context,
-                    "+${item.unreadCount}",
-                    TagType.normal,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    color: Theme.of(context).textTheme.bodySmall?.color,
-                    showTagLabel: false,
-                    jumpToTag: false,
-                    fontSizeDelta: -1,
-                  ),
-                const Spacer(),
+                const SizedBox(width: 8),
                 ChewieIcon(
                   LoftifyIcons.next,
                   color: Theme.of(context).textTheme.labelSmall?.color,
@@ -1270,6 +1284,8 @@ class SubscribeCollectionTabState
   List<TimelineGuessCollection> get _guessLikeList =>
       _pagingController.metadata ?? const <TimelineGuessCollection>[];
   bool get refreshReady => _refreshController.headerState != null;
+
+  Future<void> loadInitial() async => _fetchResult(refresh: true);
 
   callRefresh() {
     if (_scrollController.hasClients &&
@@ -1741,10 +1757,13 @@ class SubscribeCollectionTabState
                 text: item.subscribed
                     ? appLocalizations.unsubscribe
                     : appLocalizations.subscribe,
-                icon: ChewieIcon(
-                  LoftifyIcons.bookmark,
+                icon: LoftifyReactionIcon(
+                  kind: LoftifyReactionKind.bookmark,
+                  selected: item.subscribed,
                   size: 15,
-                  color: Theme.of(context).primaryColor,
+                  color: item.subscribed
+                      ? LoftifyReactionColors.bookmark
+                      : Theme.of(context).primaryColor,
                 ),
                 color: Theme.of(context).primaryColor,
                 fontWeightDelta: 2,
@@ -1796,6 +1815,8 @@ class SubscribeGrainTabState extends BaseDynamicState<SubscribeGrainTab>
 
   List<SubscribeGrainItem> get _subscribeList => _pagingController.items;
   bool get refreshReady => _refreshController.headerState != null;
+
+  Future<void> loadInitial() async => _fetchResult(refresh: true);
 
   @override
   void dispose() {

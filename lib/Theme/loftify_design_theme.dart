@@ -255,7 +255,7 @@ class LoftifyRadiusTokens {
     this.small = 6,
     this.control = 10,
     this.card = 14,
-    this.panel = 12,
+    this.panel = 20,
     this.dialog = 24,
     this.full = 999,
   });

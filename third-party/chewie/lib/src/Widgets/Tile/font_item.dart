@@ -51,7 +51,9 @@ class FontItemState extends State<FontItem> {
                 padding: const EdgeInsets.only(top: 8, left: 10, right: 10),
                 decoration: BoxDecoration(
                   color: ChewieTheme.canvasColor,
-                  border: ChewieTheme.border,
+                  border: selected
+                      ? Border.all(color: ChewieTheme.primaryColor, width: 1.5)
+                      : ChewieTheme.border,
                   borderRadius: ChewieDimens.borderRadius8,
                 ),
                 child: Column(
@@ -114,6 +116,8 @@ class FontItemState extends State<FontItem> {
                                       fontFamily: widget.font.fontFamily,
                                       fontWeightDelta: 0,
                                     ),
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
                                   );
                           },
                         ),
@@ -121,32 +125,34 @@ class FontItemState extends State<FontItem> {
                     ),
                     const SizedBox(height: 4),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        SizedBox.square(
-                          dimension: 32,
-                          child: ChewieSelectionIndicator(
-                            key: ValueKey(
-                              'font-selection-${widget.font.fontFamily}',
-                            ),
-                            selected: selected,
-                            selectedColor: ChewieTheme.primaryColor,
-                            unselectedColor: ChewieTheme.bodySmall.color,
-                          ),
+                        Icon(
+                          selected
+                              ? LucideIcons.circleCheck
+                              : LucideIcons.circle,
+                          size: 18,
+                          color: selected
+                              ? ChewieTheme.primaryColor
+                              : ChewieTheme.bodySmall.color,
                         ),
-                        if (widget.showDelete) const SizedBox(width: 5),
+                        if (widget.showDelete) const SizedBox(width: 4),
                         if (widget.showDelete)
-                          CircleIconButton(
+                          IconButton(
                             key: ValueKey(
                               'font-delete-${widget.font.fontFamily}',
                             ),
                             icon: Icon(
                               LucideIcons.trash2,
                               color: ChewieTheme.errorColor,
-                              size: 21,
+                              size: 17,
                             ),
-                            padding: const EdgeInsets.all(13.5),
-                            onTap: () {
+                            constraints: const BoxConstraints.tightFor(
+                              width: 48,
+                              height: 48,
+                            ),
+                            padding: EdgeInsets.zero,
+                            onPressed: () {
                               widget.onDelete?.call(widget.font);
                             },
                           ),
@@ -180,7 +186,7 @@ class EmptyFontItem extends StatefulWidget {
     super.key,
     this.onTap,
     this.width = 110,
-    this.height = 160,
+    this.height = 154,
   });
 
   @override

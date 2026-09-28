@@ -98,6 +98,19 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('loading timeline respects reduced motion', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: MediaQuery(
+        data: const MediaQueryData(disableAnimations: true),
+        child: LottieFiles.buildLoadingAnimation(40, false),
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 200));
+    final controller = tester.widget<Lottie>(find.byType(Lottie)).controller!;
+    expect(controller.value, 0);
+    expect(controller.isAnimating, isFalse);
+  });
+
   testWidgets('photo viewer default loading state uses forced-dark Lottie',
       (tester) async {
     await tester.pumpWidget(
@@ -186,11 +199,23 @@ void main() {
         .widget<Transform>(find.byKey(const ValueKey('indicatorPullScale')))
         .transform
         .storage[0];
+    void expectArtworkInsideReveal() {
+      final reveal = tester
+          .getRect(find.byKey(const ValueKey('refresh-indicator-viewport')));
+      final artwork =
+          tester.getRect(find.byKey(const ValueKey('visible-refresh-lottie')));
+      expect(artwork.top, greaterThanOrEqualTo(reveal.top - 0.1));
+      expect(artwork.bottom, lessThanOrEqualTo(reveal.bottom + 0.1));
+      expect(reveal.bottom,
+          closeTo(tester.getTopLeft(find.byKey(firstItemKey)).dy, 1));
+    }
+
     final firstScale = indicatorScale();
     final firstGap =
         tester.getTopLeft(find.byKey(firstItemKey)).dy - initialTop;
-    expect(40 * firstScale, lessThanOrEqualTo(firstGap + 0.01));
-    expect(40 * firstScale, closeTo(firstGap, 1));
+    expect(40 * firstScale, lessThanOrEqualTo(firstGap * 0.9 + 0.05));
+    expect(40 * firstScale, closeTo(firstGap * 0.9, 1));
+    expectArtworkInsideReveal();
     await gesture.moveBy(const Offset(0, 32));
     await tester.pump();
     final secondScale = indicatorScale();
@@ -198,10 +223,19 @@ void main() {
         tester.getTopLeft(find.byKey(firstItemKey)).dy - initialTop;
     expect(firstScale, lessThan(secondScale));
     expect(secondScale, lessThanOrEqualTo(1));
-    expect(40 * secondScale, lessThanOrEqualTo(secondGap + 0.01));
-    expect(40 * secondScale, closeTo(secondGap, 1));
+    expect(40 * secondScale, lessThanOrEqualTo(secondGap * 0.9 + 0.05));
+    expect(40 * secondScale, closeTo(secondGap * 0.9, 1));
+    expectArtworkInsideReveal();
     expect(tester.getTopLeft(find.byKey(firstItemKey)).dy,
         greaterThan(initialTop));
+    await gesture.moveBy(const Offset(0, -18));
+    await tester.pump();
+    final returningScale = indicatorScale();
+    final returningGap =
+        tester.getTopLeft(find.byKey(firstItemKey)).dy - initialTop;
+    expect(returningScale, lessThan(secondScale));
+    expect(40 * returningScale, lessThanOrEqualTo(returningGap * 0.9 + 0.05));
+    expectArtworkInsideReveal();
     expect(tester.takeException(), isNull);
 
     await gesture.up();
@@ -209,9 +243,53 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  testWidgets('refresh Lottie timeline keeps playing through drag rebuilds',
+      (tester) async {
+    final refreshCompleter = Completer<IndicatorResult>();
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: EasyRefresh.builder(
+          header: LottieCupertinoHeader(
+            indicator: LottieFiles.buildLoadingAnimation(40, false),
+          ),
+          onRefresh: () => refreshCompleter.future,
+          childBuilder: (context, physics) => ListView(
+            physics: physics,
+            children: const [SizedBox(height: 900)],
+          ),
+        ),
+      ),
+    ));
+
+    final gesture = await tester.startGesture(const Offset(200, 100));
+    await gesture.moveBy(const Offset(0, 48));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 150));
+    await tester.pump(const Duration(milliseconds: 150));
+    final lottie = tester.widget<Lottie>(find.byType(Lottie));
+    final timeline = lottie.controller!;
+    final before = timeline.value;
+    expect(before, greaterThan(0));
+
+    await gesture.moveBy(const Offset(0, 12));
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(
+        tester.widget<Lottie>(find.byType(Lottie)).controller, same(timeline));
+    expect(timeline.value, greaterThan(before));
+    final afterFirstDrag = timeline.value;
+    await gesture.moveBy(const Offset(0, 12));
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(timeline.value, greaterThan(afterFirstDrag));
+
+    await gesture.up();
+    refreshCompleter.complete(IndicatorResult.success);
+    await tester.pump(const Duration(milliseconds: 500));
+  });
+
   testWidgets('processing animation stays fitted when the gap contracts',
       (tester) async {
     final pending = Completer<IndicatorResult>();
+    const firstItemKey = ValueKey('processing-first-item');
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(
         body: EasyRefresh.builder(
@@ -224,11 +302,12 @@ void main() {
           onRefresh: () => pending.future,
           childBuilder: (context, physics) => ListView(
             physics: physics,
-            children: const [SizedBox(height: 900)],
+            children: const [SizedBox(key: firstItemKey, height: 900)],
           ),
         ),
       ),
     ));
+    final initialTop = tester.getTopLeft(find.byKey(firstItemKey)).dy;
     final gesture = await tester.startGesture(const Offset(200, 100));
     await gesture.moveBy(const Offset(0, 300));
     await tester.pump();
@@ -244,6 +323,9 @@ void main() {
         .height;
     expect(find.byKey(const ValueKey('indicatorReady')), findsOneWidget);
     expect(40 * scale, lessThanOrEqualTo(revealedHeight + 0.01));
+    final visibleGap =
+        tester.getTopLeft(find.byKey(firstItemKey)).dy - initialTop;
+    expect(40 * scale, lessThanOrEqualTo(visibleGap + 0.01));
     expect(tester.takeException(), isNull);
     pending.complete(IndicatorResult.success);
     await tester.pumpAndSettle();

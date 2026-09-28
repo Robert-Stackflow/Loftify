@@ -129,38 +129,43 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
 
   @override
   void pushPage(Widget page) {
+    final navigator = panelNavigatorState;
+    if (navigator == null) return;
+    appProvider.showPanelNavigator = true;
+    canRootPop = false;
+    if (mounted) setState(() {});
     ResponsiveUtil.runByOrientation(
       landscape: () {
-        appProvider.showPanelNavigator = true;
-        panelNavigatorState?.push(RouteUtil.getFadeRoute(page));
-        canRootPop = false;
-        if (mounted) setState(() {});
+        unawaited(navigator.push(RouteUtil.getFadeRoute(page)).then((_) {
+          _syncPanelAfterRoutePop();
+        }));
       },
       portrait: () {
-        appProvider.showPanelNavigator = true;
-        RouteUtil.pushCupertinoRoute(panelNavigatorState!.context, page);
-        canRootPop = false;
-        if (mounted) setState(() {});
+        unawaited(navigator
+            .push(CustomCupertinoPageRoute(builder: (context) => page))
+            .then((_) {
+          _syncPanelAfterRoutePop();
+        }));
       },
     );
+  }
+
+  void _syncPanelAfterRoutePop() {
+    if (!mounted) return;
+    final hasNestedPage = panelNavigatorState?.canPop() ?? false;
+    canRootPop = !hasNestedPage;
+    appProvider.showPanelNavigator = hasNestedPage;
+    setState(() {});
   }
 
   @override
   void popPage() {
     if (panelNavigatorState?.canPop() ?? false) {
       panelNavigatorState?.pop();
-      Future.delayed(const Duration(milliseconds: 400), () {
-        if (!(panelNavigatorState?.canPop() ?? false)) {
-          appProvider.showPanelNavigator = false;
-        }
-      });
-    } else {
-      appProvider.showPanelNavigator = false;
     }
     _pageController =
         PageController(initialPage: appProvider.sidebarChoice.index);
-    canRootPop = !(panelNavigatorState?.canPop() ?? false);
-    if (mounted) setState(() {});
+    _syncPanelAfterRoutePop();
   }
 
   @override

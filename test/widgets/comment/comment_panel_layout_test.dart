@@ -29,14 +29,14 @@ void main() {
 
     expect(find.byKey(const ValueKey('loftify-panel-handle')), findsOneWidget);
     expect(tester.getSize(find.byKey(const ValueKey('loftify-panel-handle'))),
-        const Size(32, 4));
+        const Size(36, 4));
     final panelClip = tester.widget<ClipRRect>(
       find.descendant(
         of: find.byType(LoftifyPanel),
         matching: find.byType(ClipRRect),
       ),
     );
-    expect((panelClip.borderRadius! as BorderRadius).topLeft.x, 24);
+    expect((panelClip.borderRadius! as BorderRadius).topLeft.x, 20);
     expect(find.textContaining('Latest comments'), findsOneWidget);
     expect(tester.takeException(), isNull);
 

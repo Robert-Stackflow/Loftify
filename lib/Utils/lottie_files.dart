@@ -243,9 +243,11 @@ class LottieFiles {
     ),
     navHome: LoftifyLottieSpec(
       asset: navHome,
-      sourceSize: Size.square(48),
-      contentBounds: Rect.fromLTWH(4, 4, 40, 40),
-      opticalFill: 0.9,
+      sourceSize: Size.square(128),
+      // The loading mark occupies only the middle of its original canvas.
+      // Crop its transparent margins so it remains legible at 22dp.
+      contentBounds: Rect.fromLTWH(34, 22, 60, 76),
+      opticalFill: 1,
     ),
     navHeart: LoftifyLottieSpec(
       asset: navHeart,
@@ -350,6 +352,7 @@ class LottieFiles {
     VoidCallback? onLoaded,
     bool? repeat,
     Color? tint,
+    double? strokeWidth,
   }) {
     return Builder(
       key: key,
@@ -359,6 +362,7 @@ class LottieFiles {
         controller: controller,
         repeat: repeat,
         tint: tint,
+        strokeWidth: strokeWidth,
         onLoaded: (_) {
           if (controller != null && autoForward == true) controller.value = 1;
           onLoaded?.call();
@@ -368,15 +372,8 @@ class LottieFiles {
   }
 
   static Widget buildLoadingAnimation(double size, bool forceDark) {
-    return Builder(
-      builder: (context) => buildAnimation(
-        getLoadingPath(context, forceDark: forceDark),
-        size: size,
-        repeat: true,
-      ),
-    );
+    return _LoopingLoadingAnimation(size: size, forceDark: forceDark);
   }
-
 
   static String getLoadingPath(
     BuildContext context, {
@@ -387,5 +384,60 @@ class LottieFiles {
             ? LottieFiles.loadingDarkTransparent
             : LottieFiles.loadingDark
         : LottieFiles.loadingLight;
+  }
+}
+
+/// Keeps the loading timeline alive while a refresh indicator rebuilds on
+/// every drag update. Lottie's implicit controller restarts in didUpdateWidget,
+/// which otherwise makes the artwork look frozen throughout the gesture.
+class _LoopingLoadingAnimation extends StatefulWidget {
+  const _LoopingLoadingAnimation({required this.size, required this.forceDark});
+
+  final double size;
+  final bool forceDark;
+
+  @override
+  State<_LoopingLoadingAnimation> createState() =>
+      _LoopingLoadingAnimationState();
+}
+
+class _LoopingLoadingAnimationState extends State<_LoopingLoadingAnimation>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(vsync: this);
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (LoftifyLottie.shouldReduceMotion(context)) {
+      _controller
+        ..stop()
+        ..value = 0;
+    } else if (_controller.duration != null && !_controller.isAnimating) {
+      _controller.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LoftifyLottie(
+      spec: LottieFiles.specFor(
+        LottieFiles.getLoadingPath(context, forceDark: widget.forceDark),
+      ),
+      size: widget.size,
+      controller: _controller,
+      onLoaded: (_) {
+        if (mounted &&
+            !LoftifyLottie.shouldReduceMotion(context) &&
+            !_controller.isAnimating) {
+          _controller.repeat();
+        }
+      },
+    );
   }
 }

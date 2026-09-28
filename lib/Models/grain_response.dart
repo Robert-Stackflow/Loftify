@@ -101,13 +101,20 @@ class GrainPostItem {
       liked: json['liked'] ?? false,
       opTime: json['opTime'] ?? 0,
       postData: GrainPostData.fromJson(json['postData']),
-      shared: json['shared'],
-      showFullText: json['showFullText'],
-      subscribed: json['subscribed'],
+      shared: json['shared'] ?? false,
+      showFullText: json['showFullText'] ?? false,
+      subscribed: json['subscribed'] ?? false,
       shareInfo: json['shareInfo'] == null
           ? null
           : ShareInfo.fromJson(json['shareInfo']),
     );
+  }
+
+  /// Timeline responses can contain unavailable/deleted entries without a post.
+  /// They have nothing for the post tile to render, so omit them from the feed.
+  static GrainPostItem? fromTimelineJson(Map<String, dynamic> json) {
+    if (json['postData'] == null) return null;
+    return GrainPostItem.fromJson(json);
   }
 
   Map<String, dynamic> toJson() {

@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Theme/loftify_design_theme.dart';
 import 'package:loftify/Widgets/BottomSheet/list_bottom_sheet.dart';
+import 'package:loftify/Widgets/Design/loftify_controls.dart';
 import 'package:loftify/Widgets/Design/loftify_state_view.dart';
 import 'package:loftify/Widgets/Design/loftify_surfaces.dart';
 import 'package:loftify/Widgets/Suit/dress_preview_card.dart';
@@ -469,6 +470,34 @@ void main() {
     expect(selected, 2);
     expect(tester.takeException(), isNull);
     debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('long option panels keep title and cancel action visible', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _TestApp(
+        width: 320,
+        mediaQuery: const MediaQueryData(size: Size(320, 400)),
+        child: Builder(
+          builder: (context) => TileList.fromOptions(
+            List.generate(30, (index) => Tuple2('Option $index', index)),
+            (_) {},
+            context: context,
+            title: 'Choose an option',
+            showCancel: true,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(
+        tester.getSize(find.byType(TileList)).height, lessThanOrEqualTo(328));
+    expect(find.text('Choose an option'), findsOneWidget);
+    expect(find.byType(LoftifyButton), findsOneWidget);
+    expect(find.byType(Scrollable), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('dark Android surfaces keep every semantic state distinct', (

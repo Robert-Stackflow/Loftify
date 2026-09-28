@@ -23,6 +23,7 @@ import '../PostDetail/comment_item.dart';
 import '../Design/loftify_controls.dart';
 import '../../l10n/l10n.dart';
 import '../loftify_icons.dart';
+import '../loftify_reaction_icon.dart';
 import 'item_builder.dart';
 
 const CircleColor shareButtonCircleColor =
@@ -165,7 +166,8 @@ class LoftifyItemBuilder {
         children: [
           Row(
             children: [
-              Expanded(
+              Flexible(
+                fit: FlexFit.loose,
                 child: Text(
                   comment.publisherBlogInfo.blogNickName,
                   maxLines: 1,
@@ -490,10 +492,11 @@ class LoftifyItemBuilder {
         size: size,
         isLiked: isLiked,
         likeBuilder: (bool isLiked) {
-          return ChewieIcon(
-            LoftifyIcons.favorite,
+          return LoftifyReactionIcon(
+            kind: LoftifyReactionKind.like,
+            selected: isLiked,
             color: isLiked
-                ? ChewieColors.likeButtonColor
+                ? LoftifyReactionColors.like
                 : defaultColor ?? Theme.of(context).iconTheme.color,
             size: iconSize,
           );
@@ -636,10 +639,11 @@ class LoftifyItemBuilder {
         circleColor: shareButtonCircleColor,
         bubblesColor: shareButtonBubblesColor,
         likeBuilder: (bool isShared) {
-          return ChewieIcon(
-            LoftifyIcons.recommend,
+          return LoftifyReactionIcon(
+            kind: LoftifyReactionKind.recommend,
+            selected: isShared,
             color: isShared
-                ? ChewieColors.shareButtonColor
+                ? LoftifyReactionColors.recommend
                 : defaultColor ?? Theme.of(context).iconTheme.color,
             size: iconSize,
           );
@@ -747,7 +751,6 @@ class LoftifyItemBuilder {
     Widget buildEnterButton() => RoundIconTextButton(
           text: appLocalizations.enter,
           height: null,
-          minHeight: 48,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           color: Theme.of(context).primaryColor,
           onPressed: onTap,
@@ -873,17 +876,20 @@ class LoftifyItemBuilder {
     TagInfo tag, {
     Function()? onTap,
     double verticalPadding = 12,
+    double horizontalPadding = 16,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         color: Colors.transparent,
-        padding:
-            EdgeInsets.symmetric(vertical: verticalPadding, horizontal: 16),
+        padding: EdgeInsets.symmetric(
+          vertical: verticalPadding,
+          horizontal: horizontalPadding,
+        ),
         child: Row(
           children: [
             ChewieIcon(
-              tag.joinCount == -1 ? LoftifyIcons.search : LoftifyIcons.tag,
+              tag.joinCount == -1 ? LoftifyIcons.search : LoftifyIcons.hash,
               size: 20,
               color: Theme.of(context).textTheme.labelMedium?.color,
             ),
@@ -909,6 +915,25 @@ class LoftifyItemBuilder {
           ],
         ),
       ),
+    );
+  }
+
+  static Widget buildSearchSuggestionSurface(
+    BuildContext context,
+    Widget child,
+  ) {
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: theme.dividerColor.withValues(alpha: 0.65),
+          width: 0.6,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: child,
     );
   }
 

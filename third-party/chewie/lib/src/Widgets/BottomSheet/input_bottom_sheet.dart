@@ -205,8 +205,10 @@ class InputBottomSheetState extends State<InputBottomSheet> {
           Expanded(
             child: RoundIconTextButton(
               height: 48,
-              background: ChewieTheme.primaryColor,
-              color: ChewieTheme.primaryButtonColor,
+              background: CustomDialogColors.readableActionFill(
+                ChewieTheme.primaryColor,
+              ),
+              color: Colors.white,
               text: widget.buttonText ?? chewieLocalizations.confirm,
               onPressed: processConfirm,
               fontSizeDelta: 2,

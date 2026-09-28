@@ -327,6 +327,7 @@ class LoftifyPanel extends StatelessWidget {
     this.footerPadding,
     this.showHandle = true,
     this.compactHeader = true,
+    this.centerTitle = true,
     this.expandBody = false,
     this.semanticLabel,
   });
@@ -341,6 +342,7 @@ class LoftifyPanel extends StatelessWidget {
   final EdgeInsetsGeometry? footerPadding;
   final bool showHandle;
   final bool compactHeader;
+  final bool centerTitle;
   final bool expandBody;
   final String? semanticLabel;
 
@@ -417,16 +419,14 @@ class LoftifyPanel extends StatelessWidget {
   Widget _buildHandle(BuildContext context) {
     final design = context.design;
     return SizedBox(
-      height: compactHeader ? 16 : design.spacing.xxxl,
+      height: 24,
       child: Center(
         child: Container(
           key: const ValueKey('loftify-panel-handle'),
-          width: compactHeader ? 32 : 36,
+          width: 36,
           height: 4,
           decoration: BoxDecoration(
-            color: compactHeader
-                ? design.colors.outlineStrong.withValues(alpha: 0.7)
-                : design.colors.outlineStrong,
+            color: design.colors.outlineStrong.withValues(alpha: 0.7),
             borderRadius: BorderRadius.circular(design.radii.full),
           ),
         ),
@@ -461,18 +461,22 @@ class LoftifyPanel extends StatelessWidget {
             Expanded(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment:
-                    compactHeader && trailing == null && leading == null
-                        ? CrossAxisAlignment.center
-                        : CrossAxisAlignment.start,
+                crossAxisAlignment: centerTitle &&
+                        compactHeader &&
+                        trailing == null &&
+                        leading == null
+                    ? CrossAxisAlignment.center
+                    : CrossAxisAlignment.start,
                 children: [
                   if (title != null)
                     Text(
                       title!,
-                      textAlign:
-                          compactHeader && trailing == null && leading == null
-                              ? TextAlign.center
-                              : null,
+                      textAlign: centerTitle &&
+                              compactHeader &&
+                              trailing == null &&
+                              leading == null
+                          ? TextAlign.center
+                          : null,
                       style: compactHeader
                           ? design.typography.sectionTitle
                           : design.typography.pageTitle,

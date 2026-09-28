@@ -80,6 +80,7 @@ class LoftifyLottie extends StatelessWidget {
     this.animate = true,
     this.repeat,
     this.tint,
+    this.strokeWidth,
     this.onLoaded,
   });
 
@@ -89,6 +90,7 @@ class LoftifyLottie extends StatelessWidget {
   final bool animate;
   final bool? repeat;
   final Color? tint;
+  final double? strokeWidth;
   final ValueChanged<LottieComposition>? onLoaded;
 
   static bool shouldReduceMotion(BuildContext context) {
@@ -154,6 +156,11 @@ class LoftifyLottie extends StatelessWidget {
           },
         );
       }
+    }
+    if (strokeWidth != null) {
+      colorDelegates.add(
+        ValueDelegate.strokeWidth(['**', '描边 1'], value: strokeWidth),
+      );
     }
     final delegates =
         colorDelegates.isEmpty ? null : LottieDelegates(values: colorDelegates);

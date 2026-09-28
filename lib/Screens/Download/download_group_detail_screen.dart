@@ -220,10 +220,6 @@ class _SourcePreview extends StatelessWidget {
       decoration: BoxDecoration(
         color: scheme.primaryContainer.withValues(alpha: 0.45),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.7),
-          width: 0.5,
-        ),
       ),
       clipBehavior: Clip.antiAlias,
       child: thumbnail != null && thumbnail.isNotEmpty

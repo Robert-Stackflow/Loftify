@@ -471,11 +471,20 @@ class _LoftifyNavigationLottieIconState
   bool _loaded = false;
   bool _animateWhenLoaded = false;
 
+  // The loading mark starts and ends on a clear glyph. Play its drawing motion
+  // once on selection, then restore the opening frame as its idle state.
+  bool get _usesLoadingMark => widget.asset == LottieFiles.navHome;
+
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this)
-      ..value = widget.selected ? 1 : 0;
+      ..value = _usesLoadingMark ? 0 : (widget.selected ? 1 : 0);
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed && _usesLoadingMark && mounted) {
+        _controller.value = 0;
+      }
+    });
   }
 
   @override
@@ -484,7 +493,7 @@ class _LoftifyNavigationLottieIconState
     if (oldWidget.asset != widget.asset) {
       _loaded = false;
       _animateWhenLoaded = widget.selected;
-      _controller.value = widget.selected ? 1 : 0;
+      _controller.value = _usesLoadingMark ? 0 : (widget.selected ? 1 : 0);
       return;
     }
     if (oldWidget.selected == widget.selected) return;
@@ -516,8 +525,12 @@ class _LoftifyNavigationLottieIconState
       size: widget.size,
       controller: _controller,
       tint: widget.color,
+      strokeWidth: _usesLoadingMark && widget.selected ? 6.8 : null,
       onLoaded: () {
         _loaded = true;
+        if (_usesLoadingMark) {
+          _controller.duration = const Duration(milliseconds: 800);
+        }
         if (!_animateWhenLoaded || !widget.selected) return;
         _animateWhenLoaded = false;
         if (LoftifyGlassNavigationBar.shouldReduceMotion(

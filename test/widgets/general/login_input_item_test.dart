@@ -57,6 +57,33 @@ void main() {
     await tester.pump();
     expect(find.byIcon(LoftifyIcons.hidden), findsOneWidget);
   });
+
+  testWidgets('captcha action stays on one line in a narrow login field',
+      (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      _host(
+        LoginInputItem(
+          controller: controller,
+          hint: '输入短信验证码',
+          leadingConfig: InputItemLeadingTailingConfig(
+            type: InputItemLeadingTailingType.icon,
+            icon: LoftifyIcons.verification,
+          ),
+          tailingConfig: InputItemLeadingTailingConfig(
+            type: InputItemLeadingTailingType.text,
+            text: '获取验证码',
+          ),
+        ),
+      ),
+    );
+
+    final action = tester.widget<Text>(find.text('获取验证码'));
+    expect(action.maxLines, 1);
+    expect(tester.takeException(), isNull);
+  });
 }
 
 Widget _host(Widget child) {

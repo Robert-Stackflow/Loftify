@@ -124,12 +124,9 @@ class _WebviewScreenState extends BaseDynamicState<WebviewScreen>
                   DialogNavigatorHelper.responsivePopPage();
                 },
                 actions: [
-                  CircleIconButton(
-                    icon: Icon(
-                      LucideIcons.ellipsisVertical,
-                      color: ChewieTheme.iconColor,
-                    ),
-                    onTap: () {
+                  ChewieIconButton(
+                    icon: LucideIcons.ellipsisVertical,
+                    onPressed: () {
                       BottomSheetBuilder.showContextMenu(
                           context, _buildMoreButtons());
                     },
@@ -139,7 +136,6 @@ class _WebviewScreenState extends BaseDynamicState<WebviewScreen>
                   ToolButton(
                     context: context,
                     icon: LucideIcons.ellipsisVertical,
-                    buttonSize: const Size(32, 32),
                     onPressed: () {
                       BottomSheetBuilder.showContextMenu(
                           context, _buildMoreButtons());

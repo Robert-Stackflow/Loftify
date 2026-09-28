@@ -1,5 +1,6 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 class ThemeItem extends StatefulWidget {
   final ChewieThemeColorData themeColorData;
@@ -25,7 +26,7 @@ class _ThemeItemState extends State<ThemeItem> {
   @override
   Widget build(BuildContext context) {
     final textScale = MediaQuery.textScalerOf(context).scale(1);
-    final responsiveHeight = 166.4 + 24 * (textScale - 1).clamp(0.0, 2.0);
+    final responsiveHeight = 136.0 + 16 * (textScale - 1).clamp(0.0, 2.0);
     final selected = widget.index == widget.groupIndex;
     void selectTheme() => widget.onChanged?.call(widget.index);
     return Semantics(
@@ -54,26 +55,32 @@ class _ThemeItemState extends State<ThemeItem> {
                   decoration: BoxDecoration(
                     color: widget.themeColorData.scaffoldBackgroundColor,
                     borderRadius: BorderRadius.circular(10),
-                    border: ChewieTheme.border,
+                    border: selected
+                        ? Border.all(
+                            color: widget.themeColorData.primaryColor,
+                            width: 1.5,
+                          )
+                        : ChewieTheme.border,
                   ),
                   child: Column(
                     children: [
                       _buildCardRow(widget.themeColorData),
                       const SizedBox(height: 5),
                       _buildCardRow(widget.themeColorData),
-                      const SizedBox(height: 15),
-                      SizedBox.square(
-                        dimension: 48,
-                        child: Center(
-                          child: ChewieSelectionIndicator(
-                            key: ValueKey('theme-selection-${widget.index}'),
-                            selected: selected,
-                            selectedColor: widget.themeColorData.primaryColor,
-                            unselectedColor:
-                                widget.themeColorData.textLightGreyColor,
-                          ),
+                      const Spacer(),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Icon(
+                          selected
+                              ? LucideIcons.circleCheck
+                              : LucideIcons.circle,
+                          size: 18,
+                          color: selected
+                              ? widget.themeColorData.primaryColor
+                              : widget.themeColorData.textLightGreyColor,
                         ),
                       ),
+                      const SizedBox(height: 6),
                     ],
                   ),
                 ),
@@ -81,7 +88,9 @@ class _ThemeItemState extends State<ThemeItem> {
               const SizedBox(height: 8),
               Text(
                 widget.themeColorData.i18nName,
-                style: ChewieTheme.bodySmall,
+                style: ChewieTheme.bodySmall.copyWith(
+                  fontWeight: selected ? FontWeight.w600 : null,
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

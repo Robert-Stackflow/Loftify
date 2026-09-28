@@ -207,9 +207,22 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    imageUrls.length == 1
-                        ? _buildSinglePage()
-                        : _buildMultiplePage(),
+                    if (imageUrls.length == 1)
+                      _buildSinglePage(0)
+                    else
+                      Stack(
+                        children: [
+                          HeroMode(
+                            enabled: _dismissOffset <= 0,
+                            child: Opacity(
+                              opacity: _dismissOffset <= 0 ? 1 : 0,
+                              child: _buildMultiplePage(),
+                            ),
+                          ),
+                          if (_dismissOffset > 0)
+                            _buildSinglePage(currentIndex),
+                        ],
+                      ),
                     if (getCaption(currentIndex).isNotEmpty)
                       Positioned(
                         bottom: 60,
@@ -417,7 +430,14 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
 
   void _popViewer() {
     if (!mounted) return;
-    Navigator.maybePop(context);
+    final route = ModalRoute.of(context);
+    unawaited(Navigator.maybePop(context).then((didPop) async {
+      if (!mounted) return;
+      if (didPop) await Future<void>.delayed(const Duration(milliseconds: 450));
+      if (mounted && (route?.isCurrent ?? false)) {
+        setState(() => _dismissOffset = 0);
+      }
+    }));
     chewieProvider.panelScreenState?.updateStatusBar();
   }
 
@@ -511,7 +531,7 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
         }
       };
 
-  Widget _buildSinglePage() {
+  Widget _buildSinglePage(int index) {
     return Container(
       constraints: BoxConstraints.expand(
         height: MediaQuery.sizeOf(context).height,
@@ -519,9 +539,9 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
       child: Listener(
         onPointerSignal: onPointerSignal,
         child: PhotoView(
-          controller: _viewControllers[0],
-          scaleStateController: _scaleStateControllers[0],
-          imageProvider: _imageProvider(0),
+          controller: _viewControllers[index],
+          scaleStateController: _scaleStateControllers[index],
+          imageProvider: _imageProvider(index),
           initialScale: getPreferedScale(currentUrl),
           minScale: minScale,
           maxScale: maxScale,
@@ -532,14 +552,14 @@ class HeroPhotoViewScreenState extends State<HeroPhotoViewScreen>
             tag: ChewieUtils.getHeroTag(
               tagSuffix: widget.tagSuffix,
               tagPrefix: widget.tagPrefix,
-              url: _heroUrls[0],
+              url: _heroUrls[index],
             ),
           ),
           loadingBuilder: (context, event) => _buildLoading(
             event,
             index: currentIndex,
           ),
-          errorBuilder: (context, error, stackTrace) => _buildImageError(0),
+          errorBuilder: (context, error, stackTrace) => _buildImageError(index),
         ),
       ),
     );

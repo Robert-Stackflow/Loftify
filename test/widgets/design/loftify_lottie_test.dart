@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loftify/Utils/lottie_files.dart';
 import 'package:loftify/Widgets/Navigation/loftify_glass_navigation_bar.dart';
@@ -65,8 +67,7 @@ void main() {
     }
   });
 
-  test('new navigation assets share one canvas and settle into a bold frame',
-      () {
+  test('navigation assets keep readable idle and selected frames', () {
     for (final asset in <String>[
       LottieFiles.navHome,
       LottieFiles.navSearch,
@@ -76,6 +77,22 @@ void main() {
       final json =
           jsonDecode(File(asset).readAsStringSync()) as Map<String, dynamic>;
       final layers = (json['layers'] as List).cast<Map<String, dynamic>>();
+      if (asset == LottieFiles.navHome) {
+        expect(json['w'], 128);
+        expect(json['h'], 128);
+        expect(json['op'], 50);
+        expect(json['nm'], contains('loading_mark'));
+        expect(layers, hasLength(2));
+        expect(
+            layers.every(
+                (layer) => layer['nm'] == 'draw' || layer['nm'] == 'draw 3'),
+            isTrue);
+        final spec = LottieFiles.specFor(asset);
+        expect(
+            spec.effectiveContentBounds, const Rect.fromLTWH(34, 22, 60, 76));
+        expect(spec.opticalFill, 1);
+        continue;
+      }
       expect(json['w'], 48, reason: asset);
       expect(json['h'], 48, reason: asset);
       expect(json['fr'], 30, reason: asset);
@@ -125,9 +142,46 @@ void main() {
         reason: asset,
       );
     }
-    final home = jsonDecode(File(LottieFiles.navHome).readAsStringSync())
-        as Map<String, dynamic>;
-    expect(home['nm'], contains('house'));
+  });
+
+  testWidgets('home loading mark plays once then returns to its idle frame',
+      (tester) async {
+    Widget host(bool selected) => _lottieHost(
+          child: LoftifyNavigationLottieIcon(
+            asset: LottieFiles.navHome,
+            selected: selected,
+            color: const Color(0xFF16AFA8),
+          ),
+        );
+
+    await tester.pumpWidget(host(false));
+    await tester.pump();
+    final controller = tester
+        .widget<LottieBuilder>(_assetLottie(LottieFiles.navHome))
+        .controller! as AnimationController;
+    expect(controller.value, 0);
+    List<double> strokeOverrides() => tester
+        .widget<LottieBuilder>(_assetLottie(LottieFiles.navHome))
+        .delegates!
+        .values!
+        .where((delegate) => delegate.value is double)
+        .map((delegate) => delegate.value as double)
+        .toList();
+    expect(strokeOverrides(), isEmpty);
+
+    await tester.pumpWidget(host(true));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(strokeOverrides(), [6.8]);
+    expect(controller.value, greaterThan(0));
+    expect(controller.value, lessThan(1));
+    expect(controller.isAnimating, isTrue);
+    await tester.pump(const Duration(seconds: 1));
+    expect(controller.value, 0);
+    expect(controller.isAnimating, isFalse);
+    await tester.pumpWidget(host(false));
+    await tester.pump();
+    expect(strokeOverrides(), isEmpty);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets(
@@ -303,5 +357,44 @@ void main() {
     expect(controller.value, 1);
     expect(controller.isAnimating, isFalse);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('navigation and loading assets paint different animation frames',
+      (tester) async {
+    Future<List<int>> pixels() async {
+      final boundary = tester.renderObject<RenderRepaintBoundary>(
+        find.byKey(const ValueKey('lottie-frame-boundary')),
+      );
+      return (await tester.runAsync(() async {
+        final image = await boundary.toImage(pixelRatio: 1);
+        final bytes =
+            await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+        image.dispose();
+        return bytes!.buffer.asUint8List().toList();
+      }))!;
+    }
+
+    for (final asset in [LottieFiles.navHome, LottieFiles.loadingLight]) {
+      final controller = AnimationController(vsync: tester);
+      addTearDown(controller.dispose);
+      await tester.pumpWidget(_lottieHost(
+        child: RepaintBoundary(
+          key: const ValueKey('lottie-frame-boundary'),
+          child: LottieFiles.buildAnimation(
+            asset,
+            size: 48,
+            controller: controller,
+          ),
+        ),
+      ));
+      await tester.pump();
+      controller.value = 0;
+      await tester.pump();
+      final first = await pixels();
+      controller.value = 0.6;
+      await tester.pump();
+      final later = await pixels();
+      expect(later, isNot(first), reason: '$asset paints the same frame');
+    }
   });
 }

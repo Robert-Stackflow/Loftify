@@ -14,7 +14,8 @@ class BottomSheetBuilder {
       return showBottomSheet(
           responsive: true,
           context,
-          (context) => ContextMenuBottomSheet(menu: menu));
+          (context) => ContextMenuBottomSheet(menu: menu),
+          topRadius: const Radius.circular(20));
     }
   }
 
@@ -83,7 +84,7 @@ class BottomSheetBuilder {
     WidgetBuilder builder, {
     Color? backgroundColor,
     ShapeBorder shape = const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: ChewieDimens.defaultRadius),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
   }) {
     final navigatorContext = chewieProvider.navigatorContextOf(context);
@@ -94,8 +95,10 @@ class BottomSheetBuilder {
           backgroundColor ?? Theme.of(navigatorContext).canvasColor,
       shape: shape,
       builder: builder,
-      containerWidget: (_, animation, child) =>
-          BottomSheetWrapperWidget(child: child),
+      containerWidget: (_, animation, child) => BottomSheetWrapperWidget(
+        topRadius: const Radius.circular(20),
+        child: child,
+      ),
     );
   }
 }

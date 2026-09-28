@@ -56,10 +56,10 @@ void main() {
       const ValueKey('theme-accent-light-reset'),
     );
     expect(reset, findsOneWidget);
-    expect(tester.getSize(reset), const Size(48, 48));
+    expect(tester.getSize(reset), const Size(44, 44));
     expect(
       tester.getSize(find.byType(ThemeItem).first).height,
-      greaterThan(166.4),
+      greaterThan(136),
     );
     expect(tester.takeException(), isNull);
 
@@ -116,7 +116,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byType(ChewieSelectionIndicator), findsOneWidget);
+    expect(find.byType(ChewieSelectionIndicator), findsNothing);
     expect(find.byIcon(Icons.radio_button_checked), findsNothing);
     expect(find.byIcon(Icons.radio_button_unchecked), findsNothing);
     expect(

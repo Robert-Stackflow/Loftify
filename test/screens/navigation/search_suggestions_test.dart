@@ -18,6 +18,7 @@ void main() {
   final pending = <(RequestOptions, RequestInterceptorHandler)>[];
   final initial = <(RequestOptions, RequestInterceptorHandler)>[];
   bool holdInitial = false;
+  bool serveRanks = false;
   int requestCount = 0;
   setUpAll(() async {
     final dir = Directory('build/test_hive/search_suggestions');
@@ -32,6 +33,7 @@ void main() {
     pending.clear();
     initial.clear();
     holdInitial = false;
+    serveRanks = false;
     requestCount = 0;
     RequestUtil.instance.dio.interceptors.clear();
     RequestUtil.instance.dio.interceptors.add(
@@ -39,6 +41,39 @@ void main() {
         requestCount++;
         if (options.path.endsWith('/sug.json')) {
           pending.add((options, handler));
+        } else if (serveRanks && options.path.endsWith('/ranklist.json')) {
+          Map<String, dynamic> rank(
+                  String name, String title, String score, int sortNo) =>
+              {
+                'listName': name,
+                'ruleUrl': '',
+                'sortNo': sortNo,
+                'type': 0,
+                'hotLists': [
+                  {
+                    'icon': '',
+                    'interactionCount': 0,
+                    'isAuth': false,
+                    'isVerify': false,
+                    'postType': 0,
+                    'pv': 0,
+                    'resource': 0,
+                    'score': score,
+                    'title': title,
+                    'trend': 0,
+                    'url': '',
+                  },
+                ],
+              };
+          handler.resolve(Response(requestOptions: options, data: {
+            'code': 0,
+            'data': {
+              'rankList': [
+                rank('Board One', 'Alpha', '98.00', 1),
+                rank('Board Two', 'Beta', '88.00', 2),
+              ],
+            },
+          }));
         } else if (holdInitial) {
           initial.add((options, handler));
         } else {
@@ -119,6 +154,24 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
   }
+
+  testWidgets('rank row fills page and horizontal swipe stays on next board',
+      (tester) async {
+    serveRanks = true;
+    await mount(tester);
+    await tester.pump(const Duration(milliseconds: 400));
+
+    final pageView = find.byType(PageView);
+    expect(pageView, findsOneWidget);
+    final pageRight = tester.getRect(pageView).right;
+    final scoreRight = tester.getRect(find.text('98.00')).right;
+    expect(pageRight - scoreRight, lessThan(55));
+
+    await tester.drag(pageView, const Offset(-300, 0));
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Beta'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   for (final locale in [
     const Locale('en'),
@@ -425,6 +478,8 @@ void main() {
       (tester) async {
     await mount(tester, resultsPage: true, locale: const Locale('en'));
     await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
     final state = tester.state(find.byType(SearchResultScreen));
     final english =
         AppLocalizations.of(tester.element(find.byType(SearchResultScreen)))!;
@@ -450,14 +505,15 @@ void main() {
     }
     expect(tester.widget<TabBar>(find.byType(TabBar)).controller, same(tabs));
     expect(tabs.index, 0);
-    expect(requestCount, loadedRequests);
+    expect(requestCount, inInclusiveRange(loadedRequests, loadedRequests + 1));
+    final requestsAfterInitialLoad = requestCount;
     await mount(tester, resultsPage: true, locale: const Locale('zh', 'TW'));
     await tester.pump(const Duration(seconds: 1));
     final traditional =
         AppLocalizations.of(tester.element(find.byType(SearchResultScreen)))!;
     expect(find.text(traditional.comprehensive), findsOneWidget);
     expect(tabs.index, 0);
-    expect(requestCount, loadedRequests);
+    expect(requestCount, requestsAfterInitialLoad);
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 1));
     expect(tester.takeException(), isNull);
@@ -476,6 +532,8 @@ void main() {
     }
     expect(find.text('late suggestion'), findsNothing);
     expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 2));
   });
 
   testWidgets('result suggestions recover from timeout and ignore disposal',

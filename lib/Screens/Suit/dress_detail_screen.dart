@@ -277,34 +277,35 @@ class _DressDetailScreenState extends BaseDynamicState<DressDetailScreen>
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.partName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  isAvatarBox
-                      ? appLocalizations.avatarBox
-                      : appLocalizations.commentBubble,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
             child: Row(
               children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.partName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        isAvatarBox
+                            ? appLocalizations.avatarBox
+                            : appLocalizations.commentBubble,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
                 LoftifyDownloadProgressIconButton(
                   semanticLabel: appLocalizations.download,
                   icon: LoftifyIcons.download,
@@ -313,27 +314,30 @@ class _DressDetailScreenState extends BaseDynamicState<DressDetailScreen>
                       ? null
                       : () => _downloadPart(item),
                 ),
-                if (isAvatarBox) ...[
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () => _dressOrUnDress(item),
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(42),
-                      ),
-                      child: Text(
-                        isDressing
-                            ? appLocalizations.dressingCurrently
-                            : appLocalizations.dressImmediately,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
+          if (isAvatarBox)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: RoundIconTextButton(
+                      height: 42,
+                      background: CustomDialogColors.readableActionFill(
+                        ChewieTheme.primaryColor.withAlpha(200),
+                      ),
+                      color: Colors.white,
+                      text: isDressing
+                          ? appLocalizations.dressingCurrently
+                          : appLocalizations.dressImmediately,
+                      onPressed: () => _dressOrUnDress(item),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

@@ -124,11 +124,13 @@ class _LoginInputItemState extends State<LoginInputItem> {
         if (config.text == null) return null;
         child = Text(
           config.text!,
-          style: Theme.of(context).textTheme.titleSmall?.apply(
+          maxLines: 1,
+          softWrap: false,
+          style: Theme.of(context).textTheme.labelMedium?.apply(
                 color: config.enable
                     ? Theme.of(context).primaryColor
                     : Theme.of(context).textTheme.labelSmall?.color,
-                fontWeightDelta: 2,
+                fontWeightDelta: 1,
               ),
         );
         break;
@@ -155,9 +157,24 @@ class _LoginInputItemState extends State<LoginInputItem> {
           cursor: config.enable
               ? SystemMouseCursors.click
               : SystemMouseCursors.basic,
-          child: SizedBox.square(
-            dimension: context.design.icons.minimumTapTarget,
-            child: Center(child: child),
+          child: SizedBox(
+            width: switch (config.type) {
+              InputItemLeadingTailingType.text => 104,
+              InputItemLeadingTailingType.widget => 84,
+              _ => 48,
+            },
+            height: 48,
+            child: Center(
+              child: config.type == InputItemLeadingTailingType.text
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: child,
+                      ),
+                    )
+                  : child,
+            ),
           ),
         ),
       ),

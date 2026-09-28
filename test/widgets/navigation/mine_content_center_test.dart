@@ -56,8 +56,8 @@ void main() {
         contains('leading: LoftifyIcons.download'),
       ),
     );
-    expect(contentSource, contains('LoftifySection('));
-    expect(contentSource, contains('LoftifyEntryItem('));
+    expect(contentSource, contains('CaptionItem('));
+    expect(contentSource, contains('EntryItem('));
     expect(contentSource, isNot(contains('const SuitScreen()')));
     expect(contentSource, isNot(contains('const SystemNoticeScreen()')));
   });
@@ -71,5 +71,19 @@ void main() {
     expect(source, isNot(contains('appLocalizations.downloadManagement')));
     expect(source, contains('appLocalizations.downloadImagePath'));
     expect(source, contains('appLocalizations.filenameFormat'));
+  });
+
+  test('mine, settings and about share the same section and entry widgets', () {
+    for (final path in [
+      'lib/Screens/Navigation/mine_screen.dart',
+      'lib/Screens/Setting/setting_screen.dart',
+      'lib/Screens/Setting/about_setting_screen.dart',
+    ]) {
+      final source = File(path).readAsStringSync();
+      expect(source, contains('CaptionItem('), reason: path);
+      expect(source, contains('EntryItem('), reason: path);
+      expect(source, isNot(contains('LoftifyEntryItem(')), reason: path);
+      expect(source, isNot(contains('LoftifySection(')), reason: path);
+    }
   });
 }

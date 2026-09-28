@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tuple/tuple.dart';
 
+import '../../Theme/loftify_design_theme.dart';
 import '../Design/loftify_controls.dart';
 import '../Design/loftify_surfaces.dart';
 
@@ -50,21 +51,53 @@ class TileList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LoftifyPanel(
-      title: showTitle ? title : null,
-      body: ListView(
-        shrinkWrap: true,
-        physics: const ClampingScrollPhysics(),
-        children: children.toList(),
+    final design = context.design;
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.82,
       ),
-      footer: showCancel
-          ? LoftifyButton(
-              label: MaterialLocalizations.of(context).cancelButtonLabel,
-              variant: LoftifyButtonVariant.secondary,
-              onPressed: onCloseTap,
-              expand: true,
-            )
-          : null,
+      child: LoftifyPanel(
+        title: showTitle ? title : null,
+        centerTitle: false,
+        expandBody: true,
+        body: ListView(
+          shrinkWrap: true,
+          physics: const ClampingScrollPhysics(),
+          padding: EdgeInsets.fromLTRB(
+            design.spacing.lg,
+            design.spacing.xs,
+            design.spacing.lg,
+            design.spacing.sm,
+          ),
+          children: [
+            for (final child in children)
+              Padding(
+                padding: EdgeInsets.only(bottom: design.spacing.xs),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(design.radii.control),
+                  child: ColoredBox(
+                    color: design.colors.surfaceMuted,
+                    child: child,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        footer: showCancel
+            ? LoftifyButton(
+                label: MaterialLocalizations.of(context).cancelButtonLabel,
+                variant: LoftifyButtonVariant.secondary,
+                onPressed: onCloseTap ?? () => Navigator.of(context).maybePop(),
+                expand: true,
+              )
+            : null,
+        footerPadding: EdgeInsets.fromLTRB(
+          design.spacing.lg,
+          design.spacing.sm,
+          design.spacing.lg,
+          design.spacing.lg,
+        ),
+      ),
     );
   }
 }

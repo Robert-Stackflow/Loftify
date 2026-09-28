@@ -69,12 +69,14 @@ class PagedDataController<T, K, C, M> extends ChangeNotifier {
   int _generation = 0;
   int? _total;
   M? _metadata;
+  Object? _lastError;
 
   List<T> get items => _itemsView;
   bool get loading => _loading;
   bool get noMore => _noMore;
   int? get total => _total;
   M? get metadata => _metadata;
+  Object? get lastError => _lastError;
   C get cursor => _cursor;
 
   Future<IndicatorResult> refresh() => _load(refresh: true);
@@ -86,6 +88,7 @@ class PagedDataController<T, K, C, M> extends ChangeNotifier {
     if (!refresh && _noMore) return IndicatorResult.noMore;
 
     _loading = true;
+    _lastError = null;
     final requestGeneration = _generation;
     _notifySafely();
     try {
@@ -130,6 +133,7 @@ class PagedDataController<T, K, C, M> extends ChangeNotifier {
       if (_disposed || requestGeneration != _generation) {
         return IndicatorResult.none;
       }
+      _lastError = error;
       onError?.call(error, stackTrace);
       return IndicatorResult.fail;
     } finally {
@@ -148,6 +152,7 @@ class PagedDataController<T, K, C, M> extends ChangeNotifier {
     _noMore = false;
     _total = null;
     _metadata = null;
+    _lastError = null;
     if (notify) _notifySafely();
   }
 
@@ -193,7 +198,7 @@ class PagedDataController<T, K, C, M> extends ChangeNotifier {
 
 List<T> parsePagedDataItems<T>(
   dynamic rawItems,
-  T Function(Map<String, dynamic> json) parser, {
+  T? Function(Map<String, dynamic> json) parser, {
   void Function(Object error, StackTrace stackTrace)? onMalformed,
 }) {
   if (rawItems is! List) return <T>[];
@@ -201,7 +206,8 @@ List<T> parsePagedDataItems<T>(
   for (final rawItem in rawItems) {
     if (rawItem is! Map) continue;
     try {
-      items.add(parser(Map<String, dynamic>.from(rawItem)));
+      final item = parser(Map<String, dynamic>.from(rawItem));
+      if (item != null) items.add(item);
     } catch (error, stackTrace) {
       onMalformed?.call(error, stackTrace);
     }

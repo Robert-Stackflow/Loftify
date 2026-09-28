@@ -50,6 +50,7 @@ import '../../Widgets/PostDetail/post_content_section.dart';
 import '../../Widgets/PostDetail/post_download_action_icon.dart';
 import '../../Widgets/PostDetail/post_swipe_gesture_detector.dart';
 import '../../Widgets/loftify_icons.dart';
+import '../../Widgets/loftify_reaction_icon.dart';
 import '../../l10n/l10n.dart';
 import '../Info/user_detail_screen.dart';
 import 'grain_detail_screen.dart';
@@ -1682,7 +1683,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
               width: isTablet ? 240 : null,
               child: RoundIconTextButton(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
                 text: appLocalizations.viewAllComments,
                 onPressed: () {
                   BottomSheetBuilder.showBottomSheet(
@@ -2514,57 +2515,49 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
     return Semantics(
       button: true,
       label: label,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          customBorder: const StadiumBorder(),
-          splashFactory: NoSplash.splashFactory,
-          overlayColor: WidgetStateProperty.all(
-            design.colors.accent.withValues(alpha: design.icons.pressedOpacity),
-          ),
-          onTap: () {
-            HapticFeedback.mediumImpact();
-            CollectionApi.subscribeOrUnSubscribe(
-              collectionId: collectionId,
-              isSubscribe: !subscribed,
-            ).then((value) {
-              if (!mounted) return;
-              if (value['meta']['status'] != 200) {
-                IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-              } else {
-                _postDetailData!.post!.postCollection!.subscribed = !subscribed;
-                setState(() {});
-              }
-            });
-          },
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 40),
-            child: Center(
-              child: Container(
-                height: textScale <= 1.15 ? 24 : null,
-                constraints: const BoxConstraints(minHeight: 24),
-                alignment: Alignment.center,
-                padding: EdgeInsets.symmetric(
-                  horizontal: design.spacing.md,
-                  vertical: textScale <= 1.15 ? 0 : design.spacing.xs,
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.mediumImpact();
+          CollectionApi.subscribeOrUnSubscribe(
+            collectionId: collectionId,
+            isSubscribe: !subscribed,
+          ).then((value) {
+            if (!mounted) return;
+            if (value['meta']['status'] != 200) {
+              IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+            } else {
+              _postDetailData!.post!.postCollection!.subscribed = !subscribed;
+              setState(() {});
+            }
+          });
+        },
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 40),
+          child: Center(
+            child: Container(
+              height: textScale <= 1.15 ? 24 : null,
+              constraints: const BoxConstraints(minHeight: 24),
+              alignment: Alignment.center,
+              padding: EdgeInsets.symmetric(
+                horizontal: design.spacing.md,
+                vertical: textScale <= 1.15 ? 0 : design.spacing.xs,
+              ),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(
+                  color: subscribed
+                      ? design.colors.outlineStrong
+                      : color.withValues(alpha: 0.7),
+                  width: design.borders.hairline,
                 ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: subscribed
-                        ? design.colors.outlineStrong
-                        : color.withValues(alpha: 0.7),
-                    width: design.borders.hairline,
-                  ),
-                ),
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: design.typography.metadata.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w600,
-                  ),
+              ),
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: design.typography.metadata.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -2700,10 +2693,10 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
                     _postDetailData!.post!.postCount!.favoriteCount,
                   )
                 : appLocalizations.like,
-            icon: const Icon(LoftifyIcons.favorite),
-            foregroundColor: _postDetailData!.liked == true
-                ? design.colors.accentForeground
-                : null,
+            icon: LoftifyReactionIcon(
+              kind: LoftifyReactionKind.like,
+              selected: _postDetailData!.liked == true,
+            ),
             onTap: _handleLike,
           ),
           const SizedBox(width: 8),
@@ -2713,10 +2706,10 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
                     _postDetailData!.post!.postCount!.shareCount,
                   )
                 : appLocalizations.recommend,
-            icon: const Icon(LoftifyIcons.recommend),
-            foregroundColor: _postDetailData!.shared == true
-                ? design.colors.accentForeground
-                : null,
+            icon: LoftifyReactionIcon(
+              kind: LoftifyReactionKind.recommend,
+              selected: _postDetailData!.shared == true,
+            ),
             onTap: _handleRecommend,
           ),
           const Spacer(),
@@ -2724,10 +2717,10 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
             label: _postDetailData!.subscribedNotNull
                 ? appLocalizations.favorited
                 : appLocalizations.favorite,
-            icon: const Icon(LoftifyIcons.bookmark),
-            foregroundColor: _postDetailData!.shared == true
-                ? design.colors.accentForeground
-                : null,
+            icon: LoftifyReactionIcon(
+              kind: LoftifyReactionKind.bookmark,
+              selected: _postDetailData!.subscribedNotNull,
+            ),
             onTap: () {
               BottomSheetBuilder.showBottomSheet(
                 context,
@@ -2792,10 +2785,10 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
                 )
               : appLocalizations.like,
           onTap: _handleLike,
-          icon: const Icon(LoftifyIcons.favorite),
-          foregroundColor: _postDetailData!.liked == true
-              ? context.design.colors.accentForeground
-              : null,
+          icon: LoftifyReactionIcon(
+            kind: LoftifyReactionKind.like,
+            selected: _postDetailData!.liked == true,
+          ),
         ),
         DetailActionButton(
           label: _postDetailData!.post!.postCount!.shareCount > 0
@@ -2804,10 +2797,10 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
                 )
               : appLocalizations.recommend,
           onTap: _handleRecommend,
-          icon: const Icon(LoftifyIcons.recommend),
-          foregroundColor: _postDetailData!.shared == true
-              ? context.design.colors.accentForeground
-              : null,
+          icon: LoftifyReactionIcon(
+            kind: LoftifyReactionKind.recommend,
+            selected: _postDetailData!.shared == true,
+          ),
         ),
         DetailActionButton(
           label: _postDetailData!.post!.postCount!.responseCount > 0
@@ -2822,11 +2815,9 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
           label: _postDetailData!.subscribedNotNull
               ? appLocalizations.favorited
               : appLocalizations.favorite,
-          icon: ChewieIcon(
-            LoftifyIcons.bookmark,
-            color: _postDetailData!.subscribedNotNull
-                ? Theme.of(context).primaryColor
-                : null,
+          icon: LoftifyReactionIcon(
+            kind: LoftifyReactionKind.bookmark,
+            selected: _postDetailData!.subscribedNotNull,
           ),
           onTap: () {
             BottomSheetBuilder.showBottomSheet(

@@ -107,28 +107,36 @@ class _AlternativeMethods extends StatelessWidget {
     return Column(
       key: const ValueKey('loftify-login-alternatives'),
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            Expanded(child: Divider(color: design.colors.outline)),
-            Flexible(
-              flex: 4,
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: design.spacing.lg),
-                child: Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: design.typography.label.copyWith(
-                    color: design.colors.textMuted,
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 320),
+            child: Row(
+              key: const ValueKey('loftify-login-alternative-heading'),
+              children: [
+                Expanded(child: Divider(color: design.colors.outline)),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: design.spacing.md),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 180),
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: design.typography.label.copyWith(
+                        color: design.colors.textMuted,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                Expanded(child: Divider(color: design.colors.outline)),
+              ],
             ),
-            Expanded(child: Divider(color: design.colors.outline)),
-          ],
+          ),
         ),
         SizedBox(height: design.spacing.xl),
         Wrap(
+          key: const ValueKey('loftify-login-alternative-methods'),
           alignment: WrapAlignment.center,
           spacing: design.spacing.xxl,
           runSpacing: design.spacing.md,

@@ -47,9 +47,11 @@ void main() {
 
       expect(await controller.load(), IndicatorResult.fail);
       expect(controller.cursor, 0);
+      expect(controller.lastError, isA<StateError>());
       shouldFail = false;
       expect(await controller.load(), IndicatorResult.success);
       expect(controller.cursor, 1);
+      expect(controller.lastError, isNull);
       controller.dispose();
     });
 
@@ -183,6 +185,22 @@ void main() {
 
       expect(result, [1, 2]);
       expect(errors, hasLength(1));
+    });
+
+    test('item parser omits known unavailable entries without an error', () {
+      final errors = <Object>[];
+      final result = parsePagedDataItems<int>(
+        [
+          {'value': 1},
+          {'value': null},
+          {'value': 2},
+        ],
+        (json) => json['value'] as int?,
+        onMalformed: (error, _) => errors.add(error),
+      );
+
+      expect(result, [1, 2]);
+      expect(errors, isEmpty);
     });
 
     test('metadata merger accumulates auxiliary page content', () async {

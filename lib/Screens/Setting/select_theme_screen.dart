@@ -133,15 +133,9 @@ class _SelectThemeScreenState extends BaseDynamicState<SelectThemeScreen>
   Widget _buildAccentColorPalette({required bool isDark}) {
     final selectedIndex =
         isDark ? _darkPrimaryColorIndex : _lightPrimaryColorIndex;
-    final compact = MediaQuery.sizeOf(context).width < 360 ||
-        MediaQuery.textScalerOf(context).scale(1) > 1.35;
-    final label = Text(
-      appLocalizations.primaryColor,
-      style: ChewieTheme.bodyMedium,
-    );
     final palette = Wrap(
-      spacing: 8,
-      runSpacing: 8,
+      spacing: 6,
+      runSpacing: 6,
       children: [
         _buildAccentCircle(
           key: ValueKey(
@@ -167,23 +161,15 @@ class _SelectThemeScreenState extends BaseDynamicState<SelectThemeScreen>
       ],
     );
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: compact
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                label,
-                const SizedBox(height: 8),
-                palette,
-              ],
-            )
-          : Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(width: 76, child: label),
-                Expanded(child: palette),
-              ],
-            ),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(appLocalizations.primaryColor, style: ChewieTheme.bodyMedium),
+          const SizedBox(height: 8),
+          palette,
+        ],
+      ),
     );
   }
 
@@ -208,13 +194,13 @@ class _SelectThemeScreenState extends BaseDynamicState<SelectThemeScreen>
     return InkAnimation(
       key: key,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(22),
       child: SizedBox.square(
-        dimension: 48,
+        dimension: 44,
         child: Center(
           child: Container(
-            width: 36,
-            height: 36,
+            width: 30,
+            height: 30,
             decoration: BoxDecoration(
               color: color,
               shape: BoxShape.circle,
@@ -222,19 +208,19 @@ class _SelectThemeScreenState extends BaseDynamicState<SelectThemeScreen>
                 color: isSelected
                     ? ChewieTheme.primaryColor
                     : ChewieTheme.dividerColor,
-                width: isSelected ? 2.5 : 1,
+                width: isSelected ? 2 : 1,
               ),
             ),
             child: color == null
                 ? Icon(
                     LoftifyIcons.reset,
-                    size: 18,
+                    size: 16,
                     color: ChewieTheme.iconColor,
                   )
                 : isSelected
                     ? ChewieIcon(
                         LoftifyIcons.check,
-                        size: 18,
+                        size: 16,
                         color: ColorUtil.getContrastColor(color),
                       )
                     : null,

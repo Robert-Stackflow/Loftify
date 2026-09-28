@@ -16,6 +16,7 @@ import 'package:loftify/Screens/Post/video_list_controller.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/uri_util.dart';
+import 'package:loftify/Utils/utils.dart';
 import 'package:loftify/Widgets/PostItem/general_post_item.dart';
 import 'package:video_player/video_player.dart';
 
@@ -25,6 +26,7 @@ import '../../Utils/loftify_file_util.dart';
 import '../../Widgets/BottomSheet/comment_bottom_sheet.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/loftify_icons.dart';
+import '../../Widgets/loftify_reaction_icon.dart';
 import '../../l10n/l10n.dart';
 
 class VideoDetailScreen extends StatefulWidget {
@@ -50,6 +52,21 @@ class VideoDetailScreen extends StatefulWidget {
 
   @override
   State<VideoDetailScreen> createState() => _VideoDetailScreenState();
+}
+
+@visibleForTesting
+enum VideoBackTarget { wait, exitFullScreen, closeAuthor, popPage }
+
+@visibleForTesting
+VideoBackTarget resolveVideoBackTarget({
+  required bool fullScreenTransitionInProgress,
+  required bool fullScreen,
+  required bool authorVisible,
+}) {
+  if (fullScreenTransitionInProgress) return VideoBackTarget.wait;
+  if (fullScreen) return VideoBackTarget.exitFullScreen;
+  if (authorVisible) return VideoBackTarget.closeAuthor;
+  return VideoBackTarget.popPage;
 }
 
 class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
@@ -78,6 +95,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
   bool _routeVisible = true;
   bool _resumeAfterInterruption = false;
   bool _isFullScreen = false;
+  bool _fullScreenTransitionInProgress = false;
   bool _authorPaneOpen = false;
   bool _authorNavigationPending = false;
   bool _continuousPlayback = false;
@@ -340,6 +358,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
       );
       if (!mounted || generation != _requestGeneration) return const [];
       if (value['code'] != 0) {
+        _showSlideCaptchaIfNeeded(value);
         throw StateError(
             value['msg']?.toString() ?? appLocalizations.loadFailed);
       }
@@ -791,6 +810,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
       blogId: postListItem.blogInfo!.blogId,
     ).then((value) {
       if (value['meta']['status'] != 200) {
+        _showSlideCaptchaIfNeeded(value);
         IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
         return;
       }
@@ -888,6 +908,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
       blogName: postListItem.blogInfo!.blogName,
     ).then((value) {
       if (value['meta']['status'] != 200) {
+        _showSlideCaptchaIfNeeded(value);
         IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
         return;
       }
@@ -904,6 +925,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
       blogId: postListItem.blogInfo!.blogId,
     ).then((value) {
       if (value['meta']['status'] != 200) {
+        _showSlideCaptchaIfNeeded(value);
         IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
         return;
       }
@@ -1082,36 +1104,57 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
   }
 
   Future<void> _toggleFullScreen() async {
-    if (!ResponsiveUtil.isMobile()) return;
-    if (!_isFullScreen) {
-      _sizeBeforeFullscreen = MediaQuery.sizeOf(context);
-      if (mounted) setState(() => _isFullScreen = true);
-      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-      await SystemChrome.setPreferredOrientations(const [
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
-      return;
-    }
+    if (!ResponsiveUtil.isMobile() || _fullScreenTransitionInProgress) return;
+    _fullScreenTransitionInProgress = true;
+    try {
+      if (!_isFullScreen) {
+        _sizeBeforeFullscreen = MediaQuery.sizeOf(context);
+        if (mounted) setState(() => _isFullScreen = true);
+        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+        await SystemChrome.setPreferredOrientations(const [
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ]);
+        return;
+      }
 
-    if (mounted) setState(() => _isFullScreen = false);
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    await ResponsiveUtil.restoreOrientationPolicy(
-      logicalSize: _sizeBeforeFullscreen,
-    );
+      if (mounted) setState(() => _isFullScreen = false);
+      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      await ResponsiveUtil.restoreOrientationPolicy(
+        logicalSize: _sizeBeforeFullscreen,
+      );
+    } finally {
+      _fullScreenTransitionInProgress = false;
+    }
+  }
+
+  bool _showSlideCaptchaIfNeeded(dynamic response) {
+    if (!mounted || response is! Map) return false;
+    final meta = response['meta'];
+    final status = response['code'] ?? (meta is Map ? meta['status'] : null);
+    if (status != 4071) return false;
+    Utils.validSlideCaptcha(context);
+    return true;
   }
 
   void _handleBack() {
     final authorSwipe = _authorSwipeKey.currentState;
-    if (_authorPaneOpen || (authorSwipe?.isAuthorVisible ?? false)) {
-      unawaited(authorSwipe?.close() ?? Future<void>.value());
-      return;
+    switch (resolveVideoBackTarget(
+      fullScreenTransitionInProgress: _fullScreenTransitionInProgress,
+      fullScreen: _isFullScreen,
+      authorVisible: _authorPaneOpen || (authorSwipe?.isAuthorVisible ?? false),
+    )) {
+      case VideoBackTarget.wait:
+        return;
+      case VideoBackTarget.exitFullScreen:
+        unawaited(_toggleFullScreen());
+        return;
+      case VideoBackTarget.closeAuthor:
+        unawaited(authorSwipe?.close() ?? Future<void>.value());
+        return;
+      case VideoBackTarget.popPage:
+        Navigator.of(context).pop();
     }
-    if (_isFullScreen) {
-      unawaited(_toggleFullScreen());
-      return;
-    }
-    Navigator.of(context).pop();
   }
 }
 
@@ -2329,24 +2372,26 @@ class VideoListButtonColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconSize = isLandscape ? 28.0 : 35.0;
+    final iconSize = isLandscape ? 24.0 : 29.0;
     final actions = <Widget>[
       _IconButton(
         compact: isLandscape,
-        icon: ChewieIcon(
-          LoftifyIcons.favorite,
+        icon: LoftifyReactionIcon(
+          kind: LoftifyReactionKind.like,
+          selected: isLiked,
           size: iconSize,
-          color: isLiked ? ChewieColors.likeButtonColor : Colors.white,
+          color: isLiked ? LoftifyReactionColors.like : Colors.white,
         ),
         text: _formatVideoCount(likeCount),
         onTap: onLike,
       ),
       _IconButton(
         compact: isLandscape,
-        icon: ChewieIcon(
-          LoftifyIcons.recommend,
+        icon: LoftifyReactionIcon(
+          kind: LoftifyReactionKind.recommend,
+          selected: isShared,
           size: iconSize,
-          color: isShared ? ChewieColors.shareButtonColor : Colors.white,
+          color: isShared ? LoftifyReactionColors.recommend : Colors.white,
         ),
         text: _formatVideoCount(shareCount),
         onTap: onShare,
@@ -2416,7 +2461,7 @@ class VideoListButtonColumn extends StatelessWidget {
     }
 
     return Container(
-      width: 40,
+      width: 48,
       margin: EdgeInsets.only(
         bottom: bottomPadding ?? 50,
         right: 12,
@@ -2512,17 +2557,13 @@ class _IconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget body = Column(
+    final body = Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
-        GestureDetector(
-          child: icon ?? emptyWidget,
-          onTap: () {
-            onTap?.call();
-          },
-        ),
-        Container(height: 2),
+        icon ?? emptyWidget,
+        const SizedBox(height: 3),
         ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: compact ? 40 : 46),
+          constraints: const BoxConstraints(maxWidth: 46),
           child: FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
@@ -2530,7 +2571,7 @@ class _IconButton extends StatelessWidget {
               maxLines: 1,
               softWrap: false,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontSize: compact ? 11 : 13,
+                    fontSize: compact ? 11 : 12,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -2539,12 +2580,12 @@ class _IconButton extends StatelessWidget {
         ),
       ],
     );
-    return ClickableWrapper(
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: compact ? 2 : 0,
-          vertical: compact ? 4 : 10,
-        ),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => onTap?.call(),
+      child: SizedBox(
+        width: 48,
+        height: compact ? 52 : 62,
         child: body,
       ),
     );

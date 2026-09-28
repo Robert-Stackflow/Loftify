@@ -206,6 +206,7 @@ void main() {
 
     expect(find.byType(SingleChildScrollView), findsOneWidget);
     expect(find.text('ACTIONS'), findsOneWidget);
+    expect(find.byType(TextButton), findsOneWidget);
     expect(tester.getSize(find.byType(ContextMenuBottomSheet)).height,
         lessThanOrEqualTo(500));
     expect(tester.takeException(), isNull);

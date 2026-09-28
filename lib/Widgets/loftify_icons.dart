@@ -20,6 +20,7 @@ abstract final class LoftifyIcons {
   static const IconData flag = LucideIcons.flag;
   static const IconData copyright = LucideIcons.copyright;
   static const IconData block = LucideIcons.ban;
+  static const IconData hash = LucideIcons.hash;
   static const IconData tag = LucideIcons.tag;
   static const IconData shield = LucideIcons.shield;
   static const IconData previous = LucideIcons.chevronLeft;

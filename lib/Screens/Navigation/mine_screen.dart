@@ -23,7 +23,6 @@ import '../../Utils/app_provider.dart';
 import '../../Utils/cloud_control_provider.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
-import '../../Widgets/Design/loftify_section.dart';
 import '../../Widgets/Design/loftify_lottie.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
@@ -568,10 +567,11 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
   List<Widget> _buildContent() {
     return [
       const SizedBox(height: 10),
-      LoftifySection(
+      CaptionItem(
+        context: context,
         title: appLocalizations.contentCenter,
         children: [
-          LoftifyEntryItem(
+          EntryItem(
             title: appLocalizations.myLikes,
             showLeading: true,
             onTap: () {
@@ -582,7 +582,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
             },
             leading: LoftifyIcons.favorite,
           ),
-          LoftifyEntryItem(
+          EntryItem(
             title: appLocalizations.myRecommends,
             showLeading: true,
             onTap: () {
@@ -593,7 +593,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
             },
             leading: LoftifyIcons.recommend,
           ),
-          LoftifyEntryItem(
+          EntryItem(
             title: appLocalizations.myFavorites,
             showLeading: true,
             onTap: () {
@@ -604,7 +604,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
             },
             leading: LoftifyIcons.bookmark,
           ),
-          LoftifyEntryItem(
+          EntryItem(
             title: appLocalizations.myHistory,
             showLeading: true,
             onTap: () {
@@ -615,7 +615,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
             },
             leading: LoftifyIcons.history,
           ),
-          LoftifyEntryItem(
+          EntryItem(
             title: appLocalizations.downloadManagement,
             showLeading: true,
             onTap: () {
@@ -633,10 +633,11 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
 
   List<Widget> _buildCreation() {
     return [
-      LoftifySection(
+      CaptionItem(
+        context: context,
         title: appLocalizations.myCreative,
         children: [
-          LoftifyEntryItem(
+          EntryItem(
             title: appLocalizations.myPosts,
             showLeading: true,
             onTap: () {
@@ -647,7 +648,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
             },
             leading: LoftifyIcons.article,
           ),
-          LoftifyEntryItem(
+          EntryItem(
             title: appLocalizations.myCollections,
             showLeading: true,
             onTap: () {
@@ -658,7 +659,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
             },
             leading: LoftifyIcons.collection,
           ),
-          LoftifyEntryItem(
+          EntryItem(
             title: appLocalizations.myGrains,
             showLeading: true,
             onTap: () {
@@ -676,15 +677,16 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
 
   List<Widget> _buildAccountActions() {
     return [
-      LoftifySection(
+      CaptionItem(
+        context: context,
         title: appLocalizations.other,
         children: [
-          LoftifyEntryItem(
+          EntryItem(
             title: appLocalizations.logout,
             showLeading: true,
             showTrailing: false,
             leading: LoftifyIcons.logout,
-            visualState: LoftifyEntryVisualState.error,
+            titleColor: Theme.of(context).colorScheme.error,
             onTap: () => HiveUtil.confirmLogout(context),
           ),
         ],

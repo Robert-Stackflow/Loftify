@@ -37,11 +37,16 @@ class ContextMenuBottomSheetState extends State<ContextMenuBottomSheet> {
     super.initState();
   }
 
-  Radius radius = ChewieDimens.defaultRadius;
+  Radius radius = const Radius.circular(20);
 
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
+    final entries = widget.menu.entries.toList();
+    final firstHeader = entries.isNotEmpty && entries.first is MenuHeader
+        ? entries.first as MenuHeader
+        : null;
+    final listEntries = firstHeader == null ? entries : entries.skip(1);
     final obscuredBottom = max(
       mediaQuery.viewPadding.bottom,
       mediaQuery.viewInsets.bottom,
@@ -59,37 +64,74 @@ class ContextMenuBottomSheetState extends State<ContextMenuBottomSheet> {
             bottom: ResponsiveUtil.isWideDevice() ? radius : Radius.zero,
           ),
           border: ChewieTheme.responsiveBorder,
-          boxShadow: ChewieTheme.defaultBoxShadow,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             if (!ResponsiveUtil.isWideDevice())
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  const SizedBox(height: 36),
-                  Container(
-                    width: 50,
-                    height: 5,
+              SizedBox(
+                height: 24,
+                child: Center(
+                  child: Container(
+                    key: const ValueKey('context-menu-handle'),
+                    width: 36,
+                    height: 4,
                     decoration: BoxDecoration(
-                      color: ChewieTheme.dividerColor,
-                      borderRadius: BorderRadius.circular(2.5),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurfaceVariant
+                          .withValues(alpha: 0.46),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                ],
+                ),
+              ),
+            if (firstHeader != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    firstHeader.disableUppercase
+                        ? firstHeader.text
+                        : firstHeader.text.toUpperCase(),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ),
               ),
             Flexible(
               child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(
-                    14, ResponsiveUtil.isWideDevice() ? 14 : 0, 14, 14),
+                padding:
+                    EdgeInsets.fromLTRB(16, firstHeader == null ? 8 : 0, 16, 8),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    for (var config in widget.menu.entries)
-                      _buildConfigItem(config),
+                    for (var config in listEntries) _buildConfigItem(config),
                   ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+              child: SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).maybePop(),
+                  style: TextButton.styleFrom(
+                    foregroundColor:
+                        Theme.of(context).colorScheme.onSurfaceVariant,
+                    backgroundColor:
+                        Theme.of(context).colorScheme.surfaceContainerLow,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child:
+                      Text(MaterialLocalizations.of(context).cancelButtonLabel),
                 ),
               ),
             ),
@@ -162,17 +204,17 @@ class ContextMenuBottomSheetState extends State<ContextMenuBottomSheet> {
       return Padding(
         padding: const EdgeInsets.only(bottom: 6),
         child: Material(
-          color: ChewieTheme.canvasColor,
-          borderRadius: ChewieDimens.borderRadius12,
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(12),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            borderRadius: ChewieDimens.borderRadius12,
+            borderRadius: BorderRadius.circular(12),
             onTap: () {
               Navigator.of(context).pop();
               config.onPressed?.call();
             },
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               child: Row(
                 children: [
                   if (config.type != MenuItemType.checkbox &&
@@ -189,7 +231,9 @@ class ContextMenuBottomSheetState extends State<ContextMenuBottomSheet> {
                   Expanded(
                     child: Text(
                       config.label,
-                      style: ChewieTheme.bodyLarge.apply(color: textColor),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: textColor,
+                          ),
                     ),
                   ),
                 ],
@@ -203,13 +247,13 @@ class ContextMenuBottomSheetState extends State<ContextMenuBottomSheet> {
 
   Widget _buildIcon(IconData icon, Color color) {
     return Container(
-      width: 34,
-      height: 34,
+      width: 32,
+      height: 32,
       decoration: BoxDecoration(
         color: color.withAlpha(30),
         borderRadius: BorderRadius.circular(9),
       ),
-      child: Icon(icon, size: 17, color: color),
+      child: Icon(icon, size: 18, color: color),
     );
   }
 }

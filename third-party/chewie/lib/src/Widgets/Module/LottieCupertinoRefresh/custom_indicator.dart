@@ -158,25 +158,53 @@ class _CustomIndicatorState extends State<_CustomIndicator>
         ),
         // Indicator.
         Positioned.fill(
-          child: ColoredBox(
-            color: widget.backgroundColor ?? const Color(0x00000000),
-            child: Transform.translate(
-              offset: _axis == Axis.vertical
-                  ? Offset(0, widget.indicatorOffset)
-                  : Offset(widget.indicatorOffset, 0),
-              child: Align(
-                alignment: Alignment.center,
-                child: Transform.scale(
-                  key: const ValueKey('indicatorPullScale'),
-                  // Match the visible gap itself, not the trigger threshold.
-                  // The original Lottie already has transparent canvas around
-                  // its artwork, so it remains clear of the list edge while
-                  // becoming legible early in the pull.
-                  scale: (_offset / math.max(1, _radius * 2)).clamp(0.0, 1.0),
-                  child: _buildIndicator(),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Use the laid-out reveal region, not the notifier's prospective
+              // scroll offset: the latter can lead the viewport during a drag.
+              final revealExtent = _axis == Axis.vertical
+                  ? constraints.maxHeight
+                  : constraints.maxWidth;
+              final availableExtent = math.max(
+                0.0,
+                revealExtent - 2 * widget.indicatorOffset.abs(),
+              );
+              // With an unclamped scrollable, the content boundary is driven
+              // by the scroll position. A reported zero is meaningful: the
+              // header can update one frame before the list actually moves.
+              // Never fall back to the header extent in that frame.
+              final notifier = widget.state.notifier;
+              final visibleExtent = notifier.clamping
+                  ? availableExtent
+                  : math.min(
+                      availableExtent,
+                      math.max(
+                        0.0,
+                        notifier.calculateOffsetWithPixels(
+                          notifier.position,
+                          notifier.position.pixels,
+                        ),
+                      ),
+                    );
+              final pullScale =
+                  (visibleExtent * 0.9 / (_radius * 2)).clamp(0.0, 1.0);
+              return ColoredBox(
+                color: widget.backgroundColor ?? const Color(0x00000000),
+                child: Transform.translate(
+                  offset: _axis == Axis.vertical
+                      ? Offset(0, widget.indicatorOffset)
+                      : Offset(widget.indicatorOffset, 0),
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: Transform.scale(
+                      key: const ValueKey('indicatorPullScale'),
+                      scale: pullScale,
+                      child: _buildIndicator(),
+                    ),
+                  ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         ),
       ],

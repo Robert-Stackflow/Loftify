@@ -178,9 +178,8 @@ class _ExperimentSettingScreenState
           title: appLocalizations.enableGestureLock,
           onTap: onEnablePinTapped,
         ),
-        Visibility(
-          visible: _enableGuesturePasswd,
-          child: EntryItem(
+        if (_enableGuesturePasswd)
+          EntryItem(
             title: pinSettled
                 ? appLocalizations.changeGestureLock
                 : appLocalizations.setGestureLock,
@@ -188,29 +187,23 @@ class _ExperimentSettingScreenState
                 pinSettled ? "" : appLocalizations.haveToSetGestureLockTip,
             onTap: onChangePinTapped,
           ),
-        ),
-        Visibility(
-          visible: _enableGuesturePasswd && pinSettled && _biometricAvailable,
-          child: CheckboxItem(
+        if (_enableGuesturePasswd && pinSettled && _biometricAvailable)
+          CheckboxItem(
             value: _enableBiometric,
             disabled: ResponsiveUtil.isMacOS() || ResponsiveUtil.isLinux(),
             title: appLocalizations.biometric,
             description: appLocalizations.biometricUnlockTip,
             onTap: onBiometricTapped,
           ),
-        ),
-        Visibility(
-          visible: _enableGuesturePasswd && pinSettled,
-          child: CheckboxItem(
+        if (_enableGuesturePasswd && pinSettled)
+          CheckboxItem(
             value: _autoLock,
             title: appLocalizations.autoLock,
             description: appLocalizations.autoLockTip,
             onTap: onEnableAutoLockTapped,
           ),
-        ),
-        Visibility(
-          visible: _enableGuesturePasswd && pinSettled && _autoLock,
-          child: Selector<AppProvider, int>(
+        if (_enableGuesturePasswd && pinSettled && _autoLock)
+          Selector<AppProvider, int>(
             selector: (context, globalProvider) =>
                 globalProvider.autoLockSeconds,
             builder: (context, autoLockTime, child) =>
@@ -230,7 +223,6 @@ class _ExperimentSettingScreenState
               },
             ),
           ),
-        ),
         CheckboxItem(
           value: _enableSafeMode,
           title: appLocalizations.safeMode,

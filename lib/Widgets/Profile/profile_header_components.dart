@@ -330,7 +330,7 @@ class LoftifyProfileAction extends StatelessWidget {
       key: const ValueKey('loftify-profile-action'),
       onTap: onPressed,
       backgroundColor: background,
-      status: danger ? LoftifySurfaceStatus.error : LoftifySurfaceStatus.normal,
+      variant: danger ? LoftifyCardVariant.outlined : LoftifyCardVariant.flat,
       radius: design.radii.control,
       semanticLabel: label,
       padding: EdgeInsets.symmetric(
@@ -339,7 +339,7 @@ class LoftifyProfileAction extends StatelessWidget {
       ),
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          minHeight: design.icons.minimumTapTarget - design.spacing.xl,
+          minHeight: 48 - design.spacing.md * 2,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

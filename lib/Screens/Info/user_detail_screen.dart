@@ -834,32 +834,37 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
     required String title,
     required int count,
   }) {
+    final scheme = Theme.of(context).colorScheme;
+    final accent = color ?? scheme.primary;
     return Container(
-      width: 180,
-      margin: const EdgeInsets.all(3),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.max,
         children: [
           Container(
-            padding: const EdgeInsets.all(3),
+            width: 32,
+            height: 32,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: color ?? ChewieColors.getHotTagTextColor(context),
-              shape: BoxShape.circle,
+              color: accent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: ChewieIcon(icon, size: 12, color: Colors.white),
+            child: ChewieIcon(icon, size: 18, color: accent),
           ),
-          const SizedBox(width: 10),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.labelMedium,
-          ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              count.toString(),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            child: Text(title, style: Theme.of(context).textTheme.bodyMedium),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            StringUtil.formatCount(count),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
           ),
         ],
       ),

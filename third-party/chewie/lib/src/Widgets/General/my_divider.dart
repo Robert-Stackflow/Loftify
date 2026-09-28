@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:awesome_chewie/awesome_chewie.dart';
 
-class MyDivider extends StatelessWidget {
+class MyDivider extends StatefulWidget {
   final double vertical;
   final double horizontal;
   final double? width;
@@ -16,14 +15,30 @@ class MyDivider extends StatelessWidget {
   });
 
   @override
+  State<MyDivider> createState() => _MyDividerState();
+}
+
+class _MyDividerState extends State<MyDivider> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    Theme.of(context);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    Theme.of(context);
+
     return Container(
-      margin: margin ??
-          EdgeInsets.symmetric(vertical: vertical, horizontal: horizontal),
-      height: width ?? 0.5,
+      margin: widget.margin ??
+          EdgeInsets.symmetric(
+            vertical: widget.vertical,
+            horizontal: widget.horizontal,
+          ),
+      height: widget.width ?? 0.5,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        color: ChewieTheme.dividerColor,
+        color: Theme.of(context).dividerColor,
       ),
     );
   }

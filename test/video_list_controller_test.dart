@@ -36,6 +36,41 @@ void main() {
     VideoPlayerPlatform.instance = platform;
   });
 
+  test('video back exits fullscreen before closing author or route', () {
+    expect(
+      resolveVideoBackTarget(
+        fullScreenTransitionInProgress: false,
+        fullScreen: true,
+        authorVisible: true,
+      ),
+      VideoBackTarget.exitFullScreen,
+    );
+    expect(
+      resolveVideoBackTarget(
+        fullScreenTransitionInProgress: true,
+        fullScreen: false,
+        authorVisible: false,
+      ),
+      VideoBackTarget.wait,
+    );
+    expect(
+      resolveVideoBackTarget(
+        fullScreenTransitionInProgress: false,
+        fullScreen: false,
+        authorVisible: true,
+      ),
+      VideoBackTarget.closeAuthor,
+    );
+    expect(
+      resolveVideoBackTarget(
+        fullScreenTransitionInProgress: false,
+        fullScreen: false,
+        authorVisible: false,
+      ),
+      VideoBackTarget.popPage,
+    );
+  });
+
   CustomVideoController createPlayer([String suffix = 'video']) {
     return CustomVideoController(
       builder: () => VideoPlayerController.networkUrl(
@@ -336,6 +371,7 @@ void main() {
 
   testWidgets('followed video author does not show an avatar status badge',
       (tester) async {
+    var likeTaps = 0;
     final author = SimpleBlogInfo(
       bigAvaImg: '',
       blogId: 1,
@@ -355,6 +391,7 @@ void main() {
             commentCount: 0,
             isFollowing: following,
             showDownloadButton: false,
+            onLike: () => likeTaps++,
           ),
         ),
       );
@@ -374,6 +411,8 @@ void main() {
     final compactCount = tester.widget<Text>(find.text('2.9w'));
     expect(compactCount.maxLines, 1);
     expect(compactCount.softWrap, isFalse);
+    await tester.tap(find.text('2.9w'));
+    expect(likeTaps, 1);
   });
 
   testWidgets('author page follows the horizontal drag and handles back',

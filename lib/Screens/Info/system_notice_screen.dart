@@ -97,44 +97,31 @@ class SystemNoticeMessageTile extends StatelessWidget {
             showLoading: false,
           ),
         );
-        final content = compact
-            ? Column(
+        final content = Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   messageText,
                   const SizedBox(height: 8),
                   timeText,
-                  const SizedBox(height: 8),
-                  Align(alignment: Alignment.centerRight, child: thumbnail),
-                  const SizedBox(height: 10),
                 ],
-              )
-            : Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        messageText,
-                        const SizedBox(height: 10),
-                        timeText,
-                        const SizedBox(height: 10),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  thumbnail,
-                ],
-              );
+              ),
+            ),
+            SizedBox(width: compact ? 8 : 12),
+            thumbnail,
+          ],
+        );
         return ClickableGestureDetector(
           onTap: onTap,
           child: Padding(
             padding: EdgeInsets.fromLTRB(
               compact ? 12 : 15,
-              compact ? 8 : 5,
+              12,
               compact ? 12 : 15,
-              0,
+              12,
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,9 +149,10 @@ class SystemNoticeMessageTile extends StatelessWidget {
                     ),
                   ),
                 ),
-                SizedBox(width: compact ? 4 : 10),
+                SizedBox(width: compact ? 8 : 12),
                 Expanded(
                   child: Container(
+                    padding: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
                       border: Border(
                         bottom: BorderSide(

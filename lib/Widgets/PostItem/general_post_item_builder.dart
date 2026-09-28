@@ -22,6 +22,7 @@ import '../Item/item_builder.dart';
 import '../Item/loftify_item_builder.dart';
 import '../Design/loftify_surfaces.dart';
 import '../loftify_icons.dart';
+import '../loftify_reaction_icon.dart';
 import 'image_grid.dart';
 
 export 'package:loftify/Widgets/PostItem/general_post_item.dart';
@@ -1355,16 +1356,12 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
               context,
               text: StringUtil.formatCount(item.likeCount),
               spacing: 4,
-              icon: !item.liked
-                  ? const ChewieIcon(
-                      LoftifyIcons.favorite,
-                      size: 20,
-                    )
-                  : const ChewieIcon(
-                      LoftifyIcons.favorite,
-                      color: ChewieColors.likeButtonColor,
-                      size: 20,
-                    ),
+              icon: LoftifyReactionIcon(
+                kind: LoftifyReactionKind.like,
+                selected: item.liked,
+                color: item.liked ? LoftifyReactionColors.like : null,
+                size: 20,
+              ),
               onTap: () {
                 _handleLike();
               },
@@ -1374,16 +1371,12 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
               context,
               text: StringUtil.formatCount(item.shareCount),
               spacing: 4,
-              icon: !item.shared
-                  ? const ChewieIcon(
-                      LoftifyIcons.recommend,
-                      size: 18,
-                    )
-                  : const ChewieIcon(
-                      LoftifyIcons.recommend,
-                      color: ChewieColors.shareButtonColor,
-                      size: 18,
-                    ),
+              icon: LoftifyReactionIcon(
+                kind: LoftifyReactionKind.recommend,
+                selected: item.shared,
+                color: item.shared ? LoftifyReactionColors.recommend : null,
+                size: 18,
+              ),
               onTap: () {
                 _handleRecommend();
               },

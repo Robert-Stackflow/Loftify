@@ -116,7 +116,7 @@ void main() {
     await tester.tap(find.byType(TextField));
     await tester.pumpAndSettle();
     final decorationAfter = _fieldDecoration(tester);
-    expect(decorationAfter.border!.top.width, 2);
+    expect(decorationAfter.border!.top.width, 1.5);
     expect(tester.takeException(), isNull);
   });
 

@@ -1,4 +1,3 @@
-import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Theme/loftify_design_theme.dart';
@@ -198,6 +197,8 @@ class LoftifyButton extends StatelessWidget {
             label,
             textAlign: TextAlign.center,
             style: design.typography.label.copyWith(
+                fontSize: size == LoftifyButtonSize.large ? 17 : null,
+                height: size == LoftifyButtonSize.large ? 1.25 : null,
                 color: variant == LoftifyButtonVariant.primary
                     ? Colors.white
                     : foreground),
@@ -424,8 +425,11 @@ class _LoftifyTextFieldState extends State<LoftifyTextField> {
             : _hovered
                 ? colors.outlineStrong
                 : colors.outline);
-    final borderWidth =
-        focused || highContrast ? design.borders.focus : design.borders.regular;
+    final borderWidth = highContrast
+        ? design.borders.focus
+        : focused
+            ? 1.5
+            : design.borders.regular;
     final supportingText = widget.statusText ?? widget.helperText;
 
     return Semantics(
@@ -456,6 +460,8 @@ class _LoftifyTextFieldState extends State<LoftifyTextField> {
             child: AnimatedContainer(
               duration: design.motion.effective(context, design.motion.state),
               curve: design.motion.enterCurve,
+              alignment: Alignment.center,
+              clipBehavior: Clip.antiAlias,
               constraints: BoxConstraints(
                 minHeight: design.density.minimumHeight(
                   LoftifyDensityRole.controlComfortable,
@@ -469,6 +475,7 @@ class _LoftifyTextFieldState extends State<LoftifyTextField> {
                 border: Border.all(color: borderColor, width: borderWidth),
               ),
               child: TextField(
+                textAlignVertical: TextAlignVertical.center,
                 controller: widget.controller,
                 focusNode: _focusNode,
                 enabled: widget.enabled,
@@ -490,6 +497,7 @@ class _LoftifyTextFieldState extends State<LoftifyTextField> {
                 ),
                 decoration: InputDecoration(
                   isDense: true,
+                  filled: false,
                   border: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   disabledBorder: InputBorder.none,
@@ -501,8 +509,8 @@ class _LoftifyTextFieldState extends State<LoftifyTextField> {
                     color: colors.textMuted,
                   ),
                   contentPadding: EdgeInsets.symmetric(
-                    horizontal: design.spacing.xl,
-                    vertical: design.spacing.lg,
+                    horizontal: design.spacing.lg,
+                    vertical: 0,
                   ),
                   prefixIcon: widget.prefix,
                   prefixIconConstraints: BoxConstraints(

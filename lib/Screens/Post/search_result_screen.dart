@@ -344,7 +344,8 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
 
   Future<bool> _refreshTabWithAnimation(int index) async {
     final controller = _refreshControllerFor(index);
-    for (var attempt = 0; attempt < 12; attempt++) {
+    for (var attempt = 0; attempt < 1; attempt++) {
+      WidgetsBinding.instance.scheduleFrame();
       await WidgetsBinding.instance.endOfFrame;
       if (!mounted) return false;
       if (controller.headerState == null) continue;
@@ -353,9 +354,26 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
       );
+      if (index == 0 &&
+          _allPagingController.metadata == null &&
+          !_allPagingController.loading &&
+          _allPagingController.lastError == null) {
+        await _fetchAllResult();
+      }
       return true;
     }
-    return false;
+    // A tab may have no mounted refresh header yet (notably the initial
+    // comprehensive search). Still fetch its first page instead of leaving
+    // its loading placeholder on screen indefinitely.
+    await switch (index) {
+      0 => _fetchAllResult(),
+      1 => _fetchTagResult(refresh: true),
+      2 => _fetchCollectionResult(refresh: true),
+      3 => _fetchGrainResult(refresh: true),
+      4 => _fetchPostResult(refresh: true),
+      _ => _fetchUserResult(refresh: true),
+    };
+    return true;
   }
 
   _bindSuggest() {
@@ -639,11 +657,14 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
   _buildSuggestList() {
     return Container(
       color: ChewieTheme.getBackground(context),
-      padding: const EdgeInsets.symmetric(vertical: 8),
       child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
         itemCount: _sugList.length,
         itemBuilder: (context, index) {
-          return _buildSuggestItem(index, _sugList[index]);
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _buildSuggestItem(index, _sugList[index]),
+          );
         },
       ),
     );
@@ -653,24 +674,41 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
     switch (item.type) {
       case 0:
         if (index == 0) {
-          return LoftifyItemBuilder.buildRankTagRow(context, item.tagInfo!,
-              onTap: () {
-            Utils.addSearchHistory(_searchController!.text);
-            _jumpToTag(item.tagInfo!.tagName);
-          });
+          return LoftifyItemBuilder.buildSearchSuggestionSurface(
+            context,
+            LoftifyItemBuilder.buildRankTagRow(context, item.tagInfo!,
+                onTap: () {
+              Utils.addSearchHistory(_searchController!.text);
+              _jumpToTag(item.tagInfo!.tagName);
+            }),
+          );
         } else {
-          return LoftifyItemBuilder.buildTagRow(context, item.tagInfo!,
+          return LoftifyItemBuilder.buildSearchSuggestionSurface(
+            context,
+            LoftifyItemBuilder.buildTagRow(
+              context,
+              item.tagInfo!,
+              horizontalPadding: 12,
               onTap: () {
-            Utils.addSearchHistory(_searchController!.text);
-            _jumpToTag(item.tagInfo!.tagName);
-          });
+                Utils.addSearchHistory(_searchController!.text);
+                _jumpToTag(item.tagInfo!.tagName);
+              },
+            ),
+          );
         }
       case 1:
-        return LoftifyItemBuilder.buildTagRow(context, item.tagInfo!,
+        return LoftifyItemBuilder.buildSearchSuggestionSurface(
+          context,
+          LoftifyItemBuilder.buildTagRow(
+            context,
+            item.tagInfo!,
+            horizontalPadding: 12,
             onTap: () {
-          Utils.addSearchHistory(_searchController!.text);
-          _performSearch(item.tagInfo!.tagName);
-        });
+              Utils.addSearchHistory(_searchController!.text);
+              _performSearch(item.tagInfo!.tagName);
+            },
+          ),
+        );
       case 2:
         return LoftifyItemBuilder.buildUserRow(context, item.blogData!,
             onTap: () {
@@ -703,7 +741,10 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
   }
 
   _buildDivider() {
-    return Container(height: 3, color: Theme.of(context).dividerColor);
+    return MyDivider(
+      width: 1,
+      horizontal: 0,
+    );
   }
 
   Widget _buildAllResultTab() {
@@ -818,8 +859,30 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
                   ),
               ],
             )
-          : LoadingWidget(
-              background: ChewieTheme.getBackground(context),
+          : CustomScrollView(
+              key: const PageStorageKey('search-all-initial'),
+              physics: physics,
+              slivers: [
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _allPagingController.lastError == null
+                      ? LoadingWidget(
+                          background: ChewieTheme.getBackground(context),
+                        )
+                      : Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(appLocalizations.loadFailed),
+                              TextButton(
+                                onPressed: () => unawaited(_fetchAllResult()),
+                                child: Text(appLocalizations.retry),
+                              ),
+                            ],
+                          ),
+                        ),
+                ),
+              ],
             ),
     );
   }
