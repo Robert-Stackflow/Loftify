@@ -200,15 +200,18 @@ class _LoginByCaptchaScreenState extends BaseDynamicState<LoginByCaptchaScreen>
                         onTap: _refreshPhotoCaptcha,
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
+                          // The captcha is requested as 270x126, so keep that
+                          // aspect and use contain: cover crops the leading and
+                          // trailing digits off.
                           child: Image.memory(
                             _photoCaptcha,
-                            width: 80,
+                            width: 86,
                             height: 40,
-                            fit: BoxFit.cover,
+                            fit: BoxFit.contain,
                           ),
                         ),
                       )
-                    : const SizedBox(width: 80, height: 40),
+                    : const SizedBox(width: 86, height: 40),
               ),
               controller: _captchaController,
               focusNode: _photoCaptchaFocusNode,

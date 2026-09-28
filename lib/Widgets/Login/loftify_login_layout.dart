@@ -111,7 +111,11 @@ class _AlternativeMethods extends StatelessWidget {
         Row(
           children: [
             Expanded(child: Divider(color: design.colors.outline)),
-            Flexible(
+            // Must be Expanded, not Flexible: Flexible defaults to FlexFit.loose,
+            // so a short title takes only its intrinsic width and the Row (whose
+            // mainAxisAlignment is start) pushes the leftover space to the right --
+            // the whole "divider / title / divider" group ends up left-shifted.
+            Expanded(
               flex: 4,
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: design.spacing.lg),

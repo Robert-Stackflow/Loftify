@@ -24,7 +24,10 @@ jobs:
             artifact_name: release-Android
             artifact_path: build/app/outputs/flutter-apk/*.apk
           - target: Windows
-            os: windows-latest
+            # Not windows-latest: it now resolves to a VS 2026 image (MSVC 14.51)
+            # whose STL turns <experimental/coroutine> into a hard error, which
+            # several Windows plugins here still include.
+            os: windows-2022
             artifact_name: release-Windows
             artifact_path: |
               build/windows/outputs/*.zip
@@ -34,7 +37,10 @@ jobs:
       date: ${{ steps.get_version.outputs.date}}
     runs-on: ${{ matrix.os }}
     env:
-      FLUTTER_VERSION: 3.27.3
+      # Must satisfy both bounds: pubspec.lock needs Dart >=3.11.0 / Flutter
+      # >=3.41.0, and flutter/flutter#181345 (2026-03-24) marked IconData final,
+      # which the vendored third-party/widget/lucide_icons extends.
+      FLUTTER_VERSION: 3.41.5
     steps:
       # Checkout branch
       - name: Checkout
@@ -72,6 +78,16 @@ jobs:
           flutter pub get
           dart run intl_utils:generate
 
+      # awesome_chewie ships its .arb files, but its generated Dart output lands
+      # in lib/src/generated/, which .gitignore excludes. Flutter normally
+      # generates it during the build; a stale build/ stamp committed into the
+      # repo makes it skip, leaving ChewieLocalizations undefined.
+      - name: Generate awesome_chewie localizations
+        working-directory: third-party/chewie
+        run: |
+          flutter pub get
+          flutter gen-l10n
+
       # Get app version
       - name: Get app version
         id: get_version
@@ -102,6 +118,15 @@ jobs:
           $dllDir = "tools\windows_dll"
           
           Copy-Item -Filter *.dll -Path $dllDir\* -Destination $SrcDir -Force
+
+          # Fail loudly instead of shipping a package that renders a blank
+          # window. sqflite_common_ffi loads sqlite3.dll at runtime, and without
+          # it initApp() throws before runApp() -- the process stays alive with
+          # a hidden, blank window and no visible error.
+          if (-not (Test-Path "$SrcDir\sqlite3.dll")) {
+            Write-Error "sqlite3.dll is missing from $SrcDir - the packaged app would start but never render."
+            exit 1
+          }
           New-Item -Path $DestDir -ItemType Directory
           Copy-Item $SrcDir\* -Recurse $DestDir
           
