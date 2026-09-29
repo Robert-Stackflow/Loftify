@@ -1,22 +1,22 @@
+import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
-import 'package:loftify/Utils/uri_util.dart';
-import 'package:loftify/Widgets/Dialog/custom_dialog.dart';
 
 import '../../Api/setting_api.dart';
 import '../../Api/user_api.dart';
 import '../../Models/account_response.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/hive_util.dart';
-import '../../Utils/ilogger.dart';
-import '../../Utils/itoast.dart';
-import '../../Utils/responsive_util.dart';
-import '../../Widgets/Dialog/dialog_builder.dart';
-import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
-import '../../Widgets/Item/item_builder.dart';
 import '../../l10n/l10n.dart';
+import 'base_setting_screen.dart';
 
-class LofterBasicSettingScreen extends StatefulWidget {
-  const LofterBasicSettingScreen({super.key});
+class LofterBasicSettingScreen extends BaseSettingScreen {
+  const LofterBasicSettingScreen({
+    super.key,
+    super.padding,
+    super.showTitleBar,
+    super.searchConfig,
+    super.searchText,
+  });
 
   static const String routeName = "/setting/lofterBasic";
 
@@ -25,7 +25,8 @@ class LofterBasicSettingScreen extends StatefulWidget {
       _LofterBasicSettingScreenState();
 }
 
-class _LofterBasicSettingScreenState extends BaseDynamicState<LofterBasicSettingScreen>
+class _LofterBasicSettingScreenState
+    extends BaseDynamicState<LofterBasicSettingScreen>
     with TickerProviderStateMixin {
   bool acceptGiftFlag = true;
   bool showReturnGiftPreviewImg = true;
@@ -148,14 +149,13 @@ class _LofterBasicSettingScreenState extends BaseDynamicState<LofterBasicSetting
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: ResponsiveAppBar(
-        showBack: true,
-        context: context,
-        title: appLocalizations.lofterBasicSetting,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      ),
-      body: EasyRefresh.builder(
+    return ChewieItemBuilder.buildSettingScreen(
+      context: context,
+      title: appLocalizations.lofterBasicSetting,
+      showTitleBar: widget.showTitleBar,
+      showBack: !ResponsiveUtil.isLandscapeLayout(),
+      padding: widget.padding,
+      overrideBody: EasyRefresh.builder(
         controller: _refreshController,
         refreshOnStart: true,
         onRefresh: () async {
@@ -171,118 +171,125 @@ class _LofterBasicSettingScreenState extends BaseDynamicState<LofterBasicSetting
         triggerAxis: Axis.vertical,
         childBuilder: (_, physics) => ListView(
           physics: physics,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: widget.padding,
           children: [
-            if (ResponsiveUtil.isLandscapeLayout()) const SizedBox(height: 10),
-            CheckboxItem(
-              value: personalRecommend,
-              context: context,
-              title: appLocalizations.personalizedService,
-              roundTop: true,
-              roundBottom: true,
-              description: appLocalizations.personalizedServiceDescription,
-              onTap: () {
-                SettingApi.updatePersonalRecommendSetting(
-                  isEnable: !personalRecommend,
-                ).then((value) {
-                  if (value['meta']['status'] == 200) {
-                    personalRecommend = !personalRecommend;
-                    setState(() {});
-                  } else {
-                    IToast.showTop(
-                        value['meta']['desc'] ?? value['meta']['msg']);
-                  }
-                });
-              },
-            ),
-            const SizedBox(height: 10),
             CaptionItem(
-                context: context, title: appLocalizations.copyrightProtection),
-            CheckboxItem(
-              value: appimagestamp,
               context: context,
-              title: appLocalizations.copyrightWatermark,
-              description: appLocalizations.copyrightWatermarkDescription,
-              onTap: () {
-                _updateCopyRightSetting(
-                  copyRightType: CopyRightType.appimagestamp,
-                  isClose: appimagestamp,
-                  onSuccess: () {
-                    appimagestamp = !appimagestamp;
+              title: appLocalizations.basicSetting,
+              children: [
+                CheckboxItem(
+                  value: personalRecommend,
+                  context: context,
+                  title: appLocalizations.personalizedService,
+                  description: appLocalizations.personalizedServiceDescription,
+                  onTap: () {
+                    SettingApi.updatePersonalRecommendSetting(
+                      isEnable: !personalRecommend,
+                    ).then((value) {
+                      if (value['meta']['status'] == 200) {
+                        personalRecommend = !personalRecommend;
+                        setState(() {});
+                      } else {
+                        IToast.showTop(
+                            value['meta']['desc'] ?? value['meta']['msg']);
+                      }
+                    });
                   },
-                );
-              },
+                ),
+              ],
             ),
-            CheckboxItem(
-              value: imageprotection,
-              context: context,
-              title: appLocalizations.workProtection,
-              description: appLocalizations.workProtectionDescription,
-              onTap: () {
-                _updateCopyRightSetting(
-                  copyRightType: CopyRightType.imageprotection,
-                  isClose: imageprotection,
-                  onSuccess: () {
-                    imageprotection = !imageprotection;
-                  },
-                );
-              },
-            ),
-            CheckboxItem(
-              value: videoprotection,
-              context: context,
-              roundBottom: true,
-              title: appLocalizations.shareVideoProtection,
-              description: appLocalizations.shareVideoProtectionDescription,
-              onTap: () {
-                _updateCopyRightSetting(
-                  copyRightType: CopyRightType.videoprotection,
-                  isClose: videoprotection,
-                  onSuccess: () {
-                    videoprotection = !videoprotection;
-                  },
-                );
-              },
-            ),
-            const SizedBox(height: 10),
             CaptionItem(
-                context: context, title: appLocalizations.giftSetting),
-            CheckboxItem(
-              value: acceptGiftFlag,
               context: context,
-              title: appLocalizations.acceptGift,
-              onTap: () {
-                SettingApi.updateGiftSetting(
-                  acceptGiftFlag: !acceptGiftFlag,
-                  showReturnGiftPreviewImg: showReturnGiftPreviewImg,
-                ).then((value) {
-                  if (value['code'] == 200) {
-                    acceptGiftFlag = !acceptGiftFlag;
-                    setState(() {});
-                  } else {
-                    IToast.showTop(value['msg']);
-                  }
-                });
-              },
+              title: appLocalizations.copyrightProtection,
+              children: [
+                CheckboxItem(
+                  value: appimagestamp,
+                  context: context,
+                  title: appLocalizations.copyrightWatermark,
+                  description: appLocalizations.copyrightWatermarkDescription,
+                  onTap: () {
+                    _updateCopyRightSetting(
+                      copyRightType: CopyRightType.appimagestamp,
+                      isClose: appimagestamp,
+                      onSuccess: () {
+                        appimagestamp = !appimagestamp;
+                      },
+                    );
+                  },
+                ),
+                CheckboxItem(
+                  value: imageprotection,
+                  context: context,
+                  title: appLocalizations.workProtection,
+                  description: appLocalizations.workProtectionDescription,
+                  onTap: () {
+                    _updateCopyRightSetting(
+                      copyRightType: CopyRightType.imageprotection,
+                      isClose: imageprotection,
+                      onSuccess: () {
+                        imageprotection = !imageprotection;
+                      },
+                    );
+                  },
+                ),
+                CheckboxItem(
+                  value: videoprotection,
+                  context: context,
+                  title: appLocalizations.shareVideoProtection,
+                  description: appLocalizations.shareVideoProtectionDescription,
+                  onTap: () {
+                    _updateCopyRightSetting(
+                      copyRightType: CopyRightType.videoprotection,
+                      isClose: videoprotection,
+                      onSuccess: () {
+                        videoprotection = !videoprotection;
+                      },
+                    );
+                  },
+                ),
+              ],
             ),
-            CheckboxItem(
-              value: showReturnGiftPreviewImg,
-              roundBottom: true,
+            CaptionItem(
               context: context,
-              title: appLocalizations.imageBlurPreview,
-              onTap: () {
-                SettingApi.updateGiftSetting(
-                  acceptGiftFlag: acceptGiftFlag,
-                  showReturnGiftPreviewImg: !showReturnGiftPreviewImg,
-                ).then((value) {
-                  if (value['code'] == 200) {
-                    showReturnGiftPreviewImg = !showReturnGiftPreviewImg;
-                    setState(() {});
-                  } else {
-                    IToast.showTop(value['msg']);
-                  }
-                });
-              },
+              title: appLocalizations.giftSetting,
+              children: [
+                CheckboxItem(
+                  value: acceptGiftFlag,
+                  context: context,
+                  title: appLocalizations.acceptGift,
+                  onTap: () {
+                    SettingApi.updateGiftSetting(
+                      acceptGiftFlag: !acceptGiftFlag,
+                      showReturnGiftPreviewImg: showReturnGiftPreviewImg,
+                    ).then((value) {
+                      if (value['code'] == 200) {
+                        acceptGiftFlag = !acceptGiftFlag;
+                        setState(() {});
+                      } else {
+                        IToast.showTop(value['msg']);
+                      }
+                    });
+                  },
+                ),
+                CheckboxItem(
+                  value: showReturnGiftPreviewImg,
+                  context: context,
+                  title: appLocalizations.imageBlurPreview,
+                  onTap: () {
+                    SettingApi.updateGiftSetting(
+                      acceptGiftFlag: acceptGiftFlag,
+                      showReturnGiftPreviewImg: !showReturnGiftPreviewImg,
+                    ).then((value) {
+                      if (value['code'] == 200) {
+                        showReturnGiftPreviewImg = !showReturnGiftPreviewImg;
+                        setState(() {});
+                      } else {
+                        IToast.showTop(value['msg']);
+                      }
+                    });
+                  },
+                ),
+              ],
             ),
             const SizedBox(height: 30),
           ],

@@ -6,13 +6,18 @@ import 'package:flutter/services.dart';
 import 'package:loftify/Api/grain_api.dart';
 import 'package:loftify/Models/grain_response.dart';
 import 'package:loftify/Screens/Info/user_detail_screen.dart';
-import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
+import 'package:loftify/Widgets/PostItem/general_post_item_builder.dart';
 import 'package:loftify/Widgets/PostItem/grain_post_item_builder.dart';
+import 'package:loftify/Widgets/PostItem/loftify_post_archive_grid.dart';
 
 import '../../Models/history_response.dart';
-import '../../Utils/asset_util.dart';
-import '../../Utils/enums.dart';
+import '../../Models/download_task.dart';
+import '../../Screens/Download/batch_download_screen.dart';
+import '../../Utils/post_sequence_source.dart';
+import '../../Widgets/PostDetail/detail_bottom_bar.dart';
+import '../../Widgets/Design/loftify_media_overlays.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
 class GrainDetailScreen extends StatefulWidget {
@@ -41,6 +46,7 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
   bool loading = false;
   List<GrainPostItem> posts = [];
   final List<ArchiveData> _archiveDataList = [];
+  late final PostSequenceSource _postSequenceSource;
   bool isOldest = false;
   bool noMore = false;
 
@@ -67,9 +73,11 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
   }
 
   _fetchData({bool refresh = false, bool showLoading = false}) async {
-    if (loading) return;
+    if (loading || (!refresh && noMore)) return IndicatorResult.none;
     if (refresh) noMore = false;
-    if (showLoading) CustomLoadingDialog.showLoading(title: appLocalizations.loading);
+    if (showLoading) {
+      CustomLoadingDialog.showLoading(title: appLocalizations.loading);
+    }
     loading = true;
     int offset = refresh ? 0 : grainDetailData?.offset ?? 0;
     return await GrainApi.getGrainDetail(
@@ -94,7 +102,7 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
           if (refresh) posts.clear();
           for (var e in t.posts) {
             if (posts.indexWhere((element) =>
-            element.postData.postView.id == e.postData.postView.id) ==
+                    element.postData.postView.id == e.postData.postView.id) ==
                 -1) {
               newPosts.add(e);
             }
@@ -102,7 +110,7 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
           posts.addAll(newPosts);
           Map<String, int> monthCount = {};
           for (var e in posts) {
-            String yearMonth = TimeUtil.formatYearMonth(e.opTime);
+            String yearMonth = formatLocalizedYearMonth(e.opTime);
             monthCount.putIfAbsent(yearMonth, () => 0);
             monthCount[yearMonth] = monthCount[yearMonth]! + 1;
           }
@@ -116,9 +124,10 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
             ));
           }
           if (mounted) setState(() {});
-          if (posts.length >= grainDetailData!.grainInfo.postCount ||
-              newPosts.isEmpty) {
-            noMore = true;
+          noMore = posts.length >= grainDetailData!.grainInfo.postCount ||
+              newPosts.isEmpty;
+          _synchronizePostSequence();
+          if (noMore && !refresh) {
             return IndicatorResult.noMore;
           } else {
             return IndicatorResult.success;
@@ -137,7 +146,7 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
   }
 
   _onRefresh() async {
-    await _fetchData(refresh: true);
+    return await _fetchData(refresh: true);
   }
 
   _onLoad() async {
@@ -147,8 +156,19 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
   @override
   void initState() {
     super.initState();
+    _postSequenceSource = PostSequenceSource(
+      loadMore: () async {
+        await _fetchData();
+      },
+    );
     _fetchData(refresh: true);
     _fetchIncantation();
+  }
+
+  @override
+  void dispose() {
+    _refreshController.dispose();
+    super.dispose();
   }
 
   @override
@@ -156,20 +176,35 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
     return Scaffold(
       backgroundColor: ChewieTheme.getBackground(context),
       appBar: ResponsiveUtil.isLandscapeLayout()
-          ? ResponsiveAppBar(showBack: true, title: appLocalizations.grainDetail)
+          ? ResponsiveAppBar(
+              showBack: true, title: appLocalizations.grainDetail)
           : null,
       bottomNavigationBar: grainDetailData != null ? _buildFooter() : null,
       body: grainDetailData != null
-          ? NestedScrollView(
-          headerSliverBuilder: (_, __) => _buildHeaderSlivers(),
-          body: _buildNineGridGroup())
+          ? _buildScrollableBody()
           : LoadingWidget(
-        background: Colors.transparent,
+              background: Colors.transparent,
+            ),
+    );
+  }
+
+  Widget _buildScrollableBody() {
+    return EasyRefresh.builder(
+      controller: _refreshController,
+      onRefresh: _onRefresh,
+      onLoad: noMore ? null : _onLoad,
+      triggerAxis: Axis.vertical,
+      childBuilder: (context, physics) => CustomScrollView(
+        physics: physics,
+        slivers: [
+          ..._buildHeaderSlivers(),
+          ..._buildPostSlivers(),
+        ],
       ),
     );
   }
 
-  _buildHeaderSlivers() {
+  List<Widget> _buildHeaderSlivers() {
     if (!ResponsiveUtil.isLandscapeLayout()) {
       return <Widget>[
         SliverAppBarWrapper(
@@ -177,27 +212,22 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
           expandedHeight: 265,
           backgroundWidget: _buildBackground(),
           actions: [
-            CircleIconButton(
-              onTap: () {
+            ChewieIconButton(
+              icon: LoftifyIcons.moreVertical,
+              tooltip: appLocalizations.moreInfo,
+              foregroundColor: Colors.white,
+              onPressed: () {
                 BottomSheetBuilder.showContextMenu(
                     context, _buildMoreButtons());
               },
-              icon: const Icon(
-                Icons.more_vert_rounded,
-                color: Colors.white,
-              ),
             ),
           ],
           title: Text(
             appLocalizations.grain,
-            style: Theme
-                .of(context)
-                .textTheme
-                .titleMedium
-                ?.apply(
-              color: Colors.white,
-              fontWeightDelta: 2,
-            ),
+            style: Theme.of(context).textTheme.titleMedium?.apply(
+                  color: Colors.white,
+                  fontWeightDelta: 2,
+                ),
           ),
           centerTitle: !ResponsiveUtil.isLandscapeLayout(),
           flexibleSpace: FlexibleSpaceBar(
@@ -208,10 +238,7 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
                   children: [
                     SizedBox(
                         height: kToolbarHeight +
-                            MediaQuery
-                                .of(context)
-                                .padding
-                                .top),
+                            MediaQuery.of(context).padding.top),
                     _buildInfoRow(),
                     _buildStatisticRow(),
                   ],
@@ -239,7 +266,7 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
           ),
         ),
         SliverPersistentHeader(
-          key: ValueKey(StringUtil.getRandomString()),
+          key: const ValueKey('grain-detail-fixed-header'),
           pinned: true,
           delegate: SliverAppBarDelegate(
             radius: 0,
@@ -255,27 +282,71 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
     return FlutterContextMenu(
       entries: [
         FlutterContextMenuItem(
+          appLocalizations.batchDownload,
+          iconData: LoftifyIcons.download,
+          onPressed: _openBatchDownload,
+        ),
+        FlutterContextMenuItem(
           appLocalizations.copyLink,
-          iconData: Icons.copy_rounded,
+          iconData: LoftifyIcons.copy,
           onPressed: () {
             ChewieUtils.copy(context, grainUrl);
           },
         ),
         FlutterContextMenuItem(appLocalizations.openWithBrowser,
-            iconData: Icons.open_in_browser_rounded, onPressed: () {
-              UriUtil.openExternal(grainUrl);
-            }),
+            iconData: LoftifyIcons.openExternal, onPressed: () {
+          UriUtil.openExternal(grainUrl);
+        }),
         FlutterContextMenuItem(appLocalizations.shareToOtherApps,
-            iconData: Icons.share_rounded, onPressed: () {
-              UriUtil.share(grainUrl);
-            }),
+            iconData: LoftifyIcons.share, onPressed: () {
+          UriUtil.share(grainUrl);
+        }),
       ],
     );
   }
 
+  void _openBatchDownload() {
+    RouteUtil.pushPanelCupertinoRoute(
+      context,
+      BatchDownloadScreen(
+        sourceTitle: grainDetailData?.grainInfo.name ?? appLocalizations.grain,
+        source: DownloadSourceDescriptor(
+          type: DownloadSourceType.grain,
+          sourceId: widget.grainId.toString(),
+          title: grainDetailData?.grainInfo.name ?? appLocalizations.grain,
+          thumbnailUrl: grainDetailData?.grainInfo.coverUrl,
+          metadata: <String, String>{
+            'grainId': widget.grainId.toString(),
+            'blogId': widget.blogId.toString(),
+          },
+        ),
+        initialItems: posts
+            .map(GrainPostItemBuilder.getGeneralPostItem)
+            .toList(growable: false),
+        loadAllItems: _loadAllBatchItems,
+      ),
+    );
+  }
+
+  Future<List<GeneralPostItem>> _loadAllBatchItems() async {
+    if (posts.isEmpty) await _onRefresh();
+    while (!noMore) {
+      final previousLength = posts.length;
+      final result = await _onLoad();
+      if (result == IndicatorResult.fail ||
+          result == IndicatorResult.none ||
+          posts.length == previousLength) {
+        break;
+      }
+    }
+    return posts
+        .map(GrainPostItemBuilder.getGeneralPostItem)
+        .toList(growable: false);
+  }
+
   PreferredSize _buildFixedBar([double height = 56]) {
-    bool hasDesc = StringUtil.isNotEmpty(
-        grainDetailData!.grainInfo.description);
+    bool hasDesc =
+        StringUtil.isNotEmpty(grainDetailData!.grainInfo.description);
     return PreferredSize(
       preferredSize: Size.fromHeight(height),
       child: Container(
@@ -287,9 +358,7 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
             topRight: Radius.circular(20),
           ),
         ),
-        width: MediaQuery
-            .sizeOf(context)
-            .width,
+        width: MediaQuery.sizeOf(context).width,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -304,17 +373,9 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
                     hasDesc
                         ? grainDetailData!.grainInfo.description
                         : appLocalizations.noDescription,
-                    style: Theme
-                        .of(context)
-                        .textTheme
-                        .labelLarge
-                        ?.apply(
-                      color: Theme
-                          .of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.color,
-                    ),
+                    style: Theme.of(context).textTheme.labelLarge?.apply(
+                          color: Theme.of(context).textTheme.bodySmall?.color,
+                        ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -322,19 +383,21 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
                 const SizedBox(width: 5),
                 ItemBuilder.buildIconTextButton(
                   context,
-                  text: isOldest ? appLocalizations.order : appLocalizations.reverseOrder,
-                  icon: AssetUtil.load(
-                    isOldest
-                        ? AssetUtil.orderDownDarkIcon
-                        : AssetUtil.orderUpDarkIcon,
-                    size: 15,
+                  text: isOldest
+                      ? appLocalizations.order
+                      : appLocalizations.reverseOrder,
+                  icon: AnimatedRotation(
+                    turns: isOldest ? 0 : 0.5,
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
+                    child: ChewieIcon(
+                      LoftifyIcons.sortDirection,
+                      size: 16,
+                      color: Theme.of(context).textTheme.labelMedium?.color,
+                    ),
                   ),
                   fontSizeDelta: 1,
-                  color: Theme
-                      .of(context)
-                      .textTheme
-                      .labelMedium
-                      ?.color,
+                  color: Theme.of(context).textTheme.labelMedium?.color,
                   onTap: () {
                     HapticFeedback.mediumImpact();
                     setState(() {
@@ -357,78 +420,54 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
   }
 
   Widget _buildFooter() {
-    return Container(
-      height: 65,
-      width: MediaQuery
-          .sizeOf(context)
-          .width,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      decoration: BoxDecoration(
-        color: Theme
-            .of(context)
-            .cardColor,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.max,
-        children: [
-          Expanded(
-            child: RoundIconTextButton(
-              text:
-              subscribed ? appLocalizations.unsubscribe : appLocalizations.subscribeGrain,
-              background: Theme
-                  .of(context)
-                  .primaryColor
-                  .withAlpha(40),
-              padding: const EdgeInsets.symmetric(vertical: 15),
-              color: Theme
-                  .of(context)
-                  .primaryColor,
-              onPressed: () {
-                HapticFeedback.mediumImpact();
-                GrainApi.subscribeOrUnSubscribe(
-                  grainId: widget.grainId,
-                  blogId: widget.blogId,
-                  isSubscribe: !subscribed,
-                ).then((value) {
-                  if (value['code'] != 0) {
-                    IToast.showTop(value['msg']);
-                  } else {
-                    subscribed = !subscribed;
-                    setState(() {});
-                  }
-                });
-              },
-              fontSizeDelta: 2,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: RoundIconTextButton(
-              text: appLocalizations.startRead,
-              background: Theme
-                  .of(context)
-                  .primaryColor,
-              padding: const EdgeInsets.symmetric(vertical: 15),
-              onPressed: () {
-                if (posts.isNotEmpty) {
-                  RouteUtil.pushPanelCupertinoRoute(
-                    context,
-                    PostDetailScreen(
-                      grainPostItem: posts[0],
-                      isArticle: GrainPostItemBuilder.getPostType(posts[0]) ==
-                          PostType.article,
-                    ),
-                  );
-                } else {
-                  IToast.showTop(appLocalizations.noPostInGrain);
-                }
-              },
-              fontSizeDelta: 2,
-            ),
-          ),
-        ],
-      ),
+    return DetailBottomBar(
+      horizontalPadding: 12,
+      spacing: 10,
+      children: [
+        RoundIconTextButton(
+          text: subscribed
+              ? appLocalizations.unsubscribe
+              : appLocalizations.subscribeGrain,
+          background: Theme.of(context).primaryColor.withAlpha(40),
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          color: Theme.of(context).primaryColor,
+          onPressed: () {
+            HapticFeedback.mediumImpact();
+            GrainApi.subscribeOrUnSubscribe(
+              grainId: widget.grainId,
+              blogId: widget.blogId,
+              isSubscribe: !subscribed,
+            ).then((value) {
+              if (value['code'] != 0) {
+                IToast.showTop(value['msg']);
+              } else {
+                subscribed = !subscribed;
+                setState(() {});
+              }
+            });
+          },
+          fontSizeDelta: 2,
+        ),
+        RoundIconTextButton(
+          text: appLocalizations.startRead,
+          background: Theme.of(context).primaryColor,
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          onPressed: () {
+            if (posts.isNotEmpty) {
+              GeneralPostItemBuilder.onTapItem(
+                context,
+                GrainPostItemBuilder.getGeneralPostItem(
+                  posts.first,
+                  sequenceSource: _postSequenceSource,
+                ),
+              );
+            } else {
+              IToast.showTop(appLocalizations.noPostInGrain);
+            }
+          },
+          fontSizeDelta: 2,
+        ),
+      ],
     );
   }
 
@@ -459,71 +498,64 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
               children: [
                 Text(
                   grainDetailData!.grainInfo.name,
-                  style: Theme
-                      .of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.apply(
-                    fontSizeDelta: 2,
-                    color: Colors.white,
-                    fontWeightDelta: 2,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium?.apply(
+                        fontSizeDelta: 2,
+                        color: Colors.white,
+                        fontWeightDelta: 2,
+                      ),
                 ),
                 const SizedBox(height: 6),
-                ClickableWrapper(child:
-                GestureDetector(
-                  onTap: () {
-                    RouteUtil.pushPanelCupertinoRoute(
-                      context,
-                      UserDetailScreen(
-                        blogId: widget.blogId,
-                        blogName: grainDetailData!.blogInfo.blogName,
-                      ),
-                    );
-                  },
-                  child: Row(
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.only(right: 5),
-                        child: ItemBuilder.buildAvatar(
-                          context: context,
-                          imageUrl: grainDetailData!.blogInfo.bigAvaImg,
-                          size: 20,
-                          showBorder: false,
-                          showLoading: false,
+                ClickableWrapper(
+                  child: GestureDetector(
+                    onTap: () {
+                      RouteUtil.pushPanelCupertinoRoute(
+                        context,
+                        UserDetailScreen(
+                          blogId: widget.blogId,
+                          blogName: grainDetailData!.blogInfo.blogName,
                         ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          "${grainDetailData!.blogInfo.blogNickName} · ${appLocalizations.updateAt}${TimeUtil.formatTimestamp(
-                              grainDetailData!.grainInfo.updateTime)}",
-                          style: Theme
-                              .of(context)
-                              .textTheme
-                              .labelMedium
-                              ?.apply(color: Colors.white, fontSizeDelta: -1),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      );
+                    },
+                    child: Row(
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.only(right: 5),
+                          child: ItemBuilder.buildAvatar(
+                            context: context,
+                            imageUrl: grainDetailData!.blogInfo.bigAvaImg,
+                            size: 20,
+                            showBorder: false,
+                            showLoading: false,
+                          ),
                         ),
-                      ),
-                    ],
+                        Expanded(
+                          child: Text(
+                            "${grainDetailData!.blogInfo.blogNickName} · ${appLocalizations.updateAt}${TimeUtil.formatTimestamp(grainDetailData!.grainInfo.updateTime)}",
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.apply(color: Colors.white, fontSizeDelta: -1),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
                 ),
                 const SizedBox(height: 6),
               ],
             ),
           ),
           if (ResponsiveUtil.isLandscapeLayout()) ...[
-            CircleIconButton(
-              onTap: () {
+            ChewieIconButton(
+              icon: LoftifyIcons.moreVertical,
+              tooltip: appLocalizations.moreInfo,
+              foregroundColor: Colors.white,
+              onPressed: () {
                 BottomSheetBuilder.showContextMenu(
                     context, _buildMoreButtons());
               },
-              icon: const Icon(
-                Icons.more_vert_rounded,
-                color: Colors.white,
-              ),
             ),
             const SizedBox(width: 5),
           ],
@@ -541,61 +573,34 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
           title: appLocalizations.postCount,
           count: grainDetailData!.grainInfo.postCount,
           countColor: Colors.white,
-          labelColor: Colors.white.withOpacity(0.6),
+          labelColor: LoftifyCoverScrim.secondaryForeground,
         ),
         ItemBuilder.buildStatisticItem(
           context,
           title: appLocalizations.subscribeCount,
           count: grainDetailData!.grainInfo.subscribedCount,
           countColor: Colors.white,
-          labelColor: Colors.white.withOpacity(0.6),
+          labelColor: LoftifyCoverScrim.secondaryForeground,
         ),
         ItemBuilder.buildStatisticItem(
           context,
           title: appLocalizations.coCreatorCount,
           count: grainDetailData!.grainInfo.joinCount,
           countColor: Colors.white,
-          labelColor: Colors.white.withOpacity(0.6),
+          labelColor: LoftifyCoverScrim.secondaryForeground,
         ),
         ItemBuilder.buildStatisticItem(
           context,
           title: appLocalizations.viewCountLong,
           count: grainDetailData!.grainInfo.viewCount,
           countColor: Colors.white,
-          labelColor: Colors.white.withOpacity(0.6),
+          labelColor: LoftifyCoverScrim.secondaryForeground,
         ),
       ],
     );
   }
 
-  Widget _buildTagList() {
-    Map<String, TagType> tags = {};
-    for (var e in grainDetailData!.grainInfo.tags) {
-      tags[e] = TagType.normal;
-    }
-    List<MapEntry<String, TagType>> sortedTags = tags.entries.toList();
-    sortedTags.sort((a, b) => b.value.index.compareTo(a.value.index));
-    return Container(
-      padding: const EdgeInsets.only(top: 8, bottom: 8),
-      height: 42,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: List.generate(sortedTags.length, (index) {
-          return Container(
-            margin: const EdgeInsets.only(right: 8),
-            child: ItemBuilder.buildTagItem(
-              context,
-              sortedTags[index].key,
-              sortedTags[index].value,
-              showIcon: false,
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  Widget _buildNineGridGroup() {
+  List<Widget> _buildPostSlivers() {
     List<Widget> widgets = [];
     int startIndex = 0;
     for (var e in _archiveDataList) {
@@ -609,78 +614,78 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
       }
       widgets.add(ItemBuilder.buildTitle(
         context,
-        title: appLocalizations.descriptionWithPostCount(e.desc, e.count.toString()),
+        title: appLocalizations.descriptionWithPostCount(
+            e.desc, e.count.toString()),
         topMargin: 16,
         bottomMargin: 0,
       ));
       widgets.add(_buildNineGrid(startIndex, count));
       startIndex += e.count;
     }
-    return EasyRefresh.builder(
-      controller: _refreshController,
-      onRefresh: _onRefresh,
-      onLoad: _onLoad,
-      childBuilder: (context, physics) {
-        return Container(
-          height: MediaQuery
-              .sizeOf(context)
-              .height,
-          color: ChewieTheme.getBackground(context),
-          child: LoadMoreNotification(
-            child: ListView(
-              padding: const EdgeInsets.only(left: 10, right: 10, bottom: 20),
-              children: widgets,
-            ),
-            noMore: noMore,
-            onLoad: _onLoad,
-          ),
+    if (widgets.isEmpty) {
+      return [
+        SliverEmptyPlaceholder(text: appLocalizations.noArticle),
+      ];
+    }
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.only(left: 10, right: 10, bottom: 20),
+        sliver: SliverList.list(children: widgets),
+      ),
+    ];
+  }
+
+  Widget _buildNineGrid(int startIndex, int count) {
+    return LoftifyPostArchiveGrid(
+      itemCount: count,
+      itemBuilder: (context, index, tileExtent) {
+        final trueIndex = startIndex + index;
+        return GrainPostItemBuilder.buildNineGridPostItem(
+          context,
+          posts[trueIndex],
+          wh: tileExtent,
+          sequenceSource: _postSequenceSource,
         );
       },
     );
   }
 
-  Widget _buildNineGrid(int startIndex, int count) {
-    return GridView.extent(
-      padding: const EdgeInsets.only(top: 12),
-      shrinkWrap: true,
-      maxCrossAxisExtent: 160,
-      mainAxisSpacing: 6,
-      crossAxisSpacing: 6,
-      physics: const NeverScrollableScrollPhysics(),
-      children: List.generate(count, (index) {
-        int trueIndex = startIndex + index;
-        return GrainPostItemBuilder.buildNineGridPostItem(
-          context,
-          posts[trueIndex],
-          wh: 160,
-        );
-      }),
+  void _synchronizePostSequence() {
+    _postSequenceSource.synchronize(
+      posts.map(
+        (item) => PostSequenceEntry(
+          postId: item.postData.postView.id,
+          blogId: item.postData.postView.blogId,
+          blogName: item.postData.blogInfo.blogName,
+          type: GrainPostItemBuilder.getPostType(item),
+        ),
+      ),
+      hasMore: !noMore,
     );
   }
 
   Widget _buildBackground({double? height}) {
     String backgroudUrl = grainDetailData!.grainInfo.coverUrl;
-    return Blur(
-      blur: 20,
-      blurColor: Colors.black12,
-      child: ChewieItemBuilder.buildCachedImage(
-        context: context,
-        imageUrl: backgroudUrl,
-        fit: BoxFit.cover,
-        showLoading: false,
-        width: MediaQuery
-            .sizeOf(context)
-            .width * 2,
-        height: height ?? MediaQuery
-            .sizeOf(context)
-            .height * 0.7,
-        placeholderBackground: Theme
-            .of(context)
-            .textTheme
-            .labelSmall
-            ?.color,
-        bottomPadding: 50,
-      ),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Blur(
+          blur: 20,
+          blurColor: Colors.black12,
+          child: ChewieItemBuilder.buildCachedImage(
+            context: context,
+            imageUrl: backgroudUrl,
+            fit: BoxFit.cover,
+            showLoading: false,
+            width: MediaQuery.sizeOf(context).width * 2,
+            height: height ?? MediaQuery.sizeOf(context).height * 0.7,
+            placeholderBackground:
+                Theme.of(context).textTheme.labelSmall?.color,
+            bottomPadding: 50,
+          ),
+        ),
+        const LoftifyCoverScrim(),
+      ],
     );
   }
 }

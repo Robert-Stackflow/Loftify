@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:awesome_chewie/awesome_chewie.dart';
 
 class StarRating extends StatefulWidget {
   final int starCount;
@@ -39,15 +40,15 @@ class StarRatingState extends State<StarRating> {
   }
 
   Widget _buildStar(BuildContext context, int index) {
-    IconData iconData = Icons.star_border;
+    IconData iconData = ChewieIcons.star;
     Color iconColor = widget.borderColor;
 
     if (index < _currentRating.floor()) {
-      iconData = Icons.star;
+      iconData = ChewieIcons.star;
       iconColor = widget.color;
     } else if (index == _currentRating.floor() &&
         _currentRating - _currentRating.floor() > 0.0) {
-      iconData = Icons.star_half;
+      iconData = ChewieIcons.starHalf;
       iconColor = widget.color;
     }
 
@@ -68,7 +69,7 @@ class StarRatingState extends State<StarRating> {
               margin: widget.showRTL
                   ? EdgeInsets.only(left: widget.spacing)
                   : EdgeInsets.only(right: widget.spacing),
-              child: Icon(
+              child: ChewieIcon(
                 iconData,
                 color: iconColor,
                 size: widget.size,

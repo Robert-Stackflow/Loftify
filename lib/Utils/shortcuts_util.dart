@@ -21,6 +21,9 @@ import 'package:flutter/services.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 
 import '../Widgets/Shortcuts/keyboard_widget.dart';
+import '../Screens/Setting/about_setting_screen.dart';
+import '../Screens/Setting/experiment_setting_screen.dart';
+import '../Screens/Setting/setting_screen.dart';
 import '../generated/app_localizations.dart';
 import '../l10n/l10n.dart';
 import '../main.dart';
@@ -242,12 +245,7 @@ class ShortcutsUtil {
   ];
 
   static void focusSearch() {
-    appProvider.searchFocusNode.requestFocus();
-    appProvider.searchFocusNode.addListener(() {
-      if (!appProvider.searchFocusNode.hasFocus) {
-        appProvider.shortcutFocusNode.requestFocus();
-      }
-    });
+    searchScreenState?.focusSearch();
   }
 
   static void lock(BuildContext context) {
@@ -287,20 +285,14 @@ class ShortcutsUtil {
   }
 
   static void jumpToSetting(BuildContext context) {
-    RouteUtil.pushDialogRoute(context, const SettingNavigationScreen());
+    RouteUtil.pushPanelCupertinoRoute(context, const SettingScreen());
   }
 
   static void jumpToSetLock(BuildContext context) {
-    RouteUtil.pushDialogRoute(
-        context, const SettingNavigationScreen(initPageIndex: 4));
+    RouteUtil.pushPanelCupertinoRoute(context, const ExperimentSettingScreen());
   }
 
   static void jumpToAbout(BuildContext context) {
-    RouteUtil.pushDialogRoute(
-        context, const SettingNavigationScreen(initPageIndex: 5));
-  }
-
-  static void jumpToMain() {
-    RouteUtil.pushRootPage(getRootPage(true));
+    RouteUtil.pushPanelCupertinoRoute(context, const AboutSettingScreen());
   }
 }

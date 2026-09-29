@@ -16,7 +16,6 @@
 import 'package:awesome_chewie/src/Widgets/Tile/expandable_item.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
 
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:html/dom.dart' as dom;
@@ -56,6 +55,7 @@ class CustomHtmlWidget extends StatefulWidget {
     this.contextMenuItemsBuilder,
     this.maxHeaderLevel = 5,
     this.detectLanguage,
+    this.selectable = true,
   });
 
   final int maxHeaderLevel;
@@ -71,6 +71,7 @@ class CustomHtmlWidget extends StatefulWidget {
   final Function(Anchor anchor)? onAnchorTap;
   final Function(String hashtag)? onHashtagTap;
   final LanguageDetector? detectLanguage;
+  final bool selectable;
   final String? url;
   final List<FlutterContextMenuItem> Function(SelectableRegionState, String?)?
       contextMenuItemsBuilder;
@@ -96,6 +97,16 @@ class CustomHtmlWidgetState extends State<CustomHtmlWidget> {
   // }
 
   double verticalMargin = 10;
+  FocusNode? _selectionFocusNode;
+
+  FocusNode get selectionFocusNode =>
+      _selectionFocusNode ??= FocusNode(debugLabel: 'CustomHtmlWidget');
+
+  @override
+  void dispose() {
+    _selectionFocusNode?.dispose();
+    super.dispose();
+  }
 
   LanguageDetector? get detectLanguage =>
       widget.detectLanguage ?? HtmlUtil.detectLanguage;
@@ -171,11 +182,13 @@ class CustomHtmlWidgetState extends State<CustomHtmlWidget> {
   }
 
   _buildHtmlWidget(String content) {
+    final renderedContent = _render(content);
+    if (!widget.selectable) return renderedContent;
     return SelectableAreaWrapper(
-      focusNode: FocusNode(),
+      focusNode: selectionFocusNode,
       // selectionNotifier: widget.selectionNotifier,
       contextMenuItemsBuilder: widget.contextMenuItemsBuilder,
-      child: _render(content),
+      child: renderedContent,
     );
   }
 
@@ -360,7 +373,8 @@ class CustomHtmlWidgetState extends State<CustomHtmlWidget> {
             // 'text-decoration': 'underline',
             // 'text-decoration-style': 'dashed',
             // 'text-decoration-color': 'red',
-            'background-color': ColorUtil.isDark(context)?'#2a2a2a':'#e0f7fa',
+            'background-color':
+                ColorUtil.isDark(context) ? '#2a2a2a' : '#e0f7fa',
           };
         }
         if (e.id == "title") {
@@ -459,60 +473,6 @@ class CustomHtmlWidgetState extends State<CustomHtmlWidget> {
             ) ??
             ChewieTheme.bodyMedium.apply(fontSizeDelta: 2),
       ),
-    );
-    bool isInline = element.localName == 'inlinetex';
-    var texWidget = ClickableGestureDetector(
-      onTap: () {
-        dom.Element tmp = dom.Element.tag('blockquote');
-        tmp.children.add(dom.Element.tag('p')..text = element.text);
-        DialogBuilder.showInfoDialog(
-          context,
-          title: "公式详情",
-          messageChild: Container(
-            margin: EdgeInsets.symmetric(vertical: verticalMargin),
-            child: Math.tex(
-              element.text,
-              mathStyle: MathStyle.display,
-              textStyle: style?.apply(fontSizeDelta: 2) ??
-                  ChewieTheme.bodyMedium.apply(fontSizeDelta: 2),
-            ),
-          ),
-        );
-      },
-      child: Wrap(
-        children: [
-          Container(
-            color: Colors.transparent,
-            constraints: const BoxConstraints(
-                maxWidth: 1000, minHeight: 5, maxHeight: 100, minWidth: 5),
-            margin: isInline
-                ? const EdgeInsets.symmetric(horizontal: 2)
-                : EdgeInsets.symmetric(
-                    vertical: verticalMargin, horizontal: 10),
-            child: Math.tex(
-              element.text,
-              mathStyle: MathStyle.text,
-              textStyle: style,
-              onErrorFallback: (err) => Container(
-                color: Colors.red,
-                child: Text(
-                  err.messageWithType,
-                  style: const TextStyle(
-                    color: Colors.yellow,
-                  ),
-                ),
-              ),
-              options: MathOptions(
-                color: style?.color ?? ChewieTheme.bodyMedium.color!,
-                fontSize: style?.fontSize ?? 16 - 1,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-    return InlineCustomWidget(
-      child: isInline ? texWidget : Center(child: texWidget),
     );
   }
 
@@ -1145,6 +1105,7 @@ class CustomHtmlWidgetState extends State<CustomHtmlWidget> {
             showClose: false,
             fullScreen: true,
             useFade: true,
+            opaque: false,
             barrierDismissible: false,
             animation: false,
             HeroPhotoViewScreen(

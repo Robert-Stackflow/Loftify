@@ -1,15 +1,20 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Models/favorites_response.dart';
-import 'package:loftify/Models/recommend_response.dart';
 
 import '../../Api/user_api.dart';
+import '../../Models/download_task.dart';
 import '../../Models/history_response.dart';
 import '../../Models/post_detail_response.dart';
+import '../../Screens/Download/batch_download_screen.dart';
+import '../../Utils/app_provider.dart';
 import '../../Utils/enums.dart';
-import '../../Utils/hive_util.dart';
+import '../../Widgets/Design/loftify_state_view.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/favorite_folder_post_item_builder.dart';
+import '../../Widgets/PostItem/general_post_item.dart';
+import '../../Widgets/PostItem/loftify_post_archive_grid.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import '../Post/post_detail_screen.dart';
 
@@ -25,19 +30,19 @@ class FavoriteFolderDetailScreen extends StatefulWidget {
       _FavoriteFolderDetailScreenState();
 }
 
-class _FavoriteFolderDetailScreenState extends BaseDynamicState<FavoriteFolderDetailScreen>
+class _FavoriteFolderDetailScreenState
+    extends BaseDynamicState<FavoriteFolderDetailScreen>
     with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
   late int favoriteFolderId;
   FavoriteFolder? _favoriteFolder;
-  bool _follow = false;
-  SimpleBlogInfo? _creatorInfo;
   final List<FavoritePostDetailData> _posts = [];
   final List<ArchiveData> _archiveDataList = [];
   bool _loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
+  InitPhase _initPhase = InitPhase.connecting;
 
   @override
   void initState() {
@@ -45,75 +50,106 @@ class _FavoriteFolderDetailScreenState extends BaseDynamicState<FavoriteFolderDe
     favoriteFolderId = widget.favoriteFolderId;
   }
 
-  _fetchDetail({bool refresh = false}) async {
-    if (_loading) return;
+  @override
+  void dispose() {
+    _refreshController.dispose();
+    super.dispose();
+  }
+
+  Future<IndicatorResult> _fetchDetail({bool refresh = false}) async {
+    if (_loading || !mounted) return IndicatorResult.none;
+    final token = appProvider.token;
+    bool isCurrentAccount() => mounted && appProvider.token == token;
+    if (token.isEmpty) {
+      setState(() {
+        _posts.clear();
+        _archiveDataList.clear();
+        _favoriteFolder = null;
+        _initPhase = InitPhase.failed;
+      });
+      return IndicatorResult.fail;
+    }
     if (refresh) _noMore = false;
     _loading = true;
-    int offset = refresh ? 0 : _posts.length;
-    return await HiveUtil.getUserInfo().then((blogInfo) async {
-      return await UserApi.getFavoriteFolderDetail(
+    final offset = refresh ? 0 : _posts.length;
+    if (_posts.isEmpty) {
+      _initPhase = InitPhase.connecting;
+      setState(() {});
+    }
+    try {
+      final value = await UserApi.getFavoriteFolderDetail(
         folderId: favoriteFolderId,
         offset: offset,
-      ).then((value) {
-        try {
-          if (value['code'] != 0) {
-            IToast.showTop(value['msg']);
-            return IndicatorResult.fail;
-          } else {
-            _follow = value['data']['followStatus'];
-            _creatorInfo = SimpleBlogInfo.fromJson(value['data']['blogInfo']);
-            _favoriteFolder = FavoriteFolder.fromJson(value['data']['folder']);
-            List<dynamic> t = value['data']['posts'];
-            if (refresh) _posts.clear();
-            for (var e in t) {
-              if (e != null) {
-                _posts.add(FavoritePostDetailData.fromJson(e));
-              }
-            }
-            Map<String, int> monthCount = {};
-            for (var e in _posts) {
-              String yearMonth = TimeUtil.formatYearMonth(e.opTime ?? 0);
-              monthCount.putIfAbsent(yearMonth, () => 0);
-              monthCount[yearMonth] = monthCount[yearMonth]! + 1;
-            }
-            _archiveDataList.clear();
-            for (var e in monthCount.keys) {
-              _archiveDataList.add(ArchiveData(
-                desc: e,
-                count: monthCount[e] ?? 0,
-                endTime: 0,
-                startTime: 0,
-              ));
-            }
-            _archiveDataList.sort((a, b) => b.desc.compareTo(a.desc));
-            if (mounted) setState(() {});
-            if (_posts.length >= (_favoriteFolder?.postCount ?? 0) &&
-                !refresh) {
-              _noMore = true;
-              return IndicatorResult.noMore;
-            } else {
-              return IndicatorResult.success;
-            }
-          }
-        } catch (e, t) {
-          ILogger.error("Failed to load folder detail", e, t);
-          if (mounted) IToast.showTop(appLocalizations.loadFailed);
-          return IndicatorResult.fail;
-        } finally {
-          if (mounted) setState(() {});
-          _loading = false;
+      );
+      if (!isCurrentAccount()) return IndicatorResult.none;
+      if (value['code'] != 0) {
+        if (_posts.isEmpty) _initPhase = InitPhase.failed;
+        IToast.showTop(value['msg']);
+        return IndicatorResult.fail;
+      }
+      final folder = FavoriteFolder.fromJson(value['data']['folder']);
+      final page = (value['data']['posts'] as List)
+          .where((item) => item != null)
+          .map((item) => FavoritePostDetailData.fromJson(item))
+          .toList();
+      final posts = refresh ? <FavoritePostDetailData>[] : [..._posts];
+      final existingIds = posts.map((item) => item.post?.id).toSet();
+      for (final item in page) {
+        if (existingIds.add(item.post?.id)) posts.add(item);
+      }
+      final archives = <ArchiveData>[];
+      for (final item in posts) {
+        final month = formatLocalizedYearMonth(item.opTime ?? 0);
+        if (archives.isNotEmpty && archives.last.desc == month) {
+          archives.last.count += 1;
+        } else {
+          archives.add(ArchiveData(
+            desc: month,
+            count: 1,
+            endTime: 0,
+            startTime: 0,
+          ));
         }
-      });
-    });
+      }
+      _favoriteFolder = folder;
+      _posts
+        ..clear()
+        ..addAll(posts);
+      _archiveDataList
+        ..clear()
+        ..addAll(archives);
+      _noMore = page.isEmpty ||
+          (!refresh && posts.length == offset) ||
+          posts.length >= (folder.postCount ?? 0);
+      _initPhase = InitPhase.successful;
+      return !refresh && _noMore
+          ? IndicatorResult.noMore
+          : IndicatorResult.success;
+    } catch (error, stackTrace) {
+      if (!isCurrentAccount()) return IndicatorResult.none;
+      if (_posts.isEmpty) _initPhase = InitPhase.failed;
+      ILogger.error('Failed to load folder detail', error, stackTrace);
+      IToast.showTop(appLocalizations.loadFailed);
+      return IndicatorResult.fail;
+    } finally {
+      if (mounted) {
+        setState(() {
+          if (!isCurrentAccount()) {
+            _posts.clear();
+            _archiveDataList.clear();
+            _favoriteFolder = null;
+            _noMore = false;
+            _initPhase = InitPhase.failed;
+          }
+        });
+      }
+      _loading = false;
+    }
   }
 
-  _onRefresh() async {
-    return await _fetchDetail(refresh: true);
-  }
+  Future<IndicatorResult> _onRefresh() => _fetchDetail(refresh: true);
 
-  _onLoad() async {
-    return await _fetchDetail();
-  }
+  Future<IndicatorResult> _onLoad() => _fetchDetail();
 
   @override
   Widget build(BuildContext context) {
@@ -125,22 +161,46 @@ class _FavoriteFolderDetailScreenState extends BaseDynamicState<FavoriteFolderDe
         refreshOnStart: true,
         controller: _refreshController,
         onRefresh: _onRefresh,
-        onLoad: _onLoad,
+        onLoad: _noMore ? null : _onLoad,
         triggerAxis: Axis.vertical,
-        childBuilder: (context, physics) =>
-            _archiveDataList.isNotEmpty && _posts.isNotEmpty
-                ? _buildNineGridGroup(physics)
-                : EmptyPlaceholder(
-                    text: appLocalizations.noFavorite,
-                    physics: physics,
-                    shrinkWrap: false,
+        childBuilder: (context, physics) {
+          if (_initPhase != InitPhase.successful) {
+            final loading = _initPhase == InitPhase.connecting;
+            return CustomScrollView(
+              physics: physics,
+              slivers: [
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: LoftifyStateView(
+                    visual: loading
+                        ? LoftifyStateVisual.loading
+                        : LoftifyStateVisual.error,
+                    title: loading
+                        ? appLocalizations.loading
+                        : appLocalizations.loadFailed,
+                    scrollWhenConstrained: false,
+                    actionLabel: loading ? null : chewieLocalizations.retry,
+                    onAction:
+                        loading ? null : () => _refreshController.callRefresh(),
                   ),
+                ),
+              ],
+            );
+          }
+          return _posts.isNotEmpty
+              ? _buildNineGridGroup(physics)
+              : EmptyPlaceholder(
+                  text: appLocalizations.noFavorite,
+                  physics: physics,
+                  shrinkWrap: false,
+                );
+        },
       ),
     );
   }
 
   Widget _buildNineGridGroup(ScrollPhysics physics) {
-    List<Widget> widgets = [];
+    final slivers = <Widget>[];
     int startIndex = 0;
     for (var e in _archiveDataList) {
       if (_posts.length < startIndex) {
@@ -151,57 +211,58 @@ class _FavoriteFolderDetailScreenState extends BaseDynamicState<FavoriteFolderDe
       if (_posts.length < startIndex + count) {
         count = _posts.length - startIndex;
       }
-      widgets.add(ItemBuilder.buildTitle(
-        context,
-        title: appLocalizations.descriptionWithPostCount(e.desc, e.count.toString()),
-        topMargin: 16,
-        bottomMargin: 0,
-      ));
-      widgets.add(_buildNineGrid(startIndex, count));
+      slivers.add(
+        SliverToBoxAdapter(
+          child: ItemBuilder.buildTitle(
+            context,
+            title: appLocalizations.descriptionWithPostCount(
+                e.desc, e.count.toString()),
+            topMargin: 16,
+            bottomMargin: 0,
+          ),
+        ),
+      );
+      slivers.add(_buildNineGrid(startIndex, count));
       startIndex += e.count;
     }
-    return ListView(
-      cacheExtent: 9999,
+    return CustomScrollView(
       physics: physics,
-      children: widgets,
+      cacheExtent: MediaQuery.sizeOf(context).height,
+      slivers: slivers,
     );
   }
 
   Widget _buildNineGrid(int startIndex, int count) {
-    return LoadMoreNotification(
-      noMore: _noMore,
-      onLoad: _onLoad,
-      child: GridView.extent(
-        padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
-        shrinkWrap: true,
-        maxCrossAxisExtent: 160,
-        mainAxisSpacing: 6,
-        crossAxisSpacing: 6,
-        physics: const NeverScrollableScrollPhysics(),
-        children: List.generate(count, (index) {
-          int trueIndex = startIndex + index;
-          return GestureDetector(
-            child: FavoriteFolderPostItemBuilder.buildNineGridPostItem(
-                context, _posts[trueIndex],
-                wh: 160),
-            onTap: () {
-              if (FavoriteFolderPostItemBuilder.isInvalid(_posts[trueIndex])) {
-                IToast.showTop(appLocalizations.invalidContent);
-              } else {
-                RouteUtil.pushPanelCupertinoRoute(
-                  context,
-                  PostDetailScreen(
-                    favoritePostDetailData: _posts[trueIndex],
-                    isArticle: FavoriteFolderPostItemBuilder.getPostType(
-                            _posts[index]) ==
-                        PostType.article,
-                  ),
-                );
-              }
-            },
-          );
-        }),
-      ),
+    return LoftifyPostArchiveSliverGrid(
+      padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
+      itemCount: count,
+      addAutomaticKeepAlives: false,
+      itemBuilder: (context, index, tileExtent) {
+        final trueIndex = startIndex + index;
+        final post = _posts[trueIndex];
+        return GestureDetector(
+          key: ValueKey('favorite-folder-${post.post?.id ?? trueIndex}'),
+          child: FavoriteFolderPostItemBuilder.buildNineGridPostItem(
+            context,
+            post,
+            wh: tileExtent,
+          ),
+          onTap: () {
+            if (FavoriteFolderPostItemBuilder.isInvalid(post)) {
+              IToast.showTop(appLocalizations.invalidContent);
+            } else {
+              RouteUtil.pushPanelCupertinoRoute(
+                context,
+                PostDetailScreen(
+                  favoritePostDetailData: post,
+                  isArticle: FavoriteFolderPostItemBuilder.getPostType(post) ==
+                      PostType.article,
+                ),
+              );
+            }
+          },
+        );
+      },
     );
   }
 
@@ -209,6 +270,61 @@ class _FavoriteFolderDetailScreenState extends BaseDynamicState<FavoriteFolderDe
     return ResponsiveAppBar(
       showBack: true,
       title: _favoriteFolder?.name ?? appLocalizations.favoriteFolderDetail,
+      actions: [_buildBatchDownloadAction()],
+      landscapeActions: [_buildBatchDownloadAction()],
     );
+  }
+
+  Widget _buildBatchDownloadAction() => ChewieIconButton(
+        icon: LoftifyIcons.download,
+        tooltip: appLocalizations.batchDownload,
+        onPressed: _openBatchDownload,
+      );
+
+  void _openBatchDownload() {
+    RouteUtil.pushPanelCupertinoRoute(
+      context,
+      BatchDownloadScreen(
+        sourceTitle:
+            _favoriteFolder?.name ?? appLocalizations.favoriteFolderDetail,
+        source: DownloadSourceDescriptor(
+          type: DownloadSourceType.favoriteFolder,
+          sourceId: favoriteFolderId.toString(),
+          title: _favoriteFolder?.name ?? appLocalizations.favoriteFolderDetail,
+          metadata: <String, String>{
+            'favoriteFolderId': favoriteFolderId.toString(),
+          },
+        ),
+        initialItems: _posts
+            .map(FavoriteFolderPostItemBuilder.getGeneralPostItem)
+            .toList(),
+        loadAllItems: _loadAllBatchItems,
+      ),
+    );
+  }
+
+  Future<List<GeneralPostItem>> _loadAllBatchItems() async {
+    if (_posts.isEmpty) {
+      final result = await _onRefresh();
+      if (result != IndicatorResult.success &&
+          result != IndicatorResult.noMore) {
+        throw StateError('Could not load favorite folder posts');
+      }
+    }
+    while (!_noMore) {
+      final previousLength = _posts.length;
+      final result = await _onLoad();
+      if (result == IndicatorResult.fail ||
+          result == IndicatorResult.none ||
+          _posts.length == previousLength) {
+        throw StateError('Could not load all favorite folder posts');
+      }
+    }
+    if (_posts.length < (_favoriteFolder?.postCount ?? 0)) {
+      throw StateError('Favorite folder posts are incomplete');
+    }
+    return _posts
+        .map(FavoriteFolderPostItemBuilder.getGeneralPostItem)
+        .toList(growable: false);
   }
 }

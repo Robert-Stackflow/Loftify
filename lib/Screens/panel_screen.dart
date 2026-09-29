@@ -13,6 +13,8 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+import 'dart:async';
+
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -24,9 +26,48 @@ import 'package:provider/provider.dart';
 import '../Utils/app_provider.dart';
 import '../Utils/enums.dart';
 import '../Utils/lottie_files.dart';
+import '../Widgets/Navigation/loftify_glass_navigation_bar.dart';
+import '../Widgets/loftify_icons.dart';
 import '../l10n/l10n.dart';
 import 'Navigation/home_screen.dart';
 import 'Navigation/search_screen.dart';
+
+class PanelBackScope extends StatelessWidget {
+  const PanelBackScope({
+    super.key,
+    required this.canRootPop,
+    required this.onNestedPop,
+    required this.child,
+  });
+
+  final bool canRootPop;
+  final FutureOr<void> Function() onNestedPop;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: canRootPop,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) onNestedPop();
+      },
+      child: child,
+    );
+  }
+}
+
+List<SideBarChoice> visiblePanelChoices({required bool hideSearch}) => [
+      SideBarChoice.Home,
+      if (!hideSearch) SideBarChoice.Search,
+      SideBarChoice.Dynamic,
+      SideBarChoice.Mine,
+    ];
+
+int visiblePanelPageIndex(
+  SideBarChoice choice, {
+  required bool hideSearch,
+}) =>
+    visiblePanelChoices(hideSearch: hideSearch).indexOf(choice);
 
 class PanelScreen extends StatefulWidget {
   const PanelScreen({
@@ -39,7 +80,7 @@ class PanelScreen extends StatefulWidget {
   State<PanelScreen> createState() => PanelScreenState();
 }
 
-class PanelScreenState extends BaseDynamicState<PanelScreen>
+class PanelScreenState extends BasePanelScreenState<PanelScreen>
     with
         TickerProviderStateMixin,
         AutomaticKeepAliveClientMixin,
@@ -49,6 +90,50 @@ class PanelScreenState extends BaseDynamicState<PanelScreen>
   List<GlobalKey> _keyList = [];
   bool unlogin = false;
   int _currentIndex = 0;
+  List<SideBarChoice> get _visibleChoices =>
+      visiblePanelChoices(hideSearch: appProvider.hideSearchNavigation);
+
+  int _visibleIndexFor(int logicalIndex) {
+    final index = visiblePanelPageIndex(
+      SideBarChoice.fromInt(logicalIndex),
+      hideSearch: appProvider.hideSearchNavigation,
+    );
+    return index < 0 ? 0 : index;
+  }
+
+  List<Widget> _buildVisiblePages() => _visibleChoices.map((choice) {
+        return switch (choice) {
+          SideBarChoice.Home => HomeScreen(key: _keyList[choice.index]),
+          SideBarChoice.Search => SearchScreen(key: _keyList[choice.index]),
+          SideBarChoice.Dynamic => DynamicScreen(key: _keyList[choice.index]),
+          SideBarChoice.Mine => MineScreen(key: _keyList[choice.index]),
+        };
+      }).toList();
+
+  void _replacePageController(int logicalIndex) {
+    final previous = _pageController;
+    _pageController = PageController(
+      initialPage: _visibleIndexFor(logicalIndex),
+      keepPage: false,
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) => previous.dispose());
+  }
+
+  void _configurePages() {
+    _keyList = [
+      homeScreenKey,
+      searchScreenKey,
+      GlobalKey(),
+      GlobalKey(),
+    ];
+    _pageList = _buildVisiblePages();
+    _currentIndex = appProvider.hideSearchNavigation &&
+            appProvider.sidebarChoice == SideBarChoice.Search
+        ? SideBarChoice.Home.index
+        : appProvider.sidebarChoice.index;
+    _replacePageController(_currentIndex);
+  }
+
   late AnimationController darkModeController;
   Widget? darkModeWidget;
   final ScrollToHideController _scrollToHideController =
@@ -59,15 +144,17 @@ class PanelScreenState extends BaseDynamicState<PanelScreen>
   NavigatorState? get panelNavigatorState => panelNavigatorKey.currentState;
 
   bool canRootPop = true;
+  bool _nestedPopInProgress = false;
+  final List<TransitionRoute<dynamic>> _nestedRoutes = [];
 
   @override
   void initState() {
-    updateStatusBar();
     super.initState();
+    updateStatusBar();
     darkModeController = AnimationController(vsync: this);
+    _configurePages();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      initPage();
-      darkModeWidget = LottieUtil.load(
+      darkModeWidget = LottieFiles.buildAnimation(
         LottieFiles.sunLight,
         size: 25,
         autoForward: !ColorUtil.isDark(context),
@@ -76,95 +163,121 @@ class PanelScreenState extends BaseDynamicState<PanelScreen>
     });
   }
 
-  login() {
+  void login() {
     popAll();
     initPage();
   }
 
-  logout() {
+  void logout() {
     popAll();
     initPage();
   }
 
-  popAll([bool initPage = true]) {
+  @override
+  void popAll([bool initPage = true]) {
+    _nestedPopInProgress = false;
+    _nestedRoutes.clear();
     while (panelNavigatorState?.canPop() ?? false) {
       panelNavigatorState?.pop();
     }
     canRootPop = !(panelNavigatorState?.canPop() ?? false);
     appProvider.showPanelNavigator = false;
     if (initPage) {
-      _pageController =
-          PageController(initialPage: appProvider.sidebarChoice.index);
+      _replacePageController(appProvider.sidebarChoice.index);
     }
   }
 
-  pushPage(Widget page) {
-    ResponsiveUtil.runByOrientation(
-      landscape: () {
-        appProvider.showPanelNavigator = true;
-        panelNavigatorState?.push(RouteUtil.getFadeRoute(page));
-        canRootPop = false;
-        if (mounted) setState(() {});
-      },
-      portrait: () {
-        appProvider.showPanelNavigator = true;
-        RouteUtil.pushCupertinoRoute(panelNavigatorState!.context, page);
-        canRootPop = false;
-        if (mounted) setState(() {});
-      },
-    );
-  }
-
-  popPage() {
-    if (panelNavigatorState?.canPop() ?? false) {
-      panelNavigatorState?.pop();
-      Future.delayed(const Duration(milliseconds: 400), () {
-        if (!(panelNavigatorState?.canPop() ?? false)) {
-          appProvider.showPanelNavigator = false;
-        }
-      });
-    } else {
-      appProvider.showPanelNavigator = false;
-    }
-    _pageController =
-        PageController(initialPage: appProvider.sidebarChoice.index);
-    canRootPop = !(panelNavigatorState?.canPop() ?? false);
+  @override
+  void pushPage(Widget page) {
+    final navigator = panelNavigatorState;
+    if (navigator == null) return;
+    appProvider.showPanelNavigator = true;
+    canRootPop = false;
     if (mounted) setState(() {});
+    final TransitionRoute<dynamic> route = ResponsiveUtil.isLandscapeLayout()
+        ? RouteUtil.getFadeRoute(page)
+        : CustomCupertinoPageRoute(builder: (context) => page);
+    _nestedRoutes.add(route);
+    unawaited(navigator.push(route));
+    // Navigator.push completes when pop begins, not when the reverse transition
+    // has left the overlay. Keep the panel visible until the route is removed.
+    unawaited(route.completed.whenComplete(() {
+      _nestedRoutes.remove(route);
+      _nestedPopInProgress = false;
+      _syncPanelAfterRoutePop();
+    }));
   }
 
-  updateStatusBar() {
-    SystemUiOverlayStyle systemUiOverlayStyle = const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Brightness.dark,
+  void _syncPanelAfterRoutePop() {
+    if (!mounted) return;
+    final hasNestedPage = panelNavigatorState?.canPop() ?? false;
+    canRootPop = !hasNestedPage;
+    appProvider.showPanelNavigator = hasNestedPage;
+    setState(() {});
+  }
+
+  @override
+  void popPage() {
+    if (_nestedPopInProgress) return;
+    final navigator = panelNavigatorState;
+    if (navigator == null || !navigator.canPop()) return;
+    final route = _nestedRoutes.isEmpty ? null : _nestedRoutes.last;
+    // maybePop consults the active route's PopScope. A direct pop bypasses it
+    // and would remove a full-screen video instead of first restoring portrait.
+    final willRemoveRoute = route?.popDisposition == RoutePopDisposition.pop &&
+        !(route?.willHandlePopInternally ?? false);
+    if (willRemoveRoute) _nestedPopInProgress = true;
+    unawaited(navigator.maybePop().whenComplete(() {
+      // PopScope and LocalHistoryEntry may handle back without removing the
+      // route. Only a real reverse transition stays locked until completed.
+      if (route?.animation?.status != AnimationStatus.reverse) {
+        _nestedPopInProgress = false;
+      }
+    }));
+  }
+
+  @override
+  void updateStatusBar() {
+    final brightness = appProvider.getBrightness() ??
+        WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    final systemUiOverlayStyle =
+        AppBarWrapper.systemUiOverlayStyleForBrightness(
+      brightness,
+      includeNavigationBar: true,
     );
     SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
   }
 
   Future<void> initPage() async {
-    _keyList = [
-      homeScreenKey,
-      searchScreenKey,
-      GlobalKey(),
-      GlobalKey(),
-    ];
-    _pageList = [
-      HomeScreen(key: _keyList[0]),
-      SearchScreen(key: _keyList[1]),
-      DynamicScreen(key: _keyList[2]),
-      MineScreen(key: _keyList[3]),
-    ];
+    _configurePages();
     try {
-      ILogger.debug(
-          "init panel page and jump to ${appProvider.sidebarChoice.index.clamp(0, _pageList.length - 1)}");
+      ILogger.debug("init panel page and jump to $_currentIndex");
     } catch (e, t) {
       ILogger.error("Failed to init panel page", e, t);
     }
-    jumpToPage(appProvider.sidebarChoice.index.clamp(0, _pageList.length - 1));
+    if (mounted) setState(() {});
   }
 
+  void updateSearchNavigationVisibility() {
+    if (_keyList.length != SideBarChoice.values.length) return;
+    if (appProvider.hideSearchNavigation &&
+        _currentIndex == SideBarChoice.Search.index) {
+      _currentIndex = SideBarChoice.Home.index;
+    }
+    _pageList = _buildVisiblePages();
+    _replacePageController(_currentIndex);
+    if (mounted) setState(() {});
+  }
+
+  @override
   void jumpToPage(int index) {
-    if (_currentIndex == index) {
+    if (index < 0 || index >= SideBarChoice.values.length) return;
+    if (appProvider.hideSearchNavigation &&
+        index == SideBarChoice.Search.index) {
+      index = SideBarChoice.Home.index;
+    }
+    _scrollToHideController.show();
+    if (_currentIndex == index && _keyList.isNotEmpty) {
       BottomNavgationMixin? mixin =
           _keyList[_currentIndex].currentState is BottomNavgationMixin?
               ? _keyList[_currentIndex].currentState as BottomNavgationMixin?
@@ -173,16 +286,21 @@ class PanelScreenState extends BaseDynamicState<PanelScreen>
     } else {
       _currentIndex = index;
       if (_pageController.hasClients) {
-        _pageController.jumpToPage(index);
+        // A PageView animation leaves the previously selected page on screen
+        // after the nav item has already changed. Switching tabs should be
+        // immediate, including quick taps across non-adjacent destinations.
+        _pageController.jumpToPage(_visibleIndexFor(index));
       }
     }
     if (mounted) setState(() {});
   }
 
+  @override
   void refreshScrollControllers() {
     setState(() {});
   }
 
+  @override
   void showBottomNavigationBar() {
     _scrollToHideController.show();
   }
@@ -233,76 +351,88 @@ class PanelScreenState extends BaseDynamicState<PanelScreen>
             child: Navigator(
               key: panelNavigatorKey,
               onGenerateRoute: (settings) {
-                return MaterialPageRoute(builder: (context) => emptyWidget);
+                return RouteUtil.getFadeRoute(
+                  emptyWidget,
+                  duration: Duration.zero,
+                );
               },
             ),
           ),
         ),
       ],
     );
-    return PopScope(
-      canPop: canRootPop,
-      onPopInvokedWithResult: (_, __) => popPage(),
+    return PanelBackScope(
+      canRootPop: canRootPop,
+      onNestedPop: popPage,
       child: scaffold,
     );
   }
 
-  _buildBottomNavigationBar() {
+  Widget _buildBottomNavigationBar() {
+    if (!LoftifyGlassNavigationBar.shouldShowForKeyboard(
+      MediaQuery.of(context),
+    )) {
+      return const SizedBox.shrink();
+    }
     return ScrollToHide.multi(
       controller: _scrollToHideController,
       scrollControllers: getScrollControllers(),
       hideDirection: Axis.vertical,
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(
-              color: Theme.of(context).dividerColor,
-              width: 1,
-            ),
-          ),
+      child: Selector<
+          AppProvider,
+          ({
+            bool reduceTransparency,
+            NavigationBarDisplayStyle displayStyle,
+            bool hideSearchNavigation,
+          })>(
+        selector: (context, appProvider) => (
+          reduceTransparency: appProvider.reduceTransparency,
+          displayStyle: appProvider.navigationBarDisplayStyle,
+          hideSearchNavigation: appProvider.hideSearchNavigation,
         ),
-        child: MyBottomNavigationBar(
-          currentIndex: _currentIndex,
-          selectedItemColor: Theme.of(context).primaryColor,
-          showSelectedLabels: false,
-          unselectedItemColor: Colors.grey,
-          showUnselectedLabels: false,
-          type: BottomNavigationBarType.fixed,
-          elevation: 0,
-          items: [
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.explore_outlined, size: 28),
-              activeIcon: const Icon(Icons.explore_rounded, size: 28),
-              label: appLocalizations.home,
+        builder: (context, preferences, child) {
+          final visibleChoices = visiblePanelChoices(
+            hideSearch: preferences.hideSearchNavigation,
+          );
+          return LoftifyGlassNavigationBar(
+            currentIndex: visibleChoices.indexOf(
+              SideBarChoice.fromInt(_currentIndex),
             ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.search_rounded, size: 28),
-              activeIcon: const Icon(Icons.manage_search_rounded, size: 28),
-              label: appLocalizations.search,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.favorite_border_rounded, size: 28),
-              activeIcon: const Icon(Icons.favorite_rounded, size: 28),
-              label: appLocalizations.dynamic,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.person_outline_rounded, size: 28),
-              activeIcon: const Icon(Icons.person_rounded, size: 28),
-              label: appLocalizations.mine,
-            ),
-          ],
-          onTap: (index) {
-            appProvider.sidebarChoice = SideBarChoice.fromInt(index);
-          },
-          onDoubleTap: (index) {
-            appProvider.sidebarChoice = SideBarChoice.fromInt(index);
-          },
-        ),
+            enableBlur: !preferences.reduceTransparency,
+            displayStyle: preferences.displayStyle,
+            destinations: [
+              LoftifyNavigationDestination(
+                icon: LoftifyIcons.home,
+                lottieAsset: LottieFiles.navHome,
+                label: appLocalizations.home,
+              ),
+              if (!preferences.hideSearchNavigation)
+                LoftifyNavigationDestination(
+                  icon: LoftifyIcons.search,
+                  lottieAsset: LottieFiles.navSearch,
+                  label: appLocalizations.search,
+                ),
+              LoftifyNavigationDestination(
+                icon: LoftifyIcons.activity,
+                lottieAsset: LottieFiles.navHeart,
+                label: appLocalizations.dynamicTab,
+              ),
+              LoftifyNavigationDestination(
+                icon: LoftifyIcons.profile,
+                lottieAsset: LottieFiles.navUser,
+                label: appLocalizations.mine,
+              ),
+            ],
+            onSelect: (index) {
+              appProvider.sidebarChoice = visibleChoices[index];
+            },
+          );
+        },
       ),
     );
   }
 
-  changeMode() {
+  void changeMode() {
     if (ColorUtil.isDark(context)) {
       appProvider.themeMode = ActiveThemeMode.light;
       darkModeController.forward();
@@ -314,14 +444,12 @@ class PanelScreenState extends BaseDynamicState<PanelScreen>
 
   @override
   List<ScrollController> getScrollControllers() {
-    List<ScrollController> res = [];
-    for (var page in _pageList) {
-      var state = _keyList[_pageList.indexOf(page)].currentState;
-      if (state is ScrollToHideMixin) {
-        res.addAll((state as ScrollToHideMixin).getScrollControllers());
-      }
+    if (_currentIndex < 0 || _currentIndex >= _keyList.length) {
+      return const [];
     }
-    return res;
+    final state = _keyList[_currentIndex].currentState;
+    if (state is! ScrollToHideMixin) return const [];
+    return (state as ScrollToHideMixin).getScrollControllers();
   }
 
   @override

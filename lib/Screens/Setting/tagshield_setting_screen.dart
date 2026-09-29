@@ -1,20 +1,20 @@
+import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/setting_api.dart';
-import 'package:loftify/Widgets/BottomSheet/input_bottom_sheet.dart';
-import 'package:loftify/Widgets/Dialog/custom_dialog.dart';
 
-import '../../Resources/theme.dart';
-import '../../Utils/ilogger.dart';
-import '../../Utils/itoast.dart';
-import '../../Widgets/BottomSheet/bottom_sheet_builder.dart';
-import '../../Widgets/Dialog/dialog_builder.dart';
-import '../../Widgets/General/EasyRefresh/easy_refresh.dart';
-import '../../Widgets/Item/item_builder.dart';
-import '../../Widgets/Item/loftify_item_builder.dart';
+import '../../Widgets/Item/setting_management_item.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
+import 'base_setting_screen.dart';
 
-class TagShieldSettingScreen extends StatefulWidget {
-  const TagShieldSettingScreen({super.key});
+class TagShieldSettingScreen extends BaseSettingScreen {
+  const TagShieldSettingScreen({
+    super.key,
+    super.padding,
+    super.showTitleBar,
+    super.searchConfig,
+    super.searchText,
+  });
 
   static const String routeName = "/setting/tagShield";
 
@@ -22,139 +22,136 @@ class TagShieldSettingScreen extends StatefulWidget {
   State<TagShieldSettingScreen> createState() => _TagShieldSettingScreenState();
 }
 
-class _TagShieldSettingScreenState extends BaseDynamicState<TagShieldSettingScreen>
+class _TagShieldSettingScreenState
+    extends BaseDynamicState<TagShieldSettingScreen>
     with TickerProviderStateMixin {
   bool loading = false;
   final EasyRefreshController _refreshController = EasyRefreshController();
   List<String> tags = [];
 
-  _fetchTags() async {
-    if (loading) return;
+  @override
+  void dispose() {
+    _refreshController.dispose();
+    super.dispose();
+  }
+
+  Future<IndicatorResult> _fetchTags() async {
+    if (loading || !mounted) return IndicatorResult.none;
     loading = true;
-    return await SettingApi.getShieldTagList().then((value) {
-      try {
-        if (value == null) return IndicatorResult.fail;
-        if (value['meta']['status'] != 200) {
-          IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-          return IndicatorResult.fail;
-        } else {
-          tags = (value['response']['list'] as List)
-              .map((e) => e.toString())
-              .toList();
-          return IndicatorResult.success;
-        }
-      } catch (e, t) {
-        ILogger.error("Failed to load tag shield list", e, t);
-        IToast.showTop(appLocalizations.loadFailed);
+    try {
+      final value = await SettingApi.getShieldTagList();
+      if (!mounted) return IndicatorResult.none;
+      if (value == null) return IndicatorResult.fail;
+      if (value['meta']['status'] != 200) {
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
         return IndicatorResult.fail;
-      } finally {
-        loading = false;
-        if (mounted) setState(() {});
+      } else {
+        tags = (value['response']['list'] as List)
+            .map((e) => e.toString())
+            .toList();
+        return IndicatorResult.success;
       }
-    });
+    } catch (e, t) {
+      if (!mounted) return IndicatorResult.none;
+      ILogger.error("Failed to load tag shield list", e, t);
+      IToast.showTop(appLocalizations.loadFailed);
+      return IndicatorResult.fail;
+    } finally {
+      loading = false;
+      if (mounted) setState(() {});
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: ChewieTheme.getBackground(context),
-      appBar: ResponsiveAppBar(
-        showBack: true,
-        showBorder: true,
-        title: "${appLocalizations.tagShieldSetting}(${tags.length})",
-        context: context,
-        actions: [
-          CircleIconButton(
-            context: context,
-            icon: Icon(Icons.add_rounded,
-                color: Theme.of(context).iconTheme.color),
-            onTap: () {
-              BottomSheetBuilder.showBottomSheet(
-                context,
-                (sheetContext) => InputBottomSheet(
-                  buttonText: appLocalizations.confirm,
-                  title: appLocalizations.addShieldTag,
-                  text: "",
-                  onConfirm: (text) {
-                    SettingApi.shieldOrUnshieldTag(tag: text, isShield: true)
-                        .then((value) {
-                      IToast.showTop(
-                          value['meta']['desc'] ?? value['meta']['msg']);
-                      if (value['meta']['status'] == 200) {
-                        tags.insert(0, text);
-                        setState(() {});
-                      }
-                    });
-                  },
-                ),
-                preferMinWidth: 400,
-                responsive: true,
-              );
-            },
+    return ChewieItemBuilder.buildSettingScreen(
+      context: context,
+      title: appLocalizations.tagShieldSetting,
+      showTitleBar: widget.showTitleBar,
+      showBack: !ResponsiveUtil.isLandscapeLayout(),
+      padding: widget.padding,
+      actions: [
+        CircleIconButton(
+          context: context,
+          icon: ChewieIcon(
+            LoftifyIcons.add,
+            color: Theme.of(context).iconTheme.color,
           ),
-        ],
-      ),
-      body: EasyRefresh(
+          onTap: () {
+            BottomSheetBuilder.showBottomSheet(
+              context,
+              (sheetContext) => InputBottomSheet(
+                buttonText: appLocalizations.confirm,
+                title: appLocalizations.addShieldTag,
+                text: "",
+                onConfirm: (text) {
+                  SettingApi.shieldOrUnshieldTag(tag: text, isShield: true)
+                      .then((value) {
+                    IToast.showTop(
+                        value['meta']['desc'] ?? value['meta']['msg']);
+                    if (value['meta']['status'] == 200) {
+                      tags.insert(0, text);
+                      setState(() {});
+                    }
+                  });
+                },
+              ),
+              preferMinWidth: 400,
+              responsive: true,
+            );
+          },
+        ),
+      ],
+      overrideBody: EasyRefresh(
         controller: _refreshController,
         refreshOnStart: true,
-        onRefresh: () {
-          _fetchTags();
+        onRefresh: () async {
+          return await _fetchTags();
         },
         triggerAxis: Axis.vertical,
-        child: ListView.builder(
-          itemCount: tags.length,
-          padding: EdgeInsets.zero,
-          itemBuilder: (context, index) => _buildTagRow(tags[index]),
+        child: ListView(
+          padding: widget.padding,
+          children: [
+            CaptionItem(
+              title: '${appLocalizations.tagShieldSetting} (${tags.length})',
+              children: tags.isEmpty
+                  ? [
+                      SettingManagementEmptyState(
+                          text: appLocalizations.noContent),
+                    ]
+                  : tags.map(_buildTagRow).toList(),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  _buildTagRow(String tag) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).dividerColor,
-            width: 0.5,
-          ),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(tag),
-          ),
-          LoftifyItemBuilder.buildFramedDoubleButton(
-            context: context,
-            isFollowed: false,
-            positiveText: appLocalizations.unblockShieldTag,
-            negtiveText: appLocalizations.unblockShieldTag,
-            onTap: () {
-              DialogBuilder.showConfirmDialog(
-                context,
-                title: appLocalizations.unblockShieldTag,
-                message: appLocalizations.unblockShieldTagMessage(tag),
-                confirmButtonText: appLocalizations.unlock,
-                onTapConfirm: () {
-                  SettingApi.shieldOrUnshieldTag(tag: tag, isShield: false)
-                      .then((value) {
-                    IToast.showTop(
-                        value['meta']['desc'] ?? value['meta']['msg']);
-                    if (value['meta']['status'] == 200) {
-                      tags.remove(tag);
-                      setState(() {});
-                    }
-                  });
-                },
-                onTapCancel: () {},
-                customDialogType: CustomDialogType.normal,
-              );
-            },
-          ),
-        ],
-      ),
+  Widget _buildTagRow(String tag) {
+    return SettingManagementItem(
+      title: tag,
+      leadingIcon: LoftifyIcons.tag,
+      actionLabel: appLocalizations.unblockShieldTag,
+      onAction: () {
+        DialogBuilder.showConfirmDialog(
+          context,
+          title: appLocalizations.unblockShieldTag,
+          message: appLocalizations.unblockShieldTagMessage(tag),
+          confirmButtonText: appLocalizations.unlock,
+          onTapConfirm: () {
+            SettingApi.shieldOrUnshieldTag(tag: tag, isShield: false)
+                .then((value) {
+              IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+              if (value['meta']['status'] == 200) {
+                tags.remove(tag);
+                setState(() {});
+              }
+            });
+          },
+          onTapCancel: () {},
+          customDialogType: CustomDialogType.normal,
+        );
+      },
     );
   }
 }

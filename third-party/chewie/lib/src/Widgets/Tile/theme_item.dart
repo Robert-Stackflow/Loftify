@@ -1,69 +1,102 @@
-import 'package:flutter/material.dart';
 import 'package:awesome_chewie/awesome_chewie.dart';
+import 'package:flutter/material.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 class ThemeItem extends StatefulWidget {
   final ChewieThemeColorData themeColorData;
   final int index;
   final int groupIndex;
   final Function(int?)? onChanged;
+  final VoidCallback? onLongPress;
 
   const ThemeItem({
-    Key? key,
+    super.key,
     required this.themeColorData,
     required this.index,
     required this.groupIndex,
     required this.onChanged,
-  }) : super(key: key);
+    this.onLongPress,
+  });
 
   @override
-  _ThemeItemState createState() => _ThemeItemState();
+  State<ThemeItem> createState() => _ThemeItemState();
 }
 
 class _ThemeItemState extends State<ThemeItem> {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 107.3,
-      height: 166.4,
-      margin: EdgeInsets.only(left: widget.index == 0 ? 10 : 0, right: 10),
-      child: Column(
-        children: [
-          Container(
-            padding:
-                const EdgeInsets.only(top: 10, bottom: 0, left: 8, right: 8),
-            decoration: BoxDecoration(
-              color: widget.themeColorData.scaffoldBackgroundColor,
-              borderRadius: const BorderRadius.all(Radius.circular(10)),
-              border: ChewieTheme.border,
-            ),
-            child: Column(
-              children: [
-                _buildCardRow(widget.themeColorData),
-                const SizedBox(height: 5),
-                _buildCardRow(widget.themeColorData),
-                const SizedBox(height: 15),
-                Radio(
-                  value: widget.index,
-                  groupValue: widget.groupIndex,
-                  onChanged: widget.onChanged,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  fillColor: WidgetStateProperty.resolveWith((states) {
-                    if (states.contains(WidgetState.selected)) {
-                      return widget.themeColorData.primaryColor;
-                    } else {
-                      return widget.themeColorData.textLightGreyColor;
-                    }
-                  }),
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final responsiveHeight = 136.0 + 16 * (textScale - 1).clamp(0.0, 2.0);
+    final selected = widget.index == widget.groupIndex;
+    void selectTheme() => widget.onChanged?.call(widget.index);
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      selected: selected,
+      button: true,
+      label: widget.themeColorData.i18nName,
+      onTap: selectTheme,
+      onLongPress: widget.onLongPress,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        excludeFromSemantics: true,
+        onLongPress: widget.onLongPress,
+        onTap: selectTheme,
+        child: Container(
+          width: 107.3,
+          height: responsiveHeight,
+          margin: EdgeInsets.only(left: widget.index == 0 ? 10 : 0, right: 10),
+          child: Column(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.only(
+                      top: 10, bottom: 0, left: 8, right: 8),
+                  decoration: BoxDecoration(
+                    color: widget.themeColorData.scaffoldBackgroundColor,
+                    borderRadius: BorderRadius.circular(10),
+                    border: selected
+                        ? Border.all(
+                            color: widget.themeColorData.primaryColor,
+                            width: 1.5,
+                          )
+                        : ChewieTheme.border,
+                  ),
+                  child: Column(
+                    children: [
+                      _buildCardRow(widget.themeColorData),
+                      const SizedBox(height: 5),
+                      _buildCardRow(widget.themeColorData),
+                      const Spacer(),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Icon(
+                          selected
+                              ? LucideIcons.circleCheck
+                              : LucideIcons.circle,
+                          size: 18,
+                          color: selected
+                              ? widget.themeColorData.primaryColor
+                              : widget.themeColorData.textLightGreyColor,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                    ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                widget.themeColorData.i18nName,
+                style: ChewieTheme.bodySmall.copyWith(
+                  fontWeight: selected ? FontWeight.w600 : null,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            widget.themeColorData.i18nName,
-            style: ChewieTheme.bodySmall,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -75,7 +108,7 @@ class _ThemeItemState extends State<ThemeItem> {
       padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
         color: themeColorData.canvasColor,
-        borderRadius: const BorderRadius.all(Radius.circular(5)),
+        borderRadius: BorderRadius.circular(5),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -133,46 +166,54 @@ class EmptyThemeItem extends StatefulWidget {
   });
 
   @override
-  _EmptyThemeItemState createState() => _EmptyThemeItemState();
+  State<EmptyThemeItem> createState() => _EmptyThemeItemState();
 }
 
 class _EmptyThemeItemState extends State<EmptyThemeItem> {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 107.3,
-      height: 166.4,
-      margin: const EdgeInsets.only(right: 10),
-      child: Column(
-        children: [
-          Container(
-            width: 107.3,
-            height: 141.7,
-            padding: const EdgeInsets.only(left: 8, right: 8),
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.all(Radius.circular(10)),
-              border: ChewieTheme.border,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.add_rounded,
-                  size: 30,
-                  color: ChewieTheme.titleSmall.color,
+    final textScale = MediaQuery.textScalerOf(context).scale(1);
+    final responsiveHeight = 166.4 + 24 * (textScale - 1).clamp(0.0, 2.0);
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      button: true,
+      label: chewieLocalizations.newTheme,
+      onTap: widget.onTap,
+      child: ClickableGestureDetector(
+        onTap: widget.onTap,
+        child: Container(
+          width: 107.3,
+          height: responsiveHeight,
+          margin: const EdgeInsets.only(right: 10),
+          child: Column(
+            children: [
+              Expanded(
+                child: Container(
+                  width: 107.3,
+                  padding: const EdgeInsets.only(
+                      top: 10, bottom: 0, left: 8, right: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: ChewieTheme.border,
+                  ),
+                  child: Icon(
+                    ChewieIcons.add,
+                    size: 30,
+                    color: ChewieTheme.bodySmall.color,
+                  ),
                 ),
-                const SizedBox(height: 6),
-                Text(chewieLocalizations.newTheme,
-                    style: ChewieTheme.titleSmall),
-              ],
-            ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                chewieLocalizations.newTheme,
+                style: ChewieTheme.bodySmall,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            "",
-            style: ChewieTheme.bodySmall,
-          ),
-        ],
+        ),
       ),
     );
   }

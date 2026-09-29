@@ -149,7 +149,7 @@ class _CupertinoIndicatorState extends State<_CupertinoIndicator>
                   child: widget.emptyWidget!,
                 )
               : Icon(
-                  CupertinoIcons.archivebox,
+                  ChewieIcons.archive,
                   key: const ValueKey('noMore'),
                   color: widget.foregroundColor,
                 )

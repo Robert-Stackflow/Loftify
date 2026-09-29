@@ -1,0 +1,799 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:awesome_chewie/awesome_chewie.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:loftify/Utils/enums.dart';
+import 'package:loftify/Utils/lottie_files.dart';
+import 'package:loftify/Widgets/Navigation/loftify_glass_navigation_bar.dart';
+import 'package:loftify/Widgets/loftify_icons.dart';
+
+const _destinations = <LoftifyNavigationDestination>[
+  LoftifyNavigationDestination(
+    icon: LoftifyIcons.home,
+    lottieAsset: LottieFiles.navHome,
+    label: 'Home',
+  ),
+  LoftifyNavigationDestination(
+    icon: LoftifyIcons.search,
+    lottieAsset: LottieFiles.navSearch,
+    label: 'Search',
+  ),
+  LoftifyNavigationDestination(
+    icon: LoftifyIcons.activity,
+    lottieAsset: LottieFiles.navHeart,
+    label: 'Activity',
+    badgeCount: 120,
+  ),
+  LoftifyNavigationDestination(
+    icon: LoftifyIcons.profile,
+    lottieAsset: LottieFiles.navUser,
+    label: 'Mine',
+  ),
+];
+
+ThemeData _themeForVariant(ChewieThemeColorData variant) {
+  final brightness = variant.isDarkMode ? Brightness.dark : Brightness.light;
+  final colorScheme = ColorScheme.fromSeed(
+    seedColor: variant.primaryColor,
+    brightness: brightness,
+  ).copyWith(
+    primary: variant.primaryColor,
+    surface: variant.effectivePageBackgroundColor,
+    onSurface: variant.textColor,
+    error: variant.errorColor,
+  );
+  return ThemeData(
+    brightness: brightness,
+    colorScheme: colorScheme,
+    primaryColor: variant.primaryColor,
+    dividerColor: variant.dividerColor,
+    shadowColor: variant.shadowColor,
+  );
+}
+
+Widget _host({
+  MediaQueryData mediaQuery = const MediaQueryData(size: Size(320, 640)),
+  Brightness brightness = Brightness.light,
+  ThemeData? theme,
+  bool enableBlur = true,
+  int currentIndex = 0,
+  List<LoftifyNavigationDestination> destinations = _destinations,
+  ValueChanged<int>? onSelect,
+  ValueChanged<int>? onDoubleTap,
+  VoidCallback? onBodyTap,
+  NavigationBarDisplayStyle displayStyle =
+      NavigationBarDisplayStyle.iconAndText,
+}) {
+  final colorScheme = ColorScheme.fromSeed(
+    seedColor: const Color(0xFF14C2BB),
+    brightness: brightness,
+  );
+  return MaterialApp(
+    theme: theme ?? ThemeData(colorScheme: colorScheme, brightness: brightness),
+    home: MediaQuery(
+      data: mediaQuery,
+      child: Scaffold(
+        extendBody: true,
+        body: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onBodyTap,
+          child: const ColoredBox(color: Color(0xFFB9DAD7)),
+        ),
+        bottomNavigationBar: LoftifyGlassNavigationBar(
+          destinations: destinations,
+          currentIndex: currentIndex,
+          enableBlur: enableBlur,
+          displayStyle: displayStyle,
+          onSelect: onSelect ?? (_) {},
+          onDoubleTap: onDoubleTap,
+        ),
+      ),
+    ),
+  );
+}
+
+void main() {
+  testWidgets('three visible destinations can leave search unselected',
+      (tester) async {
+    final selected = <int>[];
+    await tester.pumpWidget(_host(
+      currentIndex: -1,
+      destinations: [
+        _destinations[0],
+        _destinations[2],
+        _destinations[3],
+      ],
+      onSelect: selected.add,
+    ));
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Search'), findsNothing);
+    await tester.tap(find.text('Activity'));
+    expect(selected, [1]);
+  });
+
+  testWidgets('uses a clipped translucent blur surface with safe-area inset', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _host(
+        mediaQuery: const MediaQueryData(
+          size: Size(320, 640),
+          viewPadding: EdgeInsets.only(bottom: 24),
+        ),
+      ),
+    );
+
+    expect(find.byType(BackdropFilter), findsOneWidget);
+    expect(find.byType(RepaintBoundary), findsWidgets);
+    expect(tester.takeException(), isNull);
+    expect(
+      tester.getSize(find.byType(LoftifyGlassNavigationBar)).height,
+      LoftifyGlassNavigationBar.barHeight + 36,
+    );
+
+    final surface = tester.widget<DecoratedBox>(
+      find.byKey(const ValueKey('loftify-glass-navigation-surface')),
+    );
+    final decoration = surface.decoration as BoxDecoration;
+    expect(decoration.color!.a, closeTo(0.72, 0.01));
+    expect(decoration.borderRadius, BorderRadius.circular(24));
+    expect(decoration.boxShadow, hasLength(1));
+    expect(decoration.border, isNotNull);
+  });
+
+  testWidgets('uses an opaque fallback for accessibility and explicit opt-out',
+      (
+    tester,
+  ) async {
+    for (final configuration in <({MediaQueryData media, bool enabled})>[
+      (
+        media: const MediaQueryData(
+          size: Size(320, 640),
+          disableAnimations: true,
+        ),
+        enabled: true,
+      ),
+      (
+        media: const MediaQueryData(
+          size: Size(320, 640),
+          highContrast: true,
+        ),
+        enabled: true,
+      ),
+      (
+        media: const MediaQueryData(size: Size(320, 640)),
+        enabled: false,
+      ),
+    ]) {
+      await tester.pumpWidget(
+        _host(
+          mediaQuery: configuration.media,
+          enableBlur: configuration.enabled,
+        ),
+      );
+
+      expect(find.byType(BackdropFilter), findsNothing);
+      final surface = tester.widget<DecoratedBox>(
+        find.byKey(const ValueKey('loftify-glass-navigation-surface')),
+      );
+      final decoration = surface.decoration as BoxDecoration;
+      expect(decoration.color!.a, 1);
+    }
+  });
+
+  testWidgets('adapts glass tint and selected color to every built-in theme', (
+    tester,
+  ) async {
+    final variants = <ChewieThemeColorData>[
+      ...ChewieThemeColorData.defaultLightThemes,
+      ...ChewieThemeColorData.defaultDarkThemes,
+    ];
+
+    for (final variant in variants) {
+      await tester.pumpWidget(_host(theme: _themeForVariant(variant)));
+      await tester.pumpAndSettle();
+
+      final surface = tester.widget<DecoratedBox>(
+        find.byKey(const ValueKey('loftify-glass-navigation-surface')),
+      );
+      final decoration = surface.decoration as BoxDecoration;
+      expect(
+        decoration.color!.withValues(alpha: 1),
+        variant.effectivePageBackgroundColor,
+        reason: variant.id,
+      );
+      expect(
+        decoration.color!.a,
+        closeTo(variant.isDarkMode ? 0.78 : 0.72, 0.01),
+        reason: variant.id,
+      );
+      final selectedIcon = tester.widget<LoftifyNavigationLottieIcon>(
+        find.byType(LoftifyNavigationLottieIcon).first,
+      );
+      expect(selectedIcon.color, variant.primaryColor, reason: variant.id);
+      expect(tester.takeException(), isNull, reason: variant.id);
+    }
+  });
+
+  testWidgets('keeps four labels bounded and exposes selected semantics', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await tester.pumpWidget(
+      _host(
+        mediaQuery: const MediaQueryData(
+          size: Size(280, 600),
+          textScaler: TextScaler.linear(1.4),
+        ),
+        currentIndex: 2,
+      ),
+    );
+
+    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Search'), findsOneWidget);
+    expect(find.text('Activity'), findsOneWidget);
+    expect(find.text('Mine'), findsOneWidget);
+    expect(find.text('99+'), findsOneWidget);
+    expect(
+      tester.getSemantics(find.text('Activity')),
+      matchesSemantics(
+        label: 'Activity, 120',
+        isButton: true,
+        hasSelectedState: true,
+        isSelected: true,
+        hasTapAction: true,
+      ),
+    );
+    expect(tester.takeException(), isNull);
+    semantics.dispose();
+  });
+
+  testWidgets('supports icon, text and combined styles on narrow large text', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    for (final style in NavigationBarDisplayStyle.values) {
+      await tester.pumpWidget(
+        _host(
+          mediaQuery: const MediaQueryData(
+            size: Size(280, 600),
+            textScaler: TextScaler.linear(2),
+          ),
+          currentIndex: 2,
+          displayStyle: style,
+        ),
+      );
+      await tester.pump();
+
+      final showsIcons = style != NavigationBarDisplayStyle.textOnly;
+      final showsLabels = style != NavigationBarDisplayStyle.iconOnly;
+      expect(
+        find.byType(LoftifyNavigationLottieIcon),
+        showsIcons ? findsNWidgets(4) : findsNothing,
+        reason: style.key,
+      );
+      expect(
+        find.text('Home'),
+        showsLabels ? findsOneWidget : findsNothing,
+        reason: style.key,
+      );
+      expect(
+        find.text('99+'),
+        findsOneWidget,
+        reason: 'badge remains visible for ${style.key}',
+      );
+      expect(
+        find.bySemanticsLabel('Activity, 120'),
+        findsOneWidget,
+        reason: style.key,
+      );
+      expect(tester.takeException(), isNull, reason: style.key);
+    }
+    semantics.dispose();
+  });
+
+  test('defaults persisted and unknown styles to icons only', () {
+    final bar = LoftifyGlassNavigationBar(
+      destinations: _destinations,
+      currentIndex: 0,
+      onSelect: (_) {},
+    );
+    expect(bar.displayStyle, NavigationBarDisplayStyle.iconOnly);
+    expect(
+      NavigationBarDisplayStyle.fromKey(null),
+      NavigationBarDisplayStyle.iconOnly,
+    );
+    expect(
+      NavigationBarDisplayStyle.fromKey('unsupported'),
+      NavigationBarDisplayStyle.iconOnly,
+    );
+  });
+
+  testWidgets('dispatches tap and double-tap without material ripple', (
+    tester,
+  ) async {
+    var selected = -1;
+    var doubleTapped = -1;
+    await tester.pumpWidget(
+      _host(
+        onSelect: (index) => selected = index,
+        onDoubleTap: (index) => doubleTapped = index,
+      ),
+    );
+
+    expect(find.byType(InkWell), findsNothing);
+    await tester.tap(find.text('Search'));
+    expect(selected, 1);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Mine'));
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tap(find.text('Mine'));
+    await tester.pumpAndSettle();
+    expect(doubleTapped, 3);
+  });
+
+  testWidgets('press feedback scales immediately without changing glyphs', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_host());
+    final scaleFinder = find.ancestor(
+      of: find.text('Home'),
+      matching: find.byType(AnimatedScale),
+    );
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.text('Home')),
+    );
+    await tester.pump();
+
+    expect(tester.widget<AnimatedScale>(scaleFinder).scale, 0.94);
+    expect(
+      find.byType(LoftifyNavigationLottieIcon),
+      findsNWidgets(_destinations.length),
+    );
+    expect(find.byType(ChewieIcon), findsNothing);
+
+    await gesture.up();
+    await tester.pump();
+    expect(tester.widget<AnimatedScale>(scaleFinder).scale, 1);
+  });
+
+  testWidgets('selected destination uses a fuller capsule and balanced glyph', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _host(
+        currentIndex: 0,
+        displayStyle: NavigationBarDisplayStyle.iconOnly,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final selection = find.byKey(
+      const ValueKey('loftify-navigation-selection-Home'),
+    );
+    // The render box includes the 6 px top/bottom margin, leaving a restrained
+    // 42 px visible capsule around the icon rather than filling the whole bar.
+    expect(tester.getSize(selection).height, 54);
+    final icon = tester.widget<LoftifyNavigationLottieIcon>(
+      find.descendant(
+        of: selection,
+        matching: find.byType(LoftifyNavigationLottieIcon),
+      ),
+    );
+    expect(icon.size, 22);
+  });
+
+  testWidgets('navigation consumes taps without activating content beneath', (
+    tester,
+  ) async {
+    var bodyTaps = 0;
+    var selected = -1;
+    await tester.pumpWidget(
+      _host(
+        onBodyTap: () => bodyTaps++,
+        onSelect: (index) => selected = index,
+      ),
+    );
+
+    await tester.tap(find.text('Home'));
+
+    expect(selected, 0);
+    expect(bodyTaps, 0);
+  });
+
+  testWidgets('long-list direction hides and restores the glass surface', (
+    tester,
+  ) async {
+    final controller = ScrollController();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          extendBody: true,
+          body: ListView.builder(
+            controller: controller,
+            itemExtent: 64,
+            itemCount: 80,
+            itemBuilder: (context, index) => Text('Item $index'),
+          ),
+          bottomNavigationBar: ScrollToHide.multi(
+            scrollControllers: [controller],
+            hideDirection: Axis.vertical,
+            child: LoftifyGlassNavigationBar(
+              destinations: _destinations,
+              currentIndex: 0,
+              onSelect: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+    final transitionFinder = find.ancestor(
+      of: find.byType(LoftifyGlassNavigationBar),
+      matching: find.byKey(const ValueKey('scroll-to-hide-transition')),
+    );
+    final opacityFinder = find.byKey(
+      const ValueKey('scroll-to-hide-opacity'),
+    );
+
+    await tester.drag(find.byType(ListView), const Offset(0, -420));
+    await tester.pumpAndSettle();
+    var opacity = tester.widget<Opacity>(opacityFinder);
+    expect(opacity.opacity, 0);
+    expect(tester.getSize(transitionFinder).height, 0);
+
+    await tester.drag(find.byType(ListView), const Offset(0, 260));
+    await tester.pumpAndSettle();
+    opacity = tester.widget<Opacity>(opacityFinder);
+    expect(opacity.opacity, 1);
+    expect(tester.getSize(transitionFinder).height, greaterThan(0));
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+  });
+
+  testWidgets('rapid reverse scroll continues from the current smooth state', (
+    tester,
+  ) async {
+    final controller = ScrollController();
+    final visibility = ScrollToHideController();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ListView.builder(
+            controller: controller,
+            itemExtent: 64,
+            itemCount: 80,
+            itemBuilder: (context, index) => Text('Item $index'),
+          ),
+          bottomNavigationBar: ScrollToHide.multi(
+            scrollControllers: [controller],
+            hideDirection: Axis.vertical,
+            controller: visibility,
+            child: LoftifyGlassNavigationBar(
+              destinations: _destinations,
+              currentIndex: 0,
+              onSelect: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+    final opacityFinder = find.byKey(
+      const ValueKey('scroll-to-hide-opacity'),
+    );
+
+    visibility.hide();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 110));
+    final hidingOpacity = tester.widget<Opacity>(opacityFinder).opacity;
+    expect(hidingOpacity, allOf(greaterThan(0), lessThan(1)));
+
+    visibility.show();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+    final returningOpacity = tester.widget<Opacity>(opacityFinder).opacity;
+    expect(returningOpacity, greaterThan(hidingOpacity));
+    await tester.pumpAndSettle();
+    expect(tester.widget<Opacity>(opacityFinder).opacity, 1);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+  });
+
+  testWidgets('reduced motion applies scroll visibility without animation', (
+    tester,
+  ) async {
+    final controller = ScrollController();
+    final visibility = ScrollToHideController();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: ScrollToHide(
+            scrollController: controller,
+            hideDirection: Axis.vertical,
+            controller: visibility,
+            child: const SizedBox(width: 100, height: 64),
+          ),
+        ),
+      ),
+    );
+
+    visibility.hide();
+    await tester.pump();
+    final opacity = tester.widget<Opacity>(
+      find.byKey(const ValueKey('scroll-to-hide-opacity')),
+    );
+    expect(opacity.opacity, 0);
+    expect(tester.binding.transientCallbackCount, 0);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+  });
+
+  testWidgets('settled glass surface has no continuously scheduled frames', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_host());
+    await tester.pumpAndSettle();
+
+    expect(tester.binding.transientCallbackCount, 0);
+    await tester.pump(const Duration(seconds: 1));
+    expect(tester.binding.transientCallbackCount, 0);
+  });
+
+  testWidgets('selection animation settles equally at 60, 90 and 120Hz', (
+    tester,
+  ) async {
+    for (final refreshRate in <int>[60, 90, 120]) {
+      final selectedIndex = ValueNotifier<int>(0);
+      await tester.pumpWidget(
+        ValueListenableBuilder<int>(
+          valueListenable: selectedIndex,
+          builder: (context, currentIndex, child) => _host(
+            currentIndex: currentIndex,
+            onSelect: (index) => selectedIndex.value = index,
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Search'));
+      final frame = Duration(microseconds: 1000000 ~/ refreshRate);
+      var elapsed = Duration.zero;
+      while (elapsed < const Duration(milliseconds: 220)) {
+        await tester.pump(frame);
+        elapsed += frame;
+      }
+
+      final selectionFinder = find.ancestor(
+        of: find.text('Search'),
+        matching: find.byType(AnimatedContainer),
+      );
+      final selection = tester.widget<AnimatedContainer>(selectionFinder);
+      final decoration = selection.decoration as BoxDecoration;
+      expect(
+        decoration.color!.a,
+        closeTo(0.11, 0.01),
+        reason: '$refreshRate Hz',
+      );
+      expect(tester.takeException(), isNull, reason: '$refreshRate Hz');
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      selectedIndex.dispose();
+    }
+  });
+
+  test('blur policy rejects web and all accessibility fallbacks', () {
+    const normal = MediaQueryData();
+    expect(
+      LoftifyGlassNavigationBar.shouldUseBlur(
+        normal,
+        enabled: true,
+        isWeb: false,
+        platformReduceMotion: false,
+      ),
+      isTrue,
+    );
+    expect(
+      LoftifyGlassNavigationBar.shouldUseBlur(
+        normal,
+        enabled: true,
+        isWeb: true,
+        platformReduceMotion: false,
+      ),
+      isFalse,
+    );
+    expect(
+      LoftifyGlassNavigationBar.shouldUseBlur(
+        normal,
+        enabled: false,
+        platformReduceMotion: false,
+      ),
+      isFalse,
+    );
+    expect(
+      LoftifyGlassNavigationBar.shouldUseBlur(
+        const MediaQueryData(accessibleNavigation: true),
+        enabled: true,
+        platformReduceMotion: false,
+      ),
+      isFalse,
+    );
+    expect(
+      LoftifyGlassNavigationBar.shouldUseBlur(
+        normal,
+        enabled: true,
+        platformReduceMotion: true,
+      ),
+      isFalse,
+    );
+    expect(
+      LoftifyGlassNavigationBar.pageTransitionDuration(
+        normal,
+        platformReduceMotion: false,
+      ),
+      LoftifyGlassNavigationBar.standardPageTransitionDuration,
+    );
+    expect(
+      LoftifyGlassNavigationBar.pageTransitionDuration(
+        const MediaQueryData(disableAnimations: true),
+        platformReduceMotion: false,
+      ),
+      Duration.zero,
+    );
+    expect(
+      LoftifyGlassNavigationBar.pageTransitionDuration(
+        normal,
+        platformReduceMotion: true,
+      ),
+      Duration.zero,
+    );
+    expect(
+      LoftifyGlassNavigationBar.shouldShowForKeyboard(normal),
+      isTrue,
+    );
+    expect(
+      LoftifyGlassNavigationBar.shouldShowForKeyboard(
+        const MediaQueryData(viewInsets: EdgeInsets.only(bottom: 280)),
+      ),
+      isFalse,
+    );
+  });
+
+  test('phone panel extends content behind the reusable glass navigation', () {
+    final source = File('lib/Screens/panel_screen.dart').readAsStringSync();
+    final mainSource = File('lib/Screens/main_screen.dart').readAsStringSync();
+
+    expect(source, contains('extendBody: true'));
+    expect(source, contains('portrait: _buildBottomNavigationBar()'));
+    expect(source, contains('landscape: null'));
+    expect(source, contains('LoftifyGlassNavigationBar('));
+    expect(source, contains('enableBlur: !preferences.reduceTransparency'));
+    expect(source, contains('shouldShowForKeyboard('));
+    expect(source,
+        contains('_pageController.jumpToPage(_visibleIndexFor(index))'));
+    expect(source, isNot(contains('MyBottomNavigationBar(')));
+    expect(mainSource, contains('portrait: PanelScreen(key: panelScreenKey)'));
+    expect(mainSource, contains('_sideBar(leftPadding: 8, rightPadding: 8)'));
+  });
+
+  test('panel and tab navigation listen only to the active scroll source', () {
+    final panelSource =
+        File('lib/Screens/panel_screen.dart').readAsStringSync();
+    final dynamicSource = File(
+      'lib/Screens/Navigation/dynamic_screen.dart',
+    ).readAsStringSync();
+
+    expect(
+      panelSource,
+      allOf(
+        contains('_keyList[_currentIndex].currentState'),
+        contains('_scrollToHideController.show();'),
+      ),
+    );
+    expect(
+      dynamicSource,
+      allOf(
+        contains('return [getCurrentController()];'),
+        contains('_scrollToHideController.show();'),
+        contains('panelScreenState?.showBottomNavigationBar();'),
+        contains('panelScreenState?.refreshScrollControllers();'),
+      ),
+    );
+  });
+
+  test('reduce-transparency preference is persisted and localized', () {
+    final hiveSource = File('lib/Utils/hive_util.dart').readAsStringSync();
+    final providerSource = File(
+      'lib/Utils/app_provider.dart',
+    ).readAsStringSync();
+    final appearanceSource = File(
+      'lib/Screens/Setting/apperance_setting_screen.dart',
+    ).readAsStringSync();
+
+    expect(hiveSource, contains('reduceTransparencyKey'));
+    expect(
+      providerSource,
+      allOf(
+        contains('bool get reduceTransparency'),
+        contains('HiveUtil.reduceTransparencyKey'),
+        contains('notifyListeners()'),
+      ),
+    );
+    expect(
+      appearanceSource,
+      allOf(
+        contains('appProvider.reduceTransparency'),
+        contains('appLocalizations.reduceTransparency'),
+        contains('appLocalizations.reduceTransparencyDescription'),
+      ),
+    );
+
+    for (final path in <String>[
+      'lib/l10n/intl_en.arb',
+      'lib/l10n/intl_zh.arb',
+      'lib/l10n/intl_zh_CN.arb',
+      'lib/l10n/intl_zh_TW.arb',
+    ]) {
+      final messages = jsonDecode(File(path).readAsStringSync()) as Map;
+      expect(messages['reduceTransparency'], isNotEmpty, reason: path);
+      expect(
+        messages['reduceTransparencyDescription'],
+        isNotEmpty,
+        reason: path,
+      );
+    }
+  });
+
+  test('navigation display preference is persisted and localized', () {
+    final hiveSource = File('lib/Utils/hive_util.dart').readAsStringSync();
+    final providerSource = File(
+      'lib/Utils/app_provider.dart',
+    ).readAsStringSync();
+    final appearanceSource = File(
+      'lib/Screens/Setting/apperance_setting_screen.dart',
+    ).readAsStringSync();
+    final panelSource =
+        File('lib/Screens/panel_screen.dart').readAsStringSync();
+
+    expect(hiveSource, contains('navigationBarDisplayStyleKey'));
+    expect(
+      providerSource,
+      allOf(
+        contains('NavigationBarDisplayStyle get navigationBarDisplayStyle'),
+        contains('HiveUtil.navigationBarDisplayStyleKey'),
+        contains('NavigationBarDisplayStyle.iconOnly.key'),
+      ),
+    );
+    expect(
+      appearanceSource,
+      allOf(
+        contains('appLocalizations.navigationBarDisplayStyle'),
+        contains('NavigationBarDisplayStyle.values'),
+        contains('appProvider.navigationBarDisplayStyle = item.value'),
+      ),
+    );
+    expect(panelSource, contains('displayStyle: preferences.displayStyle'));
+
+    for (final path in <String>[
+      'lib/l10n/intl_en.arb',
+      'lib/l10n/intl_zh.arb',
+      'lib/l10n/intl_zh_CN.arb',
+      'lib/l10n/intl_zh_TW.arb',
+    ]) {
+      final messages = jsonDecode(File(path).readAsStringSync()) as Map;
+      for (final key in <String>[
+        'navigationBarDisplayStyle',
+        'navigationBarDisplayStyleDescription',
+        'navigationBarIconAndText',
+        'navigationBarIconOnly',
+        'navigationBarTextOnly',
+      ]) {
+        expect(messages[key], isNotEmpty, reason: '$path: $key');
+      }
+    }
+  });
+}

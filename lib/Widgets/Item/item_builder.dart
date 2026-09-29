@@ -1,15 +1,132 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:loftify/Widgets/Design/loftify_media_overlays.dart';
 import 'package:provider/provider.dart';
 import '../../Screens/Post/tag_detail_screen.dart';
 import '../../Utils/app_provider.dart';
-import '../../Utils/asset_util.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/utils.dart';
+import '../loftify_icons.dart';
 
 enum TailingType { none, clear, password, icon, text, widget }
 
 class ItemBuilder {
+  static Widget buildEntryItem({
+    required BuildContext context,
+    double radius = 10,
+    bool roundTop = false,
+    bool roundBottom = false,
+    bool showLeading = false,
+    bool showTrailing = true,
+    bool isCaption = false,
+    Color? backgroundColor,
+    Color? titleColor,
+    Color? descriptionColor,
+    CrossAxisAlignment crossAxisAlignment = CrossAxisAlignment.start,
+    IconData leading = LoftifyIcons.home,
+    required String title,
+    String tip = "",
+    String description = "",
+    Function()? onTap,
+    double padding = 18,
+    double trailingLeftMargin = 5,
+    bool dividerPadding = true,
+    IconData trailing = LoftifyIcons.next,
+  }) {
+    return EntryItem(
+      context: context,
+      radius: radius,
+      roundTop: roundTop,
+      roundBottom: roundBottom,
+      showLeading: showLeading,
+      showTrailing: showTrailing,
+      backgroundColor: backgroundColor,
+      titleColor: titleColor,
+      descriptionColor: descriptionColor,
+      crossAxisAlignment: crossAxisAlignment,
+      leading: leading,
+      title: title,
+      tip: tip,
+      description: description,
+      onTap: onTap,
+      paddingVertical: padding,
+      trailingLeftMargin: trailingLeftMargin,
+      dividerPadding: dividerPadding,
+      trailing: trailing,
+    );
+  }
+
+  static Widget buildContainerItem({
+    double radius = 10,
+    bool topRadius = false,
+    bool bottomRadius = false,
+    required Widget child,
+    required BuildContext context,
+    Color? backgroundColor,
+    Border? border,
+  }) {
+    return ContainerItem(
+      radius: radius,
+      roundTop: topRadius,
+      roundBottom: bottomRadius,
+      backgroundColor: backgroundColor,
+      border: border,
+      child: child,
+    );
+  }
+
+  static Widget buildFontItem({
+    required CustomFont font,
+    required CustomFont currentFont,
+    required BuildContext context,
+    required Function(CustomFont?)? onChanged,
+    Function(CustomFont?)? onDelete,
+    bool showDelete = false,
+    double width = 110,
+    double height = 154,
+  }) {
+    return FontItem(
+      font: font,
+      currentFont: currentFont,
+      onChanged: onChanged,
+      onDelete: onDelete,
+      showDelete: showDelete,
+      width: width,
+      height: height,
+    );
+  }
+
+  static Widget buildEmptyFontItem({
+    required BuildContext context,
+    required Function()? onTap,
+    double width = 110,
+    double height = 154,
+  }) {
+    return EmptyFontItem(onTap: onTap, width: width, height: height);
+  }
+
+  static Widget buildThemeItem({
+    required ChewieThemeColorData themeColorData,
+    required int index,
+    required int groupIndex,
+    required BuildContext context,
+    required Function(int?)? onChanged,
+  }) {
+    return ThemeItem(
+      themeColorData: themeColorData,
+      index: index,
+      groupIndex: groupIndex,
+      onChanged: onChanged,
+    );
+  }
+
+  static Widget buildEmptyThemeItem({
+    required BuildContext context,
+    required Function()? onTap,
+  }) {
+    return EmptyThemeItem(onTap: onTap);
+  }
+
   static Widget buildTextDivider({
     required BuildContext context,
     required String text,
@@ -49,41 +166,60 @@ class ItemBuilder {
     );
   }
 
-  static Tab buildAnimatedTab(BuildContext context, {
+  static Tab buildAnimatedTab(
+    BuildContext context, {
     required bool selected,
     required String text,
+    TabController? controller,
+    int? tabIndex,
     bool normalUserBold = false,
     bool sameFontSize = false,
     double fontSizeDelta = 0,
   }) {
-    TextStyle normalStyle = Theme
-        .of(context)
-        .textTheme
-        .titleLarge!
-        .apply(
-      color: Colors.grey,
-      fontSizeDelta: fontSizeDelta - (sameFontSize ? 0 : 1),
-      fontWeightDelta: normalUserBold ? 0 : -2,
-    );
-    TextStyle selectedStyle = Theme
-        .of(context)
-        .textTheme
-        .titleLarge!
-        .apply(
-      fontSizeDelta: fontSizeDelta + (sameFontSize ? 0 : 1),
-    );
-    return Tab(
-      child: AnimatedDefaultTextStyle(
-        style: selected ? selectedStyle : normalStyle,
-        duration: const Duration(milliseconds: 100),
-        child: Container(
+    TextStyle normalStyle = Theme.of(context).textTheme.titleLarge!.apply(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          fontSizeDelta: fontSizeDelta - (sameFontSize ? 0 : 1),
+          fontWeightDelta: normalUserBold ? 0 : -2,
+        );
+    TextStyle selectedStyle = Theme.of(context).textTheme.titleLarge!.apply(
+          fontSizeDelta: fontSizeDelta + (sameFontSize ? 0 : 1),
+        );
+    Widget buildLabel() => Container(
           alignment: Alignment.center,
-          child: Text(text),
-        ),
-      ),
+          child: Text(
+            text,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.fade,
+            textAlign: TextAlign.center,
+          ),
+        );
+    final animation = controller?.animation;
+    return Tab(
+      child: animation != null && tabIndex != null
+          ? AnimatedBuilder(
+              animation: animation,
+              builder: (context, _) {
+                final proximity =
+                    (1 - (animation.value - tabIndex).abs()).clamp(0.0, 1.0);
+                final progress = Curves.easeOutCubic.transform(proximity);
+                return DefaultTextStyle(
+                  style: TextStyle.lerp(
+                    normalStyle,
+                    selectedStyle,
+                    progress,
+                  )!,
+                  child: buildLabel(),
+                );
+              },
+            )
+          : AnimatedDefaultTextStyle(
+              style: selected ? selectedStyle : normalStyle,
+              duration: const Duration(milliseconds: 100),
+              child: buildLabel(),
+            ),
     );
   }
-
 
   static Widget buildDynamicIconButton({
     required BuildContext context,
@@ -113,13 +249,15 @@ class ItemBuilder {
         return ToolButton(
           context: context,
           iconBuilder: iconBuilder,
+          onPressed: onTap,
           padding: const EdgeInsets.all(7),
         );
       },
     );
   }
 
-  static Widget buildTranslucentTag(BuildContext context, {
+  static Widget buildTranslucentTag(
+    BuildContext context, {
     required String text,
     bool isCircle = false,
     int? width,
@@ -130,6 +268,10 @@ class ItemBuilder {
     double? fontSizeDelta,
     dynamic icon,
   }) {
+    final effectiveOpacity = opacity.clamp(
+      LoftifyCoverScrim.minimumBadgeOpacity,
+      1.0,
+    );
     return Container(
       padding: isCircle
           ? padding ?? const EdgeInsets.all(5)
@@ -137,7 +279,7 @@ class ItemBuilder {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: isCircle ? BoxShape.circle : BoxShape.rectangle,
-        color: Colors.black.withOpacity(opacity),
+        color: Colors.black.withValues(alpha: effectiveOpacity),
         borderRadius: isCircle
             ? null
             : BorderRadius.all(Radius.circular(borderRadius ?? 50)),
@@ -149,21 +291,18 @@ class ItemBuilder {
             const SizedBox(width: 3),
           Text(
             text,
-            style: Theme
-                .of(context)
-                .textTheme
-                .bodySmall
-                ?.apply(
-              color: Colors.white,
-              fontSizeDelta: fontSizeDelta ?? -1,
-            ),
+            style: Theme.of(context).textTheme.bodySmall?.apply(
+                  color: Colors.white,
+                  fontSizeDelta: fontSizeDelta ?? -1,
+                ),
           ),
         ],
       ),
     );
   }
 
-  static Widget buildCopyable(BuildContext context, {
+  static Widget buildCopyable(
+    BuildContext context, {
     required Widget child,
     Function()? onTap,
     required String? text,
@@ -205,119 +344,122 @@ class ItemBuilder {
       url: tagUrl,
     );
     String avatarTag =
-    hasAvatarBox && showDetailMode == ShowDetailMode.avatarBox
-        ? StringUtil.getRandomString()
-        : heroTag;
+        hasAvatarBox && showDetailMode == ShowDetailMode.avatarBox
+            ? StringUtil.getRandomString()
+            : heroTag;
     String avatarBoxTag =
-    hasAvatarBox && showDetailMode == ShowDetailMode.avatarBox
-        ? heroTag
-        : StringUtil.getRandomString();
+        hasAvatarBox && showDetailMode == ShowDetailMode.avatarBox
+            ? heroTag
+            : StringUtil.getRandomString();
     return Container(
       decoration: BoxDecoration(
         border: showBorder && !hasAvatarBox
             ? Border.all(
-          color: Theme
-              .of(context)
-              .dividerColor,
-          width: 0.5,
-        )
+                color: Theme.of(context).dividerColor,
+                width: 0.5,
+              )
             : const Border.fromBorderSide(BorderSide.none),
         shape: BoxShape.circle,
       ),
       child: useDefaultAvatar || tagUrl.isEmpty
           ? ClipOval(
-        child: Image.asset(
-          "assets/avatar.png",
-          width: size,
-          height: size,
-        ),
-      )
+              child: Image.asset(
+                "assets/avatar.png",
+                width: size,
+                height: size,
+              ),
+            )
           : ClickableGestureDetector(
-        clickable: clickable,
-        onTap: showDetailMode != ShowDetailMode.not
-            ? () {
-          RouteUtil.pushDialogRoute(
-            context,
-            showClose: false,
-            fullScreen: true,
-            useFade: true,
-            HeroPhotoViewScreen(
-              tagPrefix: tagPrefix,
-              tagSuffix: tagSuffix,
-              imageUrls: [tagUrl],
-              useMainColor: false,
-              title: title,
-              captions: [caption ?? ""],
+              clickable: clickable,
+              onTap: showDetailMode != ShowDetailMode.not
+                  ? () {
+                      RouteUtil.pushDialogRoute(
+                        context,
+                        showClose: false,
+                        fullScreen: true,
+                        useFade: true,
+                        opaque: false,
+                        HeroPhotoViewScreen(
+                          tagPrefix: tagPrefix,
+                          tagSuffix: tagSuffix,
+                          imageUrls: [tagUrl],
+                          useMainColor: false,
+                          title: title,
+                          captions: [caption ?? ""],
+                        ),
+                      );
+                    }
+                  : null,
+              child: hasAvatarBox
+                  ? Stack(
+                      children: [
+                        Positioned(
+                          top: avatarBoxDeltaSize / 2,
+                          left: avatarBoxDeltaSize / 2,
+                          child: Hero(
+                            tag: avatarTag,
+                            child: ClipOval(
+                              child: ChewieItemBuilder.buildCachedImage(
+                                context: context,
+                                imageUrl: imageUrl,
+                                width: size,
+                                showLoading: showLoading,
+                                height: size,
+                                fit: BoxFit.cover,
+                                simpleError: true,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Hero(
+                          tag: avatarBoxTag,
+                          child: ChewieItemBuilder.buildCachedImage(
+                            context: context,
+                            imageUrl: avatarBoxImageUrl!,
+                            width: size + avatarBoxDeltaSize,
+                            showLoading: false,
+                            placeholderBackground: Colors.transparent,
+                            topPadding: 0,
+                            bottomPadding: 0,
+                            height: size + avatarBoxDeltaSize,
+                            fit: BoxFit.contain,
+                            simpleError: true,
+                          ),
+                        ),
+                      ],
+                    )
+                  : ClipOval(
+                      child: ChewieItemBuilder.buildCachedImage(
+                        context: context,
+                        imageUrl: tagUrl,
+                        width: size,
+                        showLoading: showLoading,
+                        height: size,
+                        fit: BoxFit.cover,
+                        simpleError: true,
+                      ),
+                    ),
             ),
-          );
-        }
-            : null,
-        child: hasAvatarBox
-            ? Stack(
-          children: [
-            Positioned(
-              top: avatarBoxDeltaSize / 2,
-              left: avatarBoxDeltaSize / 2,
-              child: Hero(
-                tag: avatarTag,
-                child: ClipOval(
-                  child: ChewieItemBuilder.buildCachedImage(
-                    context: context,
-                    imageUrl: imageUrl,
-                    width: size,
-                    showLoading: showLoading,
-                    height: size,
-                    simpleError: true,
-                  ),
-                ),
-              ),
-            ),
-            Hero(
-              tag: avatarBoxTag,
-              child: ChewieItemBuilder.buildCachedImage(
-                context: context,
-                imageUrl: avatarBoxImageUrl!,
-                width: size + avatarBoxDeltaSize,
-                showLoading: false,
-                placeholderBackground: Colors.transparent,
-                topPadding: 0,
-                bottomPadding: 0,
-                height: size + avatarBoxDeltaSize,
-                simpleError: true,
-              ),
-            ),
-          ],
-        )
-            : ClipOval(
-          child: ChewieItemBuilder.buildCachedImage(
-            context: context,
-            imageUrl: tagUrl,
-            width: size,
-            showLoading: showLoading,
-            height: size,
-            simpleError: true,
-          ),
-        ),
-      ),
     );
   }
 
-  static Widget buildTagItem(BuildContext context,
-      String tag,
-      TagType tagType, {
-        String? shownTag,
-        Function()? onTap,
-        Color? backgroundColor,
-        Color? color,
-        bool showIcon = true,
-        bool showRightIcon = false,
-        bool showTagLabel = true,
-        bool jumpToTag = true,
-        EdgeInsets padding =
+  static Widget buildTagItem(
+    BuildContext context,
+    String tag,
+    TagType tagType, {
+    String? shownTag,
+    Function()? onTap,
+    Color? backgroundColor,
+    Color? color,
+    bool showIcon = true,
+    bool showRightIcon = false,
+    bool showTagLabel = true,
+    bool jumpToTag = true,
+    EdgeInsets padding =
         const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        double fontSizeDelta = 0,
-        int fontWeightDelta = 0,
-      }) {
+    double fontSizeDelta = 0,
+    int fontWeightDelta = 0,
+  }) {
     String str = StringUtil.isNotEmpty(shownTag) ? shownTag! : tag;
     return GestureDetector(
       onTap: () {
@@ -333,61 +475,53 @@ class ItemBuilder {
           decoration: BoxDecoration(
             color: tagType != TagType.normal
                 ? ChewieColors.getHotTagBackground(context)
-                : backgroundColor ?? Theme
-                .of(context)
-                .cardColor,
+                : backgroundColor ?? Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(50),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // if (tagType == TagType.normal && showIcon)
-              //   AssetUtil.load(
-              //     AssetUtil.tagDarkIcon,
-              //     size: 15,
-              //   ),
               if (tagType == TagType.hot && showIcon)
-                AssetUtil.load(AssetUtil.hotIcon, size: 12),
+                ChewieIcon(
+                  LoftifyIcons.hot,
+                  size: 14,
+                  color: ChewieColors.getHotTagTextColor(context),
+                ),
               if (tagType == TagType.hot && showIcon) const SizedBox(width: 2),
-              // Icon(Icons.local_fire_department_rounded,
-              //     size: 15, color: ChewieColors.getHotTagTextColor(context)),
               if (tagType == TagType.egg && showIcon)
-                Icon(Icons.egg_rounded,
-                    size: 15, color: ChewieColors.getHotTagTextColor(context)),
+                ChewieIcon(
+                  LoftifyIcons.egg,
+                  size: 15,
+                  color: ChewieColors.getHotTagTextColor(context),
+                ),
               if (tagType == TagType.catutu && showIcon)
                 Container(
                   margin: const EdgeInsets.only(right: 2),
-                  child: Icon(Icons.auto_fix_high_outlined,
-                      size: 15,
-                      color: ChewieColors.getHotTagTextColor(context)),
+                  child: ChewieIcon(
+                    LoftifyIcons.magic,
+                    size: 15,
+                    color: ChewieColors.getHotTagTextColor(context),
+                  ),
                 ),
               Text(
                 ((tagType == TagType.normal || !showIcon) && showTagLabel)
                     ? "#$str"
                     : str,
                 style: tagType != TagType.normal
-                    ? Theme
-                    .of(context)
-                    .textTheme
-                    .labelMedium
-                    ?.apply(
-                  color: color ?? ChewieColors.hotTagTextColor,
-                  fontSizeDelta: fontSizeDelta,
-                  fontWeightDelta: fontWeightDelta,
-                )
-                    : Theme
-                    .of(context)
-                    .textTheme
-                    .labelMedium
-                    ?.apply(
-                  color: color,
-                  fontSizeDelta: fontSizeDelta,
-                  fontWeightDelta: fontWeightDelta,
-                ),
+                    ? Theme.of(context).textTheme.labelMedium?.apply(
+                          color: color ?? ChewieColors.hotTagTextColor,
+                          fontSizeDelta: fontSizeDelta,
+                          fontWeightDelta: fontWeightDelta,
+                        )
+                    : Theme.of(context).textTheme.labelMedium?.apply(
+                          color: color,
+                          fontSizeDelta: fontSizeDelta,
+                          fontWeightDelta: fontWeightDelta,
+                        ),
               ),
               if (showRightIcon)
-                Icon(
-                  Icons.keyboard_arrow_right_rounded,
+                ChewieIcon(
+                  LoftifyIcons.next,
                   size: 16,
                   color: color,
                 ),
@@ -398,12 +532,13 @@ class ItemBuilder {
     );
   }
 
-  static Widget buildSmallTagItem(BuildContext context,
-      String tag, {
-        Function()? onTap,
-        Color? backgroundColor,
-        bool showIcon = true,
-      }) {
+  static Widget buildSmallTagItem(
+    BuildContext context,
+    String tag, {
+    Function()? onTap,
+    Color? backgroundColor,
+    bool showIcon = true,
+  }) {
     return GestureDetector(
       onTap: () {
         panelScreenState?.pushPage(TagDetailScreen(tag: tag));
@@ -412,17 +547,12 @@ class ItemBuilder {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         decoration: BoxDecoration(
-          color: Theme
-              .of(context)
-              .cardColor,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(50),
         ),
         child: Text(
           "#$tag",
-          style: Theme
-              .of(context)
-              .textTheme
-              .labelSmall,
+          style: Theme.of(context).textTheme.labelSmall,
         ),
       ),
     );
@@ -442,9 +572,7 @@ class ItemBuilder {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: background ?? Theme
-            .of(context)
-            .cardColor,
+        color: background ?? Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(borderRadius),
       ),
       child: Row(
@@ -455,6 +583,7 @@ class ItemBuilder {
                 color: Colors.transparent,
                 child: TextField(
                   focusNode: focusNode,
+                  textAlignVertical: TextAlignVertical.center,
                   contextMenuBuilder: (contextMenuContext, details) =>
                       ChewieItemBuilder.editTextContextMenuBuilder(
                           contextMenuContext, details,
@@ -462,55 +591,41 @@ class ItemBuilder {
                   controller: controller,
                   textInputAction: TextInputAction.search,
                   onSubmitted: onSubmitted,
-                  style: Theme
-                      .of(context)
-                      .textTheme
-                      .titleSmall
-                      ?.apply(
-                    fontSizeDelta: hintFontSizeDelta,
-                  ),
+                  style: Theme.of(context).textTheme.titleSmall?.apply(
+                        fontSizeDelta: hintFontSizeDelta,
+                      ),
                   decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.only(left: 8),
-                    border:
-                    const OutlineInputBorder(borderSide: BorderSide.none),
+                    isDense: true,
+                    filled: false,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    errorBorder: InputBorder.none,
+                    focusedErrorBorder: InputBorder.none,
                     hintText: hintText,
-                    hintStyle: Theme
-                        .of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.apply(
-                      color: Theme
-                          .of(context)
-                          .textTheme
-                          .labelSmall
-                          ?.color,
-                      fontSizeDelta: hintFontSizeDelta,
-                    ),
+                    hintStyle: Theme.of(context).textTheme.titleSmall?.apply(
+                          color: Theme.of(context).textTheme.labelSmall?.color,
+                          fontSizeDelta: hintFontSizeDelta,
+                        ),
                   ),
                 ),
               ),
             ),
           ),
-          GestureDetector(
-            onTap: () {
-              onSubmitted(controller?.text);
-            },
-            child: MouseRegion(
-              cursor: SystemMouseCursors.click,
-              child: AssetUtil.loadDouble(
-                context,
-                AssetUtil.searchLightIcon,
-                AssetUtil.searchDarkIcon,
-                size: 20,
-              ),
-            ),
+          ChewieIconButton(
+            icon: LoftifyIcons.search,
+            tooltip: hintText.toString(),
+            onPressed: () => onSubmitted(controller?.text),
           ),
         ],
       ),
     );
   }
 
-  static Widget buildTitle(BuildContext context, {
+  static Widget buildTitle(
+    BuildContext context, {
     String? title,
     IconData? icon,
     String? suffixText,
@@ -535,25 +650,18 @@ class ItemBuilder {
             child: Text(
               title ?? "",
               style: textStyle ??
-                  Theme
-                      .of(context)
+                  Theme.of(context)
                       .textTheme
                       .titleSmall
                       ?.apply(fontWeightDelta: 2, fontSizeDelta: 1),
             ),
           ),
           if (icon != null)
-            CircleIconButton(
-              icon: Icon(
-                icon,
-                size: 18,
-                color: Theme
-                    .of(context)
-                    .textTheme
-                    .labelSmall
-                    ?.color,
-              ),
-              onTap: onTap,
+            ChewieIconButton(
+              icon: icon,
+              iconSize: 18,
+              foregroundColor: Theme.of(context).textTheme.labelSmall?.color,
+              onPressed: onTap,
             ),
           if (StringUtil.isNotEmpty(suffixText))
             GestureDetector(
@@ -562,19 +670,12 @@ class ItemBuilder {
                 children: [
                   Text(
                     suffixText!,
-                    style: Theme
-                        .of(context)
-                        .textTheme
-                        .labelMedium,
+                    style: Theme.of(context).textTheme.labelMedium,
                   ),
-                  Icon(
-                    Icons.keyboard_arrow_right_rounded,
+                  ChewieIcon(
+                    LoftifyIcons.next,
                     size: 18,
-                    color: Theme
-                        .of(context)
-                        .textTheme
-                        .labelSmall
-                        ?.color,
+                    color: Theme.of(context).textTheme.labelSmall?.color,
                   ),
                 ],
               ),
@@ -584,7 +685,8 @@ class ItemBuilder {
     );
   }
 
-  static buildStatisticItem(BuildContext context, {
+  static buildStatisticItem(
+    BuildContext context, {
     Color? labelColor,
     Color? countColor,
     int labelFontWeightDelta = 0,
@@ -596,7 +698,7 @@ class ItemBuilder {
     Map countWithScale = NumberUtil.formatCountToMap(count ?? 0);
     return MouseRegion(
       cursor:
-      onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+          onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
       child: GestureDetector(
         onTap: onTap,
         child: Container(
@@ -604,56 +706,43 @@ class ItemBuilder {
           child: Column(
             children: [
               count != null
-                  ? Row(
-                children: [
-                  Text(
-                    countWithScale['count'],
-                    style: Theme
-                        .of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.apply(
-                        color: countColor,
-                        fontWeightDelta: countFontWeightDelta),
-                  ),
-                  if (countWithScale.containsKey("scale"))
-                    const SizedBox(width: 2),
-                  if (countWithScale.containsKey("scale"))
-                    Text(
-                      countWithScale['scale'],
-                      style: Theme
-                          .of(context)
-                          .textTheme
-                          .titleSmall
-                          ?.apply(
-                          fontSizeDelta: -2,
+                  ? Text.rich(
+                      TextSpan(
+                        text: countWithScale['count'],
+                        children: [
+                          if (countWithScale.containsKey('scale'))
+                            TextSpan(
+                              text: '\u2009${countWithScale['scale']}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall
+                                  ?.apply(
+                                      fontSizeDelta: -2,
+                                      color: countColor,
+                                      fontWeightDelta: countFontWeightDelta),
+                            ),
+                        ],
+                      ),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleLarge?.apply(
+                          color: countColor,
+                          fontWeightDelta: countFontWeightDelta),
+                    )
+                  : Text(
+                      "-",
+                      style: Theme.of(context).textTheme.titleLarge?.apply(
                           color: countColor,
                           fontWeightDelta: countFontWeightDelta),
                     ),
-                ],
-              )
-                  : Text(
-                "-",
-                style: Theme
-                    .of(context)
-                    .textTheme
-                    .titleLarge
-                    ?.apply(
-                    color: countColor,
-                    fontWeightDelta: countFontWeightDelta),
-              ),
               const SizedBox(height: 4),
               Text(
                 title,
-                style: Theme
-                    .of(context)
-                    .textTheme
-                    .labelMedium
-                    ?.apply(
-                  fontSizeDelta: -1,
-                  color: labelColor,
-                  fontWeightDelta: labelFontWeightDelta,
-                ),
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.labelMedium?.apply(
+                      fontSizeDelta: -1,
+                      color: labelColor,
+                      fontWeightDelta: labelFontWeightDelta,
+                    ),
               ),
             ],
           ),
@@ -662,7 +751,8 @@ class ItemBuilder {
     );
   }
 
-  static buildIconTextButton(BuildContext context, {
+  static buildIconTextButton(
+    BuildContext context, {
     Axis direction = Axis.horizontal,
     double spacing = 2,
     Widget? icon,
@@ -682,61 +772,54 @@ class ItemBuilder {
         onTap: onTap,
         child: direction == Axis.horizontal
             ? Row(
-          mainAxisAlignment:
-          start ? MainAxisAlignment.start : MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            if (icon != null && showIcon)
-              RotatedBox(quarterTurns: quarterTurns, child: icon),
-            if (icon != null && showIcon) SizedBox(width: spacing),
-            if (text.isNotEmpty)
-              Text(
-                text,
-                style: style ??
-                    Theme
-                        .of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.apply(
-                      fontSizeDelta: fontSizeDelta,
-                      color: color,
-                      fontWeightDelta: fontWeightDelta,
+                mainAxisAlignment:
+                    start ? MainAxisAlignment.start : MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (icon != null && showIcon)
+                    RotatedBox(quarterTurns: quarterTurns, child: icon),
+                  if (icon != null && showIcon) SizedBox(width: spacing),
+                  if (text.isNotEmpty)
+                    Text(
+                      text,
+                      style: style ??
+                          Theme.of(context).textTheme.titleSmall?.apply(
+                                fontSizeDelta: fontSizeDelta,
+                                color: color,
+                                fontWeightDelta: fontWeightDelta,
+                              ),
                     ),
-              ),
-          ],
-        )
+                ],
+              )
             : Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            if (icon != null && showIcon)
-              RotatedBox(quarterTurns: quarterTurns, child: icon),
-            if (icon != null && showIcon) SizedBox(height: spacing),
-            if (text.isNotEmpty)
-              Text(
-                text,
-                style: style ??
-                    Theme
-                        .of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.apply(
-                      fontSizeDelta: fontSizeDelta,
-                      color: color,
-                      fontWeightDelta: fontWeightDelta,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (icon != null && showIcon)
+                    RotatedBox(quarterTurns: quarterTurns, child: icon),
+                  if (icon != null && showIcon) SizedBox(height: spacing),
+                  if (text.isNotEmpty)
+                    Text(
+                      text,
+                      style: style ??
+                          Theme.of(context).textTheme.titleSmall?.apply(
+                                fontSizeDelta: fontSizeDelta,
+                                color: color,
+                                fontWeightDelta: fontWeightDelta,
+                              ),
                     ),
+                ],
               ),
-          ],
-        ),
       ),
     );
   }
 
-  static Widget buildWrapTagList(BuildContext context,
-      List<String> list, {
-        Function(String)? onTap,
-        EdgeInsets? margin,
-      }) {
+  static Widget buildWrapTagList(
+    BuildContext context,
+    List<String> list, {
+    Function(String)? onTap,
+    EdgeInsets? margin,
+  }) {
     return Container(
       margin: margin ?? const EdgeInsets.only(left: 16, right: 16, bottom: 4),
       child: Wrap(
@@ -750,10 +833,11 @@ class ItemBuilder {
     );
   }
 
-  static Widget buildWrapTagItem(BuildContext context,
-      String str, {
-        Function(String)? onTap,
-      }) {
+  static Widget buildWrapTagItem(
+    BuildContext context,
+    String str, {
+    Function(String)? onTap,
+  }) {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
@@ -766,18 +850,13 @@ class ItemBuilder {
             color: Colors.transparent,
             borderRadius: BorderRadius.circular(50),
             border: Border.all(
-              color: Theme
-                  .of(context)
-                  .dividerColor,
+              color: Theme.of(context).dividerColor,
               width: 0.5,
             ),
           ),
           child: Text(
             str,
-            style: Theme
-                .of(context)
-                .textTheme
-                .titleSmall,
+            style: Theme.of(context).textTheme.titleSmall,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

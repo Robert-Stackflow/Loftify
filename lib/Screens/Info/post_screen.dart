@@ -6,9 +6,13 @@ import 'package:loftify/Screens/Info/nested_mixin.dart';
 import 'package:loftify/Utils/hive_util.dart';
 
 import '../../Models/post_detail_response.dart';
+import '../../Utils/app_provider.dart';
 import '../../Utils/enums.dart';
+import '../../Utils/like_archive_util.dart';
+import '../../Widgets/Design/loftify_state_view.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
+import '../../Widgets/PostItem/loftify_post_archive_grid.dart';
 import '../../l10n/l10n.dart';
 
 class PostScreen extends StatefulWidgetForNested {
@@ -19,6 +23,8 @@ class PostScreen extends StatefulWidgetForNested {
     this.blogId,
     this.blogName,
     super.nested = false,
+    super.refreshListenable,
+    super.refreshId = 'article',
   }) {
     if (infoMode == InfoMode.other) {
       assert(blogName != null);
@@ -37,141 +43,179 @@ class PostScreen extends StatefulWidgetForNested {
 }
 
 class _PostScreenState extends BaseDynamicState<PostScreen>
-    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+    with
+        TickerProviderStateMixin,
+        AutomaticKeepAliveClientMixin,
+        NestedRefreshSignalMixin<PostScreen> {
   @override
   bool get wantKeepAlive => true;
   PostDetailData? _topPost;
   final List<PostDetailData> _postList = [];
   List<ArchiveData> _archiveDataList = [];
   bool _loading = false;
+  bool _loadingRefresh = false;
+  String? _loadingToken;
+  String? _dataToken;
+  int _requestEpoch = 0;
+  int _nextOffset = 0;
   final EasyRefreshController _refreshController = EasyRefreshController();
   bool _noMore = false;
-  InitPhase _initPhase = InitPhase.haveNotConnected;
+  InitPhase _initPhase = InitPhase.connecting;
 
   @override
   void initState() {
     super.initState();
+    bindNestedRefreshSignal(() {
+      _refreshController.callRefresh(
+        overOffset: 28,
+        duration: const Duration(milliseconds: 140),
+      );
+    });
     if (widget.nested) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Future.delayed(const Duration(milliseconds: 300), () => _onRefresh());
+        if (mounted) _onRefresh();
       });
-    } else {
-      _initPhase = InitPhase.successful;
-      setState(() {});
     }
   }
 
-  _fetchLike({bool refresh = false}) async {
-    if (_loading) return;
-    if (refresh) _noMore = false;
-    _loading = true;
-    int offset = 0;
-    if (refresh) {
-      offset = 0;
-    } else {
-      if (_archiveDataList.isNotEmpty && _archiveDataList[0].isTop) {
-        offset = _postList.length - _archiveDataList[0].count;
-      }
+  @override
+  void dispose() {
+    unbindNestedRefreshSignal();
+    _refreshController.dispose();
+    super.dispose();
+  }
+
+  Future<IndicatorResult> _fetchPosts({bool refresh = false}) async {
+    if (!mounted) return IndicatorResult.none;
+    final token = appProvider.token;
+    if (_loading && _loadingToken == token && (!refresh || _loadingRefresh)) {
+      return IndicatorResult.none;
     }
-    if (_initPhase != InitPhase.successful) {
+    if (_dataToken != null && _dataToken != token) {
+      _postList.clear();
+      _topPost = null;
+      _archiveDataList = [];
+      _nextOffset = 0;
+      _noMore = false;
+      _initPhase = InitPhase.connecting;
+    }
+    final epoch = ++_requestEpoch;
+    bool isCurrentRequest() =>
+        mounted && appProvider.token == token && epoch == _requestEpoch;
+    _loading = true;
+    _loadingRefresh = refresh;
+    _loadingToken = token;
+    final offset = refresh ? 0 : _nextOffset;
+    if (_postList.isEmpty && _topPost == null) {
       _initPhase = InitPhase.connecting;
       setState(() {});
     }
-    return await HiveUtil.getUserInfo().then((blogInfo) async {
-      String blogName = widget.infoMode == InfoMode.me
-          ? blogInfo!.blogName
-          : widget.blogName!;
-      int blogId =
-          widget.infoMode == InfoMode.me ? blogInfo!.blogId : widget.blogId!;
-      return await UserApi.getPostList(
+    try {
+      final blogInfo =
+          widget.infoMode == InfoMode.me ? await HiveUtil.getUserInfo() : null;
+      if (!isCurrentRequest()) return IndicatorResult.none;
+      final blogName =
+          widget.infoMode == InfoMode.me ? blogInfo?.blogName : widget.blogName;
+      final blogId =
+          widget.infoMode == InfoMode.me ? blogInfo?.blogId : widget.blogId;
+      if (blogName == null ||
+          blogName.isEmpty ||
+          blogId == null ||
+          blogId <= 0) {
+        if (_postList.isEmpty && _topPost == null) {
+          _initPhase = InitPhase.failed;
+        }
+        return IndicatorResult.fail;
+      }
+      final value = await UserApi.getPostList(
         blogName: blogName,
         blogId: blogId,
         offset: offset,
-      ).then((value) {
-        try {
-          if (value['meta']['status'] != 200) {
-            IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-            return IndicatorResult.fail;
-          } else {
-            if (value['response']['archives'] != null) {
-              _archiveDataList = [];
-              List<ArchiveItem> archiveItems = [];
-              List<dynamic> t = value['response']['archives'];
-              for (var e in t) {
-                archiveItems.add(ArchiveItem.fromJson(e));
-              }
-              for (var e in archiveItems) {
-                for (var item in e.monthCount) {
-                  if (item > 0) {
-                    int month = e.monthCount.indexOf(item);
-                    _archiveDataList.add(ArchiveData(
-                      desc: appLocalizations.yearAndMonth(e.year, month + 1),
-                      count: item,
-                      endTime: 0,
-                      startTime: 0,
-                    ));
-                  }
-                }
-              }
-              _archiveDataList.sort((a, b) => b.desc.compareTo(a.desc));
-            }
-            List<PostDetailData> tmp = [];
-            if (refresh) _postList.clear();
-            for (var e in (value['response']['posts'] as List)) {
-              if (e != null &&
-                  _postList.indexWhere(
-                          (element) => element.post!.id == e['post']['id']) ==
-                      -1) {
-                tmp.add(PostDetailData.fromJson(e));
-              }
-            }
-            _postList.addAll(tmp);
-            if (value['response']['topPost'] != null) {
-              _topPost = PostDetailData.fromJson(value['response']['topPost']);
-              _archiveDataList.insert(
-                0,
-                ArchiveData(
-                  desc: appLocalizations.pin,
-                  count: 1,
-                  endTime: 0,
-                  startTime: 0,
-                  isTop: true,
-                ),
-              );
-              if ((_postList.isNotEmpty &&
-                      _postList[0].post!.id != _topPost!.post!.id) ||
-                  _postList.isEmpty) {
-                _postList.insert(0, _topPost!);
-              }
-            }
-            if (mounted) setState(() {});
-            _initPhase = InitPhase.successful;
-            if (tmp.isEmpty && !refresh) {
-              _noMore = true;
-              return IndicatorResult.noMore;
-            } else {
-              return IndicatorResult.success;
-            }
-          }
-        } catch (e, t) {
+      );
+      if (!isCurrentRequest()) return IndicatorResult.none;
+      if (value['meta']['status'] != 200) {
+        if (_postList.isEmpty && _topPost == null) {
           _initPhase = InitPhase.failed;
-          ILogger.error("Failed to load post list", e, t);
-          if (mounted) IToast.showTop(appLocalizations.loadFailed);
-          return IndicatorResult.fail;
-        } finally {
-          if (mounted) setState(() {});
-          _loading = false;
         }
-      });
-    });
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+        return IndicatorResult.fail;
+      }
+      final response = value['response'] as Map;
+      final rawPosts = response['posts'] as List;
+      final page = rawPosts
+          .whereType<Map>()
+          .map((item) =>
+              PostDetailData.fromJson(Map<String, dynamic>.from(item)))
+          .where((item) => item.post != null)
+          .toList();
+      final posts = refresh ? <PostDetailData>[] : [..._postList];
+      final seen = posts.map((item) => item.post!.id).toSet();
+      for (final item in page) {
+        if (seen.add(item.post!.id)) posts.add(item);
+      }
+      final rawTopPost = response['topPost'];
+      final parsedTopPost = rawTopPost is Map
+          ? PostDetailData.fromJson(Map<String, dynamic>.from(rawTopPost))
+          : null;
+      final topPost = parsedTopPost?.post != null
+          ? parsedTopPost
+          : refresh
+              ? null
+              : _topPost;
+      final archives = response['archives'] == null
+          ? refresh
+              ? <ArchiveData>[]
+              : _archiveDataList
+          : buildLikeArchives(
+              response['archives'],
+              descriptionBuilder: appLocalizations.yearAndMonth,
+            );
+      _postList
+        ..clear()
+        ..addAll(posts);
+      _topPost = topPost;
+      _archiveDataList = archives;
+      _nextOffset = offset + rawPosts.length;
+      _noMore = rawPosts.isEmpty;
+      _initPhase = InitPhase.successful;
+      _dataToken = token;
+      return !refresh && _noMore
+          ? IndicatorResult.noMore
+          : IndicatorResult.success;
+    } catch (error, stackTrace) {
+      if (!isCurrentRequest()) return IndicatorResult.none;
+      if (_postList.isEmpty && _topPost == null) _initPhase = InitPhase.failed;
+      ILogger.error('Failed to load post list', error, stackTrace);
+      IToast.showTop(appLocalizations.loadFailed);
+      return IndicatorResult.fail;
+    } finally {
+      if (epoch == _requestEpoch && mounted) {
+        setState(() {
+          if (appProvider.token != token) {
+            _postList.clear();
+            _topPost = null;
+            _archiveDataList = [];
+            _nextOffset = 0;
+            _noMore = false;
+            _initPhase = InitPhase.failed;
+            _dataToken = null;
+          }
+        });
+      }
+      if (epoch == _requestEpoch) {
+        _loading = false;
+        _loadingRefresh = false;
+        _loadingToken = null;
+      }
+    }
   }
 
-  _onRefresh() async {
-    return await _fetchLike(refresh: true);
+  Future<IndicatorResult> _onRefresh() async {
+    return await _fetchPosts(refresh: true);
   }
 
-  _onLoad() async {
-    return await _fetchLike();
+  Future<IndicatorResult> _onLoad() async {
+    return await _fetchPosts();
   }
 
   @override
@@ -186,78 +230,127 @@ class _PostScreenState extends BaseDynamicState<PostScreen>
     );
   }
 
-  _buildBody() {
-    switch (_initPhase) {
-      case InitPhase.connecting:
-        return LoadingWidget(background: Colors.transparent);
-      case InitPhase.failed:
-        return CustomErrorWidget(
-          onTap: _onRefresh,
-        );
-      case InitPhase.successful:
-        return EasyRefresh.builder(
-          refreshOnStart: true,
-          controller: _refreshController,
-          onRefresh: _onRefresh,
-          onLoad: _onLoad,
-          triggerAxis: Axis.vertical,
-          childBuilder: (context, physics) {
-            return _archiveDataList.isNotEmpty
-                ? _buildNineGridGroup(physics)
-                : EmptyPlaceholder(text: appLocalizations.noArticle, physics: physics);
-          },
-        );
-      default:
-        return Container();
-    }
-  }
-
-  Widget _buildNineGridGroup(ScrollPhysics physics) {
-    List<Widget> widgets = [];
-    int startIndex = 0;
-    for (var e in _archiveDataList) {
-      if (_postList.length < startIndex) {
-        break;
-      }
-      if (e.count == 0) continue;
-      int count = e.count;
-      if (_postList.length < startIndex + count) {
-        count = _postList.length - startIndex;
-      }
-      widgets.add(ItemBuilder.buildTitle(
-        context,
-        title: appLocalizations.descriptionWithPostCount(e.desc, e.count.toString()),
-        topMargin: 16,
-        bottomMargin: 0,
-      ));
-      widgets.add(_buildNineGrid(startIndex, count));
-      startIndex += e.count;
-    }
-    return LoadMoreNotification(
-      noMore: _noMore,
-      onLoad: _onLoad,
-      child: ListView(
-        padding: const EdgeInsets.only(bottom: 20),
-        physics: physics,
-        children: widgets,
-      ),
+  Widget _buildBody() {
+    return EasyRefresh.builder(
+      header: widget.nested ? buildNestedRefreshHeader() : null,
+      refreshOnStart: !widget.nested,
+      controller: _refreshController,
+      onRefresh: _onRefresh,
+      onLoad: _noMore ? null : _onLoad,
+      triggerAxis: Axis.vertical,
+      childBuilder: (context, physics) {
+        if (_initPhase != InitPhase.successful) {
+          final loading = _initPhase == InitPhase.connecting;
+          return CustomScrollView(
+            controller: widget.scrollController,
+            physics: physics,
+            slivers: [
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: LoftifyStateView(
+                  visual: loading
+                      ? LoftifyStateVisual.loading
+                      : LoftifyStateVisual.error,
+                  title: loading
+                      ? appLocalizations.loading
+                      : appLocalizations.loadFailed,
+                  scrollWhenConstrained: false,
+                  actionLabel: loading ? null : chewieLocalizations.retry,
+                  onAction:
+                      loading ? null : () => _refreshController.callRefresh(),
+                ),
+              ),
+            ],
+          );
+        }
+        return _postList.isNotEmpty || _topPost != null
+            ? _buildNineGridGroup(physics)
+            : EmptyPlaceholder(
+                text: appLocalizations.noArticle,
+                physics: physics,
+                shrinkWrap: false,
+              );
+      },
     );
   }
 
-  Widget _buildNineGrid(int startIndex, int count) {
-    return GridView.extent(
+  Widget _buildNineGridGroup(ScrollPhysics physics) {
+    final posts = [..._postList];
+    final archives = [
+      for (final archive in _archiveDataList)
+        ArchiveData(
+          desc: archive.desc,
+          count: archive.count,
+          endTime: archive.endTime,
+          startTime: archive.startTime,
+        ),
+    ];
+    final slivers = <Widget>[];
+    final top = _topPost;
+    if (top?.post != null) {
+      final repeatedIndex =
+          posts.indexWhere((item) => item.post?.id == top!.post!.id);
+      if (repeatedIndex >= 0) {
+        final archive = likeArchiveForItemIndex(archives, repeatedIndex);
+        if (archive != null) archive.count--;
+        posts.removeAt(repeatedIndex);
+      }
+      slivers.add(SliverToBoxAdapter(
+        child: ItemBuilder.buildTitle(
+          context,
+          title: appLocalizations.descriptionWithPostCount(
+            appLocalizations.pin,
+            '1',
+          ),
+          topMargin: 16,
+          bottomMargin: 0,
+        ),
+      ));
+      slivers.add(_buildNineGrid([top!], 0, 1));
+    }
+    var startIndex = 0;
+    for (final archive in archives) {
+      if (posts.length <= startIndex) break;
+      if (archive.count <= 0) continue;
+      final count = (posts.length - startIndex).clamp(0, archive.count);
+      slivers.add(SliverToBoxAdapter(
+        child: ItemBuilder.buildTitle(
+          context,
+          title: appLocalizations.descriptionWithPostCount(
+            archive.desc,
+            archive.count.toString(),
+          ),
+          topMargin: 16,
+          bottomMargin: 0,
+        ),
+      ));
+      slivers.add(_buildNineGrid(posts, startIndex, count));
+      startIndex += archive.count;
+    }
+    if (startIndex < posts.length) {
+      slivers.add(_buildNineGrid(posts, startIndex, posts.length - startIndex));
+    }
+    slivers.add(const SliverToBoxAdapter(child: SizedBox(height: 20)));
+    return CustomScrollView(
+      controller: widget.scrollController,
+      physics: physics,
+      slivers: slivers,
+    );
+  }
+
+  Widget _buildNineGrid(List<PostDetailData> posts, int startIndex, int count) {
+    return LoftifyPostArchiveSliverGrid(
       padding: const EdgeInsets.only(top: 12, left: 12, right: 12),
-      shrinkWrap: true,
-      maxCrossAxisExtent: 160,
-      mainAxisSpacing: 6,
-      crossAxisSpacing: 6,
-      physics: const NeverScrollableScrollPhysics(),
-      children: List.generate(count, (index) {
-        int trueIndex = startIndex + index;
+      itemCount: count,
+      addAutomaticKeepAlives: false,
+      itemBuilder: (context, index, tileExtent) {
+        final trueIndex = startIndex + index;
         return CommonInfoItemBuilder.buildNineGridPostItem(
-            context, _postList[trueIndex],
-            wh: 160);
-      }),
+          context,
+          posts[trueIndex],
+          wh: tileExtent,
+        );
+      },
     );
   }
 

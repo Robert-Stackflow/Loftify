@@ -11,6 +11,7 @@ import 'package:flutter/physics.dart' as physics;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:awesome_chewie/src/Resources/chewie_icons.dart';
 
 import 'src/painter/paths_painter.dart';
 

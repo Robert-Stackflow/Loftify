@@ -19,6 +19,7 @@ class SliverAppBarWrapper extends StatelessWidget {
   final double leftSpacing;
   final double rightSpacing;
   final SystemUiOverlayStyle? systemOverlayStyle;
+  final VoidCallback? onBack;
 
   const SliverAppBarWrapper({
     super.key,
@@ -35,43 +36,62 @@ class SliverAppBarWrapper extends StatelessWidget {
     this.leftSpacing = 8,
     this.rightSpacing = 8,
     this.systemOverlayStyle,
+    this.onBack,
   });
 
   @override
   Widget build(BuildContext context) {
     bool showLeading = !ResponsiveUtil.isLandscapeLayout();
+    final backgroundColor = Theme.of(context).appBarTheme.backgroundColor ??
+        Theme.of(context).scaffoldBackgroundColor;
+    final effectiveSystemOverlayStyle = systemOverlayStyle ??
+        (backgroundWidget != null
+            ? AppBarWrapper.systemUiOverlayStyleForBrightness(Brightness.dark)
+            : AppBarWrapper.systemUiOverlayStyleForColor(
+                context,
+                backgroundColor,
+              ));
+    final leadingColor = backgroundWidget != null
+        ? Colors.white
+        : Theme.of(context).iconTheme.color;
     var finalTitleWidget = Container(
       margin: EdgeInsets.only(left: titleLeftMargin),
       child: title,
     );
     var leading = Container(
       margin: EdgeInsets.only(left: leftSpacing),
-      child: CircleIconButton(
-        icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-        onTap: () => Navigator.pop(context),
+      child: ChewieIconButton(
+        icon: ChewieIcons.back,
+        foregroundColor: leadingColor,
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+        onPressed: onBack ?? () => Navigator.pop(context),
       ),
     );
 
-    return MySliverAppBar(
-      systemOverlayStyle: systemOverlayStyle,
-      expandedHeight: expandedHeight,
-      collapsedHeight: collapsedHeight ??
-          max(100, kToolbarHeight + MediaQuery.of(context).padding.top),
-      pinned: true,
-      leadingWidth: showLeading ? 56 : 0,
-      leading: showLeading ? leading : null,
-      automaticallyImplyLeading: false,
-      backgroundWidget: backgroundWidget,
-      title: centerTitle ? Center(child: finalTitleWidget) : finalTitleWidget,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-      flexibleSpace: flexibleSpace,
-      bottom: bottom,
-      actions: [
-        if (actions != null) ...?actions,
-        SizedBox(width: rightSpacing),
-      ],
+    return ChewieIconButtonVisualScope(
+      visualSize: ChewieIconButtonVisualScope.appBarVisualSize,
+      maximumIconSize: ChewieIconButtonVisualScope.appBarIconSize,
+      child: MySliverAppBar(
+        systemOverlayStyle: effectiveSystemOverlayStyle,
+        expandedHeight: expandedHeight,
+        collapsedHeight: collapsedHeight ??
+            max(100, kToolbarHeight + MediaQuery.of(context).padding.top),
+        pinned: true,
+        leadingWidth: showLeading ? 52 : 0,
+        leading: showLeading ? leading : null,
+        automaticallyImplyLeading: false,
+        backgroundWidget: backgroundWidget,
+        title: centerTitle ? Center(child: finalTitleWidget) : finalTitleWidget,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: backgroundColor,
+        flexibleSpace: flexibleSpace,
+        bottom: bottom,
+        actions: [
+          if (actions != null) ...?actions,
+          SizedBox(width: rightSpacing),
+        ],
+      ),
     );
   }
 }

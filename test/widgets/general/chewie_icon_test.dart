@@ -1,0 +1,423 @@
+import 'dart:io';
+
+import 'package:awesome_chewie/awesome_chewie.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:loftify/Widgets/loftify_icons.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+
+Widget _host(
+  Widget child, {
+  ChewieIconThemeData? iconTheme,
+  Brightness brightness = Brightness.light,
+  bool highContrast = false,
+}) {
+  return MaterialApp(
+    theme: ThemeData(
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: Colors.teal,
+        brightness: brightness,
+      ),
+      extensions: <ThemeExtension<dynamic>>[
+        iconTheme ?? ChewieIconThemeData.standard,
+      ],
+    ),
+    home: MediaQuery(
+      data: MediaQueryData(highContrast: highContrast),
+      child: Scaffold(body: Center(child: child)),
+    ),
+  );
+}
+
+void main() {
+  testWidgets('shared Lucide primitives keep optical and touch sizes separate',
+      (tester) async {
+    var taps = 0;
+    await tester.pumpWidget(
+      _host(
+        ChewieIconButton(
+          icon: LucideIcons.search,
+          tooltip: 'Search',
+          onPressed: () => taps++,
+        ),
+      ),
+    );
+
+    final icon = tester.widget<Icon>(find.byIcon(LucideIcons.search));
+    final button = tester.widget<IconButton>(find.byType(IconButton));
+    expect(icon.size, 20);
+    expect(tester.getSize(find.byType(IconButton)), const Size.square(44));
+    expect(
+      tester.getSize(
+        find.byKey(const ValueKey('chewie-icon-button-visual')),
+      ),
+      const Size.square(44),
+    );
+    expect(button.style!.shape!.resolve({}), isA<CircleBorder>());
+    expect(find.bySemanticsLabel('Search'), findsOneWidget);
+
+    await tester.tap(find.byType(IconButton));
+    expect(taps, 1);
+  });
+
+  testWidgets('an explicit corner radius remains available for inline tools', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _host(
+        ChewieIconButton(
+          icon: LucideIcons.slidersHorizontal,
+          cornerRadius: 12,
+          onPressed: () {},
+        ),
+      ),
+    );
+
+    final button = tester.widget<IconButton>(find.byType(IconButton));
+    expect(button.style!.shape!.resolve({}), isA<RoundedRectangleBorder>());
+  });
+
+  testWidgets('custom specification controls all shared measurements',
+      (tester) async {
+    const specification = ChewieIconThemeData(
+      regularSize: 22,
+      minimumTapTarget: 48,
+      cornerRadius: 14,
+    );
+    await tester.pumpWidget(
+      _host(
+        ChewieIconButton(
+          icon: LucideIcons.settings,
+          onPressed: () {},
+        ),
+        iconTheme: specification,
+      ),
+    );
+
+    final icon = tester.widget<Icon>(find.byIcon(LucideIcons.settings));
+    expect(icon.size, 22);
+    expect(tester.getSize(find.byType(IconButton)), const Size.square(48));
+  });
+
+  testWidgets('selected and disabled states retain one Lucide glyph',
+      (tester) async {
+    await tester.pumpWidget(
+      _host(
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            ChewieIconButton(
+              icon: LucideIcons.heart,
+              selected: true,
+              tooltip: 'Selected',
+              onPressed: _emptyCallback,
+            ),
+            ChewieIconButton(
+              icon: LucideIcons.heart,
+              foregroundColor: Colors.red,
+              tooltip: 'Disabled',
+              onPressed: null,
+            ),
+          ],
+        ),
+      ),
+    );
+
+    final icons = tester.widgetList<Icon>(find.byIcon(LucideIcons.heart));
+    expect(icons, hasLength(2));
+    expect(icons.first.color,
+        Theme.of(tester.element(find.byType(Row))).colorScheme.primary);
+    expect(icons.last.color!.a, closeTo(0.38, 0.01));
+    expect(find.byIcon(LucideIcons.heart), findsNWidgets(2));
+  });
+
+  test('theme extension copies and interpolates icon measurements', () {
+    const start = ChewieIconThemeData();
+    final end = start.copyWith(regularSize: 24, minimumTapTarget: 48);
+    final middle = start.lerp(end, 0.5);
+
+    expect(middle.regularSize, 22);
+    expect(middle.minimumTapTarget, 46);
+    expect(end.disabledOpacity, start.disabledOpacity);
+  });
+
+  testWidgets('semantic icons preserve optional contrast shadows',
+      (tester) async {
+    const shadows = <Shadow>[
+      Shadow(color: Colors.black, blurRadius: 8),
+    ];
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ChewieIcon(
+          LoftifyIcons.nextPost,
+          shadows: shadows,
+        ),
+      ),
+    );
+
+    final icon = tester.widget<Icon>(find.byIcon(LoftifyIcons.nextPost));
+    expect(icon.shadows, shadows);
+  });
+
+  testWidgets('high contrast strengthens selected and disabled states',
+      (tester) async {
+    for (final brightness in Brightness.values) {
+      await tester.pumpWidget(
+        _host(
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              ChewieIconButton(
+                icon: LucideIcons.heart,
+                selected: true,
+                tooltip: 'Selected',
+                onPressed: _emptyCallback,
+              ),
+              ChewieIconButton(
+                icon: LucideIcons.download,
+                tooltip: 'Disabled',
+                onPressed: null,
+              ),
+            ],
+          ),
+          brightness: brightness,
+          highContrast: true,
+        ),
+      );
+
+      final visuals = find.byKey(
+        const ValueKey('chewie-icon-button-visual'),
+      );
+      final selectedDecoration = tester
+          .widget<DecoratedBox>(
+            find
+                .descendant(
+                  of: visuals.first,
+                  matching: find.byType(DecoratedBox),
+                )
+                .first,
+          )
+          .decoration as BoxDecoration;
+      final disabledIcon =
+          tester.widget<Icon>(find.byIcon(LucideIcons.download));
+
+      expect(selectedDecoration.border!.top.width, 1.2);
+      expect(selectedDecoration.border!.top.color,
+          Theme.of(tester.element(find.byType(Row))).colorScheme.primary);
+      expect(selectedDecoration.color!.a, greaterThanOrEqualTo(0.2));
+      expect(disabledIcon.color!.a, closeTo(0.5, 0.01));
+      expect(
+          tester.getSize(find.byType(IconButton).first), const Size.square(44));
+    }
+  });
+
+  testWidgets('localized icon labels preserve semantics and tap targets',
+      (tester) async {
+    await tester.pumpWidget(
+      _host(
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            ChewieIconButton(
+              icon: LucideIcons.download,
+              tooltip: 'Download',
+              onPressed: _emptyCallback,
+            ),
+            ChewieIconButton(
+              icon: LucideIcons.download,
+              tooltip: '下载',
+              onPressed: _emptyCallback,
+            ),
+          ],
+        ),
+      ),
+    );
+
+    expect(find.bySemanticsLabel('Download'), findsOneWidget);
+    expect(find.bySemanticsLabel('下载'), findsOneWidget);
+    for (final button in find.byType(IconButton).evaluate()) {
+      expect(
+          tester.getSize(find.byWidget(button.widget)), const Size.square(44));
+    }
+    expect(tester.takeException(), isNull);
+  });
+
+  test('product semantic icons all come from the Lucide font', () {
+    const icons = <IconData>[
+      LoftifyIcons.home,
+      LoftifyIcons.search,
+      LoftifyIcons.activity,
+      LoftifyIcons.profile,
+      LoftifyIcons.logout,
+      LoftifyIcons.dress,
+      LoftifyIcons.notifications,
+      LoftifyIcons.settings,
+      LoftifyIcons.flag,
+      LoftifyIcons.copyright,
+      LoftifyIcons.block,
+      LoftifyIcons.tag,
+      LoftifyIcons.shield,
+      LoftifyIcons.previous,
+      LoftifyIcons.next,
+      LoftifyIcons.previousPost,
+      LoftifyIcons.nextPost,
+      LoftifyIcons.expand,
+      LoftifyIcons.sortDirection,
+      LoftifyIcons.favorite,
+      LoftifyIcons.recommend,
+      LoftifyIcons.hot,
+      LoftifyIcons.egg,
+      LoftifyIcons.magic,
+      LoftifyIcons.select,
+      LoftifyIcons.more,
+      LoftifyIcons.moreVertical,
+      LoftifyIcons.slide,
+      LoftifyIcons.edit,
+      LoftifyIcons.history,
+      LoftifyIcons.premium,
+      LoftifyIcons.shop,
+      LoftifyIcons.avatarFrame,
+      LoftifyIcons.copy,
+      LoftifyIcons.follow,
+      LoftifyIcons.specialFollow,
+      LoftifyIcons.unfollow,
+      LoftifyIcons.bookmark,
+      LoftifyIcons.comment,
+      LoftifyIcons.article,
+      LoftifyIcons.invalidContent,
+      LoftifyIcons.originalPost,
+      LoftifyIcons.quote,
+      LoftifyIcons.reblog,
+      LoftifyIcons.collection,
+      LoftifyIcons.grain,
+      LoftifyIcons.filter,
+      LoftifyIcons.listLayout,
+      LoftifyIcons.gridLayout,
+      LoftifyIcons.scrollTop,
+      LoftifyIcons.trendUp,
+      LoftifyIcons.trendDown,
+      LoftifyIcons.refresh,
+      LoftifyIcons.save,
+      LoftifyIcons.add,
+      LoftifyIcons.check,
+      LoftifyIcons.warning,
+      LoftifyIcons.clear,
+      LoftifyIcons.visible,
+      LoftifyIcons.hidden,
+      LoftifyIcons.reset,
+      LoftifyIcons.openExternal,
+      LoftifyIcons.merge,
+      LoftifyIcons.bug,
+      LoftifyIcons.commit,
+      LoftifyIcons.review,
+      LoftifyIcons.share,
+      LoftifyIcons.support,
+      LoftifyIcons.contact,
+      LoftifyIcons.language,
+      LoftifyIcons.group,
+      LoftifyIcons.send,
+      LoftifyIcons.phone,
+      LoftifyIcons.verification,
+      LoftifyIcons.password,
+      LoftifyIcons.lofterId,
+      LoftifyIcons.email,
+      LoftifyIcons.generalSettings,
+      LoftifyIcons.appearance,
+      LoftifyIcons.image,
+      LoftifyIcons.basicSettings,
+      LoftifyIcons.experiment,
+      LoftifyIcons.info,
+      LoftifyIcons.about,
+      LoftifyIcons.download,
+      LoftifyIcons.batchDownload,
+      LoftifyIcons.file,
+      LoftifyIcons.video,
+      LoftifyIcons.videoUnavailable,
+      LoftifyIcons.videoSettings,
+      LoftifyIcons.continuousPlayback,
+      LoftifyIcons.danmaku,
+      LoftifyIcons.back,
+      LoftifyIcons.sound,
+      LoftifyIcons.mute,
+      LoftifyIcons.enterFullscreen,
+      LoftifyIcons.exitFullscreen,
+      LoftifyIcons.pause,
+      LoftifyIcons.play,
+      LoftifyIcons.retry,
+      LoftifyIcons.close,
+      LoftifyIcons.delete,
+    ];
+
+    expect(icons.every((icon) => icon.fontFamily == 'Lucide'), isTrue);
+    expect(icons.every((icon) => icon.fontPackage == 'lucide_icons'), isTrue);
+  });
+
+  test('reusable component semantics all come from the Lucide font', () {
+    const icons = <IconData>[
+      ChewieIcons.back,
+      ChewieIcons.previous,
+      ChewieIcons.next,
+      ChewieIcons.expand,
+      ChewieIcons.collapse,
+      ChewieIcons.arrowUp,
+      ChewieIcons.arrowDown,
+      ChewieIcons.arrowLeft,
+      ChewieIcons.arrowRight,
+      ChewieIcons.add,
+      ChewieIcons.remove,
+      ChewieIcons.close,
+      ChewieIcons.check,
+      ChewieIcons.copy,
+      ChewieIcons.copyDone,
+      ChewieIcons.more,
+      ChewieIcons.refresh,
+      ChewieIcons.retry,
+      ChewieIcons.search,
+      ChewieIcons.share,
+      ChewieIcons.openExternal,
+      ChewieIcons.info,
+      ChewieIcons.success,
+      ChewieIcons.warning,
+      ChewieIcons.error,
+      ChewieIcons.imageUnavailable,
+      ChewieIcons.inbox,
+      ChewieIcons.archive,
+      ChewieIcons.star,
+      ChewieIcons.starHalf,
+      ChewieIcons.pin,
+      ChewieIcons.minimizeWindow,
+      ChewieIcons.maximizeWindow,
+      ChewieIcons.restoreWindow,
+      ChewieIcons.closeWindow,
+      ChewieIcons.square,
+      ChewieIcons.alarm,
+      ChewieIcons.time,
+    ];
+
+    expect(icons.every((icon) => icon.fontFamily == 'Lucide'), isTrue);
+    expect(icons.every((icon) => icon.fontPackage == 'lucide_icons'), isTrue);
+  });
+
+  test('application pages do not import icon fonts directly', () {
+    final violations = Directory('lib')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.dart'))
+        .where(
+          (file) => !file.path.replaceAll('\\', '/').endsWith(
+                'lib/Widgets/loftify_icons.dart',
+              ),
+        )
+        .where(
+          (file) => file.readAsStringSync().contains(
+                'package:lucide_icons/lucide_icons.dart',
+              ),
+        )
+        .map((file) => file.path)
+        .toList();
+
+    expect(violations, isEmpty);
+  });
+}
+
+void _emptyCallback() {}

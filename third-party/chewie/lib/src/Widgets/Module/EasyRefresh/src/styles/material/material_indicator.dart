@@ -178,7 +178,7 @@ class _MaterialIndicatorState extends State<_MaterialIndicator> {
           ),
           if (_mode == IndicatorMode.inactive &&
               _result == IndicatorResult.noMore)
-            widget.noMoreIcon ?? const Icon(Icons.inbox_outlined),
+            widget.noMoreIcon ?? const Icon(ChewieIcons.inbox),
         ],
       ),
     );

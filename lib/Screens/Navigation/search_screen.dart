@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
-import 'package:card_swiper/card_swiper.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/search_api.dart';
 import 'package:loftify/Models/search_response.dart';
@@ -17,14 +16,18 @@ import 'package:loftify/Utils/enums.dart';
 import 'package:provider/provider.dart';
 
 import '../../Utils/hive_util.dart';
+import '../../Utils/tab_state_util.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  const SearchScreen({super.key, this.showBack = false});
+
+  final bool showBack;
 
   static const String routeName = "/search";
 
@@ -45,19 +48,27 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
   List<RankListItem> _rankList = [];
   List<ConfigListItem> _configList = [];
   List<SearchSuggestItem> _sugList = [];
-  late TabController _tabController;
-  final SwiperController _swiperController = SwiperController();
+  int _suggestRequest = 0;
+  String _suggestQuery = '';
+  int _guessRequest = 0;
+  int _rankRequest = 0;
+  TabController? _tabController;
+  PageController? _rankPageController;
   final ScrollController _scrollController = ScrollController();
+  final ScrollController _suggestScrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   final List<String> _tabLabelList = [];
+  final List<String> _tabIdList = [];
   int _currentTabIndex = 0;
   final FocusNode _focusNode = FocusNode();
 
   bool get hasSearchFocus => _focusNode.hasFocus;
 
+  void focusSearch() => _focusSearch();
+
   @override
   FutureOr onTapBottomNavigation() {
-    FocusScope.of(context).requestFocus(_focusNode);
+    _focusSearch();
   }
 
   @override
@@ -66,57 +77,112 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
     fetchGuessList();
     fetchRankList();
     _searchController.addListener(() {
-      if (_searchController.text.isEmpty) {
-        _sugList.clear();
-        if (mounted) setState(() {});
-      } else {
-        _performSuggest(_searchController.text);
-      }
+      final query = _searchController.text;
+      // Selection and composing changes must not repeat the same request.
+      if (query == _suggestQuery) return;
+      _suggestQuery = query;
+      final request = ++_suggestRequest;
+      _setSuggestions([]);
+      if (query.isNotEmpty) _performSuggest(query, request);
     });
     if (ResponsiveUtil.isDesktop()) {
       Future.delayed(const Duration(milliseconds: 200), () {
-        FocusScope.of(context).requestFocus(_focusNode);
+        if (mounted) FocusScope.of(context).requestFocus(_focusNode);
       });
     }
     WidgetsBinding.instance.addPostFrameCallback(
-            (_) => panelScreenState?.refreshScrollControllers());
+        (_) => panelScreenState?.refreshScrollControllers());
   }
 
-  initTab() {
+  void initTab() {
     _tabLabelList.clear();
+    _tabIdList.clear();
     for (var e in _rankList) {
       _tabLabelList.add(e.listName);
+      _tabIdList.add('rank:${e.type}:${e.sortNo}');
     }
-    _tabController = TabController(length: _tabLabelList.length, vsync: this);
-    _tabController.animation?.addListener(() {
-      int indexChange =
-      _tabController.offset.abs() > 0.8 ? _tabController.offset.round() : 0;
-      int index = _tabController.index + indexChange;
-      if (index != _currentTabIndex) {
-        setState(() => _currentTabIndex = index);
-      }
+    _tabController?.dispose();
+    _currentTabIndex = PersistentTabState.restore(
+      idKey: HiveUtil.searchRankTabIdKey,
+      legacyIndexKey: HiveUtil.searchRankTabIndexKey,
+      itemIds: _tabIdList,
+    ).index;
+    final oldPageController = _rankPageController;
+    _rankPageController = PageController(initialPage: _currentTabIndex);
+    if (oldPageController != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        oldPageController.dispose();
+      });
+    }
+    _tabController = TabController(
+      length: _tabLabelList.length,
+      initialIndex: _currentTabIndex,
+      vsync: this,
+    );
+  }
+
+  void _setCurrentTab(int index) {
+    final safeIndex = TabStatePreference.restoreIndex(
+      index,
+      _tabLabelList.length,
+    );
+    if (safeIndex == _currentTabIndex) return;
+    setState(() => _currentTabIndex = safeIndex);
+    PersistentTabState.save(
+      idKey: HiveUtil.searchRankTabIdKey,
+      legacyIndexKey: HiveUtil.searchRankTabIndexKey,
+      itemIds: _tabIdList,
+      index: safeIndex,
+    );
+  }
+
+  @override
+  void dispose() {
+    _tabController?.dispose();
+    _rankPageController?.dispose();
+    _scrollController.dispose();
+    _suggestScrollController.dispose();
+    _searchController.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _focusSearch() {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) FocusScope.of(context).requestFocus(_focusNode);
     });
   }
 
-  fetchGuessList() {
-    SearchApi.getGuessList().then((value) {
+  Future<void> fetchGuessList() async {
+    final request = ++_guessRequest;
+    bool isCurrent() => mounted && request == _guessRequest;
+    try {
+      final value = await SearchApi.getGuessList();
+      if (!isCurrent()) return;
       if (value['code'] != 0) {
-        IToast.showTop(value['msg']);
+        IToast.showTop(value['msg'] ?? appLocalizations.loadFailed);
       } else {
         if (value['data']['guessKeywords'] != null) {
           _guessList = (value['data']['guessKeywords'] as List)
               .map((e) => GuessKeyword.fromJson(e))
               .toList();
         }
-        if (mounted) setState(() {});
+        setState(() {});
       }
-    });
+    } catch (_) {
+      if (isCurrent()) IToast.showTop(appLocalizations.loadFailed);
+    }
   }
 
-  fetchRankList() {
-    SearchApi.getRankList().then((value) {
+  Future<void> fetchRankList() async {
+    final request = ++_rankRequest;
+    bool isCurrent() => mounted && request == _rankRequest;
+    try {
+      final value = await SearchApi.getRankList();
+      if (!isCurrent()) return;
       if (value['code'] != 0) {
-        IToast.showTop(value['msg']);
+        IToast.showTop(value['msg'] ?? appLocalizations.loadFailed);
       } else {
         if (value['data']['rankList'] != null) {
           _rankList = (value['data']['rankList'] as List)
@@ -129,9 +195,11 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
               .map((e) => ConfigListItem.fromJson(e))
               .toList();
         }
-        if (mounted) setState(() {});
+        setState(() {});
       }
-    });
+    } catch (_) {
+      if (isCurrent()) IToast.showTop(appLocalizations.loadFailed);
+    }
   }
 
   @override
@@ -140,6 +208,7 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
     return Scaffold(
       backgroundColor: ChewieTheme.getBackground(context),
       appBar: ResponsiveAppBar(
+        showBack: widget.showBack,
         titleWidget: _buildSearchBar(),
         titleLeftMargin: 0,
         rightSpacing: 0,
@@ -158,6 +227,7 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
     if (str.isEmpty) return;
     Utils.addSearchHistory(str);
     bool processed = await UriUtil.processUrl(context, str, quiet: true);
+    if (!mounted) return;
     if (!processed) {
       RouteUtil.pushPanelCupertinoRoute(
           context, SearchResultScreen(searchKey: str));
@@ -169,31 +239,48 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
     RouteUtil.pushPanelCupertinoRoute(context, TagDetailScreen(tag: tag));
   }
 
-  _performSuggest(String str) {
-    SearchApi.getSuggestList(key: str).then((value) {
+  Future<void> _performSuggest(String str, int request) async {
+    bool isCurrent() => mounted && request == _suggestRequest;
+    try {
+      final value = await SearchApi.getSuggestList(key: str);
+      if (!isCurrent()) return;
       if (value['code'] != 0) {
-        IToast.showTop(value['msg']);
+        IToast.showTop(value['msg'] ?? appLocalizations.loadFailed);
       } else {
-        if (value['data']['items'] != null &&
-            _searchController.text.isNotEmpty) {
-          _sugList = (value['data']['items'] as List)
-              .map((e) => SearchSuggestItem.fromJson(e))
-              .toList();
-        }
-        if (mounted) setState(() {});
+        final items = (value['data']?['items'] as List? ?? [])
+            .map((e) => SearchSuggestItem.fromJson(e))
+            .toList();
+        _setSuggestions(items);
       }
-    });
+    } catch (_) {
+      if (isCurrent()) IToast.showTop(appLocalizations.loadFailed);
+    }
+  }
+
+  void _setSuggestions(List<SearchSuggestItem> items) {
+    final visibilityChanged = _sugList.isNotEmpty != items.isNotEmpty;
+    setState(() => _sugList = items);
+    if (visibilityChanged) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) panelScreenState?.refreshScrollControllers();
+      });
+    }
   }
 
   _buildSuggestList() {
     return Container(
       color: ChewieTheme.getBackground(context),
-      padding: const EdgeInsets.only(top: 8),
       child: ListView.builder(
+        controller: _suggestScrollController,
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
         itemCount: _sugList.length,
         itemBuilder: (context, index) {
-          return ClickableWrapper(child:
-          _buildSuggestItem(index, _sugList[index]));
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: ClickableWrapper(
+              child: _buildSuggestItem(index, _sugList[index]),
+            ),
+          );
         },
       ),
     );
@@ -202,41 +289,49 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
   _buildSuggestItem(int index, SearchSuggestItem item) {
     switch (item.type) {
       case 0:
-        return LoftifyItemBuilder.buildRankTagRow(context, item.tagInfo!,
-            onTap: () {
-              _jumpToTag(item.tagInfo!.tagName);
-            });
+        return LoftifyItemBuilder.buildSearchSuggestionSurface(
+          context,
+          LoftifyItemBuilder.buildRankTagRow(context, item.tagInfo!, onTap: () {
+            _jumpToTag(item.tagInfo!.tagName);
+          }),
+        );
       case 1:
-        return LoftifyItemBuilder.buildTagRow(context, item.tagInfo!,
-            onTap: () {
-              _performSearch(item.tagInfo!.tagName);
-            });
+        return LoftifyItemBuilder.buildSearchSuggestionSurface(
+          context,
+          LoftifyItemBuilder.buildTagRow(
+            context,
+            item.tagInfo!,
+            horizontalPadding: 12,
+            onTap: () => _performSearch(item.tagInfo!.tagName),
+          ),
+        );
       case 2:
         return LoftifyItemBuilder.buildUserRow(context, item.blogData!,
             onTap: () {
-              Utils.addSearchHistory(_searchController.text);
-              RouteUtil.pushPanelCupertinoRoute(
-                context,
-                UserDetailScreen(
-                  blogId: item.blogData!.blogInfo.blogId,
-                  blogName: item.blogData!.blogInfo.blogName,
-                ),
-              );
-            });
+          Utils.addSearchHistory(_searchController.text);
+          RouteUtil.pushPanelCupertinoRoute(
+            context,
+            UserDetailScreen(
+              blogId: item.blogData!.blogInfo.blogId,
+              blogName: item.blogData!.blogInfo.blogName,
+            ),
+          );
+        });
       default:
         return emptyWidget;
     }
   }
 
   _buildMainBody() {
-    bool showSearchHistory =
-    ChewieHiveUtil.getBool(HiveUtil.showSearchHistoryKey, defaultValue: false);
-    bool showSearchGuess =
-    ChewieHiveUtil.getBool(HiveUtil.showSearchGuessKey, defaultValue: false);
-    bool showSearchConfig =
-    ChewieHiveUtil.getBool(HiveUtil.showSearchConfigKey, defaultValue: true);
+    bool showSearchHistory = ChewieHiveUtil.getBool(
+        HiveUtil.showSearchHistoryKey,
+        defaultValue: false);
+    bool showSearchGuess = ChewieHiveUtil.getBool(HiveUtil.showSearchGuessKey,
+        defaultValue: false);
+    bool showSearchConfig = ChewieHiveUtil.getBool(HiveUtil.showSearchConfigKey,
+        defaultValue: true);
     bool showSearchRank =
-    ChewieHiveUtil.getBool(HiveUtil.showSearchRankKey, defaultValue: false);
+        ChewieHiveUtil.getBool(HiveUtil.showSearchRankKey, defaultValue: false);
     return CustomScrollView(
       controller: _scrollController,
       slivers: [
@@ -248,41 +343,42 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
               if (showSearchHistory)
                 Selector<AppProvider, List<String>>(
                   selector: (context, globalProvider) =>
-                  globalProvider.searchHistoryList,
+                      globalProvider.searchHistoryList,
                   builder: (context, searchHistoryList, child) =>
-                  searchHistoryList.isNotEmpty
-                      ? ItemBuilder.buildTitle(
-                    context,
-                    title: appLocalizations.searchRecently,
-                    icon: Icons.delete_outline_rounded,
-                    onTap: () {
-                      DialogBuilder.showConfirmDialog(
-                        context,
-                        title: appLocalizations.clearSearchHistory,
-                        message: appLocalizations.clearSearchHistoryMessage,
-                        onTapConfirm: () {
-                          appProvider.searchHistoryList = [];
-                        },
-                      );
-                    },
-                  )
-                      : emptyWidget,
+                      searchHistoryList.isNotEmpty
+                          ? ItemBuilder.buildTitle(
+                              context,
+                              title: appLocalizations.searchRecently,
+                              icon: LoftifyIcons.delete,
+                              onTap: () {
+                                DialogBuilder.showConfirmDialog(
+                                  context,
+                                  title: appLocalizations.clearSearchHistory,
+                                  message: appLocalizations
+                                      .clearSearchHistoryMessage,
+                                  onTapConfirm: () {
+                                    appProvider.searchHistoryList = [];
+                                  },
+                                );
+                              },
+                            )
+                          : emptyWidget,
                 ),
               if (showSearchHistory)
                 Selector<AppProvider, List<String>>(
                   selector: (context, globalProvider) =>
-                  globalProvider.searchHistoryList,
+                      globalProvider.searchHistoryList,
                   builder: (context, searchHistoryList, child) =>
                       ItemBuilder.buildWrapTagList(context, searchHistoryList,
                           onTap: (str) {
-                            _performSearch(str);
-                          }),
+                    _performSearch(str);
+                  }),
                 ),
               if (showSearchGuess && _guessList.isNotEmpty)
                 ItemBuilder.buildTitle(
                   context,
                   title: appLocalizations.guessYouSearch,
-                  icon: Icons.refresh_rounded,
+                  icon: LoftifyIcons.refresh,
                   onTap: () {
                     fetchGuessList();
                   },
@@ -291,8 +387,8 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
                 ItemBuilder.buildWrapTagList(
                     context, _guessList.map((e) => e.keyword).toList(),
                     onTap: (str) {
-                      _performSearch(str);
-                    }),
+                  _performSearch(str);
+                }),
               if (showSearchConfig && _configList.isNotEmpty)
                 _buildConfigList(),
             ],
@@ -300,32 +396,35 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
         ),
         if (showSearchRank && _tabLabelList.isNotEmpty)
           SliverPersistentHeader(
-            key: ValueKey(StringUtil.getRandomString()),
+            key: const ValueKey('search-rank-tabs'),
             pinned: true,
             delegate: SliverAppBarDelegate(
               radius: 0,
               background: ChewieTheme.getBackground(context),
               tabBar: TabBarWrapper(
-                tabController: _tabController,
+                tabController: _tabController!,
                 tabs: _tabLabelList
                     .asMap()
                     .entries
                     .map(
-                      (entry) =>
-                      ItemBuilder.buildAnimatedTab(
+                      (entry) => ItemBuilder.buildAnimatedTab(
                         context,
                         selected: entry.key == _currentTabIndex,
                         text: entry.value,
+                        controller: _tabController,
+                        tabIndex: entry.key,
                         fontSizeDelta: -2,
                         normalUserBold: true,
                       ),
-                )
+                    )
                     .toList(),
                 onTap: (index) {
-                  setState(() {
-                    _currentTabIndex = index;
-                  });
-                  _swiperController.move(index);
+                  _setCurrentTab(index);
+                  _rankPageController?.animateToPage(
+                    index,
+                    duration: const Duration(milliseconds: 260),
+                    curve: Curves.easeOutCubic,
+                  );
                 },
               ),
             ),
@@ -339,47 +438,52 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
     );
   }
 
+  double get _rankRowHeight =>
+      max(32, MediaQuery.textScalerOf(context).scale(24));
+
+  List<RankItem> _visibleRankItems(RankListItem item) => item.hotLists
+      .where((entry) => entry.pv != 0 || entry.score != null)
+      .toList();
+
   _buildRankList() {
+    final count = _rankList.fold<int>(
+        0, (count, item) => max(count, _visibleRankItems(item).length));
     return SizedBox(
-      height: 945,
-      child: Swiper(
-        controller: _swiperController,
-        loop: false,
-        control: null,
-        viewportFraction: 0.93,
+      height: count * (_rankRowHeight + 16) + 32,
+      child: PageView.builder(
+        controller: _rankPageController,
         scrollDirection: Axis.horizontal,
         itemCount: _rankList.length,
         itemBuilder: (context, index) {
-          return _buildRankListItem(index, _rankList[index]);
+          return _buildRankListItem(_rankList[index]);
         },
-        onIndexChanged: (index) {
-          _tabController.animateTo(index);
+        onPageChanged: (index) {
+          _setCurrentTab(index);
+          _tabController?.animateTo(index);
         },
       ),
     );
   }
 
-  Widget _buildRankListItem(int rankIndex, RankListItem item) {
-    item.hotLists.removeWhere((e) => e.pv == 0 && e.score == null);
+  Widget _buildRankListItem(RankListItem item) {
+    final hotLists = _visibleRankItems(item);
     return Container(
-      margin:
-      EdgeInsets.only(right: rankIndex == _rankList.length - 1 ? 0 : 16),
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        color: Theme
-            .of(context)
-            .cardColor
-            .withAlpha(200),
+        color: Theme.of(context).cardColor.withAlpha(200),
       ),
       child: ScrollConfiguration(
         behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
         child: ListView.builder(
+          padding: EdgeInsets.zero,
           physics: const NeverScrollableScrollPhysics(),
-          itemCount: item.hotLists.length,
+          itemCount: hotLists.length,
           itemBuilder: (context, index) {
-            return ClickableWrapper(child:
-            _buildRankItem(index, item.rankListType, item.hotLists[index]));
+            return ClickableWrapper(
+                child:
+                    _buildRankItem(index, item.rankListType, hotLists[index]));
           },
         ),
       ),
@@ -388,7 +492,7 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
 
   Widget _buildRankItem(int index, RankListType type, RankItem item) {
     bool showImage = ((type == RankListType.post && item.postType != 1) ||
-        (type == RankListType.collection)) &&
+            (type == RankListType.collection)) &&
         StringUtil.isNotEmpty(item.img);
     bool showText = type == RankListType.post && item.postType == 1;
     return GestureDetector(
@@ -404,7 +508,8 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
             break;
           case RankListType.post:
             if (LoftifyUriUtil.isPostUrl(item.url)) {
-              Map<String, String> map = LoftifyUriUtil.extractPostInfo(item.url);
+              Map<String, String> map =
+                  LoftifyUriUtil.extractPostInfo(item.url);
               RouteUtil.pushPanelCupertinoRoute(
                 context,
                 PostDetailScreen(
@@ -413,7 +518,8 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
                 ),
               );
             } else if (LoftifyUriUtil.isVideoUrl(item.url)) {
-              Map<String, String> map = LoftifyUriUtil.extractVideoInfo(item.url);
+              Map<String, String> map =
+                  LoftifyUriUtil.extractVideoInfo(item.url);
               if (ResponsiveUtil.isDesktop()) {
                 IToast.showTop(appLocalizations.unSupportVideoInDesktop);
               } else {
@@ -444,7 +550,8 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
       },
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 8),
-        height: 30,
+        width: double.infinity,
+        height: _rankRowHeight,
         child: Row(
           children: [
             if (item.icon.isNotEmpty)
@@ -463,19 +570,16 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
               ),
             if (item.icon.isEmpty)
               Container(
-                width: 20,
+                width: max(20, MediaQuery.textScalerOf(context).scale(20)),
                 alignment: Alignment.center,
                 child: Text(
                   "${index + 1}",
-                  style: Theme
-                      .of(context)
-                      .textTheme
-                      .labelLarge
-                      ?.apply(
-                    fontWeightDelta: 2,
-                    color:
-                    index > 2 ? Colors.grey : ChewieColors.likeButtonColor,
-                  ),
+                  style: Theme.of(context).textTheme.labelLarge?.apply(
+                        fontWeightDelta: 2,
+                        color: index > 2
+                            ? Theme.of(context).colorScheme.onSurfaceVariant
+                            : ChewieColors.likeButtonColor,
+                      ),
                 ),
               ),
             const SizedBox(width: 8),
@@ -501,17 +605,14 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(
-                      color: Theme
-                          .of(context)
-                          .dividerColor, width: 2),
+                      color: Theme.of(context).dividerColor, width: 2),
                 ),
                 child: Text(
                   StringUtil.clearBlank(
                       HtmlUtil.extractTextFromHtml(item.postDigest ?? "")),
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme
-                      .of(context)
+                  style: Theme.of(context)
                       .textTheme
                       .bodyMedium
                       ?.apply(fontSizeDelta: -9),
@@ -523,44 +624,40 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
                 item.title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme
-                    .of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.apply(
-                  fontWeightDelta: 2,
-                  fontSizeDelta: -1,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium?.apply(
+                      fontWeightDelta: 2,
+                      fontSizeDelta: -1,
+                    ),
               ),
             ),
-            const SizedBox(width: 20),
-            Align(
-              alignment: Alignment.centerRight,
+            const SizedBox(width: 8),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.sizeOf(context).width * 0.3,
+              ),
               child: Text(
                 item.pv != 0
-                    ? appLocalizations.searchingCount(StringUtil.formatCount(item.pv))
+                    ? appLocalizations
+                        .searchingCount(StringUtil.formatCount(item.pv))
                     : "${item.score}",
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme
-                    .of(context)
-                    .textTheme
-                    .labelSmall
-                    ?.apply(
-                  fontWeightDelta: 2,
-                ),
+                textAlign: TextAlign.end,
+                style: Theme.of(context).textTheme.labelSmall?.apply(
+                      fontWeightDelta: 2,
+                    ),
               ),
             ),
             const SizedBox(width: 3),
             if (item.trend == 1)
-              const Icon(
-                Icons.arrow_upward_rounded,
+              const ChewieIcon(
+                LoftifyIcons.trendUp,
                 color: ChewieColors.likeButtonColor,
                 size: 12,
               ),
             if (item.trend == 2)
-              const Icon(
-                Icons.arrow_downward_rounded,
+              const ChewieIcon(
+                LoftifyIcons.trendDown,
                 color: ChewieColors.likeButtonColor,
                 size: 12,
               ),
@@ -624,8 +721,7 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
                         item.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme
-                            .of(context)
+                        style: Theme.of(context)
                             .textTheme
                             .titleSmall
                             ?.apply(fontSizeDelta: -1),
@@ -637,8 +733,7 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
                     item.content,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme
-                        .of(context)
+                    style: Theme.of(context)
                         .textTheme
                         .bodySmall
                         ?.apply(fontSizeDelta: -1),
@@ -653,16 +748,16 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
   }
 
   Widget _buildSearchBar() {
-    double width = ResponsiveUtil.isLandscapeLayout()
-        ? searchBarWidth - 80
-        : min(MediaQuery
-        .of(context)
-        .size
-        .width, searchBarWidth);
+    final isCompactWidth = MediaQuery.sizeOf(context).width < 600;
     return Container(
+      key: const ValueKey('search-navigation-bar'),
       margin: const EdgeInsets.all(10),
-      constraints:
-      BoxConstraints(maxWidth: width, minWidth: width, maxHeight: 56),
+      constraints: BoxConstraints(
+        maxWidth: !isCompactWidth && ResponsiveUtil.isLandscapeLayout()
+            ? searchBarWidth - 80
+            : double.infinity,
+        maxHeight: 56,
+      ),
       child: ItemBuilder.buildSearchBar(
         context: context,
         borderRadius: 8,
@@ -670,7 +765,6 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
         hintFontSizeDelta: 1,
         focusNode: _focusNode,
         controller: _searchController,
-        background: Colors.grey.withAlpha(40),
         hintText: appLocalizations.searchHint,
         onSubmitted: (text) async {
           _performSearch(text);
@@ -681,6 +775,8 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
 
   @override
   List<ScrollController> getScrollControllers() {
-    return [_scrollController];
+    // The covered landing list must not counteract suggestion scroll events
+    // when the navigation bar changes the viewport padding.
+    return [_sugList.isNotEmpty ? _suggestScrollController : _scrollController];
   }
 }

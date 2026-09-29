@@ -3,6 +3,7 @@ library lottie_cupertino_refresh;
 import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
+import 'package:awesome_chewie/src/Resources/chewie_icons.dart';
 
 import 'package:awesome_chewie/src/Widgets/Module/EasyRefresh/easy_refresh.dart';
 

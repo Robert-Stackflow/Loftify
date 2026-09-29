@@ -33,8 +33,8 @@ class CustomDialogColors {
   /// <h3>Hex Code: #707070</h3>
   static Color defaultTextColor = const Color(0xFF707070);
 
-  static getBgColor(BuildContext context, CustomDialogType customDialogType,
-      Color? defaultColor) {
+  static Color getBgColor(BuildContext context,
+      CustomDialogType customDialogType, Color? defaultColor) {
     return customDialogType == CustomDialogType.normal
         ? ChewieTheme.primaryColor
         : customDialogType == CustomDialogType.success
@@ -43,6 +43,16 @@ class CustomDialogColors {
                 ? CustomDialogColors.warning
                 : customDialogType == CustomDialogType.error
                     ? CustomDialogColors.error
-                    : defaultColor;
+                    : (defaultColor ?? ChewieTheme.primaryColor);
+  }
+
+  /// Keep filled action labels white without sacrificing text contrast on
+  /// lighter accent colors (notably yellow themes).
+  static Color readableActionFill(Color base) {
+    var fill = base;
+    while (1.05 / (fill.computeLuminance() + 0.05) < 4.5) {
+      fill = Color.lerp(fill, Colors.black, 0.08)!;
+    }
+    return fill;
   }
 }

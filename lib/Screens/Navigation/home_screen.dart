@@ -1,15 +1,24 @@
 import 'dart:async';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
+import 'package:extended_nested_scroll_view/extended_nested_scroll_view.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/recommend_api.dart';
 import 'package:loftify/Widgets/PostItem/recommend_flow_item_builder.dart';
+import 'package:provider/provider.dart';
 
 import '../../Models/recommend_response.dart';
+import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/app_provider.dart';
+import '../../Utils/lottie_files.dart';
+import '../../Utils/paged_data_controller.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
+import 'search_screen.dart';
 
 int krefreshTimeout = 300;
+
+typedef _ExploreCursor = ({int offset, int page, int feed});
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -33,170 +42,349 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
         BottomNavgationMixin {
   @override
   bool get wantKeepAlive => true;
-  final List<PostListItem> _recommendPosts = [];
-  bool _loading = false;
   int lastRefreshTime = 0;
   final EasyRefreshController _refreshController = EasyRefreshController();
   late final ScrollController _scrollController =
       widget.scrollController ?? ScrollController();
-  int _currentPage = 0;
-  int _currentOffset = 0;
-  int _currentFeed = 0;
+  final ScrollController _nestedScrollController = ScrollController();
+  ScrollController? _nestedInnerScrollController;
+  late final PagedDataController<PostListItem, int, _ExploreCursor, void>
+      _pagingController;
   late AnimationController _refreshRotationController;
   final ScrollToHideController _scrollToHideController =
       ScrollToHideController();
-
-  refresh() {
-    _refreshController.callRefresh();
+  Future<void> refresh() async {
+    await _scrollHomeToTop();
+    if (mounted) await _triggerRefresh();
   }
 
   @override
   void initState() {
+    super.initState();
     _refreshRotationController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
-    super.initState();
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels >
-          _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
-        _onLoad();
-      }
+    _pagingController = PagedDataController(
+      initialCursor: (offset: 0, page: 0, feed: 0),
+      keyOf: (item) => item.postData?.postView.id ?? item.itemId,
+      loader: _loadExplorePage,
+      onError: (error, stackTrace) {
+        ILogger.error(
+            'Failed to load explore recommendations', error, stackTrace);
+        if (!mounted) return;
+        IToast.showTop(
+          error is PagedDataException && StringUtil.isNotEmpty(error.message)
+              ? error.message
+              : appLocalizations.loadFailed,
+        );
+      },
+    )..addListener(_handlePagingChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) panelScreenState?.refreshScrollControllers();
     });
-    WidgetsBinding.instance.addPostFrameCallback(
-        (_) => panelScreenState?.refreshScrollControllers());
   }
 
-  _fetchData({bool refresh = false}) async {
-    if (_loading) return;
-    _loading = true;
-    if (!refresh) {
-      _currentFeed++;
-    } else {
-      _currentFeed = 0;
-      _currentOffset = 0;
+  Future<PagedDataPage<PostListItem, _ExploreCursor, void>> _loadExplorePage(
+    _ExploreCursor cursor,
+    bool refresh,
+  ) async {
+    final page = refresh ? 1 : cursor.page + 1;
+    final feed = refresh ? 0 : cursor.feed + 1;
+    final value = await RecommendApi.getExploreRecomend(
+      offset: refresh ? 0 : cursor.offset,
+      page: page,
+      feed: feed,
+    );
+    final code = (value['code'] as num?)?.toInt();
+    if (code == 4009) {
+      return PagedDataPage(
+        items: const [],
+        nextCursor: cursor,
+        hasMore: false,
+      );
     }
-    _currentPage++;
-    return await RecommendApi.getExploreRecomend(
-      offset: _currentOffset,
-      page: _currentPage,
-      feed: _currentFeed,
-    ).then((value) {
+    if (code != 0) {
+      throw PagedDataException(value['msg']?.toString() ?? '');
+    }
+
+    final data = value['data'];
+    if (data is! Map) {
+      throw const PagedDataException('');
+    }
+    final rawItems = data['list'] is List
+        ? List<dynamic>.from(data['list'] as List)
+        : const <dynamic>[];
+    final items = <PostListItem>[];
+    for (final rawItem in rawItems) {
       try {
-        if (value['code'] != 0) {
-          if (value['code'] != 4009) {
-            IToast.showTop(value['msg']);
-          }
-          return IndicatorResult.fail;
-        } else {
-          _currentOffset = value['data']['offset'];
-          List<dynamic> tmp = value['data']['list'];
-          if (refresh) _recommendPosts.clear();
-          _recommendPosts
-              .addAll(tmp.map((e) => PostListItem.fromJson(e)).toList());
-          return IndicatorResult.success;
+        if (rawItem is Map) {
+          items.add(PostListItem.fromJson(
+            Map<String, dynamic>.from(rawItem),
+          ));
         }
-      } catch (e, t) {
-        IToast.showTop(appLocalizations.loadFailed);
-        ILogger.error("Failed to load data", e, t);
-        return IndicatorResult.fail;
-      } finally {
-        if (mounted) setState(() {});
-        _loading = false;
+      } catch (error, stackTrace) {
+        ILogger.error('Skipped malformed explore card', error, stackTrace);
       }
-    });
+    }
+    final nextOffset = (data['offset'] as num?)?.toInt() ?? cursor.offset;
+    return PagedDataPage(
+      items: items,
+      nextCursor: (offset: nextOffset, page: page, feed: feed),
+      hasMore: rawItems.isNotEmpty,
+    );
   }
 
-  _onRefresh() async {
-    return await _fetchData(refresh: true);
+  void _handlePagingChanged() {
+    if (mounted) setState(() {});
   }
 
-  _onLoad() async {
-    return await _fetchData();
+  Future<IndicatorResult> _onRefresh() => _pagingController.refresh();
+
+  Future<IndicatorResult> _onLoad() => _pagingController.load();
+
+  @override
+  void dispose() {
+    _pagingController
+      ..removeListener(_handlePagingChanged)
+      ..dispose();
+    _refreshController.dispose();
+    _refreshRotationController.dispose();
+    _nestedScrollController.dispose();
+    if (widget.scrollController == null) _scrollController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final design = context.design;
+    final hideAppBar = context.select<AppProvider, bool>(
+      (provider) => provider.hideHomeAppBarOnScroll,
+    );
+    final showSearchAction = context.select<AppProvider, bool>(
+      (provider) => provider.hideSearchNavigation,
+    );
     return Scaffold(
-      backgroundColor: ChewieTheme.getBackground(context),
-      appBar: ResponsiveAppBar(
-        title: appLocalizations.home,
-        titleLeftMargin: 15,
-      ),
-      body: Stack(
-        children: [
-          EasyRefresh(
-            refreshOnStart: true,
-            controller: _refreshController,
-            onRefresh: _onRefresh,
-            onLoad: _onLoad,
-            child: WaterfallFlow.builder(
-              controller: _scrollController,
-              cacheExtent: 9999,
-              padding: const EdgeInsets.only(top: 8, left: 8, right: 8),
-              gridDelegate:
-                  const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
-                mainAxisSpacing: 6,
-                crossAxisSpacing: 6,
-                maxCrossAxisExtent: 300,
+      backgroundColor: design.colors.page,
+      appBar: hideAppBar ? null : _buildHomeAppBar(showSearchAction),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final viewportWidth = constraints.maxWidth;
+          final centeredInset =
+              ((viewportWidth - design.grid.maximumContentWidth) / 2)
+                  .clamp(0.0, double.infinity);
+          final pageInset = design.grid.denseFeedPagePaddingFor(viewportWidth);
+          final horizontalInset = centeredInset + pageInset;
+          final gutter = design.grid.gutterFor(viewportWidth);
+
+          if (!hideAppBar) {
+            return _buildFeed(
+              design: design,
+              horizontalInset: horizontalInset,
+              gutter: gutter,
+              scrollController: _scrollController,
+              hideAppBar: false,
+            );
+          }
+
+          // Keep the toolbar in the outer scroll view, as in CloudOTP. The
+          // refresh header belongs to the inner list, so it opens below the
+          // visible toolbar while the list can scroll under the status bar.
+          return ExtendedNestedScrollView(
+            controller: _nestedScrollController,
+            floatHeaderSlivers: true,
+            onlyOneScrollInBody: true,
+            headerSliverBuilder: (context, innerBoxIsScrolled) => [
+              SliverAppBar(
+                key: const ValueKey('home-floating-app-bar'),
+                floating: true,
+                snap: true,
+                pinned: false,
+                toolbarHeight: 48,
+                titleSpacing: 15,
+                elevation: 0,
+                scrolledUnderElevation: 0,
+                surfaceTintColor: Colors.transparent,
+                backgroundColor: design.colors.page,
+                title: Text(
+                  appLocalizations.home,
+                  style: ChewieTheme.titleMedium.apply(fontWeightDelta: 2),
+                ),
+                actions: showSearchAction ? [_buildSearchAction()] : const [],
               ),
-              itemBuilder: (BuildContext context, int index) {
-                return RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
-                  context,
-                  _recommendPosts[index],
-                  showMoreButton: true,
-                  // onShieldContent: () {
-                  //   _recommendPosts.remove(_recommendPosts[index]);
-                  //   setState(() {});
-                  // },
-                  // onShieldTag: (tag) {
-                  //   _recommendPosts.remove(_recommendPosts[index]);
-                  //   setState(() {});
-                  // },
-                  // onShieldUser: () {
-                  //   _recommendPosts.remove(_recommendPosts[index]);
-                  //   setState(() {});
-                  // },
+            ],
+            body: Builder(
+              builder: (context) {
+                final innerController = PrimaryScrollController.of(context);
+                if (!identical(_nestedInnerScrollController, innerController)) {
+                  _nestedInnerScrollController = innerController;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) panelScreenState?.refreshScrollControllers();
+                  });
+                }
+                return _buildFeed(
+                  design: design,
+                  horizontalInset: horizontalInset,
+                  gutter: gutter,
+                  scrollController: innerController,
+                  hideAppBar: true,
                 );
               },
-              itemCount: _recommendPosts.length,
             ),
-          ),
-          Positioned(
-            right: ResponsiveUtil.isLandscapeLayout() ? 16 : 12,
-            bottom: ResponsiveUtil.isLandscapeLayout() ? 16 : 76,
-            child: ScrollToHide.multi(
-              controller: _scrollToHideController,
-              scrollControllers: [_scrollController],
-              hideDirection: Axis.vertical,
-              child: _buildFloatingButtons(),
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 
-  void scrollToTopAndRefresh() {
-    int nowTime = DateTime.now().millisecondsSinceEpoch;
-    if (lastRefreshTime == 0 || (nowTime - lastRefreshTime) > krefreshTimeout) {
-      lastRefreshTime = nowTime;
-      if (_scrollController.offset > MediaQuery.sizeOf(context).height) {
-        _scrollController
-            .animateTo(0,
-                duration: const Duration(milliseconds: 500),
-                curve: Curves.easeInOut)
-            .then((_) {
-          _refreshController.callRefresh();
-        });
-      } else {
-        _refreshController.callRefresh();
-      }
-    }
+  Widget _buildFeed({
+    required LoftifyDesignThemeData design,
+    required double horizontalInset,
+    required double gutter,
+    required ScrollController scrollController,
+    required bool hideAppBar,
+  }) {
+    return Stack(
+      children: [
+        EasyRefresh.builder(
+          refreshOnStart: true,
+          controller: _refreshController,
+          scrollController: scrollController,
+          header: hideAppBar
+              ? LottieCupertinoHeader(
+                  backgroundColor: Colors.transparent,
+                  indicator: LottieFiles.buildLoadingAnimation(40, false),
+                  safeArea: false,
+                  clamping: true,
+                  hapticFeedback: true,
+                  triggerOffset: 56,
+                  maxOverOffset: 84,
+                  radius: 20,
+                )
+              : null,
+          onRefresh: _onRefresh,
+          onLoad: _pagingController.noMore ? null : _onLoad,
+          childBuilder: (context, physics) => CustomScrollView(
+            controller: scrollController,
+            physics: physics,
+            cacheExtent: MediaQuery.sizeOf(context).height,
+            slivers: [
+              SliverPadding(
+                padding: EdgeInsets.only(
+                  top: 8,
+                  left: horizontalInset,
+                  right: horizontalInset,
+                ),
+                sliver: SliverWaterfallFlow(
+                  gridDelegate:
+                      SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+                    mainAxisSpacing: gutter,
+                    crossAxisSpacing: gutter,
+                    maxCrossAxisExtent: design.grid.maximumDenseCardExtent,
+                  ),
+                  delegate: SliverChildBuilderDelegate(
+                    (BuildContext context, int index) {
+                      final item = _pagingController.items[index];
+                      return KeyedSubtree(
+                        key: ValueKey(
+                          'explore-${item.postData?.postView.id ?? item.itemId}',
+                        ),
+                        child:
+                            RecommendFlowItemBuilder.buildWaterfallFlowPostItem(
+                          context,
+                          item,
+                          showMoreButton: true,
+                        ),
+                      );
+                    },
+                    childCount: _pagingController.items.length,
+                    addAutomaticKeepAlives: false,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Positioned(
+          right: horizontalInset,
+          bottom: ResponsiveUtil.isLandscapeLayout() ? design.spacing.xl : 76,
+          child: ScrollToHide.multi(
+            controller: _scrollToHideController,
+            scrollControllers: hideAppBar
+                ? [_nestedScrollController, scrollController]
+                : [scrollController],
+            hideDirection: Axis.vertical,
+            child: _buildFloatingButtons(),
+          ),
+        ),
+      ],
+    );
   }
 
-  _buildFloatingButtons() {
+  ResponsiveAppBar _buildHomeAppBar(bool showSearchAction) {
+    return ResponsiveAppBar(
+      title: appLocalizations.home,
+      titleLeftMargin: 15,
+      actions: showSearchAction ? [_buildSearchAction()] : const [],
+      landscapeActions: showSearchAction ? [_buildSearchAction()] : const [],
+    );
+  }
+
+  Widget _buildSearchAction() {
+    return ChewieIconButton(
+      icon: LoftifyIcons.search,
+      tooltip: appLocalizations.search,
+      onPressed: () => RouteUtil.pushPanelCupertinoRoute(
+        context,
+        const SearchScreen(showBack: true),
+      ),
+    );
+  }
+
+  Future<void> _refreshFromHomeNavigation() async {
+    final distanceFromTop = _homeDistanceFromTop;
+    final shouldRefreshAfterScroll =
+        distanceFromTop <= MediaQuery.sizeOf(context).height / 2;
+    if (distanceFromTop > 1) {
+      await _scrollHomeToTop();
+      if (!mounted || !shouldRefreshAfterScroll) {
+        return;
+      }
+    }
+    await _triggerRefresh();
+  }
+
+  double get _homeDistanceFromTop {
+    final feed = _feedScrollController;
+    final feedDistance = feed.hasClients && feed.offset > 0 ? feed.offset : 0.0;
+    final appBarDistance = appProvider.hideHomeAppBarOnScroll &&
+            _nestedScrollController.hasClients &&
+            !identical(feed, _nestedScrollController)
+        ? (_nestedScrollController.offset > 0
+            ? _nestedScrollController.offset
+            : 0.0)
+        : 0.0;
+    return feedDistance + appBarDistance;
+  }
+
+  Future<void> _triggerRefresh() async {
+    final feed = _feedScrollController;
+    if (!mounted || !feed.hasClients || _pagingController.loading) return;
+    final nowTime = DateTime.now().millisecondsSinceEpoch;
+    if (lastRefreshTime != 0 && nowTime - lastRefreshTime <= krefreshTimeout) {
+      return;
+    }
+    lastRefreshTime = nowTime;
+    await _refreshController.callRefresh(
+      scrollController: feed,
+      jumpToEdge: !appProvider.hideHomeAppBarOnScroll,
+    );
+  }
+
+  void scrollToTopAndRefresh() => unawaited(refresh());
+
+  Widget _buildFloatingButtons() {
     return ResponsiveUtil.isLandscapeLayout()
         ? Column(
             children: [
@@ -204,7 +392,7 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
                 icon: RotationTransition(
                   turns: Tween(begin: 0.0, end: 1.0)
                       .animate(_refreshRotationController),
-                  child: const Icon(Icons.refresh_rounded),
+                  child: const ChewieIcon(LoftifyIcons.refresh),
                 ),
                 onTap: () async {
                   refresh();
@@ -212,7 +400,7 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
               ),
               const SizedBox(height: 10),
               ShadowIconButton(
-                icon: const Icon(Icons.arrow_upward_rounded),
+                icon: const ChewieIcon(LoftifyIcons.scrollTop),
                 onTap: () {
                   scrollToTop();
                 },
@@ -222,26 +410,43 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
         : emptyWidget;
   }
 
-  void scrollToTop() {
-    _scrollController.animateTo(0,
-        duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+  ScrollController get _feedScrollController =>
+      appProvider.hideHomeAppBarOnScroll
+          ? _nestedInnerScrollController ?? _nestedScrollController
+          : _scrollController;
+
+  Future<void> _scrollHomeToTop() async {
+    final feed = _feedScrollController;
+    if (feed.hasClients && feed.offset > 0) {
+      await feed.animateTo(0,
+          duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
+    }
+    if (appProvider.hideHomeAppBarOnScroll &&
+        _nestedScrollController.hasClients &&
+        _nestedScrollController.offset > 0) {
+      await _nestedScrollController.animateTo(0,
+          duration: const Duration(milliseconds: 220), curve: Curves.easeOut);
+    }
   }
 
+  void scrollToTop() => unawaited(_scrollHomeToTop());
+
   void scrollToTopOrRefresh() {
-    if (_scrollController.offset > 30) {
-      scrollToTop();
-    } else {
-      _refreshController.callRefresh();
-    }
+    unawaited(_refreshFromHomeNavigation());
   }
 
   @override
   List<ScrollController> getScrollControllers() {
-    return [_scrollController];
+    if (!appProvider.hideHomeAppBarOnScroll) return [_scrollController];
+    final inner = _nestedInnerScrollController;
+    return [
+      _nestedScrollController,
+      if (inner != null && !identical(inner, _nestedScrollController)) inner,
+    ];
   }
 
   @override
   FutureOr onTapBottomNavigation() {
-    scrollToTopOrRefresh();
+    return _refreshFromHomeNavigation();
   }
 }

@@ -7,8 +7,78 @@ import 'package:loftify/Models/suit_response.dart';
 import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 
+import '../../Theme/loftify_design_theme.dart';
+import '../../Utils/loftify_file_util.dart';
 import '../../Screens/Suit/custom_bg_avatar_list_screen.dart';
 import '../../l10n/l10n.dart';
+import '../Design/loftify_controls.dart';
+import '../Design/loftify_download_progress_button.dart';
+import '../Design/loftify_surfaces.dart';
+import '../loftify_icons.dart';
+
+class CustomBgAvatarDetailPanel extends StatelessWidget {
+  const CustomBgAvatarDetailPanel({
+    super.key,
+    required this.title,
+    required this.body,
+    required this.footer,
+  });
+
+  final String title;
+  final Widget body;
+  final Widget footer;
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final design = context.design;
+    final availableHeight = (media.size.height -
+            media.padding.top -
+            media.viewInsets.bottom -
+            design.spacing.sm)
+        .clamp(0.0, 760.0);
+    final textScale = media.textScaler.scale(14) / 14;
+    final scrollFooter = availableHeight < 640 || textScale > 1.3;
+    final scrollingContent = SingleChildScrollView(
+      key: const ValueKey('custom-bg-avatar-detail-scroll'),
+      physics: const ClampingScrollPhysics(),
+      child: scrollFooter
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                body,
+                Divider(
+                  height: design.borders.hairline,
+                  thickness: design.borders.hairline,
+                  color: design.colors.outline,
+                ),
+                Padding(
+                  key: const ValueKey(
+                    'custom-bg-avatar-detail-scrolling-footer',
+                  ),
+                  padding: EdgeInsets.all(design.spacing.xl),
+                  child: footer,
+                ),
+              ],
+            )
+          : body,
+    );
+    return ConstrainedBox(
+      key: const ValueKey('custom-bg-avatar-detail-panel'),
+      constraints: BoxConstraints(maxHeight: availableHeight),
+      child: LoftifyPanel(
+        title: title,
+        expandBody: true,
+        body: scrollingContent,
+        footer: scrollFooter ? null : footer,
+        footerPadding: EdgeInsets.all(design.spacing.xl),
+      ),
+    );
+  }
+}
+
+enum _DecorationDownloadAction { current, all }
 
 class CustomBgAvatarDetailBottomSheet extends StatefulWidget {
   const CustomBgAvatarDetailBottomSheet({super.key, required this.item});
@@ -27,6 +97,8 @@ class CustomBgAvatarDetailBottomSheetState
   final SwiperController _swiperController = SwiperController();
   int _currentIndex = 0;
   String currentUserNickName = "";
+  _DecorationDownloadAction? _activeDownload;
+  double _downloadProgress = 0;
 
   bool get isLootBox => item.type != 0;
 
@@ -70,7 +142,7 @@ class CustomBgAvatarDetailBottomSheetState
     }
   }
 
-  refreshCurrentUser() {
+  void refreshCurrentUser() {
     if (isLootBox) {
       var blogInfo = map[item.lootBox!.productItems[_currentIndex].userId];
       currentUserNickName = blogInfo?.blogNickName ?? "";
@@ -83,48 +155,18 @@ class CustomBgAvatarDetailBottomSheetState
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      runAlignment: WrapAlignment.center,
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).canvasColor,
-            borderRadius: BorderRadius.vertical(
-                top: const Radius.circular(20),
-                bottom: ResponsiveUtil.isWideDevice()
-                    ? const Radius.circular(20)
-                    : Radius.zero),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildHeader(),
-              MyDivider( horizontal: 12, vertical: 0),
-              _buildContent(),
-              _buildDesc(),
-              MyDivider( horizontal: 12, vertical: 0),
-              _buildFooter(),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      alignment: Alignment.center,
-      child: Text(
-        appLocalizations.dressDetail,
-        style: Theme.of(context).textTheme.titleLarge,
+    return CustomBgAvatarDetailPanel(
+      title: appLocalizations.dressDetail,
+      body: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [_buildContent(), _buildDesc()],
       ),
+      footer: _buildFooter(),
     );
   }
 
-  getUrlByIndex(int index) {
+  String getUrlByIndex(int index) {
     if (isLootBox) {
       return item.lootBox!.productItems[index].img.raw;
     } else {
@@ -137,7 +179,7 @@ class CustomBgAvatarDetailBottomSheetState
     }
   }
 
-  getIsAvatarByIndex(int index) {
+  bool getIsAvatarByIndex(int index) {
     if (isLootBox) {
       return false;
     } else {
@@ -149,7 +191,7 @@ class CustomBgAvatarDetailBottomSheetState
     }
   }
 
-  getAllImages() {
+  List<String> getAllImages() {
     if (isLootBox) {
       return item.lootBox!.productItems.map((e) => e.img.raw).toList();
     } else {
@@ -158,7 +200,7 @@ class CustomBgAvatarDetailBottomSheetState
     }
   }
 
-  _buildContent() {
+  Widget _buildContent() {
     return Container(
       padding: const EdgeInsets.only(top: 24, bottom: 16),
       child: Column(
@@ -215,56 +257,40 @@ class CustomBgAvatarDetailBottomSheetState
               if (count > 1 && ResponsiveUtil.isDesktop())
                 Positioned(
                   left: 16,
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: _currentIndex == 0
-                          ? Colors.black.withOpacity(0.1)
-                          : Colors.black.withOpacity(0.4),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: GestureDetector(
-                      onTap: () {
-                        _swiperController.previous();
-                      },
-                      child: ClickableWrapper(
-                        clickable: _currentIndex != 0,
-                        child: const Icon(
-                          Icons.keyboard_arrow_left_rounded,
-                          size: 30,
-                          color: Colors.white,
-                        ),
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: ChewieIconButton(
+                      icon: LoftifyIcons.previous,
+                      iconSize: 30,
+                      tapTargetSize: 44,
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.black.withValues(
+                        alpha: _currentIndex == 0 ? 0.26 : 0.4,
                       ),
+                      cornerRadius: 22,
+                      onPressed: _currentIndex == 0
+                          ? null
+                          : _swiperController.previous,
                     ),
                   ),
                 ),
               if (count > 1 && ResponsiveUtil.isDesktop())
                 Positioned(
                   right: 16,
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: _currentIndex == count - 1
-                          ? Colors.black.withOpacity(0.1)
-                          : Colors.black.withOpacity(0.4),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: GestureDetector(
-                      onTap: () {
-                        _swiperController.next();
-                      },
-                      child: ClickableWrapper(
-                        clickable: _currentIndex != count - 1,
-                       child: const Icon(
-                          Icons.keyboard_arrow_right_rounded,
-                          size: 30,
-                          color: Colors.white,
-                        ),
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: ChewieIconButton(
+                      icon: LoftifyIcons.next,
+                      iconSize: 30,
+                      tapTargetSize: 44,
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.black.withValues(
+                        alpha: _currentIndex == count - 1 ? 0.26 : 0.4,
                       ),
+                      cornerRadius: 22,
+                      onPressed: _currentIndex == count - 1
+                          ? null
+                          : _swiperController.next,
                     ),
                   ),
                 ),
@@ -283,41 +309,41 @@ class CustomBgAvatarDetailBottomSheetState
                   top: 6,
                   right: 15,
                   child: ClickableGestureDetector(
-                      onTap: () {
-                        if (ResponsiveUtil.isLandscapeLayout()) {
-                          Navigator.pop(context);
+                    onTap: () {
+                      if (ResponsiveUtil.isLandscapeLayout()) {
+                        Navigator.pop(context);
+                      }
+                      try {
+                        if (isLootBox) {
+                          var blogInfo = map[
+                              item.lootBox!.productItems[_currentIndex].userId];
+                          RouteUtil.pushPanelCupertinoRoute(
+                            context,
+                            UserDetailScreen(
+                              blogName: blogInfo!.blogName,
+                              blogId: blogInfo.blogId,
+                            ),
+                          );
+                        } else {
+                          var blogInfo = map[item.product!.blogId];
+                          RouteUtil.pushPanelCupertinoRoute(
+                            context,
+                            UserDetailScreen(
+                              blogName: blogInfo!.blogName,
+                              blogId: blogInfo.blogId,
+                            ),
+                          );
                         }
-                        try {
-                          if (isLootBox) {
-                            var blogInfo = map[item
-                                .lootBox!.productItems[_currentIndex].userId];
-                            RouteUtil.pushPanelCupertinoRoute(
-                              context,
-                              UserDetailScreen(
-                                blogName: blogInfo!.blogName,
-                                blogId: blogInfo.blogId,
-                              ),
-                            );
-                          } else {
-                            var blogInfo = map[item.product!.blogId];
-                            RouteUtil.pushPanelCupertinoRoute(
-                              context,
-                              UserDetailScreen(
-                                blogName: blogInfo!.blogName,
-                                blogId: blogInfo.blogId,
-                              ),
-                            );
-                          }
-                        } catch (e, t) {
-                          ILogger.error("Failed to open user detail", e, t);
-                          IToast.showTop(appLocalizations.jumpFailed);
-                        }
-                      },
-                      child: ItemBuilder.buildTranslucentTag(
-                        context,
-                        text: currentUserNickName,
-                        opacity: 0.5,
-                      ),
+                      } catch (e, t) {
+                        ILogger.error("Failed to open user detail", e, t);
+                        IToast.showTop(appLocalizations.jumpFailed);
+                      }
+                    },
+                    child: ItemBuilder.buildTranslucentTag(
+                      context,
+                      text: currentUserNickName,
+                      opacity: 0.5,
+                    ),
                   ),
                 ),
             ],
@@ -327,7 +353,7 @@ class CustomBgAvatarDetailBottomSheetState
     );
   }
 
-  _buildDesc() {
+  Widget _buildDesc() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16)
           .add(const EdgeInsets.only(bottom: 20)),
@@ -351,74 +377,158 @@ class CustomBgAvatarDetailBottomSheetState
     );
   }
 
-  _buildFooter() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
-      alignment: Alignment.center,
-      child: Row(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Center(
-            child: ItemBuilder.buildIconTextButton(
-              context,
-              icon: const Icon(Icons.download_done_rounded, size: 24),
-              direction: Axis.vertical,
-              text: appLocalizations.singleImage,
-              fontSizeDelta: -2,
-              onTap: () async {
-                CustomLoadingDialog.showLoading(title: appLocalizations.downloading);
-                String url = getUrlByIndex(_currentIndex);
-                await FileUtil.saveImage(context, url);
-                CustomLoadingDialog.dismissLoading();
-              },
-            ),
-          ),
-          const SizedBox(width: 20),
-          if (count > 1)
-            Center(
-              child: ItemBuilder.buildIconTextButton(
-                context,
-                icon: const Icon(Icons.done_all_rounded, size: 24),
-                direction: Axis.vertical,
-                text: appLocalizations.all,
-                fontSizeDelta: -2,
-                onTap: () async {
-                  CustomLoadingDialog.showLoading(title: appLocalizations.downloading);
-                  List<String> urls = [];
-                  if (isLootBox) {
-                    for (var item in item.lootBox!.productItems) {
-                      urls.add(item.img.raw);
-                    }
-                  } else {
-                    for (var item in item.product!.wallpapers) {
-                      urls.add(item.img.raw);
-                    }
-                    for (var item in item.product!.avatars) {
-                      urls.add(item.img.raw);
-                    }
-                  }
-                  await FileUtil.saveImages(context, urls);
-                  CustomLoadingDialog.dismissLoading();
-                },
-              ),
-            ),
-          if (count > 1) const SizedBox(width: 20),
-          Expanded(
-            child: SizedBox(
-              height: 50,
-              child: RoundIconTextButton(
-                background: Theme.of(context).primaryColor,
-                text: appLocalizations.confirm,
-                onPressed: () async {
-                  Navigator.of(context).pop();
-                },
-                fontSizeDelta: 2,
-              ),
-            ),
-          ),
-        ],
+  Widget _buildFooter() {
+    final design = context.design;
+    final actions = <Widget>[
+      LoftifyDownloadProgressButton(
+        label: appLocalizations.singleImage,
+        icon: LoftifyIcons.download,
+        variant: LoftifyButtonVariant.secondary,
+        expand: true,
+        progress: _activeDownload == _DecorationDownloadAction.current
+            ? _downloadProgress
+            : null,
+        onPressed: _activeDownload == null ? _downloadCurrent : null,
       ),
+      if (count > 1)
+        LoftifyDownloadProgressButton(
+          label: appLocalizations.all,
+          icon: LoftifyIcons.batchDownload,
+          variant: LoftifyButtonVariant.secondary,
+          expand: true,
+          progress: _activeDownload == _DecorationDownloadAction.all
+              ? _downloadProgress
+              : null,
+          onPressed: _activeDownload == null ? _downloadAll : null,
+        ),
+      LoftifyButton(
+        label: appLocalizations.confirm,
+        variant: LoftifyButtonVariant.primary,
+        expand: true,
+        onPressed:
+            _activeDownload == null ? () => Navigator.of(context).pop() : null,
+      ),
+    ];
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+        final vertical = constraints.maxWidth < 560 || textScale > 1.3;
+        if (vertical) {
+          return Column(
+            key: const ValueKey('custom-bg-avatar-detail-actions-vertical'),
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var index = 0; index < actions.length; index++) ...[
+                actions[index],
+                if (index != actions.length - 1)
+                  SizedBox(height: design.spacing.md),
+              ],
+            ],
+          );
+        }
+        return Row(
+          key: const ValueKey('custom-bg-avatar-detail-actions-horizontal'),
+          children: [
+            for (var index = 0; index < actions.length; index++) ...[
+              Expanded(child: actions[index]),
+              if (index != actions.length - 1)
+                SizedBox(width: design.spacing.md),
+            ],
+          ],
+        );
+      },
     );
+  }
+
+  Future<void> _downloadCurrent() async {
+    if (_activeDownload != null) return;
+    _beginDownload(_DecorationDownloadAction.current);
+    try {
+      final url = getUrlByIndex(_currentIndex);
+      final success = await LoftifyFileUtil.saveImage(
+        context,
+        url,
+        onReceiveProgress: (received, total) => _updateDownloadProgress(
+          _DecorationDownloadAction.current,
+          received,
+          total,
+        ),
+      );
+      await _showDownloadCompletion(
+        _DecorationDownloadAction.current,
+        success,
+      );
+    } finally {
+      _endDownload(_DecorationDownloadAction.current);
+    }
+  }
+
+  Future<void> _downloadAll() async {
+    if (_activeDownload != null) return;
+    _beginDownload(_DecorationDownloadAction.all);
+    try {
+      final urls = <String>[];
+      if (isLootBox) {
+        for (final product in item.lootBox!.productItems) {
+          urls.add(product.img.raw);
+        }
+      } else {
+        for (final wallpaper in item.product!.wallpapers) {
+          urls.add(wallpaper.img.raw);
+        }
+        for (final avatar in item.product!.avatars) {
+          urls.add(avatar.img.raw);
+        }
+      }
+      final success = await LoftifyFileUtil.saveImages(
+        context,
+        urls,
+        onReceiveProgress: (received, total) => _updateDownloadProgress(
+          _DecorationDownloadAction.all,
+          received,
+          total,
+        ),
+      );
+      await _showDownloadCompletion(_DecorationDownloadAction.all, success);
+    } finally {
+      _endDownload(_DecorationDownloadAction.all);
+    }
+  }
+
+  void _beginDownload(_DecorationDownloadAction action) {
+    if (!mounted) return;
+    setState(() {
+      _activeDownload = action;
+      _downloadProgress = 0;
+    });
+  }
+
+  void _updateDownloadProgress(
+    _DecorationDownloadAction action,
+    int received,
+    int total,
+  ) {
+    if (!mounted || _activeDownload != action || total <= 0) return;
+    final next = (received / total).clamp(0.0, 1.0).toDouble();
+    if (next < 1 && (next - _downloadProgress).abs() < 0.002) return;
+    setState(() => _downloadProgress = next);
+  }
+
+  Future<void> _showDownloadCompletion(
+    _DecorationDownloadAction action,
+    bool success,
+  ) async {
+    if (!mounted || _activeDownload != action || !success) return;
+    setState(() => _downloadProgress = 1);
+    final motion = context.design.motion;
+    await Future<void>.delayed(motion.effective(context, motion.state));
+  }
+
+  void _endDownload(_DecorationDownloadAction action) {
+    if (!mounted || _activeDownload != action) return;
+    setState(() {
+      _activeDownload = null;
+      _downloadProgress = 0;
+    });
   }
 }

@@ -8,15 +8,16 @@ import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:loftify/Api/server_api.dart';
 import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
 import 'package:loftify/Screens/panel_screen.dart';
-import 'package:loftify/Utils/asset_util.dart';
 import 'package:loftify/Utils/cloud_control_provider.dart';
 import 'package:loftify/Utils/lottie_files.dart';
+import 'package:loftify/Widgets/Design/loftify_state_view.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
+import 'package:loftify/Widgets/loftify_icons.dart';
 import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
-import '../../l10n/l10n.dart';
+import '../l10n/l10n.dart';
 import '../Api/login_api.dart';
 import '../Api/user_api.dart';
 import '../Models/account_response.dart';
@@ -50,6 +51,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
   Widget? darkModeWidget;
   FullBlogInfo? blogInfo;
   bool _hasJumpedToPinVerify = false;
+  bool _orientationPolicyUpdateScheduled = false;
   Orientation? _oldOrientation;
 
   @override
@@ -139,7 +141,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       showQQGroupDialog();
       jumpToLogin();
-      darkModeWidget = LottieUtil.load(
+      darkModeWidget = LottieFiles.buildAnimation(
         LottieFiles.sunLight,
         size: 25,
         autoForward: !ColorUtil.isDark(context),
@@ -148,7 +150,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
       ResponsiveUtil.runByPlatform(desktop: () async {
         await Utils.initTray();
         trayManager.addListener(this);
-        keyboardHandlerState?.focus();
+        appProvider.shortcutFocusNode.requestFocus();
       });
     });
     initConfig();
@@ -178,7 +180,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
   }
 
   initConfig() {
-    ResponsiveUtil.checkSizeCondition();
+    unawaited(ResponsiveUtil.checkSizeCondition());
     ResponsiveUtil.runByPlatform(
       desktop: () {
         initHotKey();
@@ -190,8 +192,9 @@ class MainScreenState extends BaseWindowState<MainScreen>
             .then((value) => setState(() => isMaximized = value));
       },
       mobile: () {
-        ChewieUtils.setSafeMode(
-            ChewieHiveUtil.getBool(HiveUtil.enableSafeModeKey, defaultValue: false));
+        ChewieUtils.setSafeMode(ChewieHiveUtil.getBool(
+            HiveUtil.enableSafeModeKey,
+            defaultValue: false));
       },
     );
     initDeepLinks();
@@ -212,20 +215,25 @@ class MainScreenState extends BaseWindowState<MainScreen>
     );
   }
 
-  initEasyRefresh() {
-    // EasyRefresh.defaultHeaderBuilder = () => LottieCupertinoHeader(
-    //       backgroundColor: Theme.of(context).canvasColor,
-    //       indicator: LottieUtil.load(LottieUtil.getLoadingPath(context)),
-    //       hapticFeedback: true,
-    //       triggerOffset: 40,
-    //     );
-    EasyRefresh.defaultHeaderBuilder = () => MaterialHeader(
-          backgroundColor: Theme.of(context).canvasColor,
-          color: Theme.of(context).primaryColor,
+  void initEasyRefresh() {
+    EasyRefresh.defaultHeaderBuilder = () => LottieCupertinoHeader(
+          backgroundColor: Colors.transparent,
+          indicator: LottieFiles.buildLoadingAnimation(40, false),
+          hapticFeedback: true,
+          triggerOffset: 56,
+          maxOverOffset: 84,
+          radius: 20,
         );
     EasyRefresh.defaultFooterBuilder = () => LottieCupertinoFooter(
-          indicator: LottieUtil.load(LottieFiles.getLoadingPath(context)),
+          backgroundColor: Colors.transparent,
+          indicator: LottieFiles.buildLoadingAnimation(36, false),
+          triggerOffset: 52,
+          maxOverOffset: 76,
+          infiniteOffset: 240,
+          radius: 18,
         );
+    chewieProvider.loadingWidgetBuilder = LottieFiles.buildLoadingAnimation;
+    chewieProvider.stateWidgetBuilder = LoftifyStateView.fromChewie;
   }
 
   showQQGroupDialog() {
@@ -250,7 +258,8 @@ class MainScreenState extends BaseWindowState<MainScreen>
 
   void jumpToLogin() {
     if (ChewieHiveUtil.isFirstLogin() &&
-        ChewieHiveUtil.getString(HiveUtil.tokenKey, defaultValue: null) == null) {
+        ChewieHiveUtil.getString(HiveUtil.tokenKey, defaultValue: null) ==
+            null) {
       HiveUtil.initConfig();
       ChewieHiveUtil.setFirstLogin();
       if (ResponsiveUtil.isLandscapeLayout()) {
@@ -289,7 +298,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
       return ResponsiveUtil.selectByResponsive(
         landscape: Scaffold(
           resizeToAvoidBottomInset: false,
-          backgroundColor: ChewieTheme.canvasColor,
+          backgroundColor: ChewieTheme.scaffoldBackgroundColor,
           body: SafeArea(child: _buildDesktopBody()),
         ),
         desktop: _buildDesktopBody(),
@@ -322,7 +331,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
       entries: [
         FlutterContextMenuItem(
           appLocalizations.viewPersonalHomepage,
-          iconData: Icons.person_outline_rounded,
+          iconData: LoftifyIcons.profile,
           onPressed: () async {
             panelScreenState?.pushPage(UserDetailScreen(
               blogId: blogInfo!.blogId,
@@ -334,7 +343,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
         FlutterContextMenuItem(
           appLocalizations.logout,
           status: MenuItemStatus.warning,
-          iconData: Icons.logout_rounded,
+          iconData: LoftifyIcons.logout,
           onPressed: () async {
             HiveUtil.confirmLogout(context);
           },
@@ -378,7 +387,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
       width: 42 + leftPadding + rightPadding,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: Theme.of(context).canvasColor,
+        color: Theme.of(context).scaffoldBackgroundColor,
         border: Border(
           right: BorderSide(
             color: Theme.of(context).dividerColor,
@@ -391,10 +400,13 @@ class MainScreenState extends BaseWindowState<MainScreen>
         children: [
           ResponsiveUtil.selectByPlatform(desktop: const WindowMoveHandle()),
           Consumer<LoftifyControlProvider>(
-            builder: (_, cloudControlProvider, __) =>
-                Selector<AppProvider, SideBarChoice>(
-              selector: (context, appProvider) => appProvider.sidebarChoice,
-              builder: (context, sidebarChoice, child) =>
+            builder: (_, cloudControlProvider, __) => Selector<AppProvider,
+                ({SideBarChoice sidebarChoice, bool hideSearch})>(
+              selector: (context, appProvider) => (
+                sidebarChoice: appProvider.sidebarChoice,
+                hideSearch: appProvider.hideSearchNavigation,
+              ),
+              builder: (context, preferences, child) =>
                   Selector<AppProvider, bool>(
                 selector: (context, appProvider) =>
                     !appProvider.showPanelNavigator,
@@ -408,35 +420,37 @@ class MainScreenState extends BaseWindowState<MainScreen>
                     const SizedBox(height: 8),
                     ToolButton(
                       context: context,
-                      selected:
-                          hideNavigator && sidebarChoice == SideBarChoice.Home,
-                      icon: Icons.explore_outlined,
-                      selectedIcon: Icons.explore_rounded,
+                      selected: hideNavigator &&
+                          preferences.sidebarChoice == SideBarChoice.Home,
+                      icon: LoftifyIcons.home,
+                      selectedIcon: LoftifyIcons.home,
                       onPressed: () async {
                         appProvider.sidebarChoice = SideBarChoice.Home;
                         panelScreenState?.popAll(false);
                       },
                       iconSize: 24,
                     ),
+                    if (!preferences.hideSearch) ...[
+                      const SizedBox(height: 8),
+                      ToolButton(
+                        context: context,
+                        selected: hideNavigator &&
+                            preferences.sidebarChoice == SideBarChoice.Search,
+                        icon: LoftifyIcons.search,
+                        selectedIcon: LoftifyIcons.search,
+                        onPressed: () async {
+                          appProvider.sidebarChoice = SideBarChoice.Search;
+                          panelScreenState?.popAll(false);
+                        },
+                      ),
+                    ],
                     const SizedBox(height: 8),
                     ToolButton(
                       context: context,
                       selected: hideNavigator &&
-                          sidebarChoice == SideBarChoice.Search,
-                      icon: Icons.search_rounded,
-                      selectedIcon: Icons.manage_search_rounded,
-                      onPressed: () async {
-                        appProvider.sidebarChoice = SideBarChoice.Search;
-                        panelScreenState?.popAll(false);
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    ToolButton(
-                      context: context,
-                      selected: hideNavigator &&
-                          sidebarChoice == SideBarChoice.Dynamic,
-                      icon: Icons.favorite_border_rounded,
-                      selectedIcon: Icons.favorite_rounded,
+                          preferences.sidebarChoice == SideBarChoice.Dynamic,
+                      icon: LoftifyIcons.activity,
+                      selectedIcon: LoftifyIcons.activity,
                       onPressed: () async {
                         appProvider.sidebarChoice = SideBarChoice.Dynamic;
                         panelScreenState?.popAll(false);
@@ -445,10 +459,10 @@ class MainScreenState extends BaseWindowState<MainScreen>
                     const SizedBox(height: 8),
                     ToolButton(
                       context: context,
-                      selected:
-                          hideNavigator && sidebarChoice == SideBarChoice.Mine,
-                      icon: Icons.person_outline_rounded,
-                      selectedIcon: Icons.person_rounded,
+                      selected: hideNavigator &&
+                          preferences.sidebarChoice == SideBarChoice.Mine,
+                      icon: LoftifyIcons.profile,
+                      selectedIcon: LoftifyIcons.profile,
                       onPressed: () async {
                         appProvider.sidebarChoice = SideBarChoice.Mine;
                         panelScreenState?.popAll(false);
@@ -499,12 +513,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
                     if (cloudControlProvider.globalControl.showDress) ...[
                       ToolButton(
                         context: context,
-                        iconBuilder: (_) => AssetUtil.loadDouble(
-                          context,
-                          AssetUtil.dressLightIcon,
-                          AssetUtil.dressDarkIcon,
-                        ),
-                        padding: const EdgeInsets.all(8),
+                        icon: LoftifyIcons.dress,
                         onPressed: () {
                           RouteUtil.pushPanelCupertinoRoute(
                               context, const SuitScreen());
@@ -514,11 +523,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
                     ],
                     ToolButton(
                       context: context,
-                      iconBuilder: (_) => Icon(
-                        Icons.notifications_on_outlined,
-                        color: Theme.of(context).iconTheme.color,
-                        size: 20,
-                      ),
+                      icon: LoftifyIcons.notifications,
                       onPressed: () {
                         RouteUtil.pushPanelCupertinoRoute(
                             context, const SystemNoticeScreen());
@@ -527,12 +532,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
                     const SizedBox(height: 2),
                     ToolButton(
                       context: context,
-                      iconBuilder: (_) => AssetUtil.loadDouble(
-                        context,
-                        AssetUtil.settingLightIcon,
-                        AssetUtil.settingDarkIcon,
-                      ),
-                      padding: const EdgeInsets.all(8),
+                      icon: LoftifyIcons.settings,
                       onPressed: () {
                         RouteUtil.pushPanelCupertinoRoute(
                             context, const SettingScreen());
@@ -585,6 +585,21 @@ class MainScreenState extends BaseWindowState<MainScreen>
         },
       );
     }
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    if (!ResponsiveUtil.isMobile() || _orientationPolicyUpdateScheduled) {
+      return;
+    }
+    _orientationPolicyUpdateScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _orientationPolicyUpdateScheduled = false;
+      if (mounted) {
+        unawaited(ResponsiveUtil.checkSizeCondition());
+      }
+    });
   }
 
   @override

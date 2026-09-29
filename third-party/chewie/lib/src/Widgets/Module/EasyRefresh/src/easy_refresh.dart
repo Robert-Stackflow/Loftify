@@ -338,17 +338,36 @@ class _EasyRefreshState extends State<EasyRefresh>
     // Refresh on start.
     if (widget.refreshOnStart && widget.onRefresh != null) {
       _isRefreshOnStart = true;
-      Future(() {
-        WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-          _callRefresh(
-            overOffset: widget.callRefreshOverOffset,
-            duration: null,
-          );
-        });
-      });
+      _scheduleInitialRefresh();
     }
     _initData();
     widget.controller?._bind(this);
+  }
+
+  void _scheduleInitialRefresh([int attempt = 0]) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final controller = widget.scrollController;
+      if (controller != null && !controller.hasClients) {
+        if (attempt < 8) {
+          _scheduleInitialRefresh(attempt + 1);
+          WidgetsBinding.instance.scheduleFrame();
+        } else {
+          _isRefreshOnStart = false;
+          _headerNotifier._update(indicator: _header, task: _onRefresh);
+        }
+        return;
+      }
+      _callRefresh(
+        overOffset: widget.callRefreshOverOffset,
+        // A clamping header needs its reveal animation to establish the
+        // offset; assigning it instantly can be cleared by nested metrics.
+        duration: _header.clamping ? const Duration(milliseconds: 200) : null,
+        // A nested inner jump to zero also scrolls its outer floating toolbar
+        // away. The initial refresh starts at the edge already.
+        jumpToEdge: !_header.clamping,
+      );
+    });
   }
 
   @override
@@ -476,6 +495,7 @@ class _EasyRefreshState extends State<EasyRefresh>
     Duration? duration,
     Curve curve = Curves.linear,
     ScrollController? scrollController,
+    bool jumpToEdge = true,
     bool force = false,
   }) {
     return _headerNotifier.callTask(
@@ -483,7 +503,9 @@ class _EasyRefreshState extends State<EasyRefresh>
       duration: duration,
       curve: curve,
       scrollController: scrollController ?? widget.scrollController,
+      jumpToEdge: jumpToEdge,
       force: force,
+      triggerHaptic: !_isRefreshOnStart,
     );
   }
 
@@ -629,9 +651,26 @@ class _EasyRefreshState extends State<EasyRefresh>
         child: widget.child!,
       );
     }
-    return _InheritedEasyRefresh(
+    final content = _InheritedEasyRefresh(
       data: _data,
       child: child,
+    );
+    // In clamping mode the header owns the reveal distance rather than the
+    // scroll position. Move the content by that same distance so it cannot
+    // cover the indicator, including inside a NestedScrollView.
+    return AnimatedBuilder(
+      animation: _headerNotifier,
+      child: content,
+      builder: (context, child) {
+        return Transform.translate(
+          // Keep the wrapper mounted even at zero. Switching between child
+          // and Transform would remount the nested Scrollable at every pull
+          // threshold crossing, resetting its position and flashing the feed.
+          offset:
+              Offset(0, _headerNotifier.clamping ? _headerNotifier.offset : 0),
+          child: child,
+        );
+      },
     );
   }
 

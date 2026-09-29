@@ -281,7 +281,7 @@ class _ClassicIndicatorState extends State<_ClassicIndicator>
       icon = SizedBox(
         child: widget.noMoreIcon ??
             const Icon(
-              Icons.inbox_outlined,
+              ChewieIcons.inbox,
             ),
       );
     } else if (_mode == IndicatorMode.processing ||
@@ -305,7 +305,7 @@ class _ClassicIndicatorState extends State<_ClassicIndicator>
         icon = SizedBox(
           child: widget.failedIcon ??
               const Icon(
-                Icons.error_outline,
+                ChewieIcons.error,
               ),
         );
       } else {
@@ -315,7 +315,7 @@ class _ClassicIndicatorState extends State<_ClassicIndicator>
               Transform.rotate(
                 angle: _axis == Axis.vertical ? 0 : -math.pi / 2,
                 child: const Icon(
-                  Icons.done,
+                  ChewieIcons.check,
                 ),
               ),
         );
@@ -325,11 +325,15 @@ class _ClassicIndicatorState extends State<_ClassicIndicator>
       icon = SizedBox(
         child: Transform.rotate(
           angle: -math.pi * _iconAnimationController.value,
-          child: Icon(widget.reverse
-              ? (_axis == Axis.vertical ? Icons.arrow_upward : Icons.arrow_back)
-              : (_axis == Axis.vertical
-                  ? Icons.arrow_downward
-                  : Icons.arrow_forward)),
+          child: Icon(
+            widget.reverse
+                ? (_axis == Axis.vertical
+                    ? ChewieIcons.arrowUp
+                    : ChewieIcons.arrowLeft)
+                : (_axis == Axis.vertical
+                    ? ChewieIcons.arrowDown
+                    : ChewieIcons.arrowRight),
+          ),
         ),
       );
     }

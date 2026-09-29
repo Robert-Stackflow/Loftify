@@ -1,10 +1,11 @@
-
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Screens/Suit/custom_bg_avatar_list_screen.dart';
 import 'package:loftify/Screens/Suit/dress_suit_list_screen.dart';
 
 import '../../Api/gift_api.dart';
+import '../../Utils/hive_util.dart';
+import '../../Utils/tab_state_util.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../l10n/l10n.dart';
 import 'custom_dress_list_screen.dart';
@@ -24,6 +25,12 @@ class _SuitScreenState extends BaseDynamicState<SuitScreen>
   bool get wantKeepAlive => true;
 
   final List<String> _tabLabelList = ["官方", "定制"];
+  static const List<String> _tabIdList = ['official', 'custom'];
+  static const List<String> _customPageIdList = [
+    'background',
+    'dress',
+    'emote',
+  ];
   late TabController _tabController;
   int _currentTabIndex = 0;
   int _currentOfficialBottomBarIndex = 0;
@@ -32,15 +39,69 @@ class _SuitScreenState extends BaseDynamicState<SuitScreen>
   List<Widget> _officialPageList = [];
   List<Widget> _customPageList = [];
   final PageController _officialPageController = PageController();
-  final PageController _customPageController = PageController();
+  late final PageController _customPageController;
+  final GlobalKey<DressSuitListScreenState> _officialPageKey = GlobalKey();
+  final GlobalKey<CustomBgAvatarListScreenState> _backgroundPageKey =
+      GlobalKey();
+  final GlobalKey<CustomDressListScreenState> _dressPageKey = GlobalKey();
+  final GlobalKey<CustomDressListScreenState> _emotePageKey = GlobalKey();
+  final Set<String> _loadedPageIds = <String>{};
   List<String> tags = [];
 
   @override
   void initState() {
     super.initState();
+    _currentCustomBottomBarIndex = PersistentTabState.restore(
+      idKey: HiveUtil.suitCustomPageIdKey,
+      legacyIndexKey: HiveUtil.suitCustomPageIndexKey,
+      itemIds: _customPageIdList,
+    ).index;
+    _customPageController = PageController(
+      initialPage: _currentCustomBottomBarIndex,
+    );
+    _customPageController.addListener(_handleCustomPageChanged);
+    _officialPageController.addListener(_handleOfficialPageChanged);
     initTab();
     fetchTag();
     initPage();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _ensureCurrentPageLoaded();
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _customPageController
+      ..removeListener(_handleCustomPageChanged)
+      ..dispose();
+    _officialPageController
+      ..removeListener(_handleOfficialPageChanged)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _handleCustomPageChanged() {
+    final page = _customPageController.page?.round();
+    if (page == null || page == _currentCustomBottomBarIndex || !mounted) {
+      return;
+    }
+    setState(() => _currentCustomBottomBarIndex = page);
+    PersistentTabState.save(
+      idKey: HiveUtil.suitCustomPageIdKey,
+      legacyIndexKey: HiveUtil.suitCustomPageIndexKey,
+      itemIds: _customPageIdList,
+      index: page,
+    );
+    _ensureCurrentPageLoaded();
+  }
+
+  void _handleOfficialPageChanged() {
+    final page = _officialPageController.page?.round();
+    if (page == null || page == _currentOfficialBottomBarIndex || !mounted) {
+      return;
+    }
+    setState(() => _currentOfficialBottomBarIndex = page);
   }
 
   fetchTag() async {
@@ -51,9 +112,9 @@ class _SuitScreenState extends BaseDynamicState<SuitScreen>
         tag: "",
       );
       String t = res['data']["tags"];
+      if (!mounted) return;
       tags = t.split(",");
       initPage();
-      setState(() {});
     } catch (e, t) {
       ILogger.error("Failed to fetch Tag", e, t);
     }
@@ -61,12 +122,28 @@ class _SuitScreenState extends BaseDynamicState<SuitScreen>
 
   initPage() {
     _officialPageList = [
-      const DressSuitListScreen(),
+      DressSuitListScreen(
+        key: _officialPageKey,
+        refreshOnStart: false,
+      ),
     ];
     _customPageList = [
-      CustomBgAvatarListScreen(tags: tags),
-      CustomDressListScreen(tags: tags),
-      CustomDressListScreen(tags: tags, propType: 3),
+      CustomBgAvatarListScreen(
+        key: _backgroundPageKey,
+        tags: tags,
+        refreshOnStart: false,
+      ),
+      CustomDressListScreen(
+        key: _dressPageKey,
+        tags: tags,
+        refreshOnStart: false,
+      ),
+      CustomDressListScreen(
+        key: _emotePageKey,
+        tags: tags,
+        propType: 3,
+        refreshOnStart: false,
+      ),
     ];
     _pageList = [
       PageView(
@@ -79,33 +156,80 @@ class _SuitScreenState extends BaseDynamicState<SuitScreen>
         children: _customPageList,
       ),
     ];
-    _customPageController.addListener(() {
-      if (_customPageController.page != _currentCustomBottomBarIndex) {
-        setState(() {
-          _currentCustomBottomBarIndex = _customPageController.page!.round();
-        });
-      }
-    });
-    _officialPageController.addListener(() {
-      if (_officialPageController.page != _currentOfficialBottomBarIndex) {
-        setState(() {
-          _currentOfficialBottomBarIndex =
-              _officialPageController.page!.round();
-        });
-      }
-    });
     setState(() {});
   }
 
   initTab() {
-    _tabController = TabController(length: _tabLabelList.length, vsync: this);
-    _tabController.animation?.addListener(() {
-      int indexChange =
-          _tabController.offset.abs() > 0.8 ? _tabController.offset.round() : 0;
-      int index = _tabController.index + indexChange;
-      if (index != _currentTabIndex) {
-        setState(() => _currentTabIndex = index);
+    _currentTabIndex = PersistentTabState.restore(
+      idKey: HiveUtil.suitTabIdKey,
+      legacyIndexKey: HiveUtil.suitTabIndexKey,
+      itemIds: _tabIdList,
+    ).index;
+    _tabController = TabController(
+      length: _tabLabelList.length,
+      initialIndex: _currentTabIndex,
+      vsync: this,
+    );
+    _tabController.addListener(() {
+      final index =
+          (_tabController.animation?.value ?? _tabController.index).round();
+      if (index != _currentTabIndex) _setCurrentTab(index);
+    });
+  }
+
+  void _setCurrentTab(int index) {
+    final safeIndex = TabStatePreference.restoreIndex(index, _tabIdList.length);
+    if (safeIndex != _currentTabIndex && mounted) {
+      setState(() => _currentTabIndex = safeIndex);
+    }
+    PersistentTabState.save(
+      idKey: HiveUtil.suitTabIdKey,
+      legacyIndexKey: HiveUtil.suitTabIndexKey,
+      itemIds: _tabIdList,
+      index: safeIndex,
+    );
+    _ensureCurrentPageLoaded();
+  }
+
+  void _ensureCurrentPageLoaded() {
+    final pageId = _currentTabIndex == 0
+        ? 'official'
+        : 'custom:${_customPageIdList[_currentCustomBottomBarIndex]}';
+    if (!_loadedPageIds.add(pageId)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      var loaded = false;
+      switch (pageId) {
+        case 'official':
+          final state = _officialPageKey.currentState;
+          if (state != null) {
+            state.callRefresh();
+            loaded = true;
+          }
+          break;
+        case 'custom:background':
+          final state = _backgroundPageKey.currentState;
+          if (state != null) {
+            state.callRefresh();
+            loaded = true;
+          }
+          break;
+        case 'custom:dress':
+          final state = _dressPageKey.currentState;
+          if (state != null) {
+            state.callRefresh();
+            loaded = true;
+          }
+          break;
+        case 'custom:emote':
+          final state = _emotePageKey.currentState;
+          if (state != null) {
+            state.callRefresh();
+            loaded = true;
+          }
+          break;
       }
+      if (!loaded) _loadedPageIds.remove(pageId);
     });
   }
 
@@ -135,21 +259,21 @@ class _SuitScreenState extends BaseDynamicState<SuitScreen>
   _buildTabBar() {
     return TabBarWrapper(
       tabController: _tabController,
-     tabs: _tabLabelList
+      tabs: _tabLabelList
           .asMap()
           .entries
           .map(
             (entry) => ItemBuilder.buildAnimatedTab(context,
                 selected: entry.key == _currentTabIndex,
                 text: entry.value,
+                controller: _tabController,
+                tabIndex: entry.key,
                 normalUserBold: true,
                 sameFontSize: true),
           )
           .toList(),
       onTap: (index) {
-        setState(() {
-          _currentTabIndex = index;
-        });
+        _setCurrentTab(index);
       },
       background: ResponsiveUtil.isLandscapeLayout()
           ? Colors.transparent

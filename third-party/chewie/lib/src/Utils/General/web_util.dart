@@ -21,21 +21,19 @@ class FaviconRequest {
 
 class WebUtil {
   static Uri getBaseUrl(dynamic url) {
-    Uri uri;
-
-    if (url is String) {
-      uri = Uri.parse(url);
-    } else if (url is Uri) {
-      uri = url;
-    } else {
+    final Uri? uri = url is Uri
+        ? url
+        : url is String
+            ? Uri.tryParse(url)
+            : null;
+    if (uri == null || uri.scheme.isEmpty || uri.host.isEmpty) {
       return Uri();
     }
-
-    final scheme = uri.scheme;
-    final host = uri.host;
-    final port = uri.hasPort ? ':${uri.port}' : '';
-
-    return Uri.parse('$scheme://$host$port');
+    return Uri(
+      scheme: uri.scheme,
+      host: uri.host,
+      port: uri.hasPort ? uri.port : null,
+    );
   }
 
   static bool isHashOnlyLink(String value) {
@@ -122,7 +120,6 @@ class WebUtil {
       if (await validateFavicon(fallback)) {
         return fallback;
       }
-
     } catch (e) {
       return null;
     }

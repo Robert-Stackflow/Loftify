@@ -31,14 +31,13 @@ class DialogWrapperWidgetState extends State<DialogWrapperWidget>
     with SingleTickerProviderStateMixin {
   bool canNavigatorPop = true;
 
+  // Kept for Loftify's root lock/unlock flow.
+  void popAll() {
+    if (mounted) Navigator.of(context).pop();
+  }
+
   late AnimationController _shakingController;
   late Animation<double> _shakingAnimation;
-
-  late double dialogWidth;
-  late double dialogHeight;
-
-  late double defaultWidth;
-  late double defaultHeight;
 
   BorderRadius borderRadius = ChewieDimens.defaultBorderRadius;
 
@@ -65,11 +64,6 @@ class DialogWrapperWidgetState extends State<DialogWrapperWidget>
               .chain(CurveTween(curve: Curves.easeInOut)),
           weight: 1),
     ]).animate(_shakingController);
-
-    defaultWidth = widget.preferMinWidth ?? 1000;
-    defaultHeight = widget.preferMinHeight ?? 720;
-    dialogWidth = defaultWidth;
-    dialogHeight = defaultHeight;
   }
 
   @override
@@ -84,27 +78,21 @@ class DialogWrapperWidgetState extends State<DialogWrapperWidget>
     }
   }
 
-  void _resetSizeToDefault() {
-    setState(() {
-      dialogWidth = defaultWidth;
-      dialogHeight = defaultHeight;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final screenHeight = MediaQuery.sizeOf(context).height;
-
-    final maxDialogWidth = screenWidth - 60;
-    final maxDialogHeight = screenHeight - 60;
-
-    final preferWidth = min(maxDialogWidth, dialogWidth);
-    final preferHeight = min(maxDialogHeight, dialogHeight);
-
-    final horizontalMargin = max((screenWidth - preferWidth) / 2, 40.0);
-    final verticalMargin = max((screenHeight - preferHeight) / 2, 40.0);
-
+    double width = MediaQuery.sizeOf(context).width - 60;
+    double height = MediaQuery.sizeOf(context).height - 60;
+    double preferWidth = min(width, widget.preferMinWidth ?? 800);
+    double preferHeight = min(height, widget.preferMinHeight ?? 720);
+    double preferHorizontalMargin =
+        width > preferWidth ? (width - preferWidth) / 2 : 0;
+    double preferVerticalMargin =
+        height > preferHeight ? (height - preferHeight) / 2 : 0;
+    preferHorizontalMargin = max(preferHorizontalMargin, 20);
+    preferVerticalMargin = max(preferVerticalMargin, 80);
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final adjustedBottomMargin =
+        max(preferVerticalMargin - keyboardHeight, 20.0);
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
       child: GestureDetector(
@@ -130,23 +118,24 @@ class DialogWrapperWidgetState extends State<DialogWrapperWidget>
               color: widget.barrierDismissible ? null : Colors.transparent,
               padding: widget.fullScreen
                   ? EdgeInsets.zero
-                  : EdgeInsets.symmetric(
-                      horizontal: horizontalMargin,
-                      vertical: verticalMargin,
+                  : EdgeInsets.only(
+                      left: preferHorizontalMargin,
+                      right: preferHorizontalMargin,
+                      top: preferVerticalMargin,
+                      bottom: adjustedBottomMargin,
                     ),
               child: GestureDetector(
                 onTap: () {},
                 child: Container(
-                  width: widget.fullScreen ? null : preferWidth,
-                  height: widget.fullScreen ? null : preferHeight,
                   decoration: BoxDecoration(
                     borderRadius: borderRadius,
                     boxShadow: ChewieTheme.defaultBoxShadow,
                     border: widget.fullScreen ? null : ChewieTheme.border,
                   ),
                   child: ClipRRect(
-                    borderRadius:
-                        widget.fullScreen ? BorderRadius.zero : borderRadius,
+                    borderRadius: widget.fullScreen
+                        ? BorderRadius.circular(0)
+                        : borderRadius,
                     child: Stack(
                       children: [
                         Navigator(
@@ -172,36 +161,6 @@ class DialogWrapperWidgetState extends State<DialogWrapperWidget>
                               onPressed: () {
                                 DialogNavigatorHelper.popPage();
                               },
-                            ),
-                          ),
-                        if (!widget.fullScreen)
-                          Positioned(
-                            right: 0,
-                            bottom: 0,
-                            child: MouseRegion(
-                              cursor: SystemMouseCursors.resizeUpLeft,
-                              child: GestureDetector(
-                                onPanUpdate: (details) {
-                                  setState(() {
-                                    dialogWidth = max(
-                                        300, dialogWidth + details.delta.dx);
-                                    dialogHeight = max(
-                                        200, dialogHeight + details.delta.dy);
-                                  });
-                                },
-                                onDoubleTap: _resetSizeToDefault,
-                                child: RotatedBox(
-                                  quarterTurns: 3,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(4),
-                                    child: const Icon(
-                                      LucideIcons.axis3d,
-                                      size: 18,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ),
-                              ),
                             ),
                           ),
                       ],

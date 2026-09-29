@@ -10,7 +10,10 @@ import '../../Models/login_lofterid_response.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/request_util.dart';
-import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Design/loftify_controls.dart';
+import '../../Widgets/Item/login_input_item.dart';
+import '../../Widgets/Login/loftify_login_layout.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
 class LoginByLofterIDScreen extends StatefulWidget {
@@ -29,6 +32,8 @@ class _LoginByLofterIDScreenState
     with TickerProviderStateMixin {
   late TextEditingController _lofterIDController;
   late TextEditingController _passwordController;
+  final FocusNode _lofterIDFocusNode = FocusNode();
+  final FocusNode _passwordFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -39,7 +44,17 @@ class _LoginByLofterIDScreenState
     _passwordController.text = widget.initPassword ?? defaultPassword;
   }
 
+  @override
+  void dispose() {
+    _lofterIDController.dispose();
+    _passwordController.dispose();
+    _lofterIDFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    super.dispose();
+  }
+
   void _login() {
+    FocusManager.instance.primaryFocus?.unfocus();
     String lofterID = _lofterIDController.text;
     String password = _passwordController.text;
     if (lofterID.isEmpty || password.isEmpty) {
@@ -73,115 +88,80 @@ class _LoginByLofterIDScreenState
     return Container(
       color: Colors.transparent,
       child: Scaffold(
-        resizeToAvoidBottomInset: false,
+        resizeToAvoidBottomInset: true,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: ResponsiveAppBar(
           title: appLocalizations.loginByLofterID,
+          showBack: !ResponsiveUtil.isLandscapeLayout(),
+          leadingIcon: LoftifyIcons.close,
+          onTapBack: () => Navigator.maybeOf(context)?.maybePop(),
+          showBorder: false,
           titleLeftMargin: ResponsiveUtil.isLandscapeLayout() ? 15 : 5,
         ),
-        body: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 20),
-          child: Stack(
-            children: [
-              ScrollConfiguration(
-                behavior: NoShadowScrollBehavior(),
-                child: ListView(
-                  children: [
-                    const SizedBox(height: 50),
-                    InputItem(
-                      hint: appLocalizations.inputLofterID,
-                      textInputAction: TextInputAction.next,
-                      controller: _lofterIDController,
-                      leadingConfig: InputItemLeadingTailingConfig(
-                        type: InputItemLeadingTailingType.icon,
-                        icon: Icons.card_membership_rounded,
-                      ),
-                      tailingConfig: InputItemLeadingTailingConfig(
-                        type: InputItemLeadingTailingType.clear,
-                      ),
-                    ),
-                    InputItem(
-                      hint: appLocalizations.inputPassword,
-                      textInputAction: TextInputAction.next,
-                      leadingConfig: InputItemLeadingTailingConfig(
-                        type: InputItemLeadingTailingType.icon,
-                        icon: Icons.verified_outlined,
-                      ),
-                      controller: _passwordController,
-                      tailingConfig: InputItemLeadingTailingConfig(
-                        type: InputItemLeadingTailingType.password,
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 50),
-                      child: RoundIconTextButton(
-                        text: appLocalizations.login,
-                        onPressed: _login,
-                        background: Theme.of(context).primaryColor,
-                        color: Colors.white,
-                        fontSizeDelta: 2,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                    ),
-                  ],
-                ),
+        body: LoftifyLoginLayout(
+          formChildren: [
+            LoginInputItem(
+              hint: appLocalizations.inputLofterID,
+              textInputAction: TextInputAction.next,
+              controller: _lofterIDController,
+              focusNode: _lofterIDFocusNode,
+              autofillHints: const [AutofillHints.username],
+              onSubmitted: (_) => _passwordFocusNode.requestFocus(),
+              leadingConfig: InputItemLeadingTailingConfig(
+                type: InputItemLeadingTailingType.icon,
+                icon: LoftifyIcons.lofterId,
               ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 50,
-                child: Column(
-                  children: [
-                    ItemBuilder.buildTextDivider(
-                      context: context,
-                      text: appLocalizations.otherLoginMethods,
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        ToolButton(
-                            context: context,
-                            icon: Icons.phone_android_rounded,
-                            onPressed: () {
-                              RouteUtil.pushCupertinoRoute(
-                                context,
-                                const LoginByCaptchaScreen(),
-                              );
-                            }),
-                        const SizedBox(width: 30),
-                        ToolButton(
-                            context: context,
-                            icon: Icons.password_rounded,
-                            onPressed: () {
-                              RouteUtil.pushCupertinoRoute(
-                                context,
-                                LoginByPasswordScreen(
-                                  initPassword: _passwordController.text,
-                                ),
-                              );
-                            }),
-                        // const SizedBox(width: 30),
-                        // ToolButton(
-                        //     context: context,
-                        //     icon: Icons.mail_outline_rounded,
-                        //     onTap: () {
-                        //       RouteUtil.pushCupertinoRoute(
-                        //         context,
-                        //         LoginByMailScreen(
-                        //           initPassword: _passwordController.text,
-                        //         ),
-                        //       );
-                        //     }),
-                      ],
-                    ),
-                  ],
-                ),
+              tailingConfig: InputItemLeadingTailingConfig(
+                type: InputItemLeadingTailingType.clear,
               ),
-            ],
+            ),
+            LoginInputItem(
+              hint: appLocalizations.inputPassword,
+              textInputAction: TextInputAction.done,
+              focusNode: _passwordFocusNode,
+              autofillHints: const [AutofillHints.password],
+              onSubmitted: (_) => _login(),
+              leadingConfig: InputItemLeadingTailingConfig(
+                type: InputItemLeadingTailingType.icon,
+                icon: LoftifyIcons.password,
+              ),
+              controller: _passwordController,
+              tailingConfig: InputItemLeadingTailingConfig(
+                type: InputItemLeadingTailingType.password,
+              ),
+            ),
+          ],
+          primaryAction: LoftifyButton(
+            label: appLocalizations.login,
+            onPressed: _login,
+            size: LoftifyButtonSize.large,
+            expand: true,
           ),
+          alternativeTitle: appLocalizations.otherLoginMethods,
+          alternativeMethods: [
+            LoftifyLoginMethod(
+              label: appLocalizations.loginByCaptcha,
+              icon: LoftifyIcons.phone,
+              onPressed: () {
+                RouteUtil.pushCupertinoRoute(
+                  context,
+                  const LoginByCaptchaScreen(),
+                );
+              },
+            ),
+            LoftifyLoginMethod(
+              label: appLocalizations.loginByPassword,
+              icon: LoftifyIcons.password,
+              onPressed: () {
+                RouteUtil.pushCupertinoRoute(
+                  context,
+                  LoginByPasswordScreen(
+                    initPassword: _passwordController.text,
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );

@@ -16,8 +16,8 @@ dependencies:
   flutter_animate: ^4.5.2
   auto_size_text: ^3.0.0
   lottie: 3.3.0
-  flutter_widget_from_html: ^0.15.0
-  flutter_widget_from_html_core:
+  flutter_widget_from_html: ^0.17.2
+  flutter_widget_from_html_core: ^0.17.2
   markdown_widget:
     path: ../widget/markdown_widget
   lucide_icons:
@@ -25,10 +25,6 @@ dependencies:
   modal_bottom_sheet: ^3.0.0
   markdown: ^7.3.0
   highlight: ^0.7.0
-  flutter_math_fork:
-    git:
-      url: https://github.com/dakshatsuraasa/flutter_math.git
-      ref: main
   # 存储/网络
   path:
   logger: ^2.5.0
@@ -52,14 +48,14 @@ dependencies:
   share_plus: ^10.1.4
   url_launcher: ^6.3.0
   app_links: ^6.4.0
-  flutter_displaymode: ^0.6.0
+  flutter_displaymode: ^0.7.0
   image_gallery_saver:
     path: ../tool/image_gallery_saver
   permission_handler: ^11.3.1
   hotkey_manager: ^0.2.3
   flutter_inappwebview: 6.1.5
   # 工具
-  intl: ^0.19.0
+  intl: ^0.20.2
   html: ^0.15.5+1
   uuid: ^4.4.2
   tuple: ^2.0.0
@@ -81,9 +77,6 @@ dependencies:
   # 插件依赖
   decimal: ^3.0.2
   equatable: ^2.0.7
-
-dependency_overrides:
-  webview_flutter_android: 3.16.1
 
 dev_dependencies:
   flutter_test:

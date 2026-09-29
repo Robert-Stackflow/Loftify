@@ -9,7 +9,10 @@ import 'package:loftify/Utils/hive_util.dart';
 import '../../Utils/app_provider.dart';
 import '../../Utils/constant.dart';
 import '../../Utils/request_util.dart';
-import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Design/loftify_controls.dart';
+import '../../Widgets/Item/login_input_item.dart';
+import '../../Widgets/Login/loftify_login_layout.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import 'login_by_lofterid_screen.dart';
 
@@ -28,6 +31,8 @@ class _LoginByMailScreenState extends BaseDynamicState<LoginByMailScreen>
     with TickerProviderStateMixin {
   late TextEditingController _mailController;
   late TextEditingController _passwordController;
+  final FocusNode _mailFocusNode = FocusNode();
+  final FocusNode _passwordFocusNode = FocusNode();
   var mailPower = {};
 
   @override
@@ -39,7 +44,17 @@ class _LoginByMailScreenState extends BaseDynamicState<LoginByMailScreen>
     _passwordController.text = widget.initPassword ?? defaultPassword;
   }
 
+  @override
+  void dispose() {
+    _mailController.dispose();
+    _passwordController.dispose();
+    _mailFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    super.dispose();
+  }
+
   Future<void> _login() async {
+    FocusManager.instance.primaryFocus?.unfocus();
     try {
       String mail = _mailController.text;
       String password = _passwordController.text;
@@ -64,7 +79,8 @@ class _LoginByMailScreenState extends BaseDynamicState<LoginByMailScreen>
           await RequestUtil.clearCookie();
           await ChewieHiveUtil.put(HiveUtil.userIdKey, resL['userId']);
           await ChewieHiveUtil.put(HiveUtil.tokenKey, resL['token']);
-          await ChewieHiveUtil.put(HiveUtil.tokenTypeKey, TokenType.lofterID.index);
+          await ChewieHiveUtil.put(
+              HiveUtil.tokenTypeKey, TokenType.lofterID.index);
           mainScreenState?.login();
         } else if (resL['ret'] == "413" && resL['dt'] == "01") {
           IToast.showTop(appLocalizations.retryLoginLater);
@@ -92,115 +108,92 @@ class _LoginByMailScreenState extends BaseDynamicState<LoginByMailScreen>
     return Container(
       color: Colors.transparent,
       child: Scaffold(
-        resizeToAvoidBottomInset: false,
+        resizeToAvoidBottomInset: true,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: ResponsiveAppBar(
           title: appLocalizations.loginByEmail,
+          showBack: !ResponsiveUtil.isLandscapeLayout(),
+          leadingIcon: LoftifyIcons.close,
+          onTapBack: () => Navigator.maybeOf(context)?.maybePop(),
+          showBorder: false,
           titleLeftMargin: ResponsiveUtil.isLandscapeLayout() ? 15 : 5,
         ),
-        body: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 20),
-          child: Stack(
-            children: [
-              ScrollConfiguration(
-                behavior: NoShadowScrollBehavior(),
-                child: ListView(
-                  children: [
-                    const SizedBox(height: 50),
-                    InputItem(
-                      hint: appLocalizations.inputEmail,
-                      textInputAction: TextInputAction.next,
-                      controller: _mailController,
-                      leadingConfig: InputItemLeadingTailingConfig(
-                        type: InputItemLeadingTailingType.icon,
-                        icon: Icons.mail_outline_rounded,
-                      ),
-                      tailingConfig: InputItemLeadingTailingConfig(
-                        type: InputItemLeadingTailingType.clear,
-                      ),
-                    ),
-                    InputItem(
-                      hint: appLocalizations.inputPassword,
-                      textInputAction: TextInputAction.next,
-                      leadingConfig: InputItemLeadingTailingConfig(
-                        type: InputItemLeadingTailingType.icon,
-                        icon: Icons.verified_outlined,
-                      ),
-                      controller: _passwordController,
-                      tailingConfig: InputItemLeadingTailingConfig(
-                        type: InputItemLeadingTailingType.password,
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 50),
-                      child: RoundIconTextButton(
-                        text: appLocalizations.login,
-                        onPressed: _login,
-                        background: Theme.of(context).primaryColor,
-                        color: Colors.white,
-                        fontSizeDelta: 2,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                    ),
-                  ],
-                ),
+        body: LoftifyLoginLayout(
+          formChildren: [
+            LoginInputItem(
+              hint: appLocalizations.inputEmail,
+              textInputAction: TextInputAction.next,
+              controller: _mailController,
+              focusNode: _mailFocusNode,
+              autofillHints: const [AutofillHints.email],
+              onSubmitted: (_) => _passwordFocusNode.requestFocus(),
+              leadingConfig: InputItemLeadingTailingConfig(
+                type: InputItemLeadingTailingType.icon,
+                icon: LoftifyIcons.email,
               ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 50,
-                child: Column(
-                  children: [
-                    ItemBuilder.buildTextDivider(
-                      context: context,
-                      text: appLocalizations.otherLoginMethods,
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        ToolButton(
-                            context: context,
-                            icon: Icons.phone_android_rounded,
-                            onPressed: () {
-                              RouteUtil.pushCupertinoRoute(
-                                context,
-                                const LoginByCaptchaScreen(),
-                              );
-                            }),
-                        const SizedBox(width: 30),
-                        ToolButton(
-                            context: context,
-                            icon: Icons.password_rounded,
-                            onPressed: () {
-                              RouteUtil.pushCupertinoRoute(
-                                context,
-                                LoginByPasswordScreen(
-                                  initPassword: _passwordController.text,
-                                ),
-                              );
-                            }),
-                        const SizedBox(width: 30),
-                        ToolButton(
-                            context: context,
-                            icon: Icons.card_membership_rounded,
-                            onPressed: () {
-                              RouteUtil.pushCupertinoRoute(
-                                context,
-                                LoginByLofterIDScreen(
-                                  initPassword: _passwordController.text,
-                                ),
-                              );
-                            }),
-                      ],
-                    ),
-                  ],
-                ),
+              tailingConfig: InputItemLeadingTailingConfig(
+                type: InputItemLeadingTailingType.clear,
               ),
-            ],
+            ),
+            LoginInputItem(
+              hint: appLocalizations.inputPassword,
+              textInputAction: TextInputAction.done,
+              focusNode: _passwordFocusNode,
+              autofillHints: const [AutofillHints.password],
+              onSubmitted: (_) => _login(),
+              leadingConfig: InputItemLeadingTailingConfig(
+                type: InputItemLeadingTailingType.icon,
+                icon: LoftifyIcons.password,
+              ),
+              controller: _passwordController,
+              tailingConfig: InputItemLeadingTailingConfig(
+                type: InputItemLeadingTailingType.password,
+              ),
+            ),
+          ],
+          primaryAction: LoftifyButton(
+            label: appLocalizations.login,
+            onPressed: _login,
+            size: LoftifyButtonSize.large,
+            expand: true,
           ),
+          alternativeTitle: appLocalizations.otherLoginMethods,
+          alternativeMethods: [
+            LoftifyLoginMethod(
+              label: appLocalizations.loginByCaptcha,
+              icon: LoftifyIcons.phone,
+              onPressed: () {
+                RouteUtil.pushCupertinoRoute(
+                  context,
+                  const LoginByCaptchaScreen(),
+                );
+              },
+            ),
+            LoftifyLoginMethod(
+              label: appLocalizations.loginByPassword,
+              icon: LoftifyIcons.password,
+              onPressed: () {
+                RouteUtil.pushCupertinoRoute(
+                  context,
+                  LoginByPasswordScreen(
+                    initPassword: _passwordController.text,
+                  ),
+                );
+              },
+            ),
+            LoftifyLoginMethod(
+              label: appLocalizations.loginByLofterID,
+              icon: LoftifyIcons.lofterId,
+              onPressed: () {
+                RouteUtil.pushCupertinoRoute(
+                  context,
+                  LoginByLofterIDScreen(
+                    initPassword: _passwordController.text,
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );

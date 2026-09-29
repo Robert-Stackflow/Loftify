@@ -1,24 +1,53 @@
 allprojects {
     repositories {
-//        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'https://maven.aliyun.com/repository/google' }
 //        maven { url 'https://maven.aliyun.com/repository/jcenter' }
+        maven { url 'https://maven.aliyun.com/repository/public' }
+        maven { url 'https://maven.aliyun.com/repository/central' }
         google()
         mavenCentral()
 //        maven { url 'https://jitpack.io' }
 //        maven { url "https://maven.google.com" }
-//        maven { url 'https://maven.aliyun.com/repository/public' }
-//        maven { url 'https://maven.aliyun.com/repository/central' }
 //        maven { url 'https://maven.aliyun.com/nexus/content/groups/public' }
 //        maven { url 'https://maven.aliyun.com/repository/flutter-plugin' }
 //        maven { url "https://download.flutter.io" }
     }
 }
 
+allprojects {
+    configurations.configureEach {
+        resolutionStrategy.force 'androidx.core:core:1.15.0'
+        resolutionStrategy.force 'androidx.core:core-ktx:1.15.0'
+        resolutionStrategy.force 'androidx.browser:browser:1.8.0'
+    }
+}
+
 rootProject.buildDir = '../build'
 subprojects {
-    afterEvaluate {
-        android {
-            compileSdkVersion 34
+    afterEvaluate { project ->
+        project.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+            kotlinOptions.jvmTarget = '17'
+        }
+
+        if (project.extensions.findByName('android') != null) {
+            project.android {
+                compileSdkVersion 36
+
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_17
+                    targetCompatibility JavaVersion.VERSION_17
+                }
+
+                if (namespace == null) {
+                    def manifestFile = project.file('src/main/AndroidManifest.xml')
+                    if (manifestFile.exists()) {
+                        def manifestPackage = new XmlSlurper().parse(manifestFile).@package.text()
+                        if (manifestPackage) {
+                            namespace manifestPackage
+                        }
+                    }
+                }
+            }
         }
     }
 }

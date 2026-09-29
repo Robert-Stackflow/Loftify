@@ -1,9 +1,10 @@
-import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
-import 'package:loftify/Widgets/Item/item_builder.dart';
 
-import '../../Utils/enums.dart';
+import '../../Theme/loftify_design_theme.dart';
 import '../../l10n/l10n.dart';
+import '../Design/loftify_controls.dart';
+import '../Design/loftify_surfaces.dart';
+import '../loftify_icons.dart';
 
 class ShieldBottomSheet extends StatefulWidget {
   const ShieldBottomSheet({
@@ -34,105 +35,141 @@ class ShieldBottomSheetState extends State<ShieldBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      runAlignment: WrapAlignment.center,
+    final design = context.design;
+    return LoftifyPanel(
+      title: appLocalizations.reduceRecommend,
+      compactHeader: true,
+      body: _buildButtons(),
+      footer: _buildFooter(),
+      footerPadding: EdgeInsets.fromLTRB(
+        design.spacing.xl,
+        design.spacing.sm,
+        design.spacing.xl,
+        design.spacing.xl,
+      ),
+    );
+  }
+
+  Widget _buildButtons() {
+    final design = context.design;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        design.spacing.xl,
+        design.spacing.md,
+        design.spacing.xl,
+        design.spacing.sm,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (tags.isNotEmpty)
+            Wrap(
+              spacing: design.spacing.sm,
+              runSpacing: design.spacing.sm,
+              children: [
+                for (final tag in tags)
+                  LoftifyTag(
+                    label: tag,
+                    leading: LoftifyIcons.tag,
+                    showSelectedIcon: false,
+                    onPressed: () => widget.onShieldTag?.call(tag),
+                  ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFooter() {
+    final design = context.design;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 50),
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: ChewieTheme.getBackground(context),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildHeader(),
-              _buildButtons(),
-              const MyDivider(horizontal: 12, vertical: 0),
-              _buildFooter(),
-            ],
-          ),
+        _ShieldActionRow(
+          label: appLocalizations.uninterestedInContent,
+          icon: LoftifyIcons.block,
+          onPressed: widget.onShieldContent,
+        ),
+        SizedBox(height: design.spacing.sm),
+        _ShieldActionRow(
+          label: appLocalizations.uninterestedInUser,
+          icon: LoftifyIcons.unfollow,
+          destructive: true,
+          onPressed: widget.onShieldUser,
         ),
       ],
     );
   }
+}
 
-  _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      alignment: Alignment.center,
-      child: Text(
-        appLocalizations.reduceRecommend,
-        style: Theme.of(context).textTheme.titleLarge,
-      ),
-    );
-  }
+class _ShieldActionRow extends StatelessWidget {
+  const _ShieldActionRow({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+    this.destructive = false,
+  });
 
-  _buildButtons() {
-    return Container(
-      padding: const EdgeInsets.only(left: 12, right: 12, top: 10, bottom: 20),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Wrap(
-            alignment: WrapAlignment.start,
-            runAlignment: WrapAlignment.start,
-            crossAxisAlignment: WrapCrossAlignment.start,
-            spacing: 10,
-            runSpacing: 10,
-            children: tags.map((tag) {
-              return MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: ItemBuilder.buildTagItem(
-                  context,
-                  tag,
-                  TagType.normal,
-                  fontWeightDelta: 2,
-                  fontSizeDelta: 1,
-                  jumpToTag: false,
-                  color: Theme.of(context).textTheme.titleMedium?.color,
-                  onTap: () {
-                    widget.onShieldTag?.call(tag);
-                  },
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
+  final String label;
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final bool destructive;
 
-  _buildFooter() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-      alignment: Alignment.center,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            height: 45,
-            child: RoundIconTextButton(
-              text: appLocalizations.uninterestedInContent,
-              onPressed: widget.onShieldContent,
-              fontSizeDelta: 2,
+  @override
+  Widget build(BuildContext context) {
+    final design = context.design;
+    final foreground =
+        destructive ? design.colors.danger : design.colors.textPrimary;
+    final background = destructive
+        ? Color.alphaBlend(
+            design.colors.danger.withValues(alpha: 0.06),
+            design.colors.surfaceRaised,
+          )
+        : design.colors.surfaceMuted;
+    final radius = BorderRadius.circular(design.radii.control);
+    return Semantics(
+      button: true,
+      enabled: onPressed != null,
+      label: label,
+      child: Material(
+        color: background,
+        borderRadius: radius,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: radius,
+          splashFactory: NoSplash.splashFactory,
+          overlayColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.pressed)) {
+              return foreground.withValues(alpha: design.icons.pressedOpacity);
+            }
+            if (states.contains(WidgetState.focused)) {
+              return foreground.withValues(alpha: design.icons.focusOpacity);
+            }
+            return Colors.transparent;
+          }),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: design.spacing.lg),
+              child: Row(
+                children: [
+                  Icon(icon, size: design.icons.regular, color: foreground),
+                  SizedBox(width: design.spacing.md),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: design.typography.label.copyWith(
+                        color: foreground,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 45,
-            child: RoundIconTextButton(
-              text: appLocalizations.uninterestedInUser,
-              onPressed: widget.onShieldUser,
-              fontSizeDelta: 2,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

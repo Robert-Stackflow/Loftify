@@ -17,6 +17,10 @@
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.RUN_USER_INITIATED_JOBS" />
     <uses-sdk tools:overrideLibrary="dev.isar.isar_flutter_libs"/>
     <application
         android:name="${applicationName}"
@@ -69,6 +73,16 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
             </intent-filter>
         </activity>
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
+        <service
+            android:name="com.bbflight.background_downloader.UIDTJobService"
+            android:exported="true"
+            android:foregroundServiceType="dataSync"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            tools:node="merge" />
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

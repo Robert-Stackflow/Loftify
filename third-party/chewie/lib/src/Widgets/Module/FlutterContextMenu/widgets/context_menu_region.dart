@@ -31,10 +31,13 @@ class ContextMenuRegion extends StatelessWidget {
         mousePosition = event.position;
       },
       child: GestureDetector(
-        onLongPress:
-            enableOnLongPress ? () => _showMenu(context, mousePosition) : null,
+        onLongPress: enable && enableOnLongPress
+            ? () => _showMenu(context, mousePosition)
+            : null,
         onSecondaryTap: enable ? () => _showMenu(context, mousePosition) : null,
-        onTap: showOnClicked ? () => _showMenu(context, mousePosition) : null,
+        onTap: enable && showOnClicked
+            ? () => _showMenu(context, mousePosition)
+            : null,
         child: child,
       ),
     );

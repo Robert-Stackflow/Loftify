@@ -1,19 +1,18 @@
-import 'dart:math';
-
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:like_button/like_button.dart';
-import 'package:loftify/Screens/Post/video_detail_screen.dart';
 import 'package:loftify/Widgets/BottomSheet/shield_bottom_sheet.dart';
+import 'package:loftify/Widgets/PostItem/general_post_item.dart';
 
 import '../../Api/post_api.dart';
 import '../../Api/user_api.dart';
-import '../../Models/grain_response.dart';
 import '../../Models/illust.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Screens/Info/user_detail_screen.dart';
 import '../../Screens/Post/post_detail_screen.dart';
+import '../../Screens/Post/video_detail_screen.dart';
+import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/uri_util.dart';
@@ -21,103 +20,92 @@ import '../../Utils/utils.dart';
 import '../../l10n/l10n.dart';
 import '../Item/item_builder.dart';
 import '../Item/loftify_item_builder.dart';
+import '../Design/loftify_surfaces.dart';
+import '../loftify_icons.dart';
+import '../loftify_reaction_icon.dart';
 import 'image_grid.dart';
 
-class GeneralPostItem {
-  PostType type;
-  List<PhotoLink> photoLinks;
-  int blogId;
-  int publishTime;
-  int opTime;
-  int postId;
-  String permalink;
-  int collectionId;
-  bool liked;
-  bool shared;
-  bool? followed;
-  String blogName;
-  String blogNickName;
-  String title;
-  String digest;
-  String content;
-  String firstImageUrl;
-  int duration;
-  int likeCount;
-  int shareCount;
-  int commentCount;
-  List<String> tags;
-  String bigAvaImg;
-  int? photoCount;
-  String? tagPrefix;
-  bool? showVideo;
-  bool? showArticle;
-  bool? showLikeButton;
-  String? excludeTag;
-  bool showMoreButton;
-  ShareInfo? shareInfo;
-  final Function(String tag)? onShieldTag;
-  final Function()? onShieldContent;
-  final Function()? onShieldUser;
+export 'package:loftify/Widgets/PostItem/general_post_item.dart';
 
-  GeneralPostItem({
-    this.showLikeButton = true,
-    this.showArticle = true,
-    this.showVideo = true,
-    this.tagPrefix,
-    this.photoCount,
-    this.shareInfo,
-    this.followed,
-    this.shared = false,
-    this.shareCount = 0,
-    this.commentCount = 0,
-    required this.type,
-    required this.photoLinks,
-    required this.blogId,
-    required this.postId,
-    required this.permalink,
-    required this.collectionId,
-    required this.liked,
-    required this.blogName,
-    required this.blogNickName,
-    required this.title,
-    required this.digest,
-    required this.content,
-    required this.firstImageUrl,
-    required this.duration,
-    required this.likeCount,
-    required this.tags,
-    required this.bigAvaImg,
-    this.excludeTag,
-    this.publishTime = 0,
-    this.opTime = 0,
-    this.showMoreButton = false,
-    this.onShieldTag,
-    this.onShieldContent,
-    this.onShieldUser,
-  });
+const double _postCardRadius = 12;
 
-  bool get hasTitleOrContent {
-    var item = this;
-    String title = StringUtil.clearBlank(item.title);
-    String content = StringUtil.clearBlank(HtmlUtil.extractTextFromHtml(item.content));
-    String digest = StringUtil.clearBlank(HtmlUtil.extractTextFromHtml(item.digest));
-    return (StringUtil.isNotEmpty(title) ||
-        StringUtil.isNotEmpty(content) ||
-        StringUtil.isNotEmpty(digest));
-  }
+double _safePhotoAspectRatio(PhotoLink photo) {
+  if (photo.ow <= 0 || photo.oh <= 0) return 1;
+  final ratio = photo.ow / photo.oh;
+  return ratio.isFinite && ratio > 0 ? ratio : 1;
+}
 
-  String get processedTitle {
-    var item = this;
-    String title = StringUtil.clearBlank(item.title);
-    String digest = StringUtil.clearBlank(HtmlUtil.extractTextFromHtml(item.digest));
-    String content = StringUtil.clearBlank(HtmlUtil.extractTextFromHtml(item.content));
-    String shownTitle = StringUtil.isNotEmpty(title)
-        ? title
-        : StringUtil.isNotEmpty(digest)
-            ? digest
-            : content;
-    return shownTitle;
-  }
+Widget _buildInvalidPostCard(
+  BuildContext context, {
+  double? width,
+  double? height,
+  double minHeight = 96,
+  double radius = _postCardRadius,
+}) {
+  return ContainerItem(
+    backgroundColor: ChewieTheme.canvasColor,
+    radius: radius,
+    roundTop: true,
+    roundBottom: true,
+    border: Border.all(color: Theme.of(context).dividerColor, width: 0.8),
+    child: SizedBox(
+      width: width,
+      height: height,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: minHeight),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: LayoutBuilder(builder: (context, constraints) {
+              final label = appLocalizations.invalidContent;
+              final style = Theme.of(context)
+                  .textTheme
+                  .labelSmall
+                  ?.apply(fontWeightDelta: 1);
+              final metrics = TextPainter(
+                text: TextSpan(text: 'Ag', style: style),
+                textDirection: Directionality.of(context),
+                textScaler: MediaQuery.textScalerOf(context),
+              )..layout();
+              final lineHeight = metrics.height;
+              metrics.dispose();
+              final showIcon = !constraints.hasBoundedHeight ||
+                  constraints.maxHeight >= 29 + lineHeight * 2;
+              final availableHeight =
+                  constraints.maxHeight - (showIcon ? 29 : 0);
+              final lines = constraints.hasBoundedHeight && lineHeight > 0
+                  ? (availableHeight / lineHeight).floor().clamp(1, 4)
+                  : 4;
+              return Tooltip(
+                message: label,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (showIcon) ...[
+                      ChewieIcon(
+                        LoftifyIcons.invalidContent,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        size: 24,
+                      ),
+                      const SizedBox(height: 5),
+                    ],
+                    Text(
+                      label,
+                      semanticsLabel: label,
+                      maxLines: lines,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: style,
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 class WaterfallFlowPostItemWidget extends StatefulWidget {
@@ -144,73 +132,112 @@ class WaterfallFlowPostItemWidgetState
   }
 
   @override
-  Widget build(BuildContext context) {
-    return buildWaterfallFlowPostItem();
+  void didUpdateWidget(covariant WaterfallFlowPostItemWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    item = widget.item;
   }
 
-  Widget buildWaterfallFlowPostItem() {
-    double width = (MediaQuery.sizeOf(context).width - 24) / 2;
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.hasBoundedWidth
+            ? constraints.maxWidth
+            : MediaQuery.sizeOf(context).width;
+        return buildWaterfallFlowPostItem(width: availableWidth);
+      },
+    );
+  }
+
+  Widget buildWaterfallFlowPostItem({required double width}) {
+    final radius = context.design.radii.card;
     PostType type = item.type;
     late Widget main;
     switch (type) {
       case PostType.image:
-        main = buildWaterfallFlowImageItem(width: width);
+        main = item.photoLinks.isNotEmpty
+            ? buildWaterfallFlowImageItem(width: width)
+            : item.hasTitleOrContent
+                ? buildWaterfallFlowArticleItem(width: width)
+                : _buildInvalidPostCard(
+                    context,
+                    width: width,
+                    minHeight: 120,
+                    radius: radius,
+                  );
       case PostType.article:
         main = item.showArticle ?? true
             ? buildWaterfallFlowArticleItem(width: width)
             : emptyWidget;
       case PostType.video:
         main = item.showVideo ?? true
-            ? buildWaterfallFlowVideoItem(width: width)
+            ? item.photoLinks.isNotEmpty
+                ? buildWaterfallFlowVideoItem(width: width)
+                : item.hasTitleOrContent
+                    ? buildWaterfallFlowArticleItem(width: width)
+                    : _buildInvalidPostCard(
+                        context,
+                        width: width,
+                        minHeight: 120,
+                        radius: radius,
+                      )
             : emptyWidget;
       case PostType.grain:
         main = emptyWidget;
       case PostType.invalid:
-        main = emptyWidget;
+        main = _buildInvalidPostCard(
+          context,
+          width: width,
+          minHeight: 120,
+          radius: radius,
+        );
     }
     return GestureDetector(
-      onTap: () {
-        GeneralPostItemBuilder.onTapItem(context, item);
-      },
+      behavior: HitTestBehavior.opaque,
+      onTap: () => GeneralPostItemBuilder.onTapItem(context, item),
       onLongPress: item.showMoreButton
           ? () {
               HapticFeedback.mediumImpact();
               GeneralPostItemBuilder.showMoreSheet(context, item);
             }
           : null,
-      child: ClickableWrapper(child:main),
+      child: ClickableWrapper(child: main),
     );
   }
 
   Widget buildWaterfallFlowArticleItem({
     required double width,
   }) {
+    final design = context.design;
     return Column(
       children: [
-        ContainerItem(
-          backgroundColor: Theme.of(context).cardColor,
-          child: Container(
-            padding: const EdgeInsets.all(15),
+        LoftifyCard(
+          variant: LoftifyCardVariant.muted,
+          padding: EdgeInsets.all(design.spacing.lg),
+          child: SizedBox(
             width: width,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.title,
-                  style: Theme.of(context).textTheme.titleMedium?.apply(
-                        fontWeightDelta: 2,
-                        fontSizeDelta: -1,
-                      ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  HtmlUtil.extractTextFromHtml(item.digest),
-                  maxLines: 6,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+                if (StringUtil.isNotEmpty(item.title))
+                  Text(
+                    item.title,
+                    style: design.typography.cardTitle,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                if (StringUtil.isNotEmpty(item.title) &&
+                    StringUtil.isNotEmpty(item.digest))
+                  SizedBox(height: design.spacing.lg),
+                if (StringUtil.isNotEmpty(item.digest))
+                  Text(
+                    HtmlUtil.extractTextFromHtml(item.digest),
+                    maxLines: 6,
+                    overflow: TextOverflow.ellipsis,
+                    style: design.typography.metadata.copyWith(
+                      color: design.colors.textSecondary,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -224,38 +251,29 @@ class WaterfallFlowPostItemWidgetState
 
   Widget buildWaterfallFlowImageItem({
     required double width,
-    double maxHeight = 300,
+    double? maxHeight,
     double minHeight = 120,
   }) {
+    final design = context.design;
+    final radius = design.radii.card;
+    final effectiveMaxHeight = maxHeight ?? design.grid.maximumDenseCardExtent;
     return Column(
       children: [
         Stack(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(
-                    color: Theme.of(context).dividerColor, width: 0.3),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: SizedBox(
-                  height: max(
-                    min(item.photoLinks[0].oh * (width / item.photoLinks[0].ow),
-                        maxHeight),
-                    minHeight,
-                  ),
-                  width: width,
-                  child: ChewieItemBuilder.buildCachedImage(
-                    context: context,
-                    fit: BoxFit.cover,
-                    showLoading: false,
-                    imageUrl: Utils.getUrlByQuality(
-                        item.photoLinks[0].middle,
-                        HiveUtil.getImageQuality(
-                            HiveUtil.waterfallFlowImageQualityKey)),
-                  ),
-                ),
+            _buildWaterfallMediaSurface(
+              width: width,
+              height: (width / _safePhotoAspectRatio(item.photoLinks[0]))
+                  .clamp(minHeight, effectiveMaxHeight),
+              radius: radius,
+              child: ChewieItemBuilder.buildCachedImage(
+                context: context,
+                fit: BoxFit.cover,
+                showLoading: false,
+                imageUrl: Utils.getUrlByQuality(
+                    item.photoLinks[0].middle,
+                    HiveUtil.getImageQuality(
+                        HiveUtil.waterfallFlowImageQualityKey)),
               ),
             ),
             if (Utils.isGIF(item.firstImageUrl))
@@ -286,38 +304,30 @@ class WaterfallFlowPostItemWidgetState
 
   Widget buildWaterfallFlowVideoItem({
     required double width,
-    double maxHeight = 300,
+    double? maxHeight,
     double minHeight = 120,
   }) {
-    var height = max(
-      min(item.photoLinks[0].oh * (width / item.photoLinks[0].ow), maxHeight),
-      minHeight,
-    );
+    final design = context.design;
+    final radius = design.radii.card;
+    final effectiveMaxHeight = maxHeight ?? design.grid.maximumDenseCardExtent;
+    final height = (width / _safePhotoAspectRatio(item.photoLinks[0]))
+        .clamp(minHeight, effectiveMaxHeight);
     return Column(
       children: [
         Stack(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(
-                    color: Theme.of(context).dividerColor, width: 0.3),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: SizedBox(
-                  height: height.isNaN ? maxHeight : height,
-                  width: width,
-                  child: ChewieItemBuilder.buildCachedImage(
-                    context: context,
-                    fit: BoxFit.cover,
-                    showLoading: false,
-                    imageUrl: Utils.getUrlByQuality(
-                        item.photoLinks[0].orign,
-                        HiveUtil.getImageQuality(
-                            HiveUtil.waterfallFlowImageQualityKey)),
-                  ),
-                ),
+            _buildWaterfallMediaSurface(
+              width: width,
+              height: height,
+              radius: radius,
+              child: ChewieItemBuilder.buildCachedImage(
+                context: context,
+                fit: BoxFit.cover,
+                showLoading: false,
+                imageUrl: Utils.getUrlByQuality(
+                    item.photoLinks[0].orign,
+                    HiveUtil.getImageQuality(
+                        HiveUtil.waterfallFlowImageQualityKey)),
               ),
             ),
             Positioned(
@@ -341,9 +351,44 @@ class WaterfallFlowPostItemWidgetState
     );
   }
 
+  Widget _buildWaterfallMediaSurface({
+    required double width,
+    required double height,
+    required double radius,
+    required Widget child,
+  }) {
+    final design = context.design;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: SizedBox(
+        key: ValueKey('waterfall-post-media-${item.postId}'),
+        width: width,
+        height: height,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            child,
+            IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: design.colors.outline,
+                    width: design.borders.hairline,
+                  ),
+                  borderRadius: BorderRadius.circular(radius),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget buildWaterfallFlowPostItemMeta({
     bool showTitle = true,
   }) {
+    final design = context.design;
     String tag = "";
     if (item.tags.isNotEmpty) {
       tag = item.tags[0];
@@ -356,7 +401,10 @@ class WaterfallFlowPostItemWidgetState
     String shownTitle = item.processedTitle;
     bool hasTitle = item.hasTitleOrContent;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
+      padding: EdgeInsets.symmetric(
+        horizontal: design.spacing.xs,
+        vertical: design.spacing.sm,
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
@@ -369,26 +417,24 @@ class WaterfallFlowPostItemWidgetState
                     showTitle && hasTitle
                         ? Container(
                             width: double.infinity,
-                            margin: const EdgeInsets.only(bottom: 3),
+                            margin: EdgeInsets.only(
+                              bottom: design.spacing.xxs,
+                            ),
                             child: Text(
                               shownTitle,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               textAlign: TextAlign.start,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.apply(
-                                    fontSizeDelta: -2,
-                                    fontWeightDelta: 2,
-                                  ),
+                              style: design.typography.cardTitle.copyWith(
+                                color: design.colors.textPrimary,
+                              ),
                             ),
                           )
-                        : const SizedBox(height: 3),
+                        : SizedBox(height: design.spacing.xxs),
                     if (tag.isNotEmpty)
                       Container(
                         width: double.infinity,
-                        margin: const EdgeInsets.only(bottom: 6),
+                        margin: EdgeInsets.only(bottom: design.spacing.sm),
                         alignment: Alignment.centerLeft,
                         child: ItemBuilder.buildSmallTagItem(context, tag),
                       ),
@@ -396,22 +442,34 @@ class WaterfallFlowPostItemWidgetState
                 ),
               ),
               if (item.showMoreButton)
-                GestureDetector(
-                  onTap: () {
-                    GeneralPostItemBuilder.showMoreSheet(context, item);
-                  },
-                  child: Container(
-                    margin: EdgeInsets.only(top: showTitle && hasTitle ? 3 : 5),
-                    child: const Icon(
-                      Icons.more_vert_rounded,
-                      size: 16,
+                Semantics(
+                  button: true,
+                  label: MaterialLocalizations.of(context).showMenuTooltip,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      GeneralPostItemBuilder.showMoreSheet(context, item);
+                    },
+                    child: Padding(
+                      padding: EdgeInsetsDirectional.only(
+                        start: design.spacing.md,
+                        top: showTitle && hasTitle
+                            ? design.spacing.xxs
+                            : design.spacing.xs,
+                        bottom: design.spacing.md,
+                      ),
+                      child: ChewieIcon(
+                        LoftifyIcons.moreVertical,
+                        size: design.icons.small,
+                        color: design.colors.textSecondary,
+                      ),
                     ),
                   ),
                 ),
             ],
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2),
+            padding: EdgeInsets.symmetric(horizontal: design.spacing.xxs),
             child: Row(
               children: [
                 GestureDetector(
@@ -425,7 +483,7 @@ class WaterfallFlowPostItemWidgetState
                     );
                   },
                   child: Container(
-                    margin: const EdgeInsets.only(right: 5),
+                    margin: EdgeInsets.only(right: design.spacing.sm),
                     child: ItemBuilder.buildAvatar(
                       context: context,
                       imageUrl: item.bigAvaImg,
@@ -447,12 +505,14 @@ class WaterfallFlowPostItemWidgetState
                     },
                     child: Text(
                       item.blogNickName,
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: design.typography.metadata.copyWith(
+                        color: design.colors.textSecondary,
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),
-                const SizedBox(width: 5),
+                SizedBox(width: design.spacing.sm),
                 if (item.showLikeButton == true)
                   LoftifyItemBuilder.buildLikedButton(
                     context,
@@ -463,8 +523,10 @@ class WaterfallFlowPostItemWidgetState
                     size: 16,
                     iconSize: 16,
                     likeCountPadding: const EdgeInsets.only(left: 3),
-                    defaultColor: Theme.of(context).textTheme.bodySmall?.color,
-                    countStyle: Theme.of(context).textTheme.bodySmall,
+                    defaultColor: design.colors.textSecondary,
+                    countStyle: design.typography.metadata.copyWith(
+                      color: design.colors.textSecondary,
+                    ),
                     onTap: (_) async {
                       HapticFeedback.mediumImpact();
                       int status = await PostApi.likeOrUnLike(
@@ -472,6 +534,7 @@ class WaterfallFlowPostItemWidgetState
                         postId: item.postId,
                         blogId: item.blogId,
                       ).then((value) {
+                        if (!mounted) return value['meta']['status'];
                         setState(() {
                           if (value['meta']['status'] != 200) {
                             IToast.showTop(
@@ -481,10 +544,12 @@ class WaterfallFlowPostItemWidgetState
                             item.likeCount += item.liked ? 1 : -1;
                             item.likeCount =
                                 item.likeCount.clamp(0, 100000000000000000);
+                            item.onLikeChanged?.call(item.liked);
                           }
                         });
                         return value['meta']['status'];
                       });
+                      if (!mounted) return item.liked;
                       if (status == 4071) {
                         Utils.validSlideCaptcha(context);
                       }
@@ -527,6 +592,12 @@ class GridPostItemWidgetState extends State<GridPostItemWidget> {
   }
 
   @override
+  void didUpdateWidget(covariant GridPostItemWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    item = widget.item;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return buildGridPostItem(
       context,
@@ -545,21 +616,48 @@ class GridPostItemWidgetState extends State<GridPostItemWidget> {
     late Widget main;
     switch (item.type) {
       case PostType.image:
-        main = buildNineGridImageItem(wh: wh, activePostId: activePostId);
+        main = item.photoLinks.isNotEmpty
+            ? buildNineGridImageItem(wh: wh, activePostId: activePostId)
+            : item.hasTitleOrContent
+                ? buildNineGridArticleItem(
+                    wh: wh,
+                    activePostId: activePostId,
+                  )
+                : buildInvalidItem(wh: wh);
       case PostType.article:
         main = buildNineGridArticleItem(wh: wh, activePostId: activePostId);
       case PostType.video:
-        main = buildNineGridVideoItem(wh: wh, activePostId: activePostId);
+        main = item.photoLinks.isNotEmpty
+            ? buildNineGridVideoItem(wh: wh, activePostId: activePostId)
+            : item.hasTitleOrContent
+                ? buildNineGridArticleItem(
+                    wh: wh,
+                    activePostId: activePostId,
+                  )
+                : buildInvalidItem(wh: wh);
       case PostType.grain:
         main = emptyWidget;
       case PostType.invalid:
         main = buildInvalidItem(wh: wh);
     }
-    return GestureDetector(
-      onTap: () {
-        GeneralPostItemBuilder.onTapItem(context, item);
-      },
-      child: ClickableWrapper(child:main),
+    return Material(
+      color: item.type == PostType.article
+          ? Theme.of(context).cardColor
+          : item.type == PostType.invalid
+              ? ChewieTheme.canvasColor
+              : Colors.transparent,
+      borderRadius: BorderRadius.circular(_postCardRadius),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(_postCardRadius),
+        onTap: () => GeneralPostItemBuilder.onTapItem(context, item),
+        onLongPress: item.showMoreButton
+            ? () {
+                HapticFeedback.mediumImpact();
+                GeneralPostItemBuilder.showMoreSheet(context, item);
+              }
+            : null,
+        child: ClickableWrapper(child: main),
+      ),
     );
   }
 
@@ -579,10 +677,10 @@ class GridPostItemWidgetState extends State<GridPostItemWidget> {
                       color: Theme.of(context).primaryColor, width: 1.6)
                   : Border.all(
                       color: Theme.of(context).dividerColor, width: 0.8),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(_postCardRadius),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(_postCardRadius),
               child: SizedBox(
                 height: wh,
                 width: wh,
@@ -617,8 +715,10 @@ class GridPostItemWidgetState extends State<GridPostItemWidget> {
     required double wh,
   }) {
     return ContainerItem(
-      backgroundColor: Theme.of(context).cardColor,
-      radius: 12,
+      backgroundColor: Colors.transparent,
+      radius: _postCardRadius,
+      roundTop: true,
+      roundBottom: true,
       border: activePostId == item.postId
           ? Border.all(color: Theme.of(context).primaryColor, width: 1.6)
           : Border.all(color: Theme.of(context).dividerColor, width: 0.8),
@@ -641,7 +741,8 @@ class GridPostItemWidgetState extends State<GridPostItemWidget> {
             SizedBox(height: item.title.isNotEmpty ? 5 : 5),
             Expanded(
               child: Text(
-                StringUtil.clearBlank(HtmlUtil.extractTextFromHtml(item.digest)),
+                StringUtil.clearBlank(
+                    HtmlUtil.extractTextFromHtml(item.digest)),
                 maxLines: item.title.isNotEmpty ? 6 : 8,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall?.apply(
@@ -671,10 +772,10 @@ class GridPostItemWidgetState extends State<GridPostItemWidget> {
                       color: Theme.of(context).primaryColor, width: 1.6)
                   : Border.all(
                       color: Theme.of(context).dividerColor, width: 0.8),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(_postCardRadius),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(_postCardRadius),
               child: SizedBox(
                 height: wh,
                 width: wh,
@@ -709,34 +810,11 @@ class GridPostItemWidgetState extends State<GridPostItemWidget> {
   }
 
   Widget buildInvalidItem({required double wh}) {
-    return ContainerItem(
-      backgroundColor: ChewieTheme.canvasColor,
-      border: Border.all(color: Theme.of(context).dividerColor, width: 0.8),
-      child: Container(
-        padding: const EdgeInsets.all(5),
-        width: wh,
-        child: Column(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline_rounded,
-              color: Theme.of(context).textTheme.labelSmall?.color,
-              size: 24,
-            ),
-            const SizedBox(height: 5),
-            Text(
-              appLocalizations.invalidContent,
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context)
-                  .textTheme
-                  .labelSmall
-                  ?.apply(fontWeightDelta: 1),
-            ),
-          ],
-        ),
-      ),
+    return _buildInvalidPostCard(
+      context,
+      width: wh,
+      height: wh,
+      minHeight: wh,
     );
   }
 }
@@ -754,7 +832,7 @@ class TilePostItemWidget extends StatefulWidget {
 }
 
 class TilePostItemWidgetState extends State<TilePostItemWidget>
-    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
+    with TickerProviderStateMixin {
   late GeneralPostItem item;
 
   @override
@@ -764,32 +842,56 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
   }
 
   @override
+  void didUpdateWidget(covariant TilePostItemWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    item = widget.item;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    super.build(context);
     return buildTilePostItem();
   }
 
   Widget buildTilePostItem() {
-    double width = (MediaQuery.sizeOf(context).width - 24) / 2;
     PostType type = item.type;
     late Widget main;
     switch (type) {
       case PostType.image:
-        main = buildTileImageItem();
+        main = item.photoLinks.isNotEmpty
+            ? buildTileImageItem()
+            : item.hasTitleOrContent
+                ? buildTileArticleItem()
+                : _buildInvalidPostCard(
+                    context,
+                    width: double.infinity,
+                  );
       case PostType.article:
         main = item.showArticle ?? true ? buildTileArticleItem() : emptyWidget;
       case PostType.video:
-        main = item.showVideo ?? true ? buildTileVideoItem() : emptyWidget;
+        main = item.showVideo ?? true
+            ? item.photoLinks.isNotEmpty
+                ? buildTileVideoItem()
+                : item.hasTitleOrContent
+                    ? buildTileArticleItem()
+                    : _buildInvalidPostCard(
+                        context,
+                        width: double.infinity,
+                      )
+            : emptyWidget;
       case PostType.grain:
-      case PostType.invalid:
         main = emptyWidget;
+      case PostType.invalid:
+        main = _buildInvalidPostCard(
+          context,
+          width: double.infinity,
+        );
     }
-    var res = Material(
+    final isLandscape = ResponsiveUtil.isLandscapeLayout();
+    return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
-          GeneralPostItemBuilder.onTapItem(context, item);
-        },
+        borderRadius: BorderRadius.circular(_postCardRadius),
+        onTap: () => GeneralPostItemBuilder.onTapItem(context, item),
         onLongPress: item.showMoreButton
             ? () {
                 HapticFeedback.mediumImpact();
@@ -797,38 +899,26 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
               }
             : null,
         child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: Theme.of(context).dividerColor,
-                width: 0.3,
-              ),
-            ),
+          padding: EdgeInsets.only(
+            left: 12,
+            right: 12,
+            top: !isLandscape && widget.isFirst ? 0 : 12,
+            bottom: isLandscape ? 12 : 0,
           ),
+          decoration: isLandscape
+              ? BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                      width: 0.3,
+                    ),
+                  ),
+                )
+              : null,
           child: main,
         ),
       ),
     );
-    return ResponsiveUtil.isLandscapeLayout()
-        ? res
-        : GestureDetector(
-            onTap: () {
-              GeneralPostItemBuilder.onTapItem(context, item);
-            },
-            onLongPress: item.showMoreButton
-                ? () {
-                    HapticFeedback.mediumImpact();
-                    GeneralPostItemBuilder.showMoreSheet(context, item);
-                  }
-                : null,
-            child: Container(
-              color: Colors.transparent,
-              padding: EdgeInsets.only(
-                  left: 12, right: 12, top: widget.isFirst ? 0 : 12),
-              child: main,
-            ),
-          );
   }
 
   Widget buildTileShareRow() {
@@ -851,8 +941,8 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
               padding: const EdgeInsets.only(bottom: 8, left: 8),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.thumb_up_alt,
+                  ChewieIcon(
+                    LoftifyIcons.recommend,
                     color: Theme.of(context).textTheme.bodySmall?.color,
                     size: 16,
                   ),
@@ -943,7 +1033,10 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
               ),
             if (item.followed != true) const SizedBox(width: 8),
             CircleIconButton(
-              icon: const Icon(Icons.more_vert_rounded, size: 20),
+              icon: const ChewieIcon(
+                LoftifyIcons.moreVertical,
+                size: 20,
+              ),
               onTap: () {
                 BottomSheetBuilder.showContextMenu(
                     context, _buildMoreButtons());
@@ -955,12 +1048,12 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
     );
   }
 
-  _buildMoreButtons() {
+  FlutterContextMenu _buildMoreButtons() {
     return FlutterContextMenu(
       entries: [
         FlutterContextMenuItem(
           appLocalizations.copyLink,
-          iconData: Icons.copy_rounded,
+          iconData: LoftifyIcons.copy,
           onPressed: () {
             Utils.copy(
               context,
@@ -973,7 +1066,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
           },
         ),
         FlutterContextMenuItem(appLocalizations.visitOriginalPost,
-            iconData: Icons.view_carousel_outlined, onPressed: () {
+            iconData: LoftifyIcons.originalPost, onPressed: () {
           UriUtil.openInternal(
             context,
             LoftifyUriUtil.getPostUrlById(
@@ -985,7 +1078,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
           );
         }),
         FlutterContextMenuItem(appLocalizations.openWithBrowser,
-            iconData: Icons.open_in_browser_rounded, onPressed: () {
+            iconData: LoftifyIcons.openExternal, onPressed: () {
           UriUtil.openExternal(
             LoftifyUriUtil.getPostUrlById(
               item.blogName,
@@ -995,7 +1088,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
           );
         }),
         FlutterContextMenuItem(appLocalizations.shareToOtherApps,
-            iconData: Icons.share_rounded, onPressed: () {
+            iconData: LoftifyIcons.share, onPressed: () {
           UriUtil.share(
             LoftifyUriUtil.getPostUrlById(
               item.blogName,
@@ -1023,6 +1116,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
         if (content.isNotEmpty)
           CustomHtmlWidget(
             content: content,
+            selectable: false,
             style: Theme.of(context).textTheme.bodyMedium,
             // linkBold: false,
             // selectable: false,
@@ -1060,7 +1154,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
 
   Widget buildTileImageItem() {
     var grid = ImageGrid(
-      ratios: item.photoLinks.map((e) => e.ow / e.oh).toList(),
+      ratios: item.photoLinks.map(_safePhotoAspectRatio).toList(),
       itemCount: item.photoLinks.length,
       itemBuilder: (BuildContext context, int index, BorderRadius radius) {
         radius =
@@ -1081,8 +1175,11 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
                     showClose: false,
                     fullScreen: true,
                     useFade: true,
+                    opaque: false,
                     HeroPhotoViewScreen(
-                      imageUrls: _getImageIllusts(),
+                      imageUrls: _getImageIllusts()
+                          .map((illust) => illust.url)
+                          .toList(),
                       initIndex: index,
                       tagPrefix: "TilePost",
                       useMainColor: true,
@@ -1115,7 +1212,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
             ],
           ),
         );
-        double ratio = item.photoLinks[index].ow / item.photoLinks[index].oh;
+        double ratio = _safePhotoAspectRatio(item.photoLinks[index]);
         ratio = ratio.clamp(0.8, 1.6);
         bool isSingle = item.photoLinks.length == 1;
         return Container(
@@ -1165,7 +1262,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
     double maxHeight = 300,
     double minHeight = 120,
   }) {
-    double ratio = item.photoLinks[0].ow / item.photoLinks[0].oh;
+    double ratio = _safePhotoAspectRatio(item.photoLinks[0]);
     ratio = ratio.clamp(0.8, 1.6);
     return Column(
       children: [
@@ -1177,10 +1274,10 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
               decoration: BoxDecoration(
                 border: Border.all(
                     color: Theme.of(context).dividerColor, width: 0.3),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(_postCardRadius),
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(_postCardRadius),
                 child: AspectRatio(
                   aspectRatio: ratio,
                   child: ChewieItemBuilder.buildCachedImage(
@@ -1259,16 +1356,12 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
               context,
               text: StringUtil.formatCount(item.likeCount),
               spacing: 4,
-              icon: !item.liked
-                  ? const Icon(
-                      Icons.favorite_border_rounded,
-                      size: 20,
-                    )
-                  : const Icon(
-                      Icons.favorite_rounded,
-                      color: ChewieColors.likeButtonColor,
-                      size: 20,
-                    ),
+              icon: LoftifyReactionIcon(
+                kind: LoftifyReactionKind.like,
+                selected: item.liked,
+                color: item.liked ? LoftifyReactionColors.like : null,
+                size: 20,
+              ),
               onTap: () {
                 _handleLike();
               },
@@ -1278,16 +1371,12 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
               context,
               text: StringUtil.formatCount(item.shareCount),
               spacing: 4,
-              icon: !item.shared
-                  ? const Icon(
-                      Icons.thumb_up_outlined,
-                      size: 18,
-                    )
-                  : const Icon(
-                      Icons.thumb_up,
-                      color: ChewieColors.shareButtonColor,
-                      size: 18,
-                    ),
+              icon: LoftifyReactionIcon(
+                kind: LoftifyReactionKind.recommend,
+                selected: item.shared,
+                color: item.shared ? LoftifyReactionColors.recommend : null,
+                size: 18,
+              ),
               onTap: () {
                 _handleRecommend();
               },
@@ -1296,7 +1385,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
             ItemBuilder.buildIconTextButton(
               context,
               text: appLocalizations.comment,
-              icon: const Icon(Icons.mode_comment_outlined, size: 18),
+              icon: const ChewieIcon(LoftifyIcons.comment, size: 18),
               spacing: 4,
               onTap: () {
                 RouteUtil.pushPanelCupertinoRoute(
@@ -1304,6 +1393,7 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
                   PostDetailScreen(
                     generalPostItem: item,
                     isArticle: item.type == PostType.article,
+                    sequenceSource: item.sequenceSource,
                   ),
                 );
               },
@@ -1326,66 +1416,64 @@ class TilePostItemWidgetState extends State<TilePostItemWidget>
     );
   }
 
-  _handleLike() async {
+  Future<void> _handleLike() async {
     HapticFeedback.mediumImpact();
-    await PostApi.likeOrUnLike(
+    final value = await PostApi.likeOrUnLike(
       isLike: !item.liked,
       postId: item.postId,
       blogId: item.blogId,
-    ).then((value) {
-      if (value['meta']['status'] != 200) {
-        if (StringUtil.isNotEmpty(value['meta']['desc']) &&
-            StringUtil.isNotEmpty(value['meta']['msg'])) {
-          IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-        }
-        if (value['meta']['status'] == 4071) {
-          Utils.validSlideCaptcha(context);
-        }
-      } else {
-        item.liked = !item.liked;
-        if (item.liked != true) {
-          IToast.showTop(appLocalizations.unlike);
-        }
-        item.likeCount += item.liked ? 1 : -1;
-        item.likeCount = item.likeCount.clamp(0, 100000000000000000);
+    );
+    if (!mounted) return;
+    if (value['meta']['status'] != 200) {
+      if (StringUtil.isNotEmpty(value['meta']['desc']) &&
+          StringUtil.isNotEmpty(value['meta']['msg'])) {
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
       }
-      setState(() {});
-    });
+      if (value['meta']['status'] == 4071) {
+        Utils.validSlideCaptcha(context);
+      }
+    } else {
+      item.liked = !item.liked;
+      if (item.liked != true) {
+        IToast.showTop(appLocalizations.unlike);
+      }
+      item.likeCount += item.liked ? 1 : -1;
+      item.likeCount = item.likeCount.clamp(0, 100000000000000000);
+      item.onLikeChanged?.call(item.liked);
+    }
+    setState(() {});
   }
 
-  _handleRecommend() async {
+  Future<void> _handleRecommend() async {
     HapticFeedback.mediumImpact();
-    await PostApi.shareOrUnShare(
+    final value = await PostApi.shareOrUnShare(
       isShare: !item.shared,
       postId: item.postId,
       blogId: item.blogId,
-    ).then((value) {
-      if (value['meta']['status'] != 200) {
-        if (StringUtil.isNotEmpty(value['meta']['desc']) &&
-            StringUtil.isNotEmpty(value['meta']['msg'])) {
-          IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-        }
-        if (value['meta']['status'] == 4071) {
-          Utils.validSlideCaptcha(context);
-        }
-      } else {
-        item.shared = !item.shared;
-        if (item.shared) {
-          IToast.showTop(appLocalizations.unrecommend);
-        }
-        item.shareCount += item.shared ? 1 : -1;
-        item.shareCount = item.shareCount.clamp(0, 100000000000000000);
+    );
+    if (!mounted) return;
+    if (value['meta']['status'] != 200) {
+      if (StringUtil.isNotEmpty(value['meta']['desc']) &&
+          StringUtil.isNotEmpty(value['meta']['msg'])) {
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
       }
-      setState(() {});
-    });
+      if (value['meta']['status'] == 4071) {
+        Utils.validSlideCaptcha(context);
+      }
+    } else {
+      item.shared = !item.shared;
+      if (item.shared) {
+        IToast.showTop(appLocalizations.unrecommend);
+      }
+      item.shareCount += item.shared ? 1 : -1;
+      item.shareCount = item.shareCount.clamp(0, 100000000000000000);
+    }
+    setState(() {});
   }
-
-  @override
-  bool get wantKeepAlive => true;
 }
 
 class GeneralPostItemBuilder {
-  static onTapItem(BuildContext context, GeneralPostItem item) {
+  static void onTapItem(BuildContext context, GeneralPostItem item) {
     if (item.type == PostType.invalid) {
       IToast.showTop(appLocalizations.invalidContent);
     } else if (item.type == PostType.video) {
@@ -1403,34 +1491,33 @@ class GeneralPostItemBuilder {
         PostDetailScreen(
           generalPostItem: item,
           isArticle: item.type == PostType.article,
+          sequenceSource: item.sequenceSource,
         ),
       );
     }
   }
 
-  static showMoreSheet(BuildContext context, GeneralPostItem item) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return BottomSheetWrapperWidget(
-          preferMinWidth: 400,
-          child: ShieldBottomSheet(
-            tags: item.tags,
-            onShieldContent: () {
-              item.onShieldContent?.call();
-              Navigator.pop(context);
-            },
-            onShieldUser: () {
-              item.onShieldUser?.call();
-              Navigator.pop(context);
-            },
-            onShieldTag: (tag) {
-              item.onShieldTag?.call(tag);
-              Navigator.pop(context);
-            },
-          ),
-        );
-      },
+  static void showMoreSheet(BuildContext context, GeneralPostItem item) {
+    BottomSheetBuilder.showBottomSheet(
+      context,
+      (sheetContext) => ShieldBottomSheet(
+        tags: item.tags,
+        onShieldContent: () {
+          item.onShieldContent?.call();
+          Navigator.pop(sheetContext);
+        },
+        onShieldUser: () {
+          item.onShieldUser?.call();
+          Navigator.pop(sheetContext);
+        },
+        onShieldTag: (tag) {
+          item.onShieldTag?.call(tag);
+          Navigator.pop(sheetContext);
+        },
+      ),
+      responsive: true,
+      preferMinWidth: 400,
+      topRadius: const Radius.circular(24),
     );
   }
 }

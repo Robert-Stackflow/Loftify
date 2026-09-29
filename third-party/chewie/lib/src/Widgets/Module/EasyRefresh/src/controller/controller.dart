@@ -35,6 +35,7 @@ class EasyRefreshController {
     Duration? duration = const Duration(milliseconds: 200),
     Curve curve = Curves.linear,
     ScrollController? scrollController,
+    bool jumpToEdge = true,
     bool force = false,
   }) async {
     await _state?._callRefresh(
@@ -42,6 +43,7 @@ class EasyRefreshController {
       duration: duration,
       curve: curve,
       scrollController: scrollController,
+      jumpToEdge: jumpToEdge,
       force: force,
     );
   }

@@ -1,4 +1,3 @@
-
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/dress_api.dart';
@@ -6,6 +5,10 @@ import 'package:loftify/Models/gift_response.dart';
 import 'package:loftify/Screens/Info/nested_mixin.dart';
 import 'package:loftify/Utils/hive_util.dart';
 
+import '../../Theme/loftify_design_theme.dart';
+import '../../Utils/loftify_file_util.dart';
+import '../../Widgets/Design/loftify_download_progress_button.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
 class EmoteDetailScreen extends StatefulWidgetForNested {
@@ -32,20 +35,21 @@ class _EmoteDetailScreenState extends BaseDynamicState<EmoteDetailScreen>
   String? userAvatarImg;
   String? currentAvatarImg;
   final EasyRefreshController _refreshController = EasyRefreshController();
+  final Map<String, double> _downloadProgress = {};
 
   @override
   void initState() {
     super.initState();
-    currentAvatarImg =
-        ChewieHiveUtil.getString(HiveUtil.customAvatarBoxKey, defaultValue: null);
+    currentAvatarImg = ChewieHiveUtil.getString(HiveUtil.customAvatarBoxKey,
+        defaultValue: null);
     setState(() {});
   }
 
-  _fetchDetail({bool refresh = false}) async {
-    if (_loading) return;
+  Future<IndicatorResult> _fetchDetail({bool refresh = false}) async {
+    if (_loading) return IndicatorResult.none;
     _loading = true;
     userAvatarImg = (await HiveUtil.getUserInfo())?.bigAvaImg;
-    await DressApi.getEmoteDetail(
+    return await DressApi.getEmoteDetail(
       emotePackId: widget.emotePackId,
     ).then((value) {
       try {
@@ -70,7 +74,7 @@ class _EmoteDetailScreenState extends BaseDynamicState<EmoteDetailScreen>
     });
   }
 
-  _onRefresh() async {
+  Future<IndicatorResult> _onRefresh() async {
     return await _fetchDetail(refresh: true);
   }
 
@@ -94,7 +98,7 @@ class _EmoteDetailScreenState extends BaseDynamicState<EmoteDetailScreen>
   Widget _buildBody(ScrollPhysics physics) {
     return WaterfallFlow.builder(
       physics: physics,
-      cacheExtent: 9999,
+      cacheExtent: MediaQuery.sizeOf(context).height,
       padding: const EdgeInsets.all(10),
       itemCount: _giftEmote?.emoteList.length ?? 0,
       gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
@@ -108,7 +112,7 @@ class _EmoteDetailScreenState extends BaseDynamicState<EmoteDetailScreen>
     );
   }
 
-  _buildItem(EmoteItem item) {
+  Widget _buildItem(EmoteItem item) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
@@ -140,19 +144,53 @@ class _EmoteDetailScreenState extends BaseDynamicState<EmoteDetailScreen>
             children: [
               Expanded(
                 flex: 2,
-                child: RoundIconTextButton(
-                    text: appLocalizations.download, onPressed: () async {
-                  CustomLoadingDialog.showLoading(title: appLocalizations.downloading);
-                  String url = item.url;
-                  await FileUtil.saveImage(context, url);
-                  CustomLoadingDialog.dismissLoading();
-                }),
+                child: LoftifyDownloadProgressButton(
+                  label: appLocalizations.download,
+                  icon: LoftifyIcons.download,
+                  progress: _downloadProgress[item.url],
+                  onPressed: _downloadProgress.containsKey(item.url)
+                      ? null
+                      : () => _downloadEmote(item),
+                ),
               ),
             ],
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _downloadEmote(EmoteItem item) async {
+    final key = item.url;
+    if (_downloadProgress.containsKey(key)) return;
+    setState(() => _downloadProgress[key] = 0);
+    try {
+      final success = await LoftifyFileUtil.saveImage(
+        context,
+        key,
+        onReceiveProgress: (received, total) {
+          _updateDownloadProgress(key, received, total);
+        },
+      );
+      await _showDownloadCompletion(key, success);
+    } finally {
+      if (mounted) setState(() => _downloadProgress.remove(key));
+    }
+  }
+
+  void _updateDownloadProgress(String key, int received, int total) {
+    if (!mounted || !_downloadProgress.containsKey(key) || total <= 0) return;
+    final next = (received / total).clamp(0.0, 1.0).toDouble();
+    final current = _downloadProgress[key] ?? 0;
+    if (next < 1 && (next - current).abs() < 0.002) return;
+    setState(() => _downloadProgress[key] = next);
+  }
+
+  Future<void> _showDownloadCompletion(String key, bool success) async {
+    if (!mounted || !_downloadProgress.containsKey(key) || !success) return;
+    setState(() => _downloadProgress[key] = 1);
+    final motion = context.design.motion;
+    await Future<void>.delayed(motion.effective(context, motion.state));
   }
 
   PreferredSizeWidget _buildAppBar() {

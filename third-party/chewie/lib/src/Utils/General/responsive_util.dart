@@ -25,6 +25,11 @@ enum LinuxOSType {
 }
 
 class ResponsiveUtil {
+  static const double tabletShortestSideThreshold = 600;
+  static const double tabletLongestSideThreshold = 900;
+
+  static bool? _portraitLockEnabled;
+
   static String osVersion = "";
   static String buildNumber = "";
   static String version = "";
@@ -58,7 +63,8 @@ class ResponsiveUtil {
     deviceName = await getDeviceName();
     deviceDescription = await getDeviceDescription();
     osVersion = await getOSVersion();
-    print("Platform: $platformName, Version: $osVersion, Build Number: $buildNumber, App Name: $appName, Package Name: $packageName, Device Name: $deviceName, Device Description: $deviceDescription");
+    print(
+        "Platform: $platformName, Version: $osVersion, Build Number: $buildNumber, App Name: $appName, Package Name: $packageName, Device Name: $deviceName, Device Description: $deviceDescription");
   }
 
   static Future<String> getOSVersion() async {
@@ -171,33 +177,39 @@ class ResponsiveUtil {
         (Platform.isMacOS || Platform.isWindows || Platform.isLinux);
   }
 
-  static checkSizeCondition() {
-    double shortestThreshold = 600;
-    double longestThreshold = 900;
-    double longestSide =
-        MediaQuery.sizeOf(chewieProvider.rootContext).longestSide;
-    double shortestSide =
-        MediaQuery.sizeOf(chewieProvider.rootContext).shortestSide;
-    bool sizeCondition =
-        longestSide >= longestThreshold && shortestSide >= shortestThreshold;
-    if (!sizeCondition) {
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp,
-        DeviceOrientation.portraitDown,
-      ]);
-    }
+  static bool isTabletSize(Size size) {
+    return size.longestSide >= tabletLongestSideThreshold &&
+        size.shortestSide >= tabletShortestSideThreshold;
+  }
+
+  static Future<void> checkSizeCondition({Size? logicalSize}) async {
+    if (!isMobile()) return;
+
+    final size = logicalSize ?? MediaQuery.sizeOf(chewieProvider.rootContext);
+    final shouldLockPortrait = !isTabletSize(size);
+    if (_portraitLockEnabled == shouldLockPortrait) return;
+
+    await SystemChrome.setPreferredOrientations(
+      shouldLockPortrait
+          ? const [
+              DeviceOrientation.portraitUp,
+              DeviceOrientation.portraitDown,
+            ]
+          : const [],
+    );
+    _portraitLockEnabled = shouldLockPortrait;
+  }
+
+  /// Re-applies the app's normal phone/tablet orientation policy after a
+  /// temporary media fullscreen override.
+  static Future<void> restoreOrientationPolicy({Size? logicalSize}) async {
+    _portraitLockEnabled = null;
+    await checkSizeCondition(logicalSize: logicalSize);
   }
 
   static bool isTablet() {
-    double shortestThreshold = 600;
-    double longestThreshold = 900;
-    double longestSide =
-        MediaQuery.sizeOf(chewieProvider.rootContext).longestSide;
-    double shortestSide =
-        MediaQuery.sizeOf(chewieProvider.rootContext).shortestSide;
-    bool sizeCondition =
-        longestSide >= longestThreshold && shortestSide >= shortestThreshold;
-    return !kIsWeb && (Platform.isIOS || Platform.isAndroid) && sizeCondition;
+    final size = MediaQuery.sizeOf(chewieProvider.rootContext);
+    return isMobile() && isTabletSize(size);
   }
 
   static bool isLandscapeTablet() {

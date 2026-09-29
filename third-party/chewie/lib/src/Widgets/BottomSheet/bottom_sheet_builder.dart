@@ -14,7 +14,8 @@ class BottomSheetBuilder {
       return showBottomSheet(
           responsive: true,
           context,
-          (context) => ContextMenuBottomSheet(menu: menu));
+          (context) => ContextMenuBottomSheet(menu: menu),
+          topRadius: const Radius.circular(20));
     }
   }
 
@@ -29,23 +30,27 @@ class BottomSheetBuilder {
     bool responsive = false,
     Color? backgroundColor,
     double? preferMinWidth,
+    Radius? topRadius,
   }) {
+    final navigatorContext = chewieProvider.navigatorContextOf(context);
     bool isLandScape = ResponsiveUtil.isWideDevice();
     preferMinWidth ??= responsive && isLandScape ? 450 : null;
     if (responsive && isLandScape) {
       return showGeneralDialog(
-        context: context,
+        context: navigatorContext,
         barrierDismissible: true,
         barrierColor: ChewieTheme.barrierColor,
         barrierLabel:
-            MaterialLocalizations.of(context).modalBarrierDismissLabel,
-        transitionDuration: const Duration(milliseconds: 300),
+            MaterialLocalizations.of(navigatorContext).modalBarrierDismissLabel,
+        transitionDuration: ChewieTheme.animationDuration,
         pageBuilder: (context, anim1, anim2) => const SizedBox.shrink(),
         transitionBuilder: (context, animation, secondaryAnimation, child) {
           return DialogAnimation(
             animation: animation,
             child: BottomSheetWrapperWidget(
               preferMinWidth: preferMinWidth,
+              useVerticalMargin: true,
+              topRadius: topRadius ?? ChewieDimens.defaultRadius,
               child: builder(context),
             ),
           );
@@ -53,20 +58,47 @@ class BottomSheetBuilder {
       );
     } else {
       return showCustomModalBottomSheet(
-        context: context,
+        context: navigatorContext,
         elevation: 0,
         enableDrag: enableDrag,
         barrierColor: ChewieTheme.barrierColor,
+        duration: ChewieTheme.animationDuration,
         backgroundColor: backgroundColor ?? ChewieTheme.canvasColor,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: topRadius ?? ChewieDimens.defaultRadius,
+          ),
         ),
         builder: builder,
         containerWidget: (_, animation, child) => BottomSheetWrapperWidget(
           preferMinWidth: preferMinWidth,
+          topRadius: topRadius ?? ChewieDimens.defaultRadius,
           child: child,
         ),
       );
     }
+  }
+
+  static Future showListBottomSheet(
+    BuildContext context,
+    WidgetBuilder builder, {
+    Color? backgroundColor,
+    ShapeBorder shape = const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+  }) {
+    final navigatorContext = chewieProvider.navigatorContextOf(context);
+    return showCustomModalBottomSheet(
+      context: navigatorContext,
+      elevation: 0,
+      backgroundColor:
+          backgroundColor ?? Theme.of(navigatorContext).canvasColor,
+      shape: shape,
+      builder: builder,
+      containerWidget: (_, animation, child) => BottomSheetWrapperWidget(
+        topRadius: const Radius.circular(20),
+        child: child,
+      ),
+    );
   }
 }

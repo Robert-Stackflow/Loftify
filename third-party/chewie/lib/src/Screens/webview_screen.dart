@@ -72,28 +72,28 @@ class _WebviewScreenState extends BaseDynamicState<WebviewScreen>
       entries: [
         FlutterContextMenuItem(
           chewieLocalizations.refresh,
-          iconData: Icons.refresh_rounded,
+          iconData: ChewieIcons.refresh,
           onPressed: () async {
             webViewController?.reload();
           },
         ),
         FlutterContextMenuItem(
           chewieLocalizations.copyLink,
-          iconData: Icons.copy_rounded,
+          iconData: ChewieIcons.copy,
           onPressed: () {
             ChewieUtils.copy(context, widget.url);
           },
         ),
         FlutterContextMenuItem(
           chewieLocalizations.openWithBrowser,
-          iconData: Icons.open_in_browser_rounded,
+          iconData: ChewieIcons.openExternal,
           onPressed: () {
             UriUtil.openExternal(widget.url);
           },
         ),
         FlutterContextMenuItem(
           chewieLocalizations.shareToOtherApps,
-          iconData: Icons.share_rounded,
+          iconData: ChewieIcons.share,
           onPressed: () {
             UriUtil.share(widget.url);
           },
@@ -124,12 +124,9 @@ class _WebviewScreenState extends BaseDynamicState<WebviewScreen>
                   DialogNavigatorHelper.responsivePopPage();
                 },
                 actions: [
-                  CircleIconButton(
-                    icon: Icon(
-                      LucideIcons.ellipsisVertical,
-                      color: ChewieTheme.iconColor,
-                    ),
-                    onTap: () {
+                  ChewieIconButton(
+                    icon: LucideIcons.ellipsisVertical,
+                    onPressed: () {
                       BottomSheetBuilder.showContextMenu(
                           context, _buildMoreButtons());
                     },
@@ -139,7 +136,6 @@ class _WebviewScreenState extends BaseDynamicState<WebviewScreen>
                   ToolButton(
                     context: context,
                     icon: LucideIcons.ellipsisVertical,
-                    buttonSize: const Size(32, 32),
                     onPressed: () {
                       BottomSheetBuilder.showContextMenu(
                           context, _buildMoreButtons());

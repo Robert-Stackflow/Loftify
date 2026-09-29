@@ -2,6 +2,7 @@ import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Api/user_api.dart';
 import 'package:loftify/Models/account_response.dart';
+import 'package:loftify/Screens/Download/download_management_screen.dart';
 import 'package:loftify/Screens/Info/collection_screen.dart';
 import 'package:loftify/Screens/Info/favorite_folder_list_screen.dart';
 import 'package:loftify/Screens/Info/grain_screen.dart';
@@ -11,7 +12,6 @@ import 'package:loftify/Screens/Info/post_screen.dart';
 import 'package:loftify/Screens/Info/share_screen.dart';
 import 'package:loftify/Screens/Info/user_detail_screen.dart';
 import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
-import 'package:loftify/Utils/asset_util.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/Utils/lottie_files.dart';
@@ -23,6 +23,8 @@ import '../../Utils/app_provider.dart';
 import '../../Utils/cloud_control_provider.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
+import '../../Widgets/Design/loftify_lottie.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import '../Info/following_follower_screen.dart';
 import '../Info/system_notice_screen.dart';
@@ -39,10 +41,7 @@ class MineScreen extends StatefulWidget {
 }
 
 class _MineScreenState extends BaseDynamicState<MineScreen>
-    with
-        TickerProviderStateMixin,
-        AutomaticKeepAliveClientMixin,
-        ScrollToHideMixin {
+    with AutomaticKeepAliveClientMixin, ScrollToHideMixin {
   @override
   bool get wantKeepAlive => true;
   FullBlogInfo? blogInfo;
@@ -53,79 +52,66 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
 
   final ScrollController _scrollController = ScrollController();
 
-  late AnimationController darkModeController;
-  Widget? darkModeWidget;
-
   @override
   void dispose() {
-    darkModeController.dispose();
+    _refreshController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
   @override
   void initState() {
     super.initState();
-    darkModeController = AnimationController(vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      darkModeWidget = LottieUtil.load(
-        LottieFiles.sunLight,
-        size: 25,
-        autoForward: !ColorUtil.isDark(context),
-        controller: darkModeController,
-      );
+      if (!mounted) return;
       panelScreenState?.refreshScrollControllers();
     });
     _fetchUserInfo();
-    if (appProvider.token.isNotEmpty) {
+  }
+
+  Future<IndicatorResult> _fetchUserInfo() async {
+    if (appProvider.token.isEmpty) return IndicatorResult.success;
+    final token = appProvider.token;
+    bool isCurrent() => mounted && appProvider.token == token;
+    try {
+      final value = await UserApi.getUserInfo();
+      if (!isCurrent()) return IndicatorResult.fail;
+      if (value['meta']['status'] != 200) {
+        IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+        return IndicatorResult.fail;
+      }
+      final account = AccountResponse.fromJson(value['response']);
+      if (account.blogs.isEmpty) {
+        IToast.showTop(appLocalizations.loadFailed);
+        return IndicatorResult.fail;
+      }
+      final info = account.blogs.first.blogInfo;
+      if (info == null) {
+        IToast.showTop(appLocalizations.loadFailed);
+        return IndicatorResult.fail;
+      }
+      await HiveUtil.setUserInfo(info);
+      if (!isCurrent()) return IndicatorResult.fail;
+      setState(() => blogInfo = info);
       _fetchFollowingOrFolllowerList(FollowingMode.following, refresh: true);
       _fetchFollowingOrFolllowerList(FollowingMode.follower, refresh: true);
+      final details = await UserApi.getMeInfo(blogName: info.blogName);
+      if (!isCurrent()) return IndicatorResult.fail;
+      if (details['meta']['status'] != 200) {
+        IToast.showTop(details['meta']['desc'] ?? details['meta']['msg']);
+        return IndicatorResult.fail;
+      }
+      final data = MeInfoData.fromJson(details['response']);
+      setState(() => meInfoData = data);
+      return IndicatorResult.success;
+    } catch (error, stackTrace) {
+      if (isCurrent()) IToast.showTop(appLocalizations.loadFailed);
+      ILogger.error('Failed to load user info', error, stackTrace);
+      return IndicatorResult.fail;
     }
   }
 
-  _fetchUserInfo() async {
-    if (appProvider.token.isNotEmpty) {
-      return await UserApi.getUserInfo().then((value) async {
-        try {
-          if (value['meta']['status'] != 200) {
-            IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-            return IndicatorResult.fail;
-          } else {
-            AccountResponse accountResponse =
-                AccountResponse.fromJson(value['response']);
-            await HiveUtil.setUserInfo(accountResponse.blogs[0].blogInfo);
-            setState(() {
-              blogInfo = accountResponse.blogs[0].blogInfo;
-            });
-            return await UserApi.getMeInfo(blogName: blogInfo!.blogName)
-                .then((value) async {
-              try {
-                if (value['meta']['status'] != 200) {
-                  IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
-                  return IndicatorResult.fail;
-                } else {
-                  setState(() {
-                    meInfoData = MeInfoData.fromJson(value['response']);
-                  });
-                  return IndicatorResult.success;
-                }
-              } catch (e, t) {
-                IToast.showTop(appLocalizations.loadFailed);
-                ILogger.error("Failed to load me info", e, t);
-                return IndicatorResult.fail;
-              }
-            });
-          }
-        } catch (e, t) {
-          IToast.showTop(appLocalizations.loadFailed);
-          ILogger.error("Failed to load user info", e, t);
-          return IndicatorResult.fail;
-        }
-      });
-    }
-    return IndicatorResult.success;
-  }
-
-  _onRefresh() async {
+  Future<IndicatorResult> _onRefresh() async {
     return await _fetchUserInfo();
   }
 
@@ -136,21 +122,12 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
       backgroundColor: appProvider.token.isNotEmpty
           ? Theme.of(context).scaffoldBackgroundColor
           : ChewieTheme.getBackground(context),
-      appBar: ResponsiveUtil.isLandscapeLayout()
-          ? appProvider.token.isNotEmpty
-              ? ResponsiveAppBar(
-                  title: appLocalizations.mine,
-                  titleLeftMargin: ResponsiveUtil.isLandscapeLayout() ? 15 : 10,
-                )
-              : null
-          : PreferredSize(
-              preferredSize: const Size.fromHeight(56),
-              child: SafeArea(child: _buildAppBar())),
+      appBar: _buildAppBar(),
       body: _buildMainBody(),
     );
   }
 
-  _buildMainBody() {
+  Widget _buildMainBody() {
     return appProvider.token.isNotEmpty
         ? ScreenTypeLayout.builder(
             breakpoints: const ScreenBreakpoints(
@@ -164,22 +141,23 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
         : LoftifyItemBuilder.buildUnLoginMainBody(context);
   }
 
-  _buildMobileMainBody() {
+  Widget _buildMobileMainBody() {
     return EasyRefresh(
       controller: _refreshController,
       onRefresh: _onRefresh,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 10),
         child: ListView(
-          cacheExtent: 9999,
+          cacheExtent: MediaQuery.sizeOf(context).height,
           controller: _scrollController,
           children: [
             const SizedBox(height: 10),
             _buildUserCard(),
             _buildStatsticRow(),
-            if (blogInfo != null) ..._buildContent(),
+            ..._buildContent(),
             // if (blogInfo != null) ..._buildMessage(),
-            if (blogInfo != null) ..._buildCreation(),
+            ..._buildCreation(),
+            ..._buildAccountActions(),
             const SizedBox(height: 20),
           ],
         ),
@@ -187,7 +165,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     );
   }
 
-  _buildTabletMainBody() {
+  Widget _buildTabletMainBody() {
     return Row(
       children: [
         Expanded(
@@ -198,13 +176,14 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 10),
               child: ListView(
-                cacheExtent: 9999,
+                cacheExtent: MediaQuery.sizeOf(context).height,
                 children: [
                   const SizedBox(height: 20),
                   _buildUserCard(),
-                  if (blogInfo != null) ..._buildContent(),
+                  ..._buildContent(),
                   // if (blogInfo != null) ..._buildMessage(),
-                  if (blogInfo != null) ..._buildCreation(),
+                  ..._buildCreation(),
+                  ..._buildAccountActions(),
                   const SizedBox(height: 20),
                 ],
               ),
@@ -227,7 +206,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
               behavior:
                   ScrollConfiguration.of(context).copyWith(scrollbars: false),
               child: ListView(
-                cacheExtent: 9999,
+                cacheExtent: MediaQuery.sizeOf(context).height,
                 children: [
                   const SizedBox(height: 10),
                   if (meInfoData != null) _buildFollowingCard(),
@@ -243,7 +222,11 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     );
   }
 
-  _processResult(value, FollowingMode followingMode, {bool refresh = false}) {
+  IndicatorResult _processResult(
+    dynamic value,
+    FollowingMode followingMode, {
+    bool refresh = false,
+  }) {
     try {
       if (value['meta']['status'] != 200) {
         IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
@@ -289,21 +272,30 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     }
   }
 
-  _fetchFollowingOrFolllowerList(
+  Future<IndicatorResult> _fetchFollowingOrFolllowerList(
     FollowingMode followingMode, {
     bool refresh = false,
   }) async {
-    int offset = refresh ? 0 : _followingList.length;
-    return await HiveUtil.getUserInfo().then((blogInfo) async {
-      String blogName = blogInfo!.blogName;
-      return await UserApi.getFollowingList(
-        blogName: blogName,
+    final info = blogInfo;
+    if (info == null || !mounted) return IndicatorResult.fail;
+    final token = appProvider.token;
+    final offset = refresh
+        ? 0
+        : followingMode == FollowingMode.following
+            ? _followingList.length
+            : _followerList.length;
+    try {
+      final value = await UserApi.getFollowingList(
+        blogName: info.blogName,
         offset: offset,
         followingMode: followingMode,
-      ).then((value) {
-        return _processResult(value, followingMode, refresh: refresh);
-      });
-    });
+      );
+      if (!mounted || appProvider.token != token) return IndicatorResult.fail;
+      return _processResult(value, followingMode, refresh: refresh);
+    } catch (error, stackTrace) {
+      ILogger.error('Failed to load relationship list', error, stackTrace);
+      return IndicatorResult.fail;
+    }
   }
 
   Widget _buildFollowingCard() {
@@ -315,7 +307,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
             context,
             title: appLocalizations
                 .myFollowingWithCount(meInfoData!.blogInfo.attentionCount),
-            icon: Icons.keyboard_arrow_right_rounded,
+            icon: LoftifyIcons.next,
             onTap: () {
               RouteUtil.pushPanelCupertinoRoute(
                 context,
@@ -359,7 +351,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
             context,
             title: appLocalizations
                 .myFollowerWithCount(meInfoData!.blogInfo.followerCount),
-            icon: Icons.keyboard_arrow_right_rounded,
+            icon: LoftifyIcons.next,
             onTap: () {
               RouteUtil.pushPanelCupertinoRoute(
                 context,
@@ -393,7 +385,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     );
   }
 
-  getAvatarBoxImage() {
+  String getAvatarBoxImage() {
     String url = ChewieHiveUtil.getString(HiveUtil.customAvatarBoxKey) ?? "";
     return url.isNotEmpty ? url : blogInfo?.avatarBoxImage ?? "";
   }
@@ -427,62 +419,64 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                 size: getAvatarBoxImage().isNotEmpty ? 48 : 72,
               ),
               const SizedBox(width: 15),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.start,
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  ItemBuilder.buildCopyable(
-                    context,
-                    toastText: appLocalizations.haveCopiedNickName,
-                    text: blogInfo != null ? blogInfo!.blogNickName : "",
-                    copyable: blogInfo != null,
-                    child: Text(
-                      blogInfo != null
-                          ? blogInfo!.blogNickName
-                          : appLocalizations.login,
-                      style: Theme.of(context).textTheme.titleLarge?.apply(
-                            fontSizeDelta: 2,
-                          ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    ItemBuilder.buildCopyable(
+                      context,
+                      toastText: appLocalizations.haveCopiedNickName,
+                      text: blogInfo != null ? blogInfo!.blogNickName : "",
+                      copyable: blogInfo != null,
+                      child: Text(
+                        blogInfo != null
+                            ? blogInfo!.blogNickName
+                            : appLocalizations.login,
+                        style: Theme.of(context).textTheme.titleLarge?.apply(
+                              fontSizeDelta: 2,
+                            ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 5),
-                  ItemBuilder.buildCopyable(
-                    context,
-                    toastText: appLocalizations.haveCopiedLofterID,
-                    text: blogInfo != null ? blogInfo!.blogName : "",
-                    copyable: blogInfo != null,
-                    child: Text(
-                      blogInfo != null
-                          ? appLocalizations.lofterId(blogInfo!.blogName)
-                          : appLocalizations.loginToGetPersonalizedService,
+                    const SizedBox(height: 5),
+                    ItemBuilder.buildCopyable(
+                      context,
+                      toastText: appLocalizations.haveCopiedLofterID,
+                      text: blogInfo != null ? blogInfo!.blogName : "",
+                      copyable: blogInfo != null,
+                      child: Text(
+                        blogInfo != null
+                            ? appLocalizations.lofterId(blogInfo!.blogName)
+                            : appLocalizations.loginToGetPersonalizedService,
+                        style: Theme.of(context).textTheme.titleSmall?.apply(
+                              color:
+                                  Theme.of(context).textTheme.labelSmall?.color,
+                              fontSizeDelta: -1,
+                              fontWeightDelta: 2,
+                            ),
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      meInfoData != null
+                          ? appLocalizations.userMeta(
+                              "${meInfoData!.blogInfo.postCount}",
+                              "${meInfoData!.collectionCount}")
+                          : appLocalizations.userMeta("-", "-"),
                       style: Theme.of(context).textTheme.titleSmall?.apply(
-                            color:
-                                Theme.of(context).textTheme.labelSmall?.color,
-                            fontSizeDelta: -1,
+                            color: Theme.of(context).textTheme.bodySmall?.color,
+                            fontSizeDelta: 0,
                             fontWeightDelta: 2,
                           ),
                     ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    meInfoData != null
-                        ? appLocalizations.userMeta(
-                            "${meInfoData!.blogInfo.postCount}",
-                            "${meInfoData!.collectionCount}")
-                        : appLocalizations.userMeta("-", "-"),
-                    style: Theme.of(context).textTheme.titleSmall?.apply(
-                          color: Theme.of(context).textTheme.bodySmall?.color,
-                          fontSizeDelta: 0,
-                          fontWeightDelta: 2,
-                        ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              const Spacer(),
-              const Icon(
-                Icons.keyboard_arrow_right_rounded,
-                color: Colors.grey,
+              const SizedBox(width: 8),
+              ChewieIcon(
+                LoftifyIcons.next,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ],
           ),
@@ -491,67 +485,82 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     );
   }
 
-  _buildStatsticRow() {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          ItemBuilder.buildStatisticItem(
-            context,
-            title: appLocalizations.hotCount,
-            count: meInfoData?.blogInfo.hot.hotCount,
-            onTap: () {},
-            labelFontWeightDelta: 2,
-            countColor: Theme.of(context).textTheme.titleLarge?.color,
-            labelColor: Theme.of(context).textTheme.labelSmall?.color,
-          ),
-          ItemBuilder.buildStatisticItem(
-            context,
-            title: appLocalizations.follower,
-            count: meInfoData?.blogInfo.followerCount,
-            onTap: () {
-              if (blogInfo != null && meInfoData != null) {
-                RouteUtil.pushPanelCupertinoRoute(
-                  context,
-                  FollowingFollowerScreen(
-                    infoMode: InfoMode.me,
-                    followingMode: FollowingMode.follower,
-                    blogId: blogInfo!.blogId,
-                    blogName: blogInfo!.blogName,
-                    total: meInfoData!.blogInfo.followerCount,
-                  ),
-                );
-              }
-            },
-            countColor: Theme.of(context).textTheme.titleLarge?.color,
-            labelColor: Theme.of(context).textTheme.labelSmall?.color,
-            labelFontWeightDelta: 2,
-          ),
-          ItemBuilder.buildStatisticItem(
-            context,
-            title: appLocalizations.following,
-            count: meInfoData?.blogInfo.attentionCount,
-            countColor: Theme.of(context).textTheme.titleLarge?.color,
-            labelColor: Theme.of(context).textTheme.labelSmall?.color,
-            labelFontWeightDelta: 2,
-            onTap: () {
-              if (blogInfo != null && meInfoData != null) {
-                RouteUtil.pushPanelCupertinoRoute(
-                  context,
-                  FollowingFollowerScreen(
-                    infoMode: InfoMode.me,
-                    followingMode: FollowingMode.following,
-                    blogId: blogInfo!.blogId,
-                    blogName: blogInfo!.blogName,
-                    total: meInfoData!.blogInfo.attentionCount,
-                  ),
-                );
-              }
-            },
-          ),
-        ],
+  Widget _buildStatsticRow() {
+    final items = <Widget>[
+      ItemBuilder.buildStatisticItem(
+        context,
+        title: appLocalizations.hotCount,
+        count: meInfoData?.blogInfo.hot.hotCount,
+        onTap: () {},
+        labelFontWeightDelta: 2,
+        countColor: Theme.of(context).textTheme.titleLarge?.color,
+        labelColor: Theme.of(context).textTheme.labelSmall?.color,
       ),
+      ItemBuilder.buildStatisticItem(
+        context,
+        title: appLocalizations.follower,
+        count: meInfoData?.blogInfo.followerCount,
+        onTap: () {
+          if (blogInfo != null && meInfoData != null) {
+            RouteUtil.pushPanelCupertinoRoute(
+              context,
+              FollowingFollowerScreen(
+                infoMode: InfoMode.me,
+                followingMode: FollowingMode.follower,
+                blogId: blogInfo!.blogId,
+                blogName: blogInfo!.blogName,
+                total: meInfoData!.blogInfo.followerCount,
+              ),
+            );
+          }
+        },
+        countColor: Theme.of(context).textTheme.titleLarge?.color,
+        labelColor: Theme.of(context).textTheme.labelSmall?.color,
+        labelFontWeightDelta: 2,
+      ),
+      ItemBuilder.buildStatisticItem(
+        context,
+        title: appLocalizations.following,
+        count: meInfoData?.blogInfo.attentionCount,
+        countColor: Theme.of(context).textTheme.titleLarge?.color,
+        labelColor: Theme.of(context).textTheme.labelSmall?.color,
+        labelFontWeightDelta: 2,
+        onTap: () {
+          if (blogInfo != null && meInfoData != null) {
+            RouteUtil.pushPanelCupertinoRoute(
+              context,
+              FollowingFollowerScreen(
+                infoMode: InfoMode.me,
+                followingMode: FollowingMode.following,
+                blogId: blogInfo!.blogId,
+                blogName: blogInfo!.blogName,
+                total: meInfoData!.blogInfo.attentionCount,
+              ),
+            );
+          }
+        },
+      ),
+    ];
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: LayoutBuilder(builder: (context, constraints) {
+        final largeText = MediaQuery.textScalerOf(context).scale(14) > 19;
+        if (largeText && constraints.maxWidth < 420) {
+          return Column(
+            children: [
+              for (final item in items)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: item,
+                ),
+            ],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [for (final item in items) Expanded(child: item)],
+        );
+      }),
     );
   }
 
@@ -559,6 +568,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     return [
       const SizedBox(height: 10),
       CaptionItem(
+        context: context,
         title: appLocalizations.contentCenter,
         children: [
           EntryItem(
@@ -570,7 +580,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                 LikeScreen(),
               );
             },
-            leading: Icons.favorite_border_rounded,
+            leading: LoftifyIcons.favorite,
           ),
           EntryItem(
             title: appLocalizations.myRecommends,
@@ -581,7 +591,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                 ShareScreen(),
               );
             },
-            leading: Icons.thumb_up_off_alt,
+            leading: LoftifyIcons.recommend,
           ),
           EntryItem(
             title: appLocalizations.myFavorites,
@@ -592,7 +602,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                 const FavoriteFolderListScreen(),
               );
             },
-            leading: Icons.bookmark_outline_rounded,
+            leading: LoftifyIcons.bookmark,
           ),
           EntryItem(
             title: appLocalizations.myHistory,
@@ -603,8 +613,18 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                 const HistoryScreen(),
               );
             },
-            roundBottom: true,
-            leading: Icons.history_rounded,
+            leading: LoftifyIcons.history,
+          ),
+          EntryItem(
+            title: appLocalizations.downloadManagement,
+            showLeading: true,
+            onTap: () {
+              RouteUtil.pushPanelCupertinoRoute(
+                context,
+                const DownloadManagementScreen(),
+              );
+            },
+            leading: LoftifyIcons.download,
           ),
         ],
       ),
@@ -613,8 +633,8 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
 
   List<Widget> _buildCreation() {
     return [
-      const SizedBox(height: 10),
       CaptionItem(
+        context: context,
         title: appLocalizations.myCreative,
         children: [
           EntryItem(
@@ -626,7 +646,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                 PostScreen(),
               );
             },
-            leading: Icons.article_outlined,
+            leading: LoftifyIcons.article,
           ),
           EntryItem(
             title: appLocalizations.myCollections,
@@ -637,123 +657,209 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
                 CollectionScreen(),
               );
             },
-            leading: Icons.bookmarks_outlined,
+            leading: LoftifyIcons.collection,
           ),
           EntryItem(
             title: appLocalizations.myGrains,
             showLeading: true,
-            roundBottom: true,
             onTap: () {
               RouteUtil.pushPanelCupertinoRoute(
                 context,
                 GrainScreen(),
               );
             },
-            leading: Icons.grain_rounded,
+            leading: LoftifyIcons.grain,
           ),
         ],
       ),
     ];
   }
 
-  changeMode() {
+  List<Widget> _buildAccountActions() {
+    return [
+      CaptionItem(
+        context: context,
+        title: appLocalizations.other,
+        children: [
+          EntryItem(
+            title: appLocalizations.logout,
+            showLeading: true,
+            showTrailing: false,
+            leading: LoftifyIcons.logout,
+            titleColor: Theme.of(context).colorScheme.error,
+            onTap: () => HiveUtil.confirmLogout(context),
+          ),
+        ],
+      ),
+    ];
+  }
+
+  void changeMode() {
     if (ColorUtil.isDark(context)) {
       appProvider.themeMode = ActiveThemeMode.light;
-      darkModeController.forward();
     } else {
       appProvider.themeMode = ActiveThemeMode.dark;
-      darkModeController.reverse();
     }
   }
 
   PreferredSizeWidget _buildAppBar() {
+    final actions = <Widget>[
+      Selector<AppProvider, ActiveThemeMode>(
+        selector: (_, provider) => provider.themeMode,
+        builder: (context, themeMode, _) => _MineThemeModeButton(
+          isDark: themeMode == ActiveThemeMode.dark ||
+              (themeMode == ActiveThemeMode.system &&
+                  MediaQuery.platformBrightnessOf(context) == Brightness.dark),
+          tooltip: appLocalizations.themeMode,
+          onPressed: changeMode,
+        ),
+      ),
+      const SizedBox(width: 5),
+      Consumer<LoftifyControlProvider>(
+        builder: (_, cloudControlProvider, __) =>
+            cloudControlProvider.globalControl.showDress
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _mineAppBarIconButton(
+                        icon: LoftifyIcons.dress,
+                        tooltip: appLocalizations.dress,
+                        onPressed: () => RouteUtil.pushPanelCupertinoRoute(
+                          context,
+                          const SuitScreen(),
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                    ],
+                  )
+                : emptyWidget,
+      ),
+      _mineAppBarIconButton(
+        icon: LoftifyIcons.notifications,
+        tooltip: appLocalizations.notice,
+        onPressed: () => RouteUtil.pushPanelCupertinoRoute(
+          context,
+          const SystemNoticeScreen(),
+        ),
+      ),
+      const SizedBox(width: 5),
+      _mineAppBarIconButton(
+        icon: LoftifyIcons.settings,
+        tooltip: appLocalizations.setting,
+        onPressed: () => RouteUtil.pushPanelCupertinoRoute(
+          context,
+          const SettingScreen(),
+        ),
+      ),
+    ];
     return ResponsiveAppBar(
-      backgroundColor: Colors.transparent,
-      actions: [
-        if (appProvider.token.isNotEmpty)
-          CircleIconButton(
-            icon: Icon(
-              Icons.exit_to_app_rounded,
-              size: 23,
-              color: Theme.of(context).iconTheme.color,
-            ),
-            onTap: () {
-              HiveUtil.confirmLogout(context);
-            },
-          ),
-        const SizedBox(width: 5),
-        ItemBuilder.buildDynamicIconButton(
-            context: context,
-            icon: darkModeWidget,
-            onTap: changeMode,
-            onChangemode: (context, themeMode, child) {
-              if (darkModeController.duration != null) {
-                if (themeMode == ActiveThemeMode.light) {
-                  darkModeController.forward();
-                } else if (themeMode == ActiveThemeMode.dark) {
-                  darkModeController.reverse();
-                } else {
-                  if (ColorUtil.isDark(context)) {
-                    darkModeController.reverse();
-                  } else {
-                    darkModeController.forward();
-                  }
-                }
-              }
-            }),
-        const SizedBox(width: 5),
-        Consumer<LoftifyControlProvider>(
-          builder: (_, cloudControlProvider, __) =>
-              cloudControlProvider.globalControl.showDress
-                  ? Row(
-                      children: [
-                        CircleIconButton(
-                            icon: AssetUtil.loadDouble(
-                              context,
-                              AssetUtil.dressLightIcon,
-                              AssetUtil.dressDarkIcon,
-                            ),
-                            onTap: () {
-                              RouteUtil.pushPanelCupertinoRoute(
-                                context,
-                                const SuitScreen(),
-                              );
-                            }),
-                        const SizedBox(width: 5),
-                      ],
-                    )
-                  : emptyWidget,
-        ),
-        CircleIconButton(
-          icon: Icon(
-            Icons.notifications_on_outlined,
-            size: 23,
-            color: Theme.of(context).iconTheme.color,
-          ),
-          onTap: () {
-            RouteUtil.pushPanelCupertinoRoute(
-              context,
-              const SystemNoticeScreen(),
-            );
-          },
-        ),
-        const SizedBox(width: 5),
-        ItemBuilder.buildDynamicIconButton(
-            context: context,
-            icon: AssetUtil.loadDouble(
-              context,
-              AssetUtil.settingLightIcon,
-              AssetUtil.settingDarkIcon,
-            ),
-            onTap: () {
-              RouteUtil.pushPanelCupertinoRoute(context, const SettingScreen());
-            }),
-      ],
+      titleWidget: const SizedBox.shrink(),
+      actions: actions,
+      landscapeActions: actions,
     );
   }
+
+  Widget _mineAppBarIconButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
+  }) =>
+      ChewieIconButtonVisualScope(
+        visualSize: ChewieIconButtonVisualScope.appBarVisualSize,
+        maximumIconSize: 22,
+        child: ChewieIconButton(
+          icon: icon,
+          foregroundColor: Theme.of(context).colorScheme.onSurface,
+          tooltip: tooltip,
+          onPressed: onPressed,
+        ),
+      );
 
   @override
   List<ScrollController> getScrollControllers() {
     return [_scrollController];
   }
+}
+
+/// Keeps the theme Lottie mounted while the app theme and its colors change.
+class _MineThemeModeButton extends StatefulWidget {
+  const _MineThemeModeButton({
+    required this.isDark,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final bool isDark;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  @override
+  State<_MineThemeModeButton> createState() => _MineThemeModeButtonState();
+}
+
+class _MineThemeModeButtonState extends State<_MineThemeModeButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(vsync: this);
+  bool _loaded = false;
+  bool? _tapTargetIsDark;
+
+  void _animateTo(bool isDark) {
+    if (!_loaded) return;
+    if (LoftifyLottie.shouldReduceMotion(context)) {
+      _controller.value = isDark ? 0 : 1;
+    } else if (isDark) {
+      _controller.reverse();
+    } else {
+      _controller.forward();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _MineThemeModeButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isDark != widget.isDark) {
+      if (_tapTargetIsDark != widget.isDark) {
+        _animateTo(widget.isDark);
+      }
+      _tapTargetIsDark = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+        tooltip: widget.tooltip,
+        onPressed: () {
+          // Start the Lottie before the app-wide theme rebuilds. The selector
+          // still handles theme changes initiated outside this button.
+          _tapTargetIsDark = !widget.isDark;
+          _animateTo(_tapTargetIsDark!);
+          widget.onPressed();
+        },
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+        style: const ButtonStyle(
+          shape: WidgetStatePropertyAll(CircleBorder()),
+        ),
+        icon: SizedBox.square(
+          dimension: ChewieIconButtonVisualScope.appBarVisualSize,
+          child: Center(
+            child: LottieFiles.buildAnimation(
+              LottieFiles.sunLight,
+              size: 25,
+              controller: _controller,
+              onLoaded: () {
+                if (_loaded) return;
+                _loaded = true;
+                _controller.value = widget.isDark ? 0 : 1;
+              },
+            ),
+          ),
+        ),
+      );
 }

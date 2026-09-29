@@ -41,25 +41,32 @@ class _ItemsList<T> extends StatelessWidget {
               !excludeSelected && selectedItem == items[index],
             _DropdownType.multipleSelect => selectedItems.contains(items[index])
           };
-          return Material(
-            color: Colors.transparent,
-            child: InkWell(
-              splashColor: decoration?.splashColor ??
-                  ListItemDecoration._defaultSplashColor,
-              highlightColor: decoration?.highlightColor ??
-                  ListItemDecoration._defaultHighlightColor,
-              onTap: () => onItemSelect(items[index]),
-              child: Ink(
-                color: selected
-                    ? (decoration?.selectedColor ??
-                        ListItemDecoration._defaultSelectedColor)
-                    : Colors.transparent,
-                padding: listItemPadding,
-                child: listItemBuilder(
-                  context,
-                  items[index],
-                  selected,
-                  () => onItemSelect(items[index]),
+          return Semantics(
+            selected: selected,
+            button: true,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  splashColor: decoration?.splashColor ??
+                      ListItemDecoration._defaultSplashColor,
+                  highlightColor: decoration?.highlightColor ??
+                      ListItemDecoration._defaultHighlightColor,
+                  onTap: () => onItemSelect(items[index]),
+                  child: Ink(
+                    color: selected
+                        ? (decoration?.selectedColor ??
+                            ListItemDecoration._defaultSelectedColor)
+                        : Colors.transparent,
+                    padding: listItemPadding,
+                    child: listItemBuilder(
+                      context,
+                      items[index],
+                      selected,
+                      () => onItemSelect(items[index]),
+                    ),
+                  ),
                 ),
               ),
             ),

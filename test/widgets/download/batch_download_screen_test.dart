@@ -1,0 +1,431 @@
+import 'dart:io';
+import 'dart:async';
+
+import 'package:awesome_chewie/awesome_chewie.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:hive/hive.dart';
+import 'package:loftify/Models/download_task.dart';
+import 'package:loftify/Screens/Download/batch_download_screen.dart';
+import 'package:loftify/Utils/download_task_manager.dart';
+import 'package:loftify/Utils/enums.dart';
+import 'package:loftify/Utils/post_batch_download_resolver.dart';
+import 'package:loftify/Widgets/PostItem/general_post_item.dart';
+import 'package:loftify/generated/app_localizations.dart';
+import 'package:loftify/Widgets/Design/loftify_state_view.dart';
+
+class _FakeResolver extends PostBatchDownloadResolver {
+  int failuresRemaining = 0;
+  _FakeResolver()
+      : super(
+          detailLoader: (
+                  {required postId,
+                  required blogId,
+                  required blogName}) async =>
+              <String, dynamic>{},
+        );
+
+  @override
+  Future<PostDownloadResolution> resolve(GeneralPostItem item) async {
+    if (failuresRemaining > 0) {
+      failuresRemaining--;
+      throw StateError('Unable to resolve resources');
+    }
+    return PostDownloadResolution(
+      postId: item.postId,
+      requests: <DownloadRequest>[
+        DownloadRequest(
+          url: 'https://example.com/${item.postId}.jpg',
+          fileName: '${item.postId}.jpg',
+          mediaType: DownloadMediaType.image,
+        ),
+      ],
+    );
+  }
+}
+
+class _FakeManager extends DownloadTaskManager {
+  int failuresRemaining = 0;
+  List<DownloadRequest> requests = <DownloadRequest>[];
+  DownloadSourceDescriptor? source;
+
+  @override
+  Future<DownloadBatchResult> enqueueBatch(
+    Iterable<DownloadRequest> requests, {
+    DownloadSourceDescriptor? source,
+    int unavailableCount = 0,
+  }) async {
+    if (failuresRemaining > 0) {
+      failuresRemaining--;
+      throw StateError('Unable to persist download queue');
+    }
+    this.requests = requests.toList(growable: false);
+    this.source = source;
+    return DownloadBatchResult(
+      requestedCount: this.requests.length,
+      queuedCount: this.requests.length,
+      skippedCount: 0,
+      invalidCount: 0,
+      requeuedCount: 0,
+      tasks: const <DownloadTask>[],
+    );
+  }
+}
+
+GeneralPostItem _item(int id) => GeneralPostItem(
+      type: PostType.article,
+      photoLinks: const [],
+      blogId: 1,
+      postId: id,
+      permalink: '',
+      collectionId: 0,
+      liked: false,
+      blogName: 'author',
+      blogNickName: 'Author',
+      title: 'Post $id',
+      digest: '',
+      content: '',
+      firstImageUrl: '',
+      duration: 0,
+      likeCount: 0,
+      tags: const [],
+      bigAvaImg: '',
+    );
+
+Widget _host(
+  Widget child, {
+  Locale locale = const Locale('zh'),
+  bool dark = false,
+  double textScale = 1,
+}) =>
+    MaterialApp(
+      locale: locale,
+      theme: (dark
+              ? ChewieThemeColorData.defaultDarkThemes.first
+              : ChewieThemeColorData.defaultLightThemes.first)
+          .toThemeData(),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context)
+            .copyWith(textScaler: TextScaler.linear(textScale)),
+        child: child!,
+      ),
+      navigatorKey: chewieProvider.globalNavigatorKey,
+      localizationsDelegates: const [
+        ChewieLocalizations.delegate,
+        ...AppLocalizations.localizationsDelegates,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Builder(
+        builder: (context) {
+          chewieProvider.setRootContext(context);
+          return child;
+        },
+      ),
+    );
+
+void main() {
+  setUpAll(() async {
+    final directory = Directory(
+      '${Directory.current.path}/build/test_hive/batch_download_screen',
+    );
+    await directory.create(recursive: true);
+    Hive.init(directory.path);
+    if (!Hive.isBoxOpen(ChewieHiveUtil.settingsBox)) {
+      await Hive.openBox(ChewieHiveUtil.settingsBox);
+    }
+  });
+
+  for (final size in [const Size(280, 480), const Size(720, 320)]) {
+    for (final locale in [
+      const Locale('en'),
+      const Locale('zh'),
+      const Locale('zh', 'TW')
+    ]) {
+      for (final dark in [false, true]) {
+        testWidgets('empty batch can load posts $size $locale dark=$dark',
+            (tester) async {
+          tester.view.physicalSize = size;
+          tester.view.devicePixelRatio = 1;
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
+          final previousBuilder = chewieProvider.stateWidgetBuilder;
+          chewieProvider.stateWidgetBuilder = LoftifyStateView.fromChewie;
+          addTearDown(
+              () => chewieProvider.stateWidgetBuilder = previousBuilder);
+          var loadCount = 0;
+          final manager = _FakeManager();
+          await tester.pumpWidget(_host(
+              BatchDownloadScreen(
+                sourceTitle: 'Empty collection',
+                source: const DownloadSourceDescriptor(
+                    type: DownloadSourceType.collection,
+                    sourceId: '42',
+                    title: 'Empty collection'),
+                initialItems: const [],
+                loadAllItems: () async {
+                  loadCount++;
+                  return [_item(1)];
+                },
+                resolver: _FakeResolver(),
+                manager: manager,
+              ),
+              locale: locale,
+              dark: dark,
+              textScale: 2));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          await tester.ensureVisible(find.byType(CheckboxItem));
+          await tester.pumpAndSettle();
+          await tester.tap(find.byType(CheckboxItem));
+          await tester.pumpAndSettle();
+          expect(loadCount, 1);
+          expect(find.text('Post 1'), findsOneWidget);
+          final l10n = AppLocalizations.of(
+              tester.element(find.byType(BatchDownloadScreen)))!;
+          final download = find.text(l10n.download).last;
+          await tester.ensureVisible(download);
+          await tester.pumpAndSettle();
+          await tester.tap(download);
+          await tester.pumpAndSettle();
+          expect(manager.requests, hasLength(1));
+          final buttonTexts = find.descendant(
+            of: find.byType(RoundIconTextButton),
+            matching: find.byType(Text),
+          );
+          for (final element in buttonTexts.evaluate()) {
+            final widget = element.widget as Text;
+            final paragraph = element.renderObject! as RenderParagraph;
+            final boxes = paragraph.getBoxesForSelection(TextSelection(
+              baseOffset: 0,
+              extentOffset: widget.data!.length,
+            ));
+            for (final box in boxes) {
+              expect(box.bottom, lessThanOrEqualTo(paragraph.size.height),
+                  reason: widget.data);
+            }
+          }
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
+  }
+
+  testWidgets('load-all failure preserves selection and the next tap retries',
+      (tester) async {
+    var attempts = 0;
+    await tester.pumpWidget(_host(BatchDownloadScreen(
+      sourceTitle: 'Collection',
+      source: const DownloadSourceDescriptor(
+          type: DownloadSourceType.collection,
+          sourceId: '42',
+          title: 'Collection'),
+      initialItems: [_item(1), _item(2)],
+      loadAllItems: () async {
+        if (++attempts == 1) throw StateError('offline');
+        return [_item(1), _item(2), _item(3)];
+      },
+      resolver: _FakeResolver(),
+      manager: _FakeManager(),
+    )));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Post 1'));
+    await tester.tap(find.byType(CheckboxItem));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('已选择 1 / 2'), findsWidgets);
+    await tester.tap(find.byType(CheckboxItem));
+    await tester.pumpAndSettle();
+    expect(attempts, 2);
+    expect(find.textContaining('已选择 3 / 3'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'select-all loads beyond the selected first page and blocks early submission',
+      (tester) async {
+    final loaded = Completer<List<GeneralPostItem>>();
+    final manager = _FakeManager();
+    var attempts = 0;
+    await tester.pumpWidget(_host(BatchDownloadScreen(
+      sourceTitle: 'Collection',
+      source: const DownloadSourceDescriptor(
+          type: DownloadSourceType.collection,
+          sourceId: '42',
+          title: 'Collection'),
+      initialItems: [_item(1)],
+      loadAllItems: () {
+        attempts++;
+        return loaded.future;
+      },
+      resolver: _FakeResolver(),
+      manager: manager,
+    )));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Post 1'));
+    await tester.pump();
+    await tester.tap(find.byType(CheckboxItem));
+    await tester.pump();
+    expect(attempts, 1);
+    await tester.tap(find.byKey(const Key('batch-download-primary')));
+    await tester.pump();
+    expect(manager.requests, isEmpty);
+    loaded.complete([_item(1), _item(2)]);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('已选择 2 / 2'), findsWidgets);
+    await tester.tap(find.byKey(const Key('batch-download-primary')));
+    await tester.pumpAndSettle();
+    expect(manager.requests, hasLength(2));
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final failure in ['resolver', 'queue']) {
+    testWidgets('batch submission recovers from $failure failures',
+        (tester) async {
+      final manager = _FakeManager()
+        ..failuresRemaining = failure == 'queue' ? 1 : 0;
+      final resolver = _FakeResolver()
+        ..failuresRemaining = failure == 'resolver' ? 1 : 0;
+      await tester.pumpWidget(_host(BatchDownloadScreen(
+        sourceTitle: 'Collection',
+        source: const DownloadSourceDescriptor(
+            type: DownloadSourceType.collection,
+            sourceId: '42',
+            title: 'Collection'),
+        initialItems: [_item(1), _item(2)],
+        manager: manager,
+        resolver: resolver,
+      )));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(CheckboxItem));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('batch-download-primary')));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining('已选择 2 / 2'), findsWidgets);
+      expect(manager.requests, isEmpty);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+      await tester.tap(find.byKey(const Key('batch-download-primary')));
+      await tester.pumpAndSettle();
+      expect(manager.requests, hasLength(2));
+      expect(manager.source?.stableKey, 'collection:42');
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('partial selection and select-all loading stay synchronized',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(360, 640));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var loadAllCount = 0;
+
+    await tester.pumpWidget(_host(BatchDownloadScreen(
+      sourceTitle: '测试集合',
+      source: const DownloadSourceDescriptor(
+        type: DownloadSourceType.collection,
+        sourceId: '42',
+        title: '测试集合',
+      ),
+      initialItems: <GeneralPostItem>[_item(1), _item(2)],
+      loadAllItems: () async {
+        loadAllCount++;
+        return <GeneralPostItem>[_item(1), _item(2), _item(3)];
+      },
+      resolver: _FakeResolver(),
+      manager: _FakeManager(),
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Post 1'));
+    await tester.pump();
+    expect(find.textContaining('已选择 1 / 2'), findsWidgets);
+
+    await tester.tap(find.byType(CheckboxItem));
+    await tester.pumpAndSettle();
+    expect(loadAllCount, 1);
+    expect(find.text('Post 3'), findsOneWidget);
+    expect(find.textContaining('已选择 3 / 3'), findsWidgets);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('confirmed resources show an enqueue summary', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 568));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final manager = _FakeManager();
+    await tester.pumpWidget(_host(BatchDownloadScreen(
+      sourceTitle: '测试集合',
+      source: const DownloadSourceDescriptor(
+        type: DownloadSourceType.collection,
+        sourceId: '42',
+        title: '测试集合',
+      ),
+      initialItems: <GeneralPostItem>[_item(1), _item(2)],
+      resolver: _FakeResolver(),
+      manager: manager,
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(CheckboxItem));
+    await tester.pump();
+    await tester.tap(find.text('下载').last);
+    await tester.pumpAndSettle();
+
+    expect(manager.requests, hasLength(2));
+    expect(manager.source?.stableKey, 'collection:42');
+    expect(find.textContaining('已加入 2 项'), findsOneWidget);
+    expect(find.text('下载管理'), findsOneWidget);
+    expect(find.text('重试'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('batch download actions reflow on narrow large-text screens',
+      (tester) async {
+    tester.view.physicalSize = const Size(280, 480);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final manager = _FakeManager();
+
+    await tester.pumpWidget(
+      _host(
+        MediaQuery(
+          data: const MediaQueryData(
+            size: Size(280, 480),
+            textScaler: TextScaler.linear(2),
+          ),
+          child: BatchDownloadScreen(
+            sourceTitle: 'A very long favorite folder title',
+            source: const DownloadSourceDescriptor(
+              type: DownloadSourceType.favoriteFolder,
+              sourceId: 'large-text',
+              title: 'A very long favorite folder title',
+            ),
+            initialItems: <GeneralPostItem>[_item(1), _item(2)],
+            resolver: _FakeResolver(),
+            manager: manager,
+          ),
+        ),
+        locale: const Locale('en'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final selectAll = tester.widget<CheckboxItem>(find.byType(CheckboxItem));
+    await selectAll.onTap?.call();
+    await tester.pump();
+    await tester.tap(find.text('Download').last);
+    await tester.pumpAndSettle();
+
+    expect(manager.requests, hasLength(2));
+    expect(find.text('Download Manager'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
+    expect(
+      tester.getRect(find.byKey(const Key('batch-download-retry'))).right,
+      lessThanOrEqualTo(280),
+    );
+    expect(
+      tester.getRect(find.byKey(const Key('batch-download-primary'))).right,
+      lessThanOrEqualTo(280),
+    );
+    expect(tester.takeException(), isNull);
+  });
+}

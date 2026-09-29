@@ -10,7 +10,10 @@ import 'package:loftify/Utils/hive_util.dart';
 
 import '../../Utils/app_provider.dart';
 import '../../Utils/request_util.dart';
-import '../../Widgets/Item/item_builder.dart';
+import '../../Widgets/Design/loftify_controls.dart';
+import '../../Widgets/Item/login_input_item.dart';
+import '../../Widgets/Login/loftify_login_layout.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
 class LoginByPasswordScreen extends StatefulWidget {
@@ -25,10 +28,13 @@ class LoginByPasswordScreen extends StatefulWidget {
   State<LoginByPasswordScreen> createState() => _LoginByPasswordScreenState();
 }
 
-class _LoginByPasswordScreenState extends BaseDynamicState<LoginByPasswordScreen>
+class _LoginByPasswordScreenState
+    extends BaseDynamicState<LoginByPasswordScreen>
     with TickerProviderStateMixin {
   late TextEditingController _mobileController;
   late TextEditingController _passwordController;
+  final FocusNode _mobileFocusNode = FocusNode();
+  final FocusNode _passwordFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -39,7 +45,17 @@ class _LoginByPasswordScreenState extends BaseDynamicState<LoginByPasswordScreen
     _passwordController.text = widget.initPassword ?? defaultPassword;
   }
 
+  @override
+  void dispose() {
+    _mobileController.dispose();
+    _passwordController.dispose();
+    _mobileFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    super.dispose();
+  }
+
   void _login() {
+    FocusManager.instance.primaryFocus?.unfocus();
     String mobile = _mobileController.text;
     String password = _passwordController.text;
     if (mobile.isEmpty || password.isEmpty) {
@@ -57,8 +73,10 @@ class _LoginByPasswordScreenState extends BaseDynamicState<LoginByPasswordScreen
           await RequestUtil.clearCookie();
           await ChewieHiveUtil.put(HiveUtil.userIdKey, loginResponse.userid);
           await ChewieHiveUtil.put(HiveUtil.tokenKey, loginResponse.token);
-          await ChewieHiveUtil.put(HiveUtil.deviceIdKey, loginResponse.deviceid);
-          await ChewieHiveUtil.put(HiveUtil.tokenTypeKey, TokenType.password.index);
+          await ChewieHiveUtil.put(
+              HiveUtil.deviceIdKey, loginResponse.deviceid);
+          await ChewieHiveUtil.put(
+              HiveUtil.tokenTypeKey, TokenType.password.index);
           mainScreenState?.login();
         }
       } catch (e, t) {
@@ -72,117 +90,81 @@ class _LoginByPasswordScreenState extends BaseDynamicState<LoginByPasswordScreen
     return Container(
       color: Colors.transparent,
       child: Scaffold(
-        resizeToAvoidBottomInset: false,
+        resizeToAvoidBottomInset: true,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: ResponsiveAppBar(
           title: appLocalizations.loginByPassword,
+          showBack: !ResponsiveUtil.isLandscapeLayout(),
+          leadingIcon: LoftifyIcons.close,
+          onTapBack: () => Navigator.maybeOf(context)?.maybePop(),
+          showBorder: false,
           titleLeftMargin: ResponsiveUtil.isLandscapeLayout() ? 15 : 5,
         ),
-        body: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 20),
-          child: Stack(
-            children: [
-              ScrollConfiguration(
-                behavior: NoShadowScrollBehavior(),
-                child: ListView(
-                  children: [
-                    const SizedBox(height: 50),
-                    InputItem(
-                      hint: appLocalizations.inputPhone,
-                      textInputAction: TextInputAction.next,
-                      controller: _mobileController,
-                      leadingConfig: InputItemLeadingTailingConfig(
-                        type: InputItemLeadingTailingType.icon,
-                        icon: Icons.phone_android_rounded,
-                      ),
-                      tailingConfig: InputItemLeadingTailingConfig(
-                        type: InputItemLeadingTailingType.clear,
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                    InputItem(
-                      hint: appLocalizations.inputPassword,
-                      textInputAction: TextInputAction.next,
-                      leadingConfig: InputItemLeadingTailingConfig(
-                        type: InputItemLeadingTailingType.icon,
-                        icon: Icons.verified_outlined,
-                      ),
-                      controller: _passwordController,
-                      tailingConfig: InputItemLeadingTailingConfig(
-                        type: InputItemLeadingTailingType.password,
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 50),
-                      child: RoundIconTextButton(
-                        text: appLocalizations.login,
-                        background: Theme.of(context).primaryColor,
-                        onPressed: _login,
-                        color: Colors.white,
-                        fontSizeDelta: 2,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                    ),
-                  ],
-                ),
+        body: LoftifyLoginLayout(
+          formChildren: [
+            LoginInputItem(
+              hint: appLocalizations.inputPhone,
+              textInputAction: TextInputAction.next,
+              controller: _mobileController,
+              focusNode: _mobileFocusNode,
+              autofillHints: const [AutofillHints.telephoneNumber],
+              onSubmitted: (_) => _passwordFocusNode.requestFocus(),
+              leadingConfig: InputItemLeadingTailingConfig(
+                type: InputItemLeadingTailingType.icon,
+                icon: LoftifyIcons.phone,
               ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 50,
-                child: Column(
-                  children: [
-                    ItemBuilder.buildTextDivider(
-                      context: context,
-                      text: appLocalizations.otherLoginMethods,
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        ToolButton(
-                            context: context,
-                            icon: Icons.phone_android_rounded,
-                            onPressed: () {
-                              RouteUtil.pushCupertinoRoute(
-                                context,
-                                LoginByCaptchaScreen(
-                                    initPhone: _mobileController.text),
-                              );
-                            }),
-                        const SizedBox(width: 30),
-                        ToolButton(
-                            context: context,
-                            icon: Icons.card_membership_rounded,
-                            onPressed: () {
-                              RouteUtil.pushCupertinoRoute(
-                                context,
-                                LoginByLofterIDScreen(
-                                  initPassword: _passwordController.text,
-                                ),
-                              );
-                            }),
-                        // const SizedBox(width: 30),
-                        // ToolButton(
-                        //     context: context,
-                        //     icon: Icons.mail_outline_rounded,
-                        //     onTap: () {
-                        //       RouteUtil.pushCupertinoRoute(
-                        //         context,
-                        //         LoginByMailScreen(
-                        //           initPassword: _passwordController.text,
-                        //         ),
-                        //       );
-                        //     }),
-                      ],
-                    ),
-                  ],
-                ),
+              tailingConfig: InputItemLeadingTailingConfig(
+                type: InputItemLeadingTailingType.clear,
               ),
-            ],
+              keyboardType: TextInputType.number,
+            ),
+            LoginInputItem(
+              hint: appLocalizations.inputPassword,
+              textInputAction: TextInputAction.done,
+              focusNode: _passwordFocusNode,
+              autofillHints: const [AutofillHints.password],
+              onSubmitted: (_) => _login(),
+              leadingConfig: InputItemLeadingTailingConfig(
+                type: InputItemLeadingTailingType.icon,
+                icon: LoftifyIcons.password,
+              ),
+              controller: _passwordController,
+              tailingConfig: InputItemLeadingTailingConfig(
+                type: InputItemLeadingTailingType.password,
+              ),
+            ),
+          ],
+          primaryAction: LoftifyButton(
+            label: appLocalizations.login,
+            onPressed: _login,
+            size: LoftifyButtonSize.large,
+            expand: true,
           ),
+          alternativeTitle: appLocalizations.otherLoginMethods,
+          alternativeMethods: [
+            LoftifyLoginMethod(
+              label: appLocalizations.loginByCaptcha,
+              icon: LoftifyIcons.phone,
+              onPressed: () {
+                RouteUtil.pushCupertinoRoute(
+                  context,
+                  LoginByCaptchaScreen(initPhone: _mobileController.text),
+                );
+              },
+            ),
+            LoftifyLoginMethod(
+              label: appLocalizations.loginByLofterID,
+              icon: LoftifyIcons.lofterId,
+              onPressed: () {
+                RouteUtil.pushCupertinoRoute(
+                  context,
+                  LoginByLofterIDScreen(
+                    initPassword: _passwordController.text,
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );

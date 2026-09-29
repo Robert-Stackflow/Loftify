@@ -33,7 +33,7 @@ class StarBottomSheetState extends State<StarBottomSheet> {
             borderRadius: BorderRadius.vertical(
                 top: radius,
                 bottom: ResponsiveUtil.isWideDevice() ? radius : Radius.zero),
-            border: ChewieTheme.border,
+            border: ChewieTheme.responsiveBorder,
             boxShadow: ChewieTheme.defaultBoxShadow,
           ),
           child: Column(
@@ -102,10 +102,10 @@ class StarBottomSheetState extends State<StarBottomSheet> {
               (index) {
                 return ClickableGestureDetector(
                   child: Icon(
-                    index < currentStar
-                        ? Icons.star_rate_rounded
-                        : Icons.star_border_purple500_rounded,
-                    color: Colors.yellow,
+                    ChewieIcons.star,
+                    color: index < currentStar
+                        ? Colors.amber
+                        : Theme.of(context).colorScheme.outline,
                     size: 40,
                   ),
                   onTap: () {

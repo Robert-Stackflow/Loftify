@@ -20,6 +20,19 @@ class CustomErrorWidget extends StatefulWidget {
 class CustomErrorWidgetState extends State<CustomErrorWidget> {
   @override
   Widget build(BuildContext context) {
+    final stateBuilder = chewieProvider.stateWidgetBuilder;
+    if (stateBuilder != null) {
+      return stateBuilder(
+        context,
+        ChewieStateViewConfig(
+          type: ChewieStateViewType.error,
+          text: widget.text ?? chewieLocalizations.loadFailed,
+          actionLabel: widget.buttonText ?? chewieLocalizations.retry,
+          onAction: widget.onTap,
+          icon: ChewieIcons.error,
+        ),
+      );
+    }
     return Container(
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 20),

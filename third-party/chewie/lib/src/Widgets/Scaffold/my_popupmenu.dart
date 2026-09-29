@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:awesome_chewie/src/Resources/chewie_icons.dart';
 
 const Duration _kMenuDuration = Duration(milliseconds: 300);
 const double _kMenuCloseIntervalEnd = 2.0 / 3.0;
@@ -526,7 +527,9 @@ class _CheckedPopupMenuItemState<T>
           titleTextStyle: effectiveLabelTextStyle?.resolve(states),
           leading: FadeTransition(
             opacity: _opacity,
-            child: Icon(_controller.isDismissed ? null : Icons.done),
+            child: Icon(
+              _controller.isDismissed ? null : ChewieIcons.check,
+            ),
           ),
           title: widget.child,
         ),

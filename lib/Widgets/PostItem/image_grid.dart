@@ -13,8 +13,8 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
-import 'package:loftify/Utils/constant.dart';
 
 class ImageGrid extends StatefulWidget {
   final Function(BuildContext, int, BorderRadius radius) itemBuilder;
@@ -32,11 +32,7 @@ class ImageGrid extends StatefulWidget {
   ImageGridState createState() => ImageGridState();
 }
 
-class ImageGridState extends State<ImageGrid>
-    with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
-
+class ImageGridState extends State<ImageGrid> {
   late List<double> ratios;
   double calculatedAspectRatio = 1;
   double maxAspectRatio = 1.6;
@@ -52,24 +48,33 @@ class ImageGridState extends State<ImageGrid>
   @override
   void initState() {
     super.initState();
-    ratios = widget.ratios;
-    if (ratios.length != widget.itemCount) {
-      ratios.addAll(
-          List.generate(widget.itemCount - ratios.length, (index) => 1));
-    }
+    _syncRatios();
+  }
+
+  @override
+  void didUpdateWidget(covariant ImageGrid oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncRatios();
+  }
+
+  void _syncRatios() {
+    final count = widget.itemCount.clamp(0, 9);
+    ratios = List<double>.generate(count, (index) {
+      if (index >= widget.ratios.length) return 1;
+      final ratio = widget.ratios[index];
+      return ratio.isFinite && ratio > 0 ? ratio : 1;
+    });
     calculatedAspectRatio = ratios.fold<double>(0, (previousValue, element) {
-      if (element == 0) {
-        return previousValue;
-      }
       return previousValue + element;
     });
-    setState(() {});
+    if (calculatedAspectRatio <= 0 || !calculatedAspectRatio.isFinite) {
+      calculatedAspectRatio = 1;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
-    int count = widget.itemCount;
+    final count = widget.itemCount.clamp(0, 9);
     Widget res;
     if (count == 0) {
       res = emptyWidget;
@@ -92,7 +97,13 @@ class ImageGridState extends State<ImageGrid>
     } else {
       res = _buildNineImages(radius);
     }
-    return Container(constraints: constraints, child: res);
+    return Container(
+      constraints: constraints,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(radius),
+        child: res,
+      ),
+    );
   }
 
   Widget _buildSingleImage(double radius) {
@@ -301,117 +312,131 @@ class ImageGridState extends State<ImageGrid>
   }
 
   Widget _buildSevenImages(double radius) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        AspectRatio(
-          aspectRatio: 1,
-          child: GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: 4,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 2,
-              mainAxisSpacing: 2,
+    return AspectRatio(
+      aspectRatio: 12 / 11,
+      child: Column(
+        children: [
+          Expanded(
+            flex: 8,
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: widget.itemBuilder(
+                    context,
+                    0,
+                    BorderRadius.only(topLeft: Radius.circular(radius)),
+                  ),
+                ),
+                const SizedBox(width: 2),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: widget.itemBuilder(
+                          context,
+                          1,
+                          BorderRadius.only(
+                            topRight: Radius.circular(radius),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Expanded(
+                        child: widget.itemBuilder(
+                          context,
+                          2,
+                          BorderRadius.zero,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            itemBuilder: (context, index) {
-              var borderRadius = BorderRadius.zero;
-              switch (index) {
-                case 0:
-                  borderRadius =
-                      BorderRadius.only(topLeft: Radius.circular(radius));
-                  break;
-                case 1:
-                  borderRadius =
-                      BorderRadius.only(topRight: Radius.circular(radius));
-                  break;
-              }
-              return widget.itemBuilder(context, index, borderRadius);
-            },
           ),
-        ),
-        const SizedBox(height: 2),
-        AspectRatio(
-          aspectRatio: 3,
-          child: GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: 3,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 2,
-              mainAxisSpacing: 2,
+          const SizedBox(height: 2),
+          Expanded(
+            flex: 3,
+            child: Row(
+              children: List.generate(4, (offset) {
+                final index = offset + 3;
+                final borderRadius = switch (index) {
+                  3 => BorderRadius.only(
+                      bottomLeft: Radius.circular(radius),
+                    ),
+                  6 => BorderRadius.only(
+                      bottomRight: Radius.circular(radius),
+                    ),
+                  _ => BorderRadius.zero,
+                };
+                return Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(left: offset == 0 ? 0 : 2),
+                    child: widget.itemBuilder(context, index, borderRadius),
+                  ),
+                );
+              }),
             ),
-            itemBuilder: (context, index) {
-              var borderRadius = BorderRadius.zero;
-              switch (index) {
-                case 0:
-                  borderRadius =
-                      BorderRadius.only(bottomLeft: Radius.circular(radius));
-                  break;
-                case 2:
-                  borderRadius =
-                      BorderRadius.only(bottomRight: Radius.circular(radius));
-                  break;
-              }
-              return widget.itemBuilder(context, index + 4, borderRadius);
-            },
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildEightImages(double radius) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        AspectRatio(
-          aspectRatio: 3 / 2,
-          child: GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: 6,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 2,
-              mainAxisSpacing: 2,
+    return AspectRatio(
+      aspectRatio: 1,
+      child: Column(
+        children: [
+          Expanded(
+            flex: 2,
+            child: GridView.builder(
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: 6,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 2,
+                mainAxisSpacing: 2,
+              ),
+              itemBuilder: (context, index) {
+                final borderRadius = switch (index) {
+                  0 => BorderRadius.only(
+                      topLeft: Radius.circular(radius),
+                    ),
+                  2 => BorderRadius.only(
+                      topRight: Radius.circular(radius),
+                    ),
+                  _ => BorderRadius.zero,
+                };
+                return widget.itemBuilder(context, index, borderRadius);
+              },
             ),
-            itemBuilder: (context, index) {
-              var borderRadius = BorderRadius.zero;
-              switch (index) {
-                case 0:
-                  borderRadius =
-                      BorderRadius.only(topLeft: Radius.circular(radius));
-                  break;
-                case 2:
-                  borderRadius =
-                      BorderRadius.only(topRight: Radius.circular(radius));
-                  break;
-              }
-              return widget.itemBuilder(context, index, borderRadius);
-            },
           ),
-        ),
-        const SizedBox(height: 2),
-        AspectRatio(
-          aspectRatio: 2,
-          child: Row(
-            children: [
-              Expanded(
-                child: widget.itemBuilder(context, 6,
-                    BorderRadius.only(bottomLeft: Radius.circular(radius))),
-              ),
-              const SizedBox(width: 2),
-              Expanded(
-                child: widget.itemBuilder(context, 7,
-                    BorderRadius.only(bottomRight: Radius.circular(radius))),
-              ),
-            ],
+          const SizedBox(height: 2),
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(
+                  child: widget.itemBuilder(
+                    context,
+                    6,
+                    BorderRadius.only(bottomLeft: Radius.circular(radius)),
+                  ),
+                ),
+                const SizedBox(width: 2),
+                Expanded(
+                  child: widget.itemBuilder(
+                    context,
+                    7,
+                    BorderRadius.only(bottomRight: Radius.circular(radius)),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

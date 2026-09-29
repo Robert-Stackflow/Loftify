@@ -17,6 +17,7 @@ class AppBarWrapper extends StatelessWidget implements PreferredSizeWidget {
   final double titleRightMargin;
   final List<Widget>? actions;
   final SystemUiOverlayStyle? systemOverlayStyle;
+  final bool primary;
 
   const AppBarWrapper({
     super.key,
@@ -33,6 +34,7 @@ class AppBarWrapper extends StatelessWidget implements PreferredSizeWidget {
     this.titleRightMargin = 0,
     this.actions,
     this.systemOverlayStyle,
+    this.primary = true,
   });
 
   @override
@@ -41,6 +43,11 @@ class AppBarWrapper extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     bool showLeading = (leadingIcon != null || leadingWidget != null);
+    final effectiveBackgroundColor = backgroundColor ??
+        Theme.of(context).appBarTheme.backgroundColor ??
+        Theme.of(context).scaffoldBackgroundColor;
+    final effectiveSystemOverlayStyle = systemOverlayStyle ??
+        systemUiOverlayStyleForColor(context, effectiveBackgroundColor);
 
     var finalTitleWidget = Container(
       margin: EdgeInsets.only(
@@ -53,38 +60,79 @@ class AppBarWrapper extends StatelessWidget implements PreferredSizeWidget {
     var finalLeadingWidget = Container(
       margin: EdgeInsets.only(left: leftSpacing),
       child: leadingWidget ??
-          CircleIconButton(
-            icon:
-                Icon(leadingIcon, color: leadingColor ?? ChewieTheme.iconColor),
-            onTap: onLeadingTap,
-          ),
+          (leadingIcon == null
+              ? const SizedBox.shrink()
+              : ChewieIconButton(
+                  icon: leadingIcon!,
+                  foregroundColor: leadingColor ?? ChewieTheme.iconColor,
+                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                  onPressed: onLeadingTap,
+                )),
     );
 
-    return MyAppBar(
-      backgroundColor:
-          backgroundColor ?? Theme.of(context).appBarTheme.backgroundColor!,
-      elevation: 0,
-      centerTitle: centerTitle,
-      systemOverlayStyle: systemOverlayStyle ??
-          (ChewieTheme.isDarkMode
-              ? SystemUiOverlayStyle.light
-              : SystemUiOverlayStyle.dark),
-      scrolledUnderElevation: 0,
-      automaticallyImplyLeading: false,
-      leadingWidth: showLeading ? 56.0 : 0.0,
-      leading: showLeading ? finalLeadingWidget : null,
-      title: centerTitle ? Center(child: finalTitleWidget) : finalTitleWidget,
-      actions: [
-        ...?actions,
-        if (rightSpacing > 0) SizedBox(width: rightSpacing),
-      ],
+    return ChewieIconButtonVisualScope(
+      visualSize: ChewieIconButtonVisualScope.appBarVisualSize,
+      maximumIconSize: ChewieIconButtonVisualScope.appBarIconSize,
+      child: MyAppBar(
+        backgroundColor: effectiveBackgroundColor,
+        elevation: 0,
+        centerTitle: centerTitle,
+        systemOverlayStyle: effectiveSystemOverlayStyle,
+        primary: primary,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+        leadingWidth: showLeading ? 52.0 : 0.0,
+        leading: showLeading ? finalLeadingWidget : null,
+        title: centerTitle ? Center(child: finalTitleWidget) : finalTitleWidget,
+        actions: [
+          ...?actions,
+          if (rightSpacing > 0) SizedBox(width: rightSpacing),
+        ],
+      ),
+    );
+  }
+
+  static SystemUiOverlayStyle systemUiOverlayStyleForColor(
+    BuildContext context,
+    Color backgroundColor, {
+    bool includeNavigationBar = false,
+  }) {
+    final opaqueBackground = Color.alphaBlend(
+      backgroundColor,
+      Theme.of(context).scaffoldBackgroundColor,
+    );
+    return systemUiOverlayStyleForBrightness(
+      ThemeData.estimateBrightnessForColor(opaqueBackground),
+      includeNavigationBar: includeNavigationBar,
+    );
+  }
+
+  static SystemUiOverlayStyle systemUiOverlayStyleForBrightness(
+    Brightness backgroundBrightness, {
+    bool includeNavigationBar = false,
+  }) {
+    final preset = backgroundBrightness == Brightness.dark
+        ? SystemUiOverlayStyle.light
+        : SystemUiOverlayStyle.dark;
+    return SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarBrightness: preset.statusBarBrightness,
+      statusBarIconBrightness: preset.statusBarIconBrightness,
+      systemStatusBarContrastEnforced: false,
+      systemNavigationBarColor:
+          includeNavigationBar ? Colors.transparent : null,
+      systemNavigationBarDividerColor:
+          includeNavigationBar ? Colors.transparent : null,
+      systemNavigationBarIconBrightness:
+          includeNavigationBar ? preset.statusBarIconBrightness : null,
+      systemNavigationBarContrastEnforced: includeNavigationBar ? false : null,
     );
   }
 
   static PreferredSizeWidget simple({
     String title = "",
     Key? key,
-    IconData leadingIcon = Icons.arrow_back_rounded,
+    IconData leadingIcon = ChewieIcons.back,
     List<Widget>? actions,
     required BuildContext context,
     bool transparent = false,

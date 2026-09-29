@@ -8,12 +8,14 @@ class BottomSheetWrapperWidget extends StatelessWidget {
   final Widget child;
   final double? preferMinWidth;
   final bool useVerticalMargin;
+  final Radius topRadius;
 
   const BottomSheetWrapperWidget({
     super.key,
     required this.child,
     this.preferMinWidth,
     this.useVerticalMargin = false,
+    this.topRadius = ChewieDimens.defaultRadius,
   });
 
   @override
@@ -22,14 +24,50 @@ class BottomSheetWrapperWidget extends StatelessWidget {
     double width = MediaQuery.sizeOf(context).width - 60;
     double height = MediaQuery.sizeOf(context).height - 60;
     double preferWidth = min(width, preferMinWidth ?? 540);
-    double preferHeight = min(width, 500);
+    double preferHeight = min(height, 500);
+    final panel = ClipRRect(
+      borderRadius: BorderRadius.vertical(
+        top: topRadius,
+        bottom: useVerticalMargin || isLandScape ? topRadius : Radius.zero,
+      ),
+      child: ColoredBox(
+        color: ChewieTheme.scaffoldBackgroundColor,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(child: child),
+            if (!isLandScape &&
+                MediaQuery.of(context).viewInsets.bottom <= 0 &&
+                MediaQuery.of(context).viewPadding.bottom > 0)
+              SizedBox(height: MediaQuery.of(context).viewPadding.bottom),
+          ],
+        ),
+      ),
+    );
+
+    if (useVerticalMargin) {
+      return BackdropFilter(
+        filter: ResponsiveUtil.isDesktop()
+            ? ImageFilter.blur(sigmaX: 2, sigmaY: 2)
+            : ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minWidth: preferWidth,
+              maxWidth: preferWidth,
+              maxHeight: preferHeight,
+            ),
+            child: panel,
+          ),
+        ),
+      );
+    }
+
     double preferHorizontalMargin = isLandScape
         ? width > preferWidth
             ? (width - preferWidth) / 2
             : 0
         : 0;
-    double preferVerticalMargin =
-        height > preferHeight ? (height - preferHeight) / 2 : 0;
     return BackdropFilter(
       filter: ResponsiveUtil.isDesktop()
           ? ImageFilter.blur(sigmaX: 2, sigmaY: 2)
@@ -38,14 +76,9 @@ class BottomSheetWrapperWidget extends StatelessWidget {
         margin: EdgeInsets.only(
           left: preferHorizontalMargin,
           right: preferHorizontalMargin,
-          top: useVerticalMargin
-              ? preferVerticalMargin
-              : ResponsiveUtil.isLandscapeLayout()
-                  ? 0
-                  : 100,
-          bottom: useVerticalMargin ? preferVerticalMargin : 0,
+          top: ResponsiveUtil.isLandscapeLayout() ? 0 : 100,
         ),
-        child: child,
+        child: panel,
       ),
     );
   }

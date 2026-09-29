@@ -138,8 +138,7 @@ class _CustomConfirmDialogWidgetState
                     Expanded(
                       flex: 1,
                       child: RoundIconTextButton(
-                        color: widget.buttonTextColor ??
-                            ChewieTheme.primaryButtonColor,
+                        color: widget.buttonTextColor ?? Colors.white,
                         fontSizeDelta: 2,
                         height: 48,
                         onPressed: () {
@@ -147,10 +146,12 @@ class _CustomConfirmDialogWidgetState
                           widget.onTapConfirm.call();
                         },
                         text: widget.confirmButtonText,
-                        background: CustomDialogColors.getBgColor(
-                          context,
-                          widget.customDialogType,
-                          widget.color ?? ChewieTheme.primaryColor,
+                        background: CustomDialogColors.readableActionFill(
+                          CustomDialogColors.getBgColor(
+                            context,
+                            widget.customDialogType,
+                            widget.color ?? ChewieTheme.primaryColor,
+                          ),
                         ),
                       ),
                     ),

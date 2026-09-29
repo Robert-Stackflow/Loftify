@@ -439,8 +439,7 @@ class MyTooltip extends StatefulWidget {
 ///
 /// This class can be used to programmatically show the Tooltip, see the
 /// [ensureTooltipVisible] method.
-class MyTooltipState extends State<MyTooltip>
-    with SingleTickerProviderStateMixin {
+class MyTooltipState extends State<MyTooltip> with TickerProviderStateMixin {
   static const double _defaultVerticalOffset = 16.0;
   static const bool _defaultPreferBelow = true;
   static const EdgeInsetsGeometry _defaultMargin = EdgeInsets.zero;
@@ -517,6 +516,22 @@ class MyTooltipState extends State<MyTooltip>
   final Set<int> _activeHoveringPointerDevices = <int>{};
 
   AnimationStatus _animationStatus = AnimationStatus.dismissed;
+  bool _isActive = true;
+  bool _globalPointerRouteRegistered = false;
+
+  void _addGlobalPointerRoute() {
+    if (_globalPointerRouteRegistered) return;
+    GestureBinding.instance.pointerRouter
+        .addGlobalRoute(_handleGlobalPointerEvent);
+    _globalPointerRouteRegistered = true;
+  }
+
+  void _removeGlobalPointerRoute() {
+    if (!_globalPointerRouteRegistered) return;
+    GestureBinding.instance.pointerRouter
+        .removeGlobalRoute(_handleGlobalPointerEvent);
+    _globalPointerRouteRegistered = false;
+  }
 
   void _handleStatusChanged(AnimationStatus status) {
     assert(mounted);
@@ -624,7 +639,7 @@ class MyTooltipState extends State<MyTooltip>
 
   // For PointerDownEvents, this method will be called after _handlePointerDown.
   void _handleGlobalPointerEvent(PointerEvent event) {
-    assert(mounted);
+    if (!mounted || !_isActive) return;
     if (_tapRecognizer?.primaryPointer == event.pointer ||
         _longPressRecognizer?.primaryPointer == event.pointer) {
       // This is a pointer of interest specified by the trigger mode, since it's
@@ -637,7 +652,7 @@ class MyTooltipState extends State<MyTooltip>
       // callback (_handleTapToDismiss) will not be called.
       return;
     }
-    if ((_timer == null && _controller.isDismissed) ||
+    if ((_timer == null && (_backingController?.isDismissed ?? true)) ||
         event is! PointerDownEvent) {
       return;
     }
@@ -765,8 +780,21 @@ class MyTooltipState extends State<MyTooltip>
     // Listen to global pointer events so that we can hide a tooltip immediately
     // if some other control is clicked on. Pointer events are dispatched to
     // global routes **after** other routes.
-    GestureBinding.instance.pointerRouter
-        .addGlobalRoute(_handleGlobalPointerEvent);
+    _addGlobalPointerRoute();
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    _isActive = true;
+    _addGlobalPointerRoute();
+  }
+
+  @override
+  void deactivate() {
+    _isActive = false;
+    _removeGlobalPointerRoute();
+    super.deactivate();
   }
 
   @override
@@ -854,11 +882,13 @@ class MyTooltipState extends State<MyTooltip>
     };
 
     final TooltipThemeData tooltipTheme = _tooltipTheme;
+    final defaultConstraints = BoxConstraints(
+      minHeight: widget.height ?? _getDefaultTooltipHeight(),
+    );
     final _TooltipOverlay overlayChild = _TooltipOverlay(
       maxWidth: widget.maxWidth,
       richMessage: widget.richMessage ?? TextSpan(text: widget.message),
-      height:
-          widget.height ?? tooltipTheme.height ?? _getDefaultTooltipHeight(),
+      constraints: tooltipTheme.constraints ?? defaultConstraints,
       padding: widget.padding ?? tooltipTheme.padding ?? _getDefaultPadding(),
       margin: widget.margin ?? tooltipTheme.margin ?? _defaultMargin,
       onEnter: _handleMouseEnter,
@@ -885,8 +915,8 @@ class MyTooltipState extends State<MyTooltip>
 
   @override
   void dispose() {
-    GestureBinding.instance.pointerRouter
-        .removeGlobalRoute(_handleGlobalPointerEvent);
+    _isActive = false;
+    _removeGlobalPointerRoute();
     MyTooltip._openedTooltips.remove(this);
     // _longPressRecognizer.dispose() and _tapRecognizer.dispose() may call
     // their registered onCancel callbacks if there's a gesture in progress.
@@ -995,7 +1025,7 @@ class _TooltipPositionDelegate extends SingleChildLayoutDelegate {
 
 class _TooltipOverlay extends StatelessWidget {
   const _TooltipOverlay({
-    required this.height,
+    required this.constraints,
     required this.richMessage,
     this.padding,
     this.margin,
@@ -1013,7 +1043,7 @@ class _TooltipOverlay extends StatelessWidget {
   });
 
   final InlineSpan richMessage;
-  final double height;
+  final BoxConstraints constraints;
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
   final Decoration? decoration;
@@ -1054,8 +1084,9 @@ class _TooltipOverlay extends StatelessWidget {
                 Container(
                   decoration: mDecoration,
                   padding: padding ?? const EdgeInsets.all(8),
-                  constraints:
-                      BoxConstraints(maxWidth: maxWidth ?? double.infinity),
+                  constraints: constraints.enforce(
+                    BoxConstraints(maxWidth: maxWidth ?? double.infinity),
+                  ),
                   margin: margin,
                   child: Text.rich(
                     richMessage,

@@ -24,7 +24,9 @@ jobs:
             artifact_name: release-Android
             artifact_path: build/app/outputs/flutter-apk/*.apk
           - target: Windows
-            os: windows-latest
+            # Keep the VS 2022 toolchain for Windows plugins that still use
+            # <experimental/coroutine>.
+            os: windows-2022
             artifact_name: release-Windows
             artifact_path: |
               build/windows/outputs/*.zip
@@ -34,7 +36,8 @@ jobs:
       date: ${{ steps.get_version.outputs.date}}
     runs-on: ${{ matrix.os }}
     env:
-      FLUTTER_VERSION: 3.27.3
+      # Satisfies pubspec.lock without the newer IconData final-class change.
+      FLUTTER_VERSION: 3.41.5
     steps:
       # Checkout branch
       - name: Checkout
@@ -72,6 +75,12 @@ jobs:
           flutter pub get
           dart run intl_utils:generate
 
+      - name: Generate awesome_chewie localizations
+        working-directory: third-party/chewie
+        run: |
+          flutter pub get
+          flutter gen-l10n
+
       # Get app version
       - name: Get app version
         id: get_version
@@ -102,6 +111,10 @@ jobs:
           $dllDir = "tools\windows_dll"
           
           Copy-Item -Filter *.dll -Path $dllDir\* -Destination $SrcDir -Force
+          if (-not (Test-Path "$SrcDir\sqlite3.dll")) {
+            Write-Error "sqlite3.dll is missing from $SrcDir - the packaged app would start but never render."
+            exit 1
+          }
           New-Item -Path $DestDir -ItemType Directory
           Copy-Item $SrcDir\* -Recurse $DestDir
           

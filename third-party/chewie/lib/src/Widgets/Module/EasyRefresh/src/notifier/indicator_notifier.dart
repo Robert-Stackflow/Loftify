@@ -28,6 +28,10 @@ abstract class IndicatorNotifier extends ChangeNotifier {
   /// Wait for the task to complete.
   bool _waitTaskResult;
 
+  int _taskStartCount = 0;
+
+  bool _programmaticCallInProgress = false;
+
   /// Mounted on EasyRefresh.
   bool _mounted = false;
 
@@ -433,8 +437,10 @@ abstract class IndicatorNotifier extends ChangeNotifier {
     Duration? duration,
     Curve curve = Curves.linear,
     ScrollController? scrollController,
+    bool jumpToEdge = true,
     bool force = false,
-  }) {
+    bool triggerHaptic = true,
+  }) async {
     if (!_mounted) {
       return Future.value();
     }
@@ -447,13 +453,31 @@ abstract class IndicatorNotifier extends ChangeNotifier {
       _mode = IndicatorMode.inactive;
       _processing = false;
     }
-    return animateToOffset(
-      offset: actualTriggerOffset + overOffset,
-      mode: IndicatorMode.ready,
-      duration: duration,
-      curve: curve,
-      scrollController: scrollController,
-    );
+    final taskStartCount = _taskStartCount;
+    _programmaticCallInProgress = true;
+    try {
+      await animateToOffset(
+        offset: actualTriggerOffset + overOffset,
+        mode: IndicatorMode.ready,
+        duration: duration,
+        curve: curve,
+        scrollController: scrollController,
+        jumpToEdge: jumpToEdge,
+      );
+      // A nested position may not emit a pointer release. Start the task once
+      // the header is visible, unless the animation already started it.
+      if (_taskStartCount != taskStartCount) {
+        if (hapticFeedback && triggerHaptic) HapticFeedback.mediumImpact();
+        return;
+      }
+      if (_offset > 0 && !modeLocked && !noMoreLocked && _canProcess) {
+        if (hapticFeedback && triggerHaptic) HapticFeedback.mediumImpact();
+        _setMode(IndicatorMode.processing);
+        _onTask();
+      }
+    } finally {
+      _programmaticCallInProgress = false;
+    }
   }
 
   /// Animation listener for [clamping].
@@ -567,7 +591,9 @@ abstract class IndicatorNotifier extends ChangeNotifier {
       return;
     }
     // Haptic feedback
-    if (hapticFeedback && userOffsetNotifier.value) {
+    if (hapticFeedback &&
+        userOffsetNotifier.value &&
+        !_programmaticCallInProgress) {
       if (_indicator.triggerWhenReach) {
         if (_mode == IndicatorMode.processing &&
             oldMode == IndicatorMode.drag) {
@@ -642,8 +668,9 @@ abstract class IndicatorNotifier extends ChangeNotifier {
           }
         }
       } else if (_mode == IndicatorMode.done && offset > 0) {
-        _setMode(IndicatorMode.inactive);
-        // The state does not change until the end
+        // A clamping header is still closing. Re-arming it here starts a
+        // second refresh while the same pull animation is rebounding.
+        if (!clamping) _setMode(IndicatorMode.inactive);
         return;
       } else if (_offset == 0) {
         if (!(_mode == IndicatorMode.ready && !userOffsetNotifier.value)) {
@@ -743,6 +770,7 @@ abstract class IndicatorNotifier extends ChangeNotifier {
     if (!(_canProcess && !_processing && _task != null)) {
       return;
     }
+    _taskStartCount++;
     _processing = true;
     if (_waitTaskResult) {
       try {
@@ -785,6 +813,17 @@ abstract class IndicatorNotifier extends ChangeNotifier {
   /// Reset ballistic.
   /// Trigger [_ERScrollPhysics.createBallisticSimulation].
   void _resetBallistic() {
+    if (clamping && _offset > 0) {
+      // The ready spring may still be settling at the trigger distance when
+      // a fast refresh finishes. Replace it with the closing spring instead
+      // of leaving the indicator held open indefinitely.
+      _clampingAnimationController!.stop(canceled: true);
+      final simulation = createBallisticSimulation(position, 0);
+      if (simulation != null) {
+        _clampingAnimationController!.animateWith(simulation);
+      }
+      return;
+    }
     ScrollActivityDelegate? delegate;
     double velocity = 0;
     if (_position is ScrollPosition) {
@@ -1031,7 +1070,13 @@ class HeaderNotifier extends IndicatorNotifier {
     ScrollController? scrollController,
   }) async {
     try {
-      if (scrollController == null && _position is! ScrollPosition) {
+      if (scrollController != null) {
+        if (!scrollController.hasClients) return;
+        // Nested scroll views can expose only ScrollMetrics to the indicator
+        // until the first user drag. A caller-provided controller is the
+        // authoritative position for programmatic refreshes in that case.
+        position = scrollController.positions.first;
+      } else if (_position is! ScrollPosition) {
         return;
       }
     } catch (_) {
@@ -1068,6 +1113,7 @@ class HeaderNotifier extends IndicatorNotifier {
           } else {
             (_position as ScrollPosition).jumpTo(scrollTo);
           }
+          _updateBySimulation(position, 0);
         } else {
           userOffsetNotifier.value = true;
           if (scrollController != null) {
@@ -1078,7 +1124,10 @@ class HeaderNotifier extends IndicatorNotifier {
                 .animateTo(scrollTo, duration: duration, curve: curve);
           }
           userOffsetNotifier.value = false;
-          notifyListeners();
+          // A programmatic overscroll has no pointer-up event. Finalize it as
+          // a released simulation so the ready indicator actually starts the
+          // refresh task instead of remaining animated forever.
+          _updateBySimulation(position, 0);
         }
       }
     }
@@ -1194,7 +1243,10 @@ class FooterNotifier extends IndicatorNotifier {
     ScrollController? scrollController,
   }) async {
     try {
-      if (scrollController == null && _position is! ScrollPosition) {
+      if (scrollController != null) {
+        if (!scrollController.hasClients) return;
+        position = scrollController.positions.first;
+      } else if (_position is! ScrollPosition) {
         return;
       }
     } catch (_) {
@@ -1231,6 +1283,7 @@ class FooterNotifier extends IndicatorNotifier {
           } else {
             (_position as ScrollPosition).jumpTo(scrollTo);
           }
+          _updateBySimulation(position, 0);
         } else {
           userOffsetNotifier.value = true;
           if (scrollController != null) {
@@ -1241,7 +1294,7 @@ class FooterNotifier extends IndicatorNotifier {
                 .animateTo(scrollTo, duration: duration, curve: curve);
           }
           userOffsetNotifier.value = false;
-          notifyListeners();
+          _updateBySimulation(position, 0);
         }
       }
     }

@@ -1,11 +1,10 @@
+import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 
 import '../../Models/post_detail_response.dart';
 import '../../Models/recommend_response.dart';
-import '../../Utils/constant.dart';
 import '../../Utils/enums.dart';
 import '../../Utils/hive_util.dart';
-import '../../Utils/utils.dart';
 import 'general_post_item_builder.dart';
 
 class RecommendFlowItemBuilder {
@@ -17,40 +16,47 @@ class RecommendFlowItemBuilder {
     final Function()? onShieldUser,
     bool showMoreButton = false,
   }) {
+    final postData = item.postData;
+    if (postData == null) {
+      return _invalidPostItem(item.itemId);
+    }
+    final postView = postData.postView;
+    final blogInfo = item.blogInfo;
     List<PhotoLink> photoLinks = [];
     PostType type = getPostType(item);
     switch (type) {
       case PostType.video:
-        String cover = "";
-        if (StringUtil.isNotEmpty(item.postData!.postView.previewUrl)) {
-          cover = item.postData!.postView.previewUrl!;
-        } else {
-          cover = item.postData!.postView.firstImage!.orign;
+        final firstImage = postView.firstImage;
+        final cover = StringUtil.isNotEmpty(postView.previewUrl)
+            ? postView.previewUrl!
+            : firstImage?.orign ?? '';
+        if (StringUtil.isNotEmpty(cover)) {
+          photoLinks = [
+            PhotoLink(
+              orign: cover,
+              raw: cover,
+              small: cover,
+              middle: cover,
+              rw: firstImage?.ow ?? 0,
+              rh: firstImage?.oh ?? 0,
+              ow: firstImage?.ow ?? 0,
+              oh: firstImage?.oh ?? 0,
+            )
+          ];
         }
-        photoLinks = [
-          PhotoLink(
-            orign: cover,
-            raw: cover,
-            small: cover,
-            middle: cover,
-            rw: item.postData!.postView.firstImage!.ow,
-            rh: item.postData!.postView.firstImage!.oh,
-            ow: item.postData!.postView.firstImage!.ow,
-            oh: item.postData!.postView.firstImage!.oh,
-          )
-        ];
         break;
       case PostType.image:
+        final firstImage = postView.firstImage!;
         photoLinks = [
           PhotoLink(
-            orign: item.postData!.postView.firstImage!.orign,
-            raw: item.postData!.postView.firstImage!.orign,
-            small: item.postData!.postView.firstImage!.orign,
-            middle: item.postData!.postView.firstImage!.orign,
-            rw: item.postData!.postView.firstImage!.ow,
-            rh: item.postData!.postView.firstImage!.oh,
-            ow: item.postData!.postView.firstImage!.ow,
-            oh: item.postData!.postView.firstImage!.oh,
+            orign: firstImage.orign,
+            raw: firstImage.orign,
+            small: firstImage.orign,
+            middle: firstImage.orign,
+            rw: firstImage.ow,
+            rh: firstImage.oh,
+            ow: firstImage.ow,
+            oh: firstImage.oh,
           )
         ];
         break;
@@ -60,22 +66,22 @@ class RecommendFlowItemBuilder {
     return GeneralPostItem(
       type: type,
       photoLinks: photoLinks,
-      blogId: item.postData!.postView.blogId,
-      postId: item.postData!.postView.id,
-      permalink: item.postData!.postView.permalink,
-      collectionId: item.postData!.postCollection?.id ?? 0,
+      blogId: postView.blogId,
+      postId: postView.id,
+      permalink: postView.permalink,
+      collectionId: postData.postCollection?.id ?? 0,
       liked: item.favorite,
-      blogName: item.blogInfo!.blogName,
-      blogNickName: item.blogInfo!.blogNickName,
-      title: item.postData!.postView.title,
-      digest: item.postData!.postView.digest,
-      content: item.postData!.postView.digest,
-      firstImageUrl: item.postData!.postView.firstImage?.orign ?? "",
-      duration: item.postData!.postView.videoPostView?.videoInfo.duration ?? 0,
-      likeCount: item.postData!.postCount!.favoriteCount,
-      photoCount: item.postData!.postView.photoCount,
-      tags: item.postData!.postView.tagList,
-      bigAvaImg: item.blogInfo!.bigAvaImg,
+      blogName: blogInfo?.blogName ?? '',
+      blogNickName: blogInfo?.blogNickName ?? '',
+      title: postView.title,
+      digest: postView.digest,
+      content: postView.digest,
+      firstImageUrl: postView.firstImage?.orign ?? '',
+      duration: postView.videoPostView?.videoInfo.duration ?? 0,
+      likeCount: postData.postCount?.favoriteCount ?? 0,
+      photoCount: postView.photoCount,
+      tags: postView.tagList,
+      bigAvaImg: blogInfo?.bigAvaImg ?? '',
       showArticle: ChewieHiveUtil.getBool(HiveUtil.showRecommendArticleKey),
       showVideo: ChewieHiveUtil.getBool(HiveUtil.showRecommendVideoKey),
       excludeTag: excludeTag,
@@ -83,6 +89,28 @@ class RecommendFlowItemBuilder {
       onShieldUser: onShieldUser,
       onShieldContent: onShieldContent,
       onShieldTag: onShieldTag,
+    );
+  }
+
+  static GeneralPostItem _invalidPostItem(int postId) {
+    return GeneralPostItem(
+      type: PostType.invalid,
+      photoLinks: const [],
+      blogId: 0,
+      postId: postId,
+      permalink: '',
+      collectionId: 0,
+      liked: false,
+      blogName: '',
+      blogNickName: '',
+      title: '',
+      digest: '',
+      content: '',
+      firstImageUrl: '',
+      duration: 0,
+      likeCount: 0,
+      tags: const [],
+      bigAvaImg: '',
     );
   }
 
@@ -95,9 +123,8 @@ class RecommendFlowItemBuilder {
     String? excludeTag,
     bool showMoreButton = false,
   }) {
-    if (item.postData == null) return emptyWidget;
     return WaterfallFlowPostItemWidget(
-      key: ValueKey(item.postData!.postView.id),
+      key: ValueKey(item.postData?.postView.id ?? item.itemId),
       item: getGeneralPostItem(
         item,
         excludeTag: excludeTag,
@@ -115,9 +142,8 @@ class RecommendFlowItemBuilder {
     double wh = 100,
     int? activePostId,
   }) {
-    if (item.postData == null) return emptyWidget;
     return GridPostItemWidget(
-      key: ValueKey(item.postData!.postView.id),
+      key: ValueKey(item.postData?.postView.id ?? item.itemId),
       wh: wh,
       activePostId: activePostId,
       item: getGeneralPostItem(

@@ -12,17 +12,35 @@ import 'package:loftify/Screens/Post/collection_detail_screen.dart';
 import 'package:loftify/Screens/Post/grain_detail_screen.dart';
 import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Screens/Post/tag_detail_screen.dart';
-import 'package:loftify/Utils/asset_util.dart';
 import 'package:loftify/Utils/enums.dart';
 
 import '../../Api/tag_api.dart';
 import '../../Models/grain_response.dart';
 import '../../Utils/app_provider.dart';
+import '../../Utils/hive_util.dart';
+import '../../Utils/paged_data_controller.dart';
+import '../../Utils/tab_state_util.dart';
+import '../../Widgets/Dynamic/dynamic_collection_card_frame.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../Widgets/PostItem/grain_post_item_builder.dart';
+import '../../Widgets/loftify_icons.dart';
+import '../../Widgets/loftify_reaction_icon.dart';
 import '../../l10n/l10n.dart';
 import 'home_screen.dart';
+
+typedef _TimelineCursor = ({int show, int publish, int share});
+
+Map<String, dynamic> _requireDynamicData(dynamic value) {
+  final code = value is Map ? (value['code'] as num?)?.toInt() : null;
+  if (code != 0) {
+    throw PagedDataException(
+      value is Map ? value['msg']?.toString() ?? '' : '',
+    );
+  }
+  final data = value['data'];
+  return data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+}
 
 class DynamicScreen extends StatefulWidget {
   const DynamicScreen({
@@ -47,12 +65,23 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
   @override
   bool get wantKeepAlive => true;
   late TabController _tabController;
+  late final LazyTabLoadState _tabLoadState;
   int _currentTabIndex = 0;
-  final List<String> _tabLabelList = [
-    appLocalizations.follow,
-    appLocalizations.tag,
-    appLocalizations.collection,
-    appLocalizations.grain
+  List<String> get _tabLabelList {
+    final localizations = AppLocalizations.of(context)!;
+    return [
+      localizations.follow,
+      localizations.tag,
+      localizations.collection,
+      localizations.grain,
+    ];
+  }
+
+  static const List<String> _tabIdList = [
+    'follow',
+    'tag',
+    'collection',
+    'grain',
   ];
   int lastRefreshTime = 0;
   final GlobalKey _tagTabKey = GlobalKey();
@@ -70,12 +99,7 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
 
   @override
   List<ScrollController> getScrollControllers() {
-    return [
-      _tagScrollController,
-      _collectionScrollController,
-      _grainScrollController,
-      _followScrollController,
-    ];
+    return [getCurrentController()];
   }
 
   @override
@@ -93,6 +117,7 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
   }
 
   void scrollToTopOrRefresh() {
+    if (appProvider.token.isEmpty) return;
     ScrollController controller = getCurrentController();
     if (controller.hasClients && controller.offset > 30) {
       controller.animateTo(0,
@@ -121,32 +146,28 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
     return controller;
   }
 
-  Function getCurrentCallRefresh() {
-    late Function callRefresh;
+  VoidCallback? getCurrentCallRefresh() {
     switch (_currentTabIndex) {
       case 1:
-        callRefresh =
-            (_tagTabKey.currentState as SubscribeTagTabState).callRefresh;
-        break;
+        final state = _tagTabKey.currentState;
+        return state is SubscribeTagTabState ? state.callRefresh : null;
       case 2:
-        callRefresh =
-            (_collectionTabKey.currentState as SubscribeCollectionTabState)
-                .callRefresh;
-        break;
+        final state = _collectionTabKey.currentState;
+        return state is SubscribeCollectionTabState ? state.callRefresh : null;
       case 3:
-        callRefresh =
-            (_grainTabKey.currentState as SubscribeGrainTabState).callRefresh;
-        break;
+        final state = _grainTabKey.currentState;
+        return state is SubscribeGrainTabState ? state.callRefresh : null;
       case 0:
-        callRefresh =
-            (_followTabKey.currentState as FollowTabState).callRefresh;
-        break;
+        final state = _followTabKey.currentState;
+        return state is FollowTabState ? state.callRefresh : null;
+      default:
+        return null;
     }
-    return callRefresh;
   }
 
   void refresh() {
-    getCurrentCallRefresh()();
+    if (appProvider.token.isEmpty) return;
+    getCurrentCallRefresh()?.call();
   }
 
   void scrollToTop() {
@@ -162,8 +183,22 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
     );
     super.initState();
     initTab();
-    WidgetsBinding.instance.addPostFrameCallback(
-        (_) => panelScreenState?.refreshScrollControllers());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      panelScreenState?.refreshScrollControllers();
+      _ensureTabLoaded(_currentTabIndex);
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _refreshRotationController.dispose();
+    _tagScrollController.dispose();
+    _collectionScrollController.dispose();
+    _grainScrollController.dispose();
+    _followScrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -220,7 +255,7 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
                 icon: RotationTransition(
                   turns: Tween(begin: 0.0, end: 1.0)
                       .animate(_refreshRotationController),
-                  child: const Icon(Icons.refresh_rounded),
+                  child: const ChewieIcon(LoftifyIcons.refresh),
                 ),
                 onTap: () async {
                   refresh();
@@ -228,7 +263,7 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
               ),
               const SizedBox(height: 10),
               ShadowIconButton(
-                icon: const Icon(Icons.arrow_upward_rounded),
+                icon: const ChewieIcon(LoftifyIcons.scrollTop),
                 onTap: () {
                   scrollToTop();
                 },
@@ -238,47 +273,147 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
         : emptyWidget;
   }
 
-  initTab() {
-    _tabController = TabController(length: _tabLabelList.length, vsync: this);
-    _tabController.animation?.addListener(() {
-      int indexChange =
-          _tabController.offset.abs() > 0.8 ? _tabController.offset.round() : 0;
-      int index = _tabController.index + indexChange;
-      if (index != _currentTabIndex) {
-        setState(() => _currentTabIndex = index);
+  void initTab() {
+    final restored = PersistentTabState.restore(
+      idKey: HiveUtil.dynamicTabIdKey,
+      legacyIndexKey: HiveUtil.dynamicTabIndexKey,
+      itemIds: _tabIdList,
+    );
+    _tabLoadState = LazyTabLoadState(
+      itemIds: _tabIdList,
+      savedId: restored.id,
+    );
+    _currentTabIndex = _tabLoadState.currentIndex;
+    _tabController = TabController(
+      length: _tabIdList.length,
+      initialIndex: _currentTabIndex,
+      vsync: this,
+    );
+    _tabController.addListener(() {
+      final offset = _tabController.offset;
+      final preloadIndex = _tabController.indexIsChanging
+          ? _tabController.index
+          : offset > 0.001
+              ? _tabController.index + 1
+              : offset < -0.001
+                  ? _tabController.index - 1
+                  : _tabController.index;
+      if (preloadIndex >= 0 && preloadIndex < _tabIdList.length) {
+        _ensureTabLoaded(preloadIndex);
       }
+      final index =
+          (_tabController.animation?.value ?? _tabController.index).round();
+      if (index != _currentTabIndex) _setCurrentTab(index);
     });
+  }
+
+  void _setCurrentTab(int index) {
+    final safeIndex = TabStatePreference.restoreIndex(
+      index,
+      _tabIdList.length,
+    );
+    final changed = safeIndex != _currentTabIndex;
+    if (changed) {
+      setState(() => _currentTabIndex = safeIndex);
+      _scrollToHideController.show();
+      panelScreenState?.showBottomNavigationBar();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) panelScreenState?.refreshScrollControllers();
+      });
+    }
+    PersistentTabState.save(
+      idKey: HiveUtil.dynamicTabIdKey,
+      legacyIndexKey: HiveUtil.dynamicTabIndexKey,
+      itemIds: _tabIdList,
+      index: safeIndex,
+    );
+    _ensureTabLoaded(safeIndex);
+  }
+
+  void _ensureTabLoaded(int index) {
+    if (!_tabLoadState.selectAndShouldLoad(index)) return;
+    unawaited(_startTabRefreshWhenMounted(index));
+  }
+
+  Future<void> _startTabRefreshWhenMounted(int index) async {
+    for (var attempt = 0; attempt < 8; attempt++) {
+      WidgetsBinding.instance.scheduleFrame();
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) return;
+      final state = switch (index) {
+        0 => _followTabKey.currentState,
+        1 => _tagTabKey.currentState,
+        2 => _collectionTabKey.currentState,
+        3 => _grainTabKey.currentState,
+        _ => null,
+      };
+      final refreshReady = switch (state) {
+        FollowTabState state => state.refreshReady,
+        SubscribeTagTabState state => state.refreshReady,
+        SubscribeCollectionTabState state => state.refreshReady,
+        SubscribeGrainTabState state => state.refreshReady,
+        _ => false,
+      };
+      if (state != null && refreshReady) {
+        switch (index) {
+          case 0:
+            (state as FollowTabState).callRefresh();
+            break;
+          case 1:
+            (state as SubscribeTagTabState).callRefresh();
+            break;
+          case 2:
+            (state as SubscribeCollectionTabState).callRefresh();
+            break;
+          case 3:
+            (state as SubscribeGrainTabState).callRefresh();
+            break;
+        }
+        return;
+      }
+      if (state != null && attempt == 7) {
+        await switch (state) {
+          FollowTabState state => state.loadInitial(),
+          SubscribeTagTabState state => state.loadInitial(),
+          SubscribeCollectionTabState state => state.loadInitial(),
+          SubscribeGrainTabState state => state.loadInitial(),
+          _ => Future<void>.value(),
+        };
+        return;
+      }
+    }
+    _tabLoadState.markLoadFailed(index);
   }
 
   PreferredSizeWidget _buildAppBar() {
     return ResponsiveAppBar(
       titleLeftMargin: 15,
       titleWidget: TabBar(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
         controller: _tabController,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        labelPadding: const EdgeInsets.only(right: 32),
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
+        dividerHeight: 0,
+        physics: const BouncingScrollPhysics(),
+        overlayColor: WidgetStateProperty.all(Colors.transparent),
+        indicator: UnderlinedTabIndicator(
+          borderColor: Theme.of(context).primaryColor,
+        ),
         tabs: _tabLabelList
             .asMap()
             .entries
-            .map((entry) => ItemBuilder.buildAnimatedTab(context,
-                selected: entry.key == _currentTabIndex, text: entry.value))
+            .map(
+              (entry) => ItemBuilder.buildAnimatedTab(
+                context,
+                selected: entry.key == _currentTabIndex,
+                text: entry.value,
+                controller: _tabController,
+                tabIndex: entry.key,
+              ),
+            )
             .toList(),
-        overlayColor: WidgetStateProperty.all(Colors.transparent),
-        labelPadding: const EdgeInsets.only(right: 32),
-        enableFeedback: true,
-        dividerHeight: 0,
-        isScrollable: true,
-        tabAlignment: TabAlignment.start,
-        physics: const BouncingScrollPhysics(),
-        indicator:
-            UnderlinedTabIndicator(borderColor: Theme.of(context).primaryColor),
-        onTap: (index) {
-          if (_currentTabIndex == index) {
-            return;
-          }
-          setState(() {
-            _currentTabIndex = index;
-          });
-        },
+        onTap: _setCurrentTab,
       ),
     );
   }
@@ -300,20 +435,22 @@ class FollowTabState extends BaseDynamicState<FollowTab>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-  final List<GrainPostItem> _postList = [];
-  final List<TimelineBlog> _timelineBlogList = [];
   final EasyRefreshController _refreshController = EasyRefreshController();
-  int _showOffset = 0;
-  int _shareOffset = 0;
-  int _publishOffset = 0;
-  bool _loading = false;
+  late final PagedDataController<GrainPostItem, int, _TimelineCursor,
+      List<TimelineBlog>> _pagingController;
   late final ScrollController _scrollController =
       widget.scrollController ?? ScrollController();
-  bool _noMore = false;
-  ScrollController primaryScrollController = ScrollController();
+
+  List<GrainPostItem> get _postList => _pagingController.items;
+  List<TimelineBlog> get _timelineBlogList =>
+      _pagingController.metadata ?? const <TimelineBlog>[];
+  bool get refreshReady => _refreshController.headerState != null;
+
+  Future<void> loadInitial() async => _fetchResult(refresh: true);
 
   callRefresh() {
-    if (_scrollController.offset > MediaQuery.sizeOf(context).height) {
+    if (_scrollController.hasClients &&
+        _scrollController.offset > MediaQuery.sizeOf(context).height) {
       _scrollController
           .animateTo(0,
               duration: const Duration(milliseconds: 500),
@@ -326,72 +463,74 @@ class FollowTabState extends BaseDynamicState<FollowTab>
     }
   }
 
-  _fetchResult({bool refresh = false}) async {
-    if (_loading) return;
-    if (refresh) _noMore = false;
-    _loading = true;
-    return await RecommendApi.getTimeline(
-      showOffset: refresh ? 0 : _showOffset,
-      publishOffset: refresh ? 0 : _publishOffset,
-      shareOffset: refresh ? 0 : _shareOffset,
-    ).then((value) {
-      try {
-        if (value['code'] != 0) {
-          IToast.showTop(value['msg']);
-        } else {
-          List<GrainPostItem> tmp = [];
-          if (value['data'] != null) {
-            _showOffset = value['data']['showOffset'] ?? 0;
-            _publishOffset = value['data']['publishOffset'] ?? 0;
-            _shareOffset = value['data']['shareOffset'] ?? 0;
-            if (value['data']['items'] != null) {
-              var list = value['data']['items'] as List;
-              list =
-                  list.where((element) => element['postData'] != null).toList();
-              tmp = list.map((e) => GrainPostItem.fromJson(e)).toList();
-              if (refresh) _postList.clear();
-              _postList.addAll(tmp);
-            }
-            if (value['data']['timelineBlogList'] != null) {
-              if (refresh) _timelineBlogList.clear();
-              _timelineBlogList.addAll(
-                  (value['data']['timelineBlogList'] as List)
-                      .map((e) => TimelineBlog.fromJson(e))
-                      .toList());
-            }
-          }
-          if (mounted) setState(() {});
-          if (tmp.isEmpty && !refresh) {
-            _noMore = true;
-            return IndicatorResult.noMore;
-          } else {
-            return IndicatorResult.success;
-          }
+  Future<PagedDataPage<GrainPostItem, _TimelineCursor, List<TimelineBlog>>>
+      _loadPage(_TimelineCursor cursor, bool refresh) async {
+    final value = await RecommendApi.getTimeline(
+      showOffset: refresh ? 0 : cursor.show,
+      publishOffset: refresh ? 0 : cursor.publish,
+      shareOffset: refresh ? 0 : cursor.share,
+    );
+    final data = _requireDynamicData(value);
+    final rawItems = data['items'];
+    final posts = parsePagedDataItems<GrainPostItem>(
+      rawItems,
+      GrainPostItem.fromTimelineJson,
+      onMalformed: (error, stackTrace) =>
+          ILogger.error('Skipped malformed timeline post', error, stackTrace),
+    );
+    final timelineBlogs = parsePagedDataItems<TimelineBlog>(
+      data['timelineBlogList'],
+      TimelineBlog.fromJson,
+      onMalformed: (error, stackTrace) =>
+          ILogger.error('Skipped malformed timeline blog', error, stackTrace),
+    );
+    return PagedDataPage(
+      items: posts,
+      nextCursor: (
+        show: (data['showOffset'] as num?)?.toInt() ?? cursor.show,
+        publish: (data['publishOffset'] as num?)?.toInt() ?? cursor.publish,
+        share: (data['shareOffset'] as num?)?.toInt() ?? cursor.share,
+      ),
+      hasMore: rawItems is List && rawItems.isNotEmpty,
+      metadata: refresh ? timelineBlogs : null,
+    );
+  }
+
+  Future<IndicatorResult> _fetchResult({bool refresh = false}) =>
+      refresh ? _pagingController.refresh() : _pagingController.load();
+
+  @override
+  void initState() {
+    super.initState();
+    _pagingController = PagedDataController(
+      initialCursor: (show: 0, publish: 0, share: 0),
+      keyOf: (item) => item.postData.postView.id,
+      loader: _loadPage,
+      onError: (error, stackTrace) {
+        ILogger.error('Failed to load follow dynamics', error, stackTrace);
+        if (mounted) {
+          IToast.showTop(
+            error is PagedDataException && StringUtil.isNotEmpty(error.message)
+                ? error.message
+                : appLocalizations.loadFailed,
+          );
         }
-      } catch (e, t) {
-        IToast.showTop(appLocalizations.loadFailed);
-        ILogger.error("Failed to load tag dynamic", e, t);
-        return IndicatorResult.fail;
-      } finally {
-        if (mounted) setState(() {});
-        _loading = false;
-      }
-    });
+      },
+    )..addListener(_handlePagingChanged);
+  }
+
+  void _handlePagingChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
-  initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      primaryScrollController = PrimaryScrollController.of(context);
-    });
-    _scrollController.addListener(() {
-      if (!_noMore &&
-          _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
-        _fetchResult();
-      }
-    });
+  void dispose() {
+    _pagingController
+      ..removeListener(_handlePagingChanged)
+      ..dispose();
+    _refreshController.dispose();
+    if (widget.scrollController == null) _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -490,34 +629,43 @@ class FollowTabState extends BaseDynamicState<FollowTab>
 
   _buildEasyRefresh(ERChildBuilder builder) {
     return EasyRefresh.builder(
-      refreshOnStart: true,
+      refreshOnStart: false,
       controller: _refreshController,
       scrollController: _scrollController,
       onRefresh: () async {
         return await _fetchResult(refresh: true);
       },
-      onLoad: () async {
-        return await _fetchResult();
-      },
+      onLoad: _pagingController.noMore
+          ? null
+          : () async {
+              return await _fetchResult();
+            },
       triggerAxis: Axis.vertical,
       childBuilder: builder,
     );
   }
 
   _buildPostList() {
-    return SliverWaterfallFlow.extent(
-      maxCrossAxisExtent: 600,
-      children: List.generate(
-        _postList.length,
-        (int index) {
-          return ClickableWrapper(
-            child: GrainPostItemBuilder.buildTilePostItem(
-              context,
-              _postList[index],
-              isFirst: ResponsiveUtil.isLandscapeLayout() && index == 0,
+    return SliverWaterfallFlow(
+      gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 600,
+      ),
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final item = _postList[index];
+          return KeyedSubtree(
+            key: ValueKey('dynamic-follow-${item.postData.postView.id}'),
+            child: ClickableWrapper(
+              child: GrainPostItemBuilder.buildTilePostItem(
+                context,
+                item,
+                isFirst: ResponsiveUtil.isLandscapeLayout() && index == 0,
+              ),
             ),
           );
         },
+        childCount: _postList.length,
+        addAutomaticKeepAlives: false,
       ),
     );
   }
@@ -539,17 +687,22 @@ class SubscribeTagTabState extends BaseDynamicState<SubscribeTagTab>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-  final List<FullSubscribeTagItem> _subscribeList = [];
-  final List<FullSubscribeTagItem> _recentVisitList = [];
   final EasyRefreshController _refreshController = EasyRefreshController();
-  int _offset = 0;
-  bool _loading = false;
+  late final PagedDataController<FullSubscribeTagItem, String, int,
+      List<FullSubscribeTagItem>> _pagingController;
   late final ScrollController _scrollController =
       widget.scrollController ?? ScrollController();
-  bool _noMore = false;
+
+  List<FullSubscribeTagItem> get _subscribeList => _pagingController.items;
+  List<FullSubscribeTagItem> get _recentVisitList =>
+      _pagingController.metadata ?? const <FullSubscribeTagItem>[];
+  bool get refreshReady => _refreshController.headerState != null;
+
+  Future<void> loadInitial() async => _fetchResult(refresh: true);
 
   callRefresh() {
-    if (_scrollController.offset > MediaQuery.sizeOf(context).height) {
+    if (_scrollController.hasClients &&
+        _scrollController.offset > MediaQuery.sizeOf(context).height) {
       _scrollController
           .animateTo(0,
               duration: const Duration(milliseconds: 500),
@@ -562,82 +715,90 @@ class SubscribeTagTabState extends BaseDynamicState<SubscribeTagTab>
     }
   }
 
-  _fetchResult({bool refresh = false}) async {
-    if (_loading) return;
-    if (refresh) _noMore = false;
-    _loading = true;
-    return await TagApi.getFullSubscribdTagList(
-      offset: refresh ? 0 : _offset,
-    ).then((value) {
-      try {
-        if (value['code'] != 0) {
-          IToast.showTop(value['msg']);
-        } else {
-          List<FullSubscribeTagItem> tmp = [];
-          if (value['data'] != null) {
-            if (value['data']['offset'] != null) {
-              _offset = value['data']['offset'];
-            }
-            if (value['data']['favoriteTags'] != null) {
-              tmp = (value['data']['favoriteTags'] as List)
-                  .map((e) => FullSubscribeTagItem.fromJson(e))
-                  .toList();
-              if (refresh) _subscribeList.clear();
-              for (var exist in _subscribeList) {
-                tmp.removeWhere((element) => element.name == exist.name);
-              }
-              _subscribeList.addAll(tmp);
-            }
-            if (value['data']['recentVisitTags'] != null) {
-              if (refresh) _recentVisitList.clear();
-              _recentVisitList.addAll((value['data']['recentVisitTags'] as List)
-                  .map((e) => FullSubscribeTagItem.fromJson(e))
-                  .toList());
-            }
-          }
-          if (mounted) setState(() {});
-          if (tmp.isEmpty && !refresh) {
-            _noMore = true;
-            return IndicatorResult.noMore;
-          } else {
-            return IndicatorResult.success;
-          }
+  Future<PagedDataPage<FullSubscribeTagItem, int, List<FullSubscribeTagItem>>>
+      _loadPage(int cursor, bool refresh) async {
+    final value = await TagApi.getFullSubscribdTagList(
+      offset: refresh ? 0 : cursor,
+    );
+    final data = _requireDynamicData(value);
+    final rawItems = data['favoriteTags'];
+    final subscribed = parsePagedDataItems<FullSubscribeTagItem>(
+      rawItems,
+      FullSubscribeTagItem.fromJson,
+      onMalformed: (error, stackTrace) => ILogger.error(
+        'Skipped malformed subscribed tag',
+        error,
+        stackTrace,
+      ),
+    );
+    final recent = parsePagedDataItems<FullSubscribeTagItem>(
+      data['recentVisitTags'],
+      FullSubscribeTagItem.fromJson,
+      onMalformed: (error, stackTrace) => ILogger.error(
+        'Skipped malformed recent tag',
+        error,
+        stackTrace,
+      ),
+    );
+    return PagedDataPage(
+      items: subscribed,
+      nextCursor: (data['offset'] as num?)?.toInt() ?? cursor,
+      hasMore: rawItems is List && rawItems.isNotEmpty,
+      metadata: refresh ? recent : null,
+    );
+  }
+
+  Future<IndicatorResult> _fetchResult({bool refresh = false}) =>
+      refresh ? _pagingController.refresh() : _pagingController.load();
+
+  @override
+  void initState() {
+    super.initState();
+    _pagingController = PagedDataController(
+      initialCursor: 0,
+      keyOf: (item) => item.name,
+      loader: _loadPage,
+      onError: (error, stackTrace) {
+        ILogger.error('Failed to load subscribed tags', error, stackTrace);
+        if (mounted) {
+          IToast.showTop(
+            error is PagedDataException && StringUtil.isNotEmpty(error.message)
+                ? error.message
+                : appLocalizations.loadFailed,
+          );
         }
-      } catch (e, t) {
-        IToast.showTop(appLocalizations.loadFailed);
-        ILogger.error("Failed to load tag dynamic", e, t);
-        return IndicatorResult.fail;
-      } finally {
-        if (mounted) setState(() {});
-        _loading = false;
-      }
-    });
+      },
+    )..addListener(_handlePagingChanged);
+  }
+
+  void _handlePagingChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
-  initState() {
-    super.initState();
-    _scrollController.addListener(() {
-      if (!_noMore &&
-          _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
-        _fetchResult();
-      }
-    });
+  void dispose() {
+    _pagingController
+      ..removeListener(_handlePagingChanged)
+      ..dispose();
+    _refreshController.dispose();
+    if (widget.scrollController == null) _scrollController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
     return EasyRefresh.builder(
-      refreshOnStart: true,
+      refreshOnStart: false,
       controller: _refreshController,
       onRefresh: () async {
         return await _fetchResult(refresh: true);
       },
-      onLoad: () async {
-        return await _fetchResult();
-      },
+      onLoad: _pagingController.noMore
+          ? null
+          : () async {
+              return await _fetchResult();
+            },
       triggerAxis: Axis.vertical,
       childBuilder: (context, physics) => CustomScrollView(
         controller: _scrollController,
@@ -746,14 +907,23 @@ class SubscribeTagTabState extends BaseDynamicState<SubscribeTagTab>
   }
 
   _buildSubscribeTagList(ScrollPhysics physics) {
-    return SliverWaterfallFlow.extent(
-      maxCrossAxisExtent: 600,
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 6,
-      children: List.generate(_subscribeList.length, (int index) {
-        return ClickableWrapper(
-            child: _buildSubscribeTagItem(_subscribeList[index]));
-      }),
+    return SliverWaterfallFlow(
+      gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 600,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 6,
+      ),
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final item = _subscribeList[index];
+          return KeyedSubtree(
+            key: ValueKey('dynamic-tag-${item.name}'),
+            child: ClickableWrapper(child: _buildSubscribeTagItem(item)),
+          );
+        },
+        childCount: _subscribeList.length,
+        addAutomaticKeepAlives: false,
+      ),
     );
   }
 
@@ -770,58 +940,55 @@ class SubscribeTagTabState extends BaseDynamicState<SubscribeTagTab>
           children: [
             Row(
               children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).iconTheme.color,
-                    shape: BoxShape.circle,
-                  ),
-                  padding: const EdgeInsets.all(3),
-                  child: AssetUtil.loadDouble(
-                    context,
-                    AssetUtil.tagWhiteIcon,
-                    AssetUtil.tagLightIcon,
-                    size: 10,
-                  ),
+                ChewieIcon(
+                  LoftifyIcons.hash,
+                  size: 18,
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  item.name,
-                  style: Theme.of(context).textTheme.titleLarge?.apply(
-                        fontWeightDelta: 2,
+                Expanded(
+                  child: Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      Text(
+                        item.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
+                      if (StringUtil.isNotEmpty(item.tagRankName))
+                        ItemBuilder.buildTagItem(
+                          context,
+                          item.tagRankName,
+                          TagType.normal,
+                          backgroundColor:
+                              Theme.of(context).primaryColor.withAlpha(30),
+                          color: ChewieColors.likeButtonColor,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          showTagLabel: false,
+                          jumpToTag: false,
+                          fontSizeDelta: -1,
+                        ),
+                      if (item.unreadCount > 0)
+                        ItemBuilder.buildTagItem(
+                          context,
+                          "+${item.unreadCount}",
+                          TagType.normal,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          color: Theme.of(context).textTheme.bodySmall?.color,
+                          showTagLabel: false,
+                          jumpToTag: false,
+                          fontSizeDelta: -1,
+                        ),
+                    ],
+                  ),
                 ),
-                if (StringUtil.isNotEmpty(item.tagRankName))
-                  const SizedBox(width: 8),
-                if (StringUtil.isNotEmpty(item.tagRankName))
-                  ItemBuilder.buildTagItem(
-                    context,
-                    item.tagRankName,
-                    TagType.normal,
-                    backgroundColor:
-                        Theme.of(context).primaryColor.withAlpha(30),
-                    color: ChewieColors.likeButtonColor,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    showTagLabel: false,
-                    jumpToTag: false,
-                    fontSizeDelta: -1,
-                  ),
-                if (item.unreadCount > 0) const SizedBox(width: 8),
-                if (item.unreadCount > 0)
-                  ItemBuilder.buildTagItem(
-                    context,
-                    "+${item.unreadCount}",
-                    TagType.normal,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    color: Theme.of(context).textTheme.bodySmall?.color,
-                    showTagLabel: false,
-                    jumpToTag: false,
-                    fontSizeDelta: -1,
-                  ),
-                const Spacer(),
-                Icon(
-                  Icons.keyboard_arrow_right_rounded,
+                const SizedBox(width: 8),
+                ChewieIcon(
+                  LoftifyIcons.next,
                   color: Theme.of(context).textTheme.labelSmall?.color,
                   size: 16,
                 ),
@@ -908,7 +1075,8 @@ class SubscribeTagTabState extends BaseDynamicState<SubscribeTagTab>
                     Text(
                       digest,
                       style: Theme.of(context).textTheme.labelMedium?.apply(
-                            color: Colors.grey,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1103,18 +1271,22 @@ class SubscribeCollectionTabState
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-  final List<TimelineCollection> _subscribeList = [];
-  final List<TimelineGuessCollection> _guessLikeList = [];
   final EasyRefreshController _refreshController = EasyRefreshController();
-  bool _loading = false;
-  int _total = 0;
+  late final PagedDataController<TimelineCollection, int, int,
+      List<TimelineGuessCollection>> _pagingController;
   late final ScrollController _scrollController =
       widget.scrollController ?? ScrollController();
-  bool _noMore = false;
-  bool _noMoreSubscribeItem = false;
+
+  List<TimelineCollection> get _subscribeList => _pagingController.items;
+  List<TimelineGuessCollection> get _guessLikeList =>
+      _pagingController.metadata ?? const <TimelineGuessCollection>[];
+  bool get refreshReady => _refreshController.headerState != null;
+
+  Future<void> loadInitial() async => _fetchResult(refresh: true);
 
   callRefresh() {
-    if (_scrollController.offset > MediaQuery.sizeOf(context).height) {
+    if (_scrollController.hasClients &&
+        _scrollController.offset > MediaQuery.sizeOf(context).height) {
       _scrollController
           .animateTo(0,
               duration: const Duration(milliseconds: 500),
@@ -1128,103 +1300,105 @@ class SubscribeCollectionTabState
   }
 
   @override
-  initState() {
-    super.initState();
-    _scrollController.addListener(() {
-      if (!_noMore &&
-          _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
-        _fetchResult();
-      }
-    });
+  void dispose() {
+    _pagingController
+      ..removeListener(_handlePagingChanged)
+      ..dispose();
+    _refreshController.dispose();
+    if (widget.scrollController == null) _scrollController.dispose();
+    super.dispose();
   }
 
-  _fetchResult({bool refresh = false}) async {
-    if (_loading) return;
-    if (refresh) {
-      _noMore = false;
-      _noMoreSubscribeItem = false;
-    }
-    _loading = true;
-    return await CollectionApi.getSubscribdCollectionList(
-      offset: refresh ? 0 : _subscribeList.length,
-    ).then((value) {
-      try {
-        if (value['code'] != 0) {
-          IToast.showTop(value['msg']);
-        } else {
-          if (refresh) _guessLikeList.clear();
-          List<TimelineCollection> tmp = [];
-          List<TimelineCollection> uniqueSubscribeList = [];
-          if (value['data'] != null) {
-            if (value['data']['total'] != null) {
-              _total = value['data']['subscribeCollectionCount'];
-            }
-            if (value['data']['collections'] != null) {
-              tmp = (value['data']['collections'] as List)
-                  .map((e) => TimelineCollection.fromJson(e))
-                  .toList();
-              if (refresh) _subscribeList.clear();
-              for (var exist in _subscribeList) {
-                tmp.removeWhere(
-                    (element) => element.collectionId == exist.collectionId);
-              }
-              _subscribeList.addAll(tmp);
-            }
-            if (tmp.isEmpty) {
-              _noMoreSubscribeItem = true;
-            }
-            Set<int> seenIds = {};
-            for (var item in _subscribeList) {
-              if (!seenIds.contains(item.collectionId)) {
-                seenIds.add(item.collectionId);
-                uniqueSubscribeList.add(item);
-              }
-            }
-            _subscribeList.clear();
-            _subscribeList.addAll(uniqueSubscribeList);
-            if (_noMoreSubscribeItem &&
-                value['data']['guessLikeList'] != null) {
-              List<TimelineGuessCollection> tmp =
-                  (value['data']['guessLikeList'] as List)
-                      .map((e) => TimelineGuessCollection.fromJson(e))
-                      .toList();
-              tmp.removeWhere((e) => _guessLikeList
-                  .any((element) => element.collectionId == e.collectionId));
-              _guessLikeList.addAll(tmp);
-            }
-          }
-          if (mounted) setState(() {});
-          if ((tmp.isEmpty) && !refresh) {
-            _noMore = true;
-            return IndicatorResult.noMore;
-          } else {
-            return IndicatorResult.success;
-          }
+  Future<PagedDataPage<TimelineCollection, int, List<TimelineGuessCollection>>>
+      _loadPage(
+    int cursor,
+    bool refresh,
+  ) async {
+    final offset = refresh ? 0 : cursor;
+    final value = await CollectionApi.getSubscribdCollectionList(
+      offset: offset,
+    );
+    final data = _requireDynamicData(value);
+    final rawItems = data['collections'];
+    final collections = parsePagedDataItems<TimelineCollection>(
+      rawItems,
+      TimelineCollection.fromJson,
+      onMalformed: (error, stackTrace) => ILogger.error(
+        'Skipped malformed subscribed collection',
+        error,
+        stackTrace,
+      ),
+    );
+    final guesses = rawItems is List && rawItems.isEmpty
+        ? parsePagedDataItems<TimelineGuessCollection>(
+            data['guessLikeList'],
+            TimelineGuessCollection.fromJson,
+            onMalformed: (error, stackTrace) => ILogger.error(
+              'Skipped malformed guessed collection',
+              error,
+              stackTrace,
+            ),
+          )
+        : <TimelineGuessCollection>[];
+    return PagedDataPage(
+      items: collections,
+      nextCursor: offset + (rawItems is List ? rawItems.length : 0),
+      hasMore: rawItems is List && rawItems.isNotEmpty,
+      metadata: guesses,
+    );
+  }
+
+  Future<IndicatorResult> _fetchResult({bool refresh = false}) =>
+      refresh ? _pagingController.refresh() : _pagingController.load();
+
+  @override
+  void initState() {
+    super.initState();
+    _pagingController = PagedDataController(
+      initialCursor: 0,
+      keyOf: (item) => item.collectionId,
+      loader: _loadPage,
+      metadataMerger: (current, incoming, refresh) {
+        final merged = <TimelineGuessCollection>[
+          ...?current,
+          ...?incoming,
+        ];
+        final seen = <int>{};
+        merged.removeWhere((item) => !seen.add(item.collectionId));
+        return merged;
+      },
+      onError: (error, stackTrace) {
+        ILogger.error(
+            'Failed to load subscribed collections', error, stackTrace);
+        if (mounted) {
+          IToast.showTop(
+            error is PagedDataException && StringUtil.isNotEmpty(error.message)
+                ? error.message
+                : appLocalizations.loadFailed,
+          );
         }
-      } catch (e, t) {
-        IToast.showTop(appLocalizations.loadFailed);
-        ILogger.error("Failed to load collection dynamic", e, t);
-        return IndicatorResult.fail;
-      } finally {
-        if (mounted) setState(() {});
-        _loading = false;
-      }
-    });
+      },
+    )..addListener(_handlePagingChanged);
+  }
+
+  void _handlePagingChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
     return EasyRefresh.builder(
-      refreshOnStart: true,
+      refreshOnStart: false,
       controller: _refreshController,
       onRefresh: () async {
         return await _fetchResult(refresh: true);
       },
-      onLoad: () async {
-        return await _fetchResult();
-      },
+      onLoad: _pagingController.noMore
+          ? null
+          : () async {
+              return await _fetchResult();
+            },
       triggerAxis: Axis.vertical,
       childBuilder: (context, physics) => CustomScrollView(
         controller: _scrollController,
@@ -1267,18 +1441,36 @@ class SubscribeCollectionTabState
   }
 
   _buildSubscribeCollectionList(ScrollPhysics physics) {
-    return SliverWaterfallFlow.extent(
-      maxCrossAxisExtent: 560,
-      children: List.generate(_subscribeList.length, (index) {
-        return ClickableWrapper(
-            child: _buildSubscribeCollectionItem(_subscribeList[index]));
-      }),
+    final width = MediaQuery.sizeOf(context).width;
+    final spacing = DynamicCollectionGridLayout.spacingFor(width);
+    return SliverPadding(
+      padding: DynamicCollectionGridLayout.paddingFor(width),
+      sliver: SliverWaterfallFlow(
+        gridDelegate: SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 560,
+          mainAxisSpacing: spacing,
+          crossAxisSpacing: spacing,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final item = _subscribeList[index];
+            return KeyedSubtree(
+              key: ValueKey('dynamic-collection-${item.collectionId}'),
+              child: ClickableWrapper(
+                child: _buildSubscribeCollectionItem(item),
+              ),
+            );
+          },
+          childCount: _subscribeList.length,
+          addAutomaticKeepAlives: false,
+        ),
+      ),
     );
   }
 
   _buildSubscribeCollectionItem(TimelineCollection item) {
     bool hasLastRead = item.lastReadBlogId != 0 && item.lastReadPostId != 0;
-    return GestureDetector(
+    return DynamicCollectionCardFrame(
       onTap: () {
         RouteUtil.pushPanelCupertinoRoute(
           context,
@@ -1290,153 +1482,161 @@ class SubscribeCollectionTabState
           ),
         );
       },
-      child: Container(
-        height: 118,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        color: Colors.transparent,
-        child: Row(
-          children: [
-            Stack(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Theme.of(context).dividerColor,
-                      width: 0.8,
-                    ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: ChewieItemBuilder.buildCachedImage(
-                      imageUrl: item.coverUrl,
-                      context: context,
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
-                      showLoading: false,
-                    ),
-                  ),
-                ),
-                if (item.recentlyRead == 1)
-                  Positioned(
-                    top: 4,
-                    left: 4,
-                    child: ItemBuilder.buildTranslucentTag(
-                      context,
-                      text: appLocalizations.viewRecently,
-                      fontSizeDelta: -2,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          item.name,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.apply(fontWeightDelta: 2),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (item.unreadCount > 0) const SizedBox(width: 3),
-                      if (item.unreadCount > 0)
-                        ItemBuilder.buildTagItem(
-                          context,
-                          appLocalizations.updateCount(
-                              item.unreadCount > 100 ? 99 : item.unreadCount),
-                          showTagLabel: false,
-                          jumpToTag: false,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 1),
-                          TagType.normal,
-                          fontSizeDelta: -2,
-                          backgroundColor:
-                              Theme.of(context).primaryColor.withAlpha(30),
-                          color: Theme.of(context).primaryColor,
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  if (item.latestPosts != null)
-                    Text(
-                      item.latestPosts!.join("\n"),
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.apply(fontSizeDelta: 1),
-                      maxLines: 3,
-                    ),
-                  const SizedBox(height: 6),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const Spacer(),
-                      ItemBuilder.buildIconTextButton(
-                        context,
-                        text: hasLastRead
-                            ? appLocalizations.continueRead
-                            : appLocalizations.startRead,
-                        color: Theme.of(context).primaryColor,
-                        fontWeightDelta: 2,
-                        onTap: !hasLastRead
-                            ? null
-                            : () {
-                                RouteUtil.pushPanelCupertinoRoute(
-                                  context,
-                                  PostDetailScreen(
-                                    meta: {
-                                      "postId": NumberUtil.intToHex(
-                                          item.lastReadPostId),
-                                      "blogId": NumberUtil.intToHex(
-                                          item.lastReadBlogId),
-                                      "blogName": "",
-                                    },
-                                    isArticle: false,
-                                  ),
-                                );
-                              },
-                      ),
-                    ],
-                  ),
-                ],
+      cover: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Theme.of(context).dividerColor,
+                width: 0.8,
               ),
             ),
-          ],
-        ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: ChewieItemBuilder.buildCachedImage(
+                imageUrl: item.coverUrl,
+                context: context,
+                width: 100,
+                height: 100,
+                fit: BoxFit.cover,
+                showLoading: false,
+              ),
+            ),
+          ),
+          if (item.recentlyRead == 1)
+            Positioned(
+              top: 4,
+              left: 4,
+              child: ItemBuilder.buildTranslucentTag(
+                context,
+                text: appLocalizations.viewRecently,
+                fontSizeDelta: -2,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6,
+                  vertical: 2,
+                ),
+              ),
+            ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Flexible(
+                child: Text(
+                  item.name,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.apply(fontWeightDelta: 2),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (item.unreadCount > 0) const SizedBox(width: 3),
+              if (item.unreadCount > 0)
+                ItemBuilder.buildTagItem(
+                  context,
+                  appLocalizations.updateCount(
+                      item.unreadCount > 100 ? 99 : item.unreadCount),
+                  showTagLabel: false,
+                  jumpToTag: false,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  TagType.normal,
+                  fontSizeDelta: -2,
+                  backgroundColor: Theme.of(context).primaryColor.withAlpha(30),
+                  color: Theme.of(context).primaryColor,
+                ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          if (item.latestPosts != null)
+            Text(
+              item.latestPosts!.join("\n"),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.apply(fontSizeDelta: 1),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Spacer(),
+              ItemBuilder.buildIconTextButton(
+                context,
+                text: hasLastRead
+                    ? appLocalizations.continueRead
+                    : appLocalizations.startRead,
+                color: Theme.of(context).primaryColor,
+                fontWeightDelta: 2,
+                onTap: !hasLastRead
+                    ? null
+                    : () {
+                        RouteUtil.pushPanelCupertinoRoute(
+                          context,
+                          PostDetailScreen(
+                            meta: {
+                              "postId":
+                                  NumberUtil.intToHex(item.lastReadPostId),
+                              "blogId":
+                                  NumberUtil.intToHex(item.lastReadBlogId),
+                              "blogName": "",
+                            },
+                            isArticle: false,
+                          ),
+                        );
+                      },
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
   _buildGuessLikeCollectionList(ScrollPhysics physics) {
-    return SliverWaterfallFlow.extent(
-      maxCrossAxisExtent: 560,
-      children: List.generate(_guessLikeList.length, (index) {
-        return ClickableWrapper(
-            child: _buildGuessLikeCollectionItem(_guessLikeList[index]));
-      }),
+    final width = MediaQuery.sizeOf(context).width;
+    final spacing = DynamicCollectionGridLayout.spacingFor(width);
+    return SliverPadding(
+      padding: DynamicCollectionGridLayout.paddingFor(width),
+      sliver: SliverWaterfallFlow(
+        gridDelegate: SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 560,
+          mainAxisSpacing: spacing,
+          crossAxisSpacing: spacing,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final item = _guessLikeList[index];
+            return KeyedSubtree(
+              key: ValueKey(
+                'dynamic-guess-collection-${item.collectionId}',
+              ),
+              child: ClickableWrapper(
+                child: _buildGuessLikeCollectionItem(item),
+              ),
+            );
+          },
+          childCount: _guessLikeList.length,
+          addAutomaticKeepAlives: false,
+        ),
+      ),
     );
   }
 
   _buildGuessLikeCollectionItem(TimelineGuessCollection item) {
     List<String> tags = [];
     tags = item.tags.split(",");
-    return GestureDetector(
+    return DynamicCollectionCardFrame(
       onTap: () {
         RouteUtil.pushPanelCupertinoRoute(
           context,
@@ -1448,156 +1648,141 @@ class SubscribeCollectionTabState
           ),
         );
       },
-      child: Container(
-        height: 125,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        color: Colors.transparent,
-        child: Row(
-          children: [
-            Stack(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Theme.of(context).dividerColor,
-                      width: 0.8,
+      cover: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: Theme.of(context).dividerColor,
+            width: 0.8,
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: ChewieItemBuilder.buildCachedImage(
+            imageUrl: item.coverUrl,
+            context: context,
+            width: 100,
+            height: 100,
+            fit: BoxFit.cover,
+            showLoading: false,
+          ),
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Flexible(
+                child: Text(
+                  item.name,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.apply(fontWeightDelta: 2),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Row(
+                children: [
+                  const SizedBox(width: 3),
+                  if (StringUtil.isNotEmpty(item.reason))
+                    RoundIconTextButton(
+                      text: item.reason,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 3, vertical: 2),
+                      radius: 3,
+                      color: ChewieColors.likeButtonColor,
+                      fontSizeDelta: -2,
                     ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: ChewieItemBuilder.buildCachedImage(
-                      imageUrl: item.coverUrl,
-                      context: context,
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
-                      showLoading: false,
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          Text(
+            item.latestPost,
+            style: Theme.of(context).textTheme.bodySmall,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 6),
+          SizedBox(
+            height: 16,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                ...List.generate(
+                  tags.length,
+                  (index) => Container(
+                    margin: const EdgeInsets.only(right: 5),
+                    child: ItemBuilder.buildTagItem(
+                      context,
+                      tags[index],
+                      TagType.normal,
+                      showIcon: false,
+                      fontSizeDelta: -3,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 0,
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          item.name,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.apply(fontWeightDelta: 2),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          const SizedBox(width: 3),
-                          if (StringUtil.isNotEmpty(item.reason))
-                            RoundIconTextButton(
-                              text: item.reason,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 3, vertical: 2),
-                              radius: 3,
-                              color: ChewieColors.likeButtonColor,
-                              fontSizeDelta: -2,
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    item.latestPost,
-                    style: Theme.of(context).textTheme.bodySmall,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-                  SizedBox(
-                    height: 16,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        ...List.generate(
-                          tags.length,
-                          (index) => Container(
-                            margin: const EdgeInsets.only(right: 5),
-                            child: ItemBuilder.buildTagItem(
-                              context,
-                              tags[index],
-                              TagType.normal,
-                              showIcon: false,
-                              fontSizeDelta: -3,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 0,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        "${item.postCount}${appLocalizations.chapter} · ${StringUtil.formatCount(item.subscribeCount)}${appLocalizations.subscribe}",
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall
-                            ?.apply(fontSizeDelta: -1),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const Spacer(),
-                      ItemBuilder.buildIconTextButton(
-                        context,
-                        text: item.subscribed
-                            ? appLocalizations.unsubscribe
-                            : appLocalizations.subscribe,
-                        icon: Icon(
-                          item.subscribed
-                              ? Icons.bookmark_added_rounded
-                              : Icons.bookmark_add_outlined,
-                          size: 15,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                        color: Theme.of(context).primaryColor,
-                        fontWeightDelta: 2,
-                        onTap: () {
-                          HapticFeedback.mediumImpact();
-                          CollectionApi.subscribeOrUnSubscribe(
-                            isSubscribe: !item.subscribed,
-                            collectionId: item.collectionId,
-                          ).then((value) {
-                            if (value['meta']['status'] != 200) {
-                              IToast.showTop(value['meta']['desc'] ??
-                                  value['meta']['msg']);
-                            } else {
-                              item.subscribed = !item.subscribed;
-                              setState(() {});
-                            }
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                "${item.postCount}${appLocalizations.chapter} · ${StringUtil.formatCount(item.subscribeCount)}${appLocalizations.subscribe}",
+                style: Theme.of(context)
+                    .textTheme
+                    .titleSmall
+                    ?.apply(fontSizeDelta: -1),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ],
-        ),
+              const Spacer(),
+              ItemBuilder.buildIconTextButton(
+                context,
+                text: item.subscribed
+                    ? appLocalizations.unsubscribe
+                    : appLocalizations.subscribe,
+                icon: LoftifyReactionIcon(
+                  kind: LoftifyReactionKind.bookmark,
+                  selected: item.subscribed,
+                  size: 15,
+                  color: item.subscribed
+                      ? LoftifyReactionColors.bookmark
+                      : Theme.of(context).primaryColor,
+                ),
+                color: Theme.of(context).primaryColor,
+                fontWeightDelta: 2,
+                onTap: () {
+                  HapticFeedback.mediumImpact();
+                  CollectionApi.subscribeOrUnSubscribe(
+                    isSubscribe: !item.subscribed,
+                    collectionId: item.collectionId,
+                  ).then((value) {
+                    if (value['meta']['status'] != 200) {
+                      IToast.showTop(
+                          value['meta']['desc'] ?? value['meta']['msg']);
+                    } else {
+                      item.subscribed = !item.subscribed;
+                      setState(() {});
+                    }
+                  });
+                },
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -1619,28 +1804,30 @@ class SubscribeGrainTabState extends BaseDynamicState<SubscribeGrainTab>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-  final List<SubscribeGrainItem> _subscribeList = [];
   final EasyRefreshController _refreshController = EasyRefreshController();
-  int _total = 0;
-  bool _loading = false;
+  late final PagedDataController<SubscribeGrainItem, int, int, void>
+      _pagingController;
   late final ScrollController _scrollController =
       widget.scrollController ?? ScrollController();
-  bool _noMore = false;
+
+  List<SubscribeGrainItem> get _subscribeList => _pagingController.items;
+  bool get refreshReady => _refreshController.headerState != null;
+
+  Future<void> loadInitial() async => _fetchResult(refresh: true);
 
   @override
-  initState() {
-    super.initState();
-    _scrollController.addListener(() {
-      if (!_noMore &&
-          _scrollController.position.pixels >
-              _scrollController.position.maxScrollExtent - kLoadExtentOffset) {
-        _fetchResult();
-      }
-    });
+  void dispose() {
+    _pagingController
+      ..removeListener(_handlePagingChanged)
+      ..dispose();
+    _refreshController.dispose();
+    if (widget.scrollController == null) _scrollController.dispose();
+    super.dispose();
   }
 
   callRefresh() {
-    if (_scrollController.offset > MediaQuery.sizeOf(context).height) {
+    if (_scrollController.hasClients &&
+        _scrollController.offset > MediaQuery.sizeOf(context).height) {
       _scrollController
           .animateTo(0,
               duration: const Duration(milliseconds: 500),
@@ -1653,65 +1840,77 @@ class SubscribeGrainTabState extends BaseDynamicState<SubscribeGrainTab>
     }
   }
 
-  _fetchResult({bool refresh = false}) async {
-    if (_loading) return;
-    if (refresh) _noMore = false;
-    _loading = true;
-    return await GrainApi.listSubscribdGrainList(
-      offset: refresh ? 0 : _subscribeList.length,
-    ).then((value) {
-      try {
-        if (value['code'] != 0) {
-          IToast.showTop(value['msg']);
-        } else {
-          List<SubscribeGrainItem> tmp = [];
-          if (value['data'] != null) {
-            if (value['data']['total'] != null) {
-              _total = value['data']['grainCount'];
-            }
-            if (value['data']['grains'] != null) {
-              tmp = (value['data']['grains'] as List)
-                  .map((e) => SubscribeGrainItem.fromJson(e))
-                  .toList();
-              if (refresh) _subscribeList.clear();
-              for (var exist in _subscribeList) {
-                tmp.removeWhere(
-                    (element) => element.grain.id == exist.grain.id);
-              }
-              _subscribeList.addAll(tmp);
-            }
-          }
-          if (mounted) setState(() {});
-          if ((tmp.isEmpty || _subscribeList.length >= _total) && !refresh) {
-            _noMore = true;
-            return IndicatorResult.noMore;
-          } else {
-            return IndicatorResult.success;
-          }
+  Future<PagedDataPage<SubscribeGrainItem, int, void>> _loadPage(
+    int cursor,
+    bool refresh,
+  ) async {
+    final offset = refresh ? 0 : cursor;
+    final value = await GrainApi.listSubscribdGrainList(offset: offset);
+    final data = _requireDynamicData(value);
+    final rawItems = data['grains'];
+    final items = parsePagedDataItems<SubscribeGrainItem>(
+      rawItems,
+      SubscribeGrainItem.fromJson,
+      onMalformed: (error, stackTrace) => ILogger.error(
+        'Skipped malformed subscribed grain',
+        error,
+        stackTrace,
+      ),
+    );
+    final totalValue = data['grainCount'] ?? data['total'];
+    final total = (totalValue as num?)?.toInt();
+    final nextOffset = offset + (rawItems is List ? rawItems.length : 0);
+    return PagedDataPage(
+      items: items,
+      nextCursor: nextOffset,
+      hasMore: rawItems is List &&
+          rawItems.isNotEmpty &&
+          (total == null || nextOffset < total),
+      total: total,
+    );
+  }
+
+  Future<IndicatorResult> _fetchResult({bool refresh = false}) =>
+      refresh ? _pagingController.refresh() : _pagingController.load();
+
+  @override
+  void initState() {
+    super.initState();
+    _pagingController = PagedDataController(
+      initialCursor: 0,
+      keyOf: (item) => item.grain.id,
+      loader: _loadPage,
+      onError: (error, stackTrace) {
+        ILogger.error('Failed to load subscribed grains', error, stackTrace);
+        if (mounted) {
+          IToast.showTop(
+            error is PagedDataException && StringUtil.isNotEmpty(error.message)
+                ? error.message
+                : appLocalizations.loadFailed,
+          );
         }
-      } catch (e, t) {
-        IToast.showTop(appLocalizations.loadFailed);
-        ILogger.error("Failed to load grain dynamic", e, t);
-        return IndicatorResult.fail;
-      } finally {
-        if (mounted) setState(() {});
-        _loading = false;
-      }
-    });
+      },
+    )..addListener(_handlePagingChanged);
+  }
+
+  void _handlePagingChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
     return EasyRefresh.builder(
-      refreshOnStart: true,
+      refreshOnStart: false,
       controller: _refreshController,
       onRefresh: () async {
         return await _fetchResult(refresh: true);
       },
-      onLoad: () async {
-        return await _fetchResult();
-      },
+      onLoad: _pagingController.noMore
+          ? null
+          : () async {
+              return await _fetchResult();
+            },
       triggerAxis: Axis.vertical,
       childBuilder: (context, physics) => CustomScrollView(
         controller: _scrollController,
@@ -1738,12 +1937,21 @@ class SubscribeGrainTabState extends BaseDynamicState<SubscribeGrainTab>
   }
 
   _buildSubscribeGrainList(ScrollPhysics physics) {
-    return SliverWaterfallFlow.extent(
-      maxCrossAxisExtent: 560,
-      children: List.generate(_subscribeList.length, (index) {
-        return ClickableWrapper(
-            child: _buildSubscribeGrainItem(_subscribeList[index]));
-      }),
+    return SliverWaterfallFlow(
+      gridDelegate: const SliverWaterfallFlowDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 560,
+      ),
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final item = _subscribeList[index];
+          return KeyedSubtree(
+            key: ValueKey('dynamic-grain-${item.grain.id}'),
+            child: ClickableWrapper(child: _buildSubscribeGrainItem(item)),
+          );
+        },
+        childCount: _subscribeList.length,
+        addAutomaticKeepAlives: false,
+      ),
     );
   }
 

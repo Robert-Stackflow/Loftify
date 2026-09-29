@@ -1,10 +1,44 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:loftify/Models/recommend_response.dart';
 
-import '../Utils/utils.dart';
 import 'account_response.dart';
 
 enum PostLayoutType { waterfallflow, grid, detail }
+
+int _detailInt(dynamic value) {
+  if (value is num) return value.toInt();
+  return NumberUtil.parseToInt(value);
+}
+
+bool _detailBool(dynamic value) {
+  if (value is bool) return value;
+  if (value is num) return value != 0;
+  if (value is String) {
+    return value == '1' || value.toLowerCase() == 'true';
+  }
+  return false;
+}
+
+String _detailString(dynamic value) => value?.toString() ?? '';
+
+SimpleBlogInfo _detailBlogInfo(dynamic value) {
+  final map =
+      value is Map ? Map<String, dynamic>.from(value) : <String, dynamic>{};
+  try {
+    return SimpleBlogInfo.fromJson(map);
+  } catch (_) {
+    final blogName = _detailString(map['blogName']);
+    return SimpleBlogInfo(
+      bigAvaImg: _detailString(map['bigAvaImg']),
+      blogId: _detailInt(map['blogId']),
+      blogName: blogName,
+      blogNickName: _detailString(map['blogNickName']).isNotEmpty
+          ? _detailString(map['blogNickName'])
+          : blogName,
+      extraBits: _detailInt(map['extraBits']),
+    );
+  }
+}
 
 ///PostDetailData
 class PostDetailData {
@@ -39,20 +73,27 @@ class PostDetailData {
   }
 
   PostDetailData.fromJson(Map<String, dynamic> json) {
-    followed = (json['followed'] is bool)
-        ? (json['followed'] == true ? 1 : 0)
-        : json['followed'];
-    liked = json['liked'];
-    misc = json['misc'];
-    post = json['post'] != null ? PostDetail.fromJson(json['post']) : null;
-    postData =
-        json['postData'] != null ? PostDetail.fromJson(json['postData']) : null;
-    shared = json['shared'];
-    showLuckyBoy = json['showLuckyBoy'];
-    opTime = json['opTime'];
-    subscribed = json['subscribed'];
-    grainInfo = json['grainInfo'] != null
-        ? GrainInfo.fromJson(json['grainInfo'])
+    followed = _detailInt(json['followed']);
+    liked = json['liked'] == null ? null : _detailBool(json['liked']);
+    misc = json['misc']?.toString();
+    post = json['post'] is Map
+        ? PostDetail.fromJson(Map<String, dynamic>.from(json['post'] as Map))
+        : null;
+    postData = json['postData'] is Map
+        ? PostDetail.fromJson(
+            Map<String, dynamic>.from(json['postData'] as Map),
+          )
+        : null;
+    shared = json['shared'] == null ? null : _detailBool(json['shared']);
+    showLuckyBoy =
+        json['showLuckyBoy'] == null ? null : _detailBool(json['showLuckyBoy']);
+    opTime = json['opTime'] == null ? null : _detailInt(json['opTime']);
+    subscribed =
+        json['subscribed'] == null ? null : _detailBool(json['subscribed']);
+    grainInfo = json['grainInfo'] is Map
+        ? GrainInfo.fromJson(
+            Map<String, dynamic>.from(json['grainInfo'] as Map),
+          )
         : null;
   }
 
@@ -308,98 +349,119 @@ class PostDetail {
 
   factory PostDetail.fromJson(Map<String, dynamic> json) {
     return PostDetail(
-      imageAiMark: json['imageAiMark'] ?? 0,
-      imageMarkInfo: json['imageMarkInfo'] ?? "",
-      imageReblogMark: json['imageReblogMark'] ?? 0,
-      reblogAuthorFromEmbed: json['reblogAuthorFromEmbed'] ?? "",
-      allowReward: json['allowReward'] ?? 0,
-      allowView: json['allowView'] ?? 0,
-      applyStatus: json['applyStatus'] ?? 0,
-      blogId: json['blogId'] ?? 0,
-      blogInfo: json['blogInfo'] != null
-          ? FullBlogInfo.fromJson(json['blogInfo'])
+      imageAiMark: _detailInt(json['imageAiMark']),
+      imageMarkInfo: _detailString(json['imageMarkInfo']),
+      imageReblogMark: _detailInt(json['imageReblogMark']),
+      reblogAuthorFromEmbed: _detailString(json['reblogAuthorFromEmbed']),
+      allowReward: _detailInt(json['allowReward']),
+      allowView: _detailInt(json['allowView']),
+      applyStatus: _detailInt(json['applyStatus']),
+      blogId: _detailInt(json['blogId']),
+      blogInfo: json['blogInfo'] is Map
+          ? FullBlogInfo.fromJson(
+              Map<String, dynamic>.from(json['blogInfo'] as Map),
+            )
           : null,
-      returnContent: json['returnContent'] != null
+      returnContent: json['returnContent'] is List
           ? (json['returnContent'] as List)
-              .map((v) => ReturnContent.fromJson(v))
+              .whereType<Map>()
+              .map(
+                (value) => ReturnContent.fromJson(
+                  Map<String, dynamic>.from(value),
+                ),
+              )
               .toList()
           : [],
-      blogPageUrl: json['blogPageUrl'] ?? "",
-      caption: json['caption'] ?? "",
-      embed: json['embed'] ?? "",
-      cctype: (json['cctype'] ?? json['ccType']) ?? 0,
-      cited: json['cited'] ?? false,
-      citeParentBlogId: json['citeParentBlogId'] ?? 0,
-      citeParentPermalink: json['citeParentPermalink'] ?? "",
-      citeParentPostId: json['citeParentPostId'] ?? 0,
-      citeRootBlogId: json['citeRootBlogId'] ?? 0,
-      citeRootPostId: json['citeRootPostId'] ?? 0,
-      collectionId: json['collectionId'] ?? 0,
-      content: json['content'] ?? "",
-      digest: json['digest'] ?? "",
-      dirPostType: json['dirPostType'] ?? 0,
-      fansVipPost: json['fansVipPost'] ?? 0,
-      firstImage: json['firstImage'] != null
-          ? FirstImage.fromJson(json['firstImage'])
+      blogPageUrl: _detailString(json['blogPageUrl']),
+      caption: _detailString(json['caption']),
+      embed: _detailString(json['embed']),
+      cctype: _detailInt(json['cctype'] ?? json['ccType']),
+      cited: _detailBool(json['cited']),
+      citeParentBlogId: _detailInt(json['citeParentBlogId']),
+      citeParentPermalink: _detailString(json['citeParentPermalink']),
+      citeParentPostId: _detailInt(json['citeParentPostId']),
+      citeRootBlogId: _detailInt(json['citeRootBlogId']),
+      citeRootPostId: _detailInt(json['citeRootPostId']),
+      collectionId: _detailInt(json['collectionId']),
+      content: _detailString(json['content']),
+      digest: _detailString(json['digest']),
+      dirPostType: _detailInt(json['dirPostType']),
+      fansVipPost: _detailInt(json['fansVipPost']),
+      firstImage: json['firstImage'] is Map
+          ? FirstImage.fromJson(
+              Map<String, dynamic>.from(json['firstImage'] as Map),
+            )
           : null,
-      firstImageUrl: json['firstImageUrl'] ?? "",
-      firstImageWh: json['firstImageWh'] != null
-          ? (json['firstImageWh'] as List).map((v) => v as int).toList()
+      firstImageUrl: _detailString(json['firstImageUrl']),
+      firstImageWh: json['firstImageWh'] is List
+          ? (json['firstImageWh'] as List).map(_detailInt).toList()
           : [],
-      firstSmallImageUrl: json['firstSmallImageUrl'] ?? "",
-      forbidPcomment: json['forbidPcomment'] ?? 0,
-      forbidShare: json['forbidShare'] ?? 0,
-      hot: json['hot'] ?? 0,
-      id: json['id'] ?? 0,
-      ipLocation: json['ipLocation'] ?? "",
-      isContribute: json['isContribute'] == 1 ? true : false,
-      isPublished: json['isPublished'] == 1 ? true : false,
-      locationId: json['locationId'] ?? 0,
-      needPay: json['needPay'] ?? false,
-      newVersionAuditing: json['newVersionAuditing'] ?? false,
-      payingView: json['payingView'] ?? false,
-      payView: json['payView'] ?? 0,
-      payViewExpire: json['payViewExpire'] ?? false,
-      payViewPost: json['payViewPost'] ?? false,
-      permalink: json['permalink'] ?? "",
-      photoCaptions: json['photoCaptions'] ?? "",
-      photoLinks: json['photoLinks'] ?? "",
-      photoType: json['photoType'] ?? 0,
-      pos: json['pos'] ?? 0,
-      postCollection: json['postCollection'] != null
-          ? FullPostCollection.fromJson(json['postCollection'])
+      firstSmallImageUrl: _detailString(json['firstSmallImageUrl']),
+      forbidPcomment: _detailInt(json['forbidPcomment']),
+      forbidShare: _detailInt(json['forbidShare']),
+      hot: _detailInt(json['hot']),
+      id: _detailInt(json['id']),
+      ipLocation: _detailString(json['ipLocation']),
+      isContribute: _detailBool(json['isContribute']),
+      isPublished: _detailBool(json['isPublished']),
+      locationId: _detailInt(json['locationId']),
+      needPay: _detailBool(json['needPay']),
+      newVersionAuditing: _detailBool(json['newVersionAuditing']),
+      payingView: _detailBool(json['payingView']),
+      payView: _detailInt(json['payView']),
+      payViewExpire: _detailBool(json['payViewExpire']),
+      payViewPost: _detailBool(json['payViewPost']),
+      permalink: _detailString(json['permalink']),
+      photoCaptions: _detailString(json['photoCaptions']),
+      photoLinks: _detailString(json['photoLinks']),
+      photoType: _detailInt(json['photoType']),
+      pos: _detailInt(json['pos']),
+      postCollection: json['postCollection'] is Map
+          ? FullPostCollection.fromJson(
+              Map<String, dynamic>.from(json['postCollection'] as Map),
+            )
           : null,
-      postCount: json['postCount'] != null
-          ? PostCount.fromJson(json['postCount'])
-          : json['postCountView'] != null
-              ? PostCount.fromJson(json['postCountView'])
+      postCount: json['postCount'] is Map
+          ? PostCount.fromJson(
+              Map<String, dynamic>.from(json['postCount'] as Map),
+            )
+          : json['postCountView'] is Map
+              ? PostCount.fromJson(
+                  Map<String, dynamic>.from(json['postCountView'] as Map),
+                )
               : null,
-      postSource: json['postSource'] ?? 0,
-      postStyle: json['postStyle'] ?? 0,
-      publisherMainBlogInfo: json['publisherMainBlogInfo'] != null
-          ? FullBlogInfo.fromJson(json['publisherMainBlogInfo'])
+      postSource: _detailInt(json['postSource']),
+      postStyle: _detailInt(json['postStyle']),
+      publisherMainBlogInfo: json['publisherMainBlogInfo'] is Map
+          ? FullBlogInfo.fromJson(
+              Map<String, dynamic>.from(json['publisherMainBlogInfo'] as Map),
+            )
           : null,
-      publisherUserId: json['publisherUserId'],
-      publishTime: json['publishTime'],
-      rank: json['rank'] ?? 0,
-      showGift: json['showGift'] ?? 0,
-      tag: json['tag'] ?? "",
-      tagList: json['tagList'] != null
-          ? (json['tagList'] as List).map((v) => v as String).toList()
+      publisherUserId: _detailInt(json['publisherUserId']),
+      publishTime: _detailInt(json['publishTime']),
+      rank: _detailInt(json['rank']),
+      showGift: _detailInt(json['showGift']),
+      tag: _detailString(json['tag']),
+      tagList: json['tagList'] is List
+          ? (json['tagList'] as List).map(_detailString).toList()
           : [],
-      tagRankList: json['tagRankList'] != null
-          ? (json['tagRankList'] as List).map((v) => v as String).toList()
+      tagRankList: json['tagRankList'] is List
+          ? (json['tagRankList'] as List).map(_detailString).toList()
           : [],
-      title: json['title'] ?? "",
-      top: json['top'],
-      type: json['type'],
-      valid: json['valid'],
-      viewRank: json['viewRank'],
-      videoPostView: json['videoPostView'] != null
-          ? VideoPostView.fromJson(json['videoPostView'])
+      title: _detailString(json['title']),
+      top: _detailInt(json['top']),
+      type: _detailInt(json['type']),
+      valid: _detailInt(json['valid']),
+      viewRank: _detailInt(json['viewRank']),
+      videoPostView: json['videoPostView'] is Map
+          ? VideoPostView.fromJson(
+              Map<String, dynamic>.from(json['videoPostView'] as Map),
+            )
           : null,
-      photoPostView: json['photoPostView'] != null
-          ? PhotoPostView.fromJson(json['photoPostView'])
+      photoPostView: json['photoPostView'] is Map
+          ? PhotoPostView.fromJson(
+              Map<String, dynamic>.from(json['photoPostView'] as Map),
+            )
           : null,
     );
   }
@@ -886,31 +948,41 @@ class Comment {
   factory Comment.fromJson(Map<String, dynamic> json) {
     return Comment(
       l2CommentOffset: -1,
-      blogId: json['blogId'],
-      content: json['content'],
-      emotes: json['emotes'] != null
+      blogId: _detailInt(json['blogId']),
+      content: _detailString(json['content']),
+      emotes: json['emotes'] is List
           ? (json['emotes'] as List)
-              .map((v) => CommentEmote.fromJson(v))
+              .whereType<Map>()
+              .map(
+                (value) => CommentEmote.fromJson(
+                  Map<String, dynamic>.from(value),
+                ),
+              )
               .toList()
           : [],
-      id: json['id'],
-      ipLocation: json['ipLocation'] ?? "",
-      l2Comments: json['l2Comments'] != null
+      id: _detailInt(json['id']),
+      ipLocation: _detailString(json['ipLocation']),
+      l2Comments: json['l2Comments'] is List
           ? (json['l2Comments'] as List)
-              .map((v) => Comment.fromJson(v))
+              .whereType<Map>()
+              .map(
+                (value) => Comment.fromJson(
+                  Map<String, dynamic>.from(value),
+                ),
+              )
               .toList()
           : [],
-      l2Count: json['l2Count'] ?? 0,
-      likeCount: json['likeCount'],
-      liked: json['liked'],
-      postId: json['postId'],
-      publisherBlogInfo: SimpleBlogInfo.fromJson(json['publisherBlogInfo']),
-      publishTime: json['publishTime'],
-      replyL1CommentId: json['replyL1CommentId'],
-      replyL2CommentId: json['replyL2CommentId'],
-      top: json['top'],
-      replyBlogInfo: json['replyBlogInfo'] != null
-          ? SimpleBlogInfo.fromJson(json['replyBlogInfo'])
+      l2Count: _detailInt(json['l2Count']),
+      likeCount: _detailInt(json['likeCount']),
+      liked: _detailBool(json['liked']),
+      postId: _detailInt(json['postId']),
+      publisherBlogInfo: _detailBlogInfo(json['publisherBlogInfo']),
+      publishTime: _detailInt(json['publishTime']),
+      replyL1CommentId: _detailInt(json['replyL1CommentId']),
+      replyL2CommentId: _detailInt(json['replyL2CommentId']),
+      top: _detailInt(json['top']),
+      replyBlogInfo: json['replyBlogInfo'] is Map
+          ? _detailBlogInfo(json['replyBlogInfo'])
           : null,
     );
   }

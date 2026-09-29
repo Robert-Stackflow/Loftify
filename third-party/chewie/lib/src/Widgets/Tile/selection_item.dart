@@ -280,7 +280,7 @@ class SelectionItemState<T extends DropdownMixin>
           splashColor: Theme.of(context).splashColor,
           highlightColor: Theme.of(context).highlightColor,
           selectedColor: Theme.of(context).hoverColor,
-          selectedIconColor: ChewieTheme.successColor,
+          selectedIconColor: ChewieTheme.primaryColor,
         ),
         searchFieldDecoration: SearchFieldDecoration(
           hintStyle:
@@ -337,7 +337,7 @@ class SelectionItemState<T extends DropdownMixin>
           splashColor: ChewieTheme.splashColor,
           highlightColor: ChewieTheme.highlightColor,
           selectedColor: ChewieTheme.hoverColor,
-          selectedIconColor: ChewieTheme.successColor,
+          selectedIconColor: ChewieTheme.primaryColor,
         ),
         searchFieldDecoration: SearchFieldDecoration(
           hintStyle:

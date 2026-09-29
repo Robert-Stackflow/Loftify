@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
@@ -15,6 +17,8 @@ class AutoImage extends StatefulWidget {
   final bool showLoading;
   final double? width;
   final double? height;
+  final int? memCacheWidth;
+  final int? memCacheHeight;
   final double? placeholderHeight;
   final Color? placeholderBackground;
   final double topPadding;
@@ -29,6 +33,8 @@ class AutoImage extends StatefulWidget {
     this.showLoading = true,
     this.width,
     this.height,
+    this.memCacheWidth,
+    this.memCacheHeight,
     this.placeholderHeight,
     this.placeholderBackground,
     this.topPadding = 0,
@@ -43,12 +49,33 @@ class AutoImage extends StatefulWidget {
 class _AutoImageState extends State<AutoImage> {
   late Future<Widget> _imageFuture;
 
-  static final Map<String, bool> _svgCheckCache = {};
+  static const _maxSvgCheckCacheEntries = 200;
+  static final LinkedHashMap<String, bool> _svgCheckCache = LinkedHashMap();
 
   @override
   void initState() {
     super.initState();
     _imageFuture = _loadImage();
+  }
+
+  @override
+  void didUpdateWidget(covariant AutoImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.imageUrl != widget.imageUrl ||
+        oldWidget.baseUrl != widget.baseUrl ||
+        oldWidget.fit != widget.fit ||
+        oldWidget.width != widget.width ||
+        oldWidget.height != widget.height ||
+        oldWidget.memCacheWidth != widget.memCacheWidth ||
+        oldWidget.memCacheHeight != widget.memCacheHeight ||
+        oldWidget.showLoading != widget.showLoading ||
+        oldWidget.placeholderHeight != widget.placeholderHeight ||
+        oldWidget.placeholderBackground != widget.placeholderBackground ||
+        oldWidget.topPadding != widget.topPadding ||
+        oldWidget.bottomPadding != widget.bottomPadding ||
+        oldWidget.simpleError != widget.simpleError) {
+      _imageFuture = _loadImage();
+    }
   }
 
   bool hasCommonImageExtension(String url) {
@@ -90,23 +117,22 @@ class _AutoImageState extends State<AutoImage> {
       }
     }
 
-    final lowerUrl = fullUrl.toLowerCase();
-    const commonImageExtensions = ['.png', '.jpg', '.jpeg', '.webp', '.gif'];
-    bool useCachedImage =
-        commonImageExtensions.any((ext) => lowerUrl.endsWith(ext));
-    if (useCachedImage) {
+    if (hasCommonImageExtension(fullUrl)) {
       return _buildCachedImage();
     }
 
     bool isSvg = false;
     if (_svgCheckCache.containsKey(fullUrl)) {
-      isSvg = _svgCheckCache[fullUrl]!;
+      isSvg = _svgCheckCache.remove(fullUrl)!;
+      _svgCheckCache[fullUrl] = isSvg;
     } else {
       try {
-        final response = await http.head(Uri.parse(fullUrl));
+        final response = await http
+            .head(Uri.parse(fullUrl))
+            .timeout(const Duration(seconds: 5));
         final contentType = response.headers['content-type'];
         isSvg = contentType != null && contentType.contains('image/svg+xml');
-        _svgCheckCache[fullUrl] = isSvg;
+        _rememberSvgType(fullUrl, isSvg);
       } catch (e) {
         isSvg = false;
       }
@@ -138,6 +164,14 @@ class _AutoImageState extends State<AutoImage> {
     return _buildCachedImage();
   }
 
+  void _rememberSvgType(String url, bool isSvg) {
+    _svgCheckCache.remove(url);
+    _svgCheckCache[url] = isSvg;
+    while (_svgCheckCache.length > _maxSvgCheckCacheEntries) {
+      _svgCheckCache.remove(_svgCheckCache.keys.first);
+    }
+  }
+
   Widget _buildCachedImage() {
     return MyCachedNetworkImage(
       imageUrl: widget.imageUrl,
@@ -146,6 +180,8 @@ class _AutoImageState extends State<AutoImage> {
       width: widget.width,
       simpleError: widget.simpleError,
       height: widget.height,
+      memCacheWidth: widget.memCacheWidth,
+      memCacheHeight: widget.memCacheHeight,
       placeholderHeight: widget.placeholderHeight,
       placeholderBackground: widget.placeholderBackground,
       topPadding: widget.topPadding,

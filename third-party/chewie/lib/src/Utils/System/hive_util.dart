@@ -64,9 +64,9 @@ class ChewieHiveUtil {
   }
 
   static initBox() async {
-    Hive.box(
-      name: ChewieHiveUtil.settingsBox,
-      directory: await FileUtil.getApplicationDir(),
+    await Hive.openBox(
+      ChewieHiveUtil.settingsBox,
+      path: await FileUtil.getApplicationDir(),
     );
   }
 
@@ -163,11 +163,11 @@ class ChewieHiveUtil {
     }
   }
 
-  static int? getFontSize() {
-    return 2;
+  static int getFontSize() {
+    return ChewieHiveUtil.getInt(ChewieHiveUtil.fontSizeKey, defaultValue: 2);
   }
 
-  static void setFontSize(int? fontSize) {
+  static void setFontSize(int fontSize) {
     ChewieHiveUtil.put(ChewieHiveUtil.fontSizeKey, fontSize);
   }
 
@@ -183,7 +183,7 @@ class ChewieHiveUtil {
   static int getLightThemeIndex() {
     int index = ChewieHiveUtil.getInt(ChewieHiveUtil.lightThemeIndexKey,
         defaultValue: 0);
-    if (index > ChewieThemeColorData.defaultLightThemes.length) {
+    if (index >= ChewieThemeColorData.defaultLightThemes.length) {
       String? json =
           ChewieHiveUtil.getString(ChewieHiveUtil.customLightThemeListKey);
       if (json == null || json.isEmpty) {
@@ -191,7 +191,7 @@ class ChewieHiveUtil {
         return 0;
       } else {
         List<dynamic> list = jsonDecode(json);
-        if (index >
+        if (index >=
             ChewieThemeColorData.defaultLightThemes.length + list.length) {
           setLightTheme(0);
           return 0;
@@ -208,7 +208,7 @@ class ChewieHiveUtil {
   static int getDarkThemeIndex() {
     int index = ChewieHiveUtil.getInt(ChewieHiveUtil.darkThemeIndexKey,
         defaultValue: 0);
-    if (index > ChewieThemeColorData.defaultDarkThemes.length) {
+    if (index >= ChewieThemeColorData.defaultDarkThemes.length) {
       String? json =
           ChewieHiveUtil.getString(ChewieHiveUtil.customDarkThemeListKey);
       if (json == null || json.isEmpty) {
@@ -216,7 +216,7 @@ class ChewieHiveUtil {
         return 0;
       } else {
         List<dynamic> list = jsonDecode(json);
-        if (index >
+        if (index >=
             ChewieThemeColorData.defaultDarkThemes.length + list.length) {
           setDarkTheme(0);
           return 0;
@@ -230,56 +230,91 @@ class ChewieHiveUtil {
     }
   }
 
+  static ChewieThemeColorData _applyPrimaryColorOverride(
+      ChewieThemeColorData theme, bool isDark) {
+    final key = isDark
+        ? customDarkThemePrimaryColorKey
+        : customLightThemePrimaryColorKey;
+    String? hex = ChewieHiveUtil.getString(key, autoCreate: false);
+    if (hex == null || hex.isEmpty) return theme;
+    final color = HexColor.fromHex(hex);
+    // Flutter's normalized Color channels previously got serialized with
+    // `toInt()`, producing values such as #01010000. Those legacy values are
+    // unrecoverable, so discard the broken override and restore the selected
+    // theme's own accent instead of rendering an almost transparent UI.
+    if ((color.toARGB32() >>> 24) <= 1) {
+      ChewieHiveUtil.delete(key);
+      if (isDark) {
+        setDarkThemePrimaryColorIndex(0);
+      } else {
+        setLightThemePrimaryColorIndex(0);
+      }
+      return theme;
+    }
+    return theme.copyWith(
+      primaryColor: color,
+      indicatorColor: color,
+      cursorColor: color,
+      textSelectionColor: color.withAlpha(70),
+      textSelectionHandleColor: color,
+      buttonPrimaryColor: color,
+    );
+  }
+
   static ChewieThemeColorData getLightTheme() {
     int index = ChewieHiveUtil.getInt(ChewieHiveUtil.lightThemeIndexKey,
         defaultValue: 0);
-    if (index > ChewieThemeColorData.defaultLightThemes.length) {
+    ChewieThemeColorData theme;
+    if (index >= ChewieThemeColorData.defaultLightThemes.length) {
       String? json =
           ChewieHiveUtil.getString(ChewieHiveUtil.customLightThemeListKey);
       if (json == null || json.isEmpty) {
         setLightTheme(0);
-        return ChewieThemeColorData.defaultLightThemes[0];
+        theme = ChewieThemeColorData.defaultLightThemes[0];
       } else {
         List<dynamic> list = jsonDecode(json);
-        if (index >
+        if (index >=
             ChewieThemeColorData.defaultLightThemes.length + list.length) {
           setLightTheme(0);
-          return ChewieThemeColorData.defaultLightThemes[0];
+          theme = ChewieThemeColorData.defaultLightThemes[0];
         } else {
-          return ChewieThemeColorData.fromJson(
+          theme = ChewieThemeColorData.fromJson(
               list[index - ChewieThemeColorData.defaultLightThemes.length]);
         }
       }
     } else {
-      return ChewieThemeColorData.defaultLightThemes[ChewieUtils.patchEnum(
+      theme = ChewieThemeColorData.defaultLightThemes[ChewieUtils.patchEnum(
           index, ChewieThemeColorData.defaultLightThemes.length)];
     }
+    return _applyPrimaryColorOverride(theme, false);
   }
 
   static ChewieThemeColorData getDarkTheme() {
     int index = ChewieHiveUtil.getInt(ChewieHiveUtil.darkThemeIndexKey,
         defaultValue: 0);
-    if (index > ChewieThemeColorData.defaultDarkThemes.length) {
+    ChewieThemeColorData theme;
+    if (index >= ChewieThemeColorData.defaultDarkThemes.length) {
       String? json =
           ChewieHiveUtil.getString(ChewieHiveUtil.customDarkThemeListKey);
       if (json == null || json.isEmpty) {
         setDarkTheme(0);
-        return ChewieThemeColorData.defaultDarkThemes[0];
+        theme = ChewieThemeColorData.defaultDarkThemes[0];
       } else {
         List<dynamic> list = jsonDecode(json);
-        if (index >
+        if (index >=
             ChewieThemeColorData.defaultDarkThemes.length + list.length) {
           setDarkTheme(0);
-          return ChewieThemeColorData.defaultDarkThemes[0];
+          theme = ChewieThemeColorData.defaultDarkThemes[0];
         } else {
-          return ChewieThemeColorData.fromJson(
+          theme = ChewieThemeColorData.fromJson(
               list[index - ChewieThemeColorData.defaultDarkThemes.length]);
         }
       }
     } else {
-      return ChewieThemeColorData.defaultDarkThemes[ChewieUtils.patchEnum(
+      theme = ChewieThemeColorData.defaultDarkThemes[ChewieUtils.patchEnum(
           index, ChewieThemeColorData.defaultDarkThemes.length)];
     }
+    return _applyPrimaryColorOverride(theme, true);
   }
 
   static void setLightTheme(int index) =>
@@ -287,6 +322,84 @@ class ChewieHiveUtil {
 
   static void setDarkTheme(int index) =>
       ChewieHiveUtil.put(ChewieHiveUtil.darkThemeIndexKey, index);
+
+  static List<ChewieThemeColorData> getCustomLightThemes() {
+    String? json =
+        ChewieHiveUtil.getString(ChewieHiveUtil.customLightThemeListKey);
+    if (json == null || json.isEmpty) return [];
+    List<dynamic> list = jsonDecode(json);
+    return list.map((e) => ChewieThemeColorData.fromJson(e)).toList();
+  }
+
+  static List<ChewieThemeColorData> getCustomDarkThemes() {
+    String? json =
+        ChewieHiveUtil.getString(ChewieHiveUtil.customDarkThemeListKey);
+    if (json == null || json.isEmpty) return [];
+    List<dynamic> list = jsonDecode(json);
+    return list.map((e) => ChewieThemeColorData.fromJson(e)).toList();
+  }
+
+  static void setCustomLightThemes(List<ChewieThemeColorData> themes) {
+    ChewieHiveUtil.put(ChewieHiveUtil.customLightThemeListKey,
+        jsonEncode(themes.map((e) => e.toJson()).toList()));
+  }
+
+  static void setCustomDarkThemes(List<ChewieThemeColorData> themes) {
+    ChewieHiveUtil.put(ChewieHiveUtil.customDarkThemeListKey,
+        jsonEncode(themes.map((e) => e.toJson()).toList()));
+  }
+
+  static Color? getCustomLightPrimaryColor() {
+    String? hex = ChewieHiveUtil.getString(
+        ChewieHiveUtil.customLightThemePrimaryColorKey,
+        autoCreate: false);
+    if (hex == null || hex.isEmpty) return null;
+    return HexColor.fromHex(hex);
+  }
+
+  static void setCustomLightPrimaryColor(Color? color) {
+    if (color == null) {
+      ChewieHiveUtil.delete(ChewieHiveUtil.customLightThemePrimaryColorKey);
+    } else {
+      ChewieHiveUtil.put(
+          ChewieHiveUtil.customLightThemePrimaryColorKey, color.toHex());
+    }
+  }
+
+  static Color? getCustomDarkPrimaryColor() {
+    String? hex = ChewieHiveUtil.getString(
+        ChewieHiveUtil.customDarkThemePrimaryColorKey,
+        autoCreate: false);
+    if (hex == null || hex.isEmpty) return null;
+    return HexColor.fromHex(hex);
+  }
+
+  static void setCustomDarkPrimaryColor(Color? color) {
+    if (color == null) {
+      ChewieHiveUtil.delete(ChewieHiveUtil.customDarkThemePrimaryColorKey);
+    } else {
+      ChewieHiveUtil.put(
+          ChewieHiveUtil.customDarkThemePrimaryColorKey, color.toHex());
+    }
+  }
+
+  static int getLightThemePrimaryColorIndex() {
+    return ChewieHiveUtil.getInt(ChewieHiveUtil.lightThemePrimaryColorIndexKey,
+        defaultValue: 0);
+  }
+
+  static void setLightThemePrimaryColorIndex(int index) {
+    ChewieHiveUtil.put(ChewieHiveUtil.lightThemePrimaryColorIndexKey, index);
+  }
+
+  static int getDarkThemePrimaryColorIndex() {
+    return ChewieHiveUtil.getInt(ChewieHiveUtil.darkThemePrimaryColorIndexKey,
+        defaultValue: 0);
+  }
+
+  static void setDarkThemePrimaryColorIndex(int index) {
+    ChewieHiveUtil.put(ChewieHiveUtil.darkThemePrimaryColorIndexKey, index);
+  }
 
   static List<SortableItem> getSortableItems(
     String key,
@@ -310,7 +423,7 @@ class ChewieHiveUtil {
     String boxName = ChewieHiveUtil.settingsBox,
     int defaultValue = 0,
   }) {
-    final Box box = Hive.box(name: boxName);
+    final Box box = Hive.box(boxName);
     if (!box.containsKey(key)) {
       put(key, defaultValue, boxName: boxName);
     }
@@ -322,7 +435,7 @@ class ChewieHiveUtil {
     String boxName = ChewieHiveUtil.settingsBox,
     int defaultValue = 0,
   }) {
-    final Box box = Hive.box(name: boxName);
+    final Box box = Hive.box(boxName);
     if (!box.containsKey(key)) {
       put(key, defaultValue, boxName: boxName);
     }
@@ -334,7 +447,7 @@ class ChewieHiveUtil {
     String boxName = ChewieHiveUtil.settingsBox,
     bool defaultValue = true,
   }) {
-    final Box box = Hive.box(name: boxName);
+    final Box box = Hive.box(boxName);
     if (!box.containsKey(key)) {
       put(key, defaultValue, boxName: boxName);
     }
@@ -347,7 +460,7 @@ class ChewieHiveUtil {
     bool autoCreate = true,
     String? defaultValue,
   }) {
-    final Box box = Hive.box(name: boxName);
+    final Box box = Hive.box(boxName);
     if (!box.containsKey(key)) {
       if (!autoCreate) {
         return null;
@@ -361,7 +474,7 @@ class ChewieHiveUtil {
     String key, {
     String boxName = ChewieHiveUtil.settingsBox,
   }) {
-    final Box box = Hive.box(name: boxName);
+    final Box box = Hive.box(boxName);
     Map<String, dynamic> res = {};
     if (box.get(key) != null) {
       res = Map<String, dynamic>.from(box.get(key));
@@ -375,7 +488,7 @@ class ChewieHiveUtil {
     bool autoCreate = true,
     List<dynamic> defaultValue = const [],
   }) {
-    final Box box = Hive.box(name: boxName);
+    final Box box = Hive.box(boxName);
     if (!box.containsKey(key)) {
       if (!autoCreate) {
         return null;
@@ -406,7 +519,7 @@ class ChewieHiveUtil {
     dynamic value, {
     String boxName = ChewieHiveUtil.settingsBox,
   }) async {
-    final Box box = Hive.box(name: boxName);
+    final Box box = Hive.box(boxName);
     return box.put(key, value);
   }
 
@@ -414,7 +527,7 @@ class ChewieHiveUtil {
     String key, {
     String boxName = ChewieHiveUtil.settingsBox,
   }) async {
-    final Box box = Hive.box(name: boxName);
+    final Box box = Hive.box(boxName);
     box.delete(key);
   }
 
@@ -422,7 +535,7 @@ class ChewieHiveUtil {
     String key, {
     String boxName = ChewieHiveUtil.settingsBox,
   }) {
-    final Box box = Hive.box(name: boxName);
+    final Box box = Hive.box(boxName);
     return box.containsKey(key);
   }
 }

@@ -8,12 +8,18 @@ import 'package:loftify/Screens/Post/post_detail_screen.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
 
 import '../../Api/collection_api.dart';
+import '../../Models/download_task.dart';
 import '../../Models/history_response.dart';
 import '../../Models/post_detail_response.dart';
 import '../../Models/recommend_response.dart';
-import '../../Utils/asset_util.dart';
+import '../../Screens/Download/batch_download_screen.dart';
 import '../../Utils/enums.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
+import '../../Widgets/PostItem/general_post_item.dart';
+import '../../Widgets/PostItem/loftify_post_archive_grid.dart';
+import '../../Widgets/PostDetail/detail_bottom_bar.dart';
+import '../../Widgets/Design/loftify_media_overlays.dart';
+import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
 class CollectionDetailScreen extends StatefulWidget {
@@ -73,9 +79,11 @@ class CollectionDetailScreenState
   }
 
   _fetchData({bool refresh = false, bool showLoading = false}) async {
-    if (loading) return;
+    if (loading || (!refresh && noMore)) return IndicatorResult.none;
     if (refresh) noMore = false;
-    if (showLoading) CustomLoadingDialog.showLoading(title: appLocalizations.loading);
+    if (showLoading) {
+      CustomLoadingDialog.showLoading(title: appLocalizations.loading);
+    }
     loading = true;
     int offset = refresh ? 0 : posts.length;
     return await CollectionApi.getCollectionDetail(
@@ -112,7 +120,7 @@ class CollectionDetailScreenState
           posts.addAll(newPosts);
           Map<String, int> monthCount = {};
           for (var e in posts) {
-            String yearMonth = TimeUtil.formatYearMonth(e.post!.publishTime);
+            String yearMonth = formatLocalizedYearMonth(e.post!.publishTime);
             monthCount.putIfAbsent(yearMonth, () => 0);
             monthCount[yearMonth] = monthCount[yearMonth]! + 1;
           }
@@ -126,8 +134,9 @@ class CollectionDetailScreenState
             ));
           }
           if (mounted) setState(() {});
-          if (posts.length >= postCollection!.postCount || newPosts.isEmpty) {
-            noMore = true;
+          noMore =
+              posts.length >= postCollection!.postCount || newPosts.isEmpty;
+          if (noMore && !refresh) {
             return IndicatorResult.noMore;
           } else {
             return IndicatorResult.success;
@@ -146,7 +155,7 @@ class CollectionDetailScreenState
   }
 
   _onRefresh() async {
-    await _fetchData(refresh: true);
+    return await _fetchData(refresh: true);
   }
 
   _onLoad() async {
@@ -161,23 +170,44 @@ class CollectionDetailScreenState
   }
 
   @override
+  void dispose() {
+    _refreshController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ChewieTheme.getBackground(context),
       appBar: ResponsiveUtil.isLandscapeLayout()
-          ? ResponsiveAppBar(showBack: true, title: appLocalizations.collectionDetail)
+          ? ResponsiveAppBar(
+              showBack: true, title: appLocalizations.collectionDetail)
           : null,
       bottomNavigationBar:
           blogInfo != null && postCollection != null ? _buildFooter() : null,
       body: blogInfo != null && postCollection != null
-          ? NestedScrollView(
-              headerSliverBuilder: (_, __) => _buildHeaderSlivers(),
-              body: _buildNineGridGroup())
+          ? _buildScrollableBody()
           : const LoadingWidget(background: Colors.transparent),
     );
   }
 
-  _buildHeaderSlivers() {
+  Widget _buildScrollableBody() {
+    return EasyRefresh.builder(
+      controller: _refreshController,
+      onRefresh: _onRefresh,
+      onLoad: noMore ? null : _onLoad,
+      triggerAxis: Axis.vertical,
+      childBuilder: (context, physics) => CustomScrollView(
+        physics: physics,
+        slivers: [
+          ..._buildHeaderSlivers(),
+          ..._buildPostSlivers(),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildHeaderSlivers() {
     if (!ResponsiveUtil.isLandscapeLayout()) {
       return <Widget>[
         SliverAppBarWrapper(
@@ -185,15 +215,14 @@ class CollectionDetailScreenState
           expandedHeight: 265,
           backgroundWidget: _buildBackground(),
           actions: [
-            CircleIconButton(
-              onTap: () {
+            ChewieIconButton(
+              icon: LoftifyIcons.moreVertical,
+              tooltip: appLocalizations.moreInfo,
+              foregroundColor: Colors.white,
+              onPressed: () {
                 BottomSheetBuilder.showContextMenu(
                     context, _buildMoreButtons());
               },
-              icon: const Icon(
-                Icons.more_vert_rounded,
-                color: Colors.white,
-              ),
             ),
           ],
           centerTitle: !ResponsiveUtil.isLandscapeLayout(),
@@ -240,7 +269,7 @@ class CollectionDetailScreenState
           ),
         ),
         SliverPersistentHeader(
-          key: ValueKey(StringUtil.getRandomString()),
+          key: const ValueKey('collection-detail-fixed-header'),
           pinned: true,
           delegate: SliverAppBarDelegate(
             radius: 0,
@@ -290,12 +319,18 @@ class CollectionDetailScreenState
                 const SizedBox(width: 5),
                 ItemBuilder.buildIconTextButton(
                   context,
-                  text: isOldest ? appLocalizations.order : appLocalizations.reverseOrder,
-                  icon: AssetUtil.load(
-                    isOldest
-                        ? AssetUtil.orderDownDarkIcon
-                        : AssetUtil.orderUpDarkIcon,
-                    size: 15,
+                  text: isOldest
+                      ? appLocalizations.order
+                      : appLocalizations.reverseOrder,
+                  icon: AnimatedRotation(
+                    turns: isOldest ? 0 : 0.5,
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
+                    child: ChewieIcon(
+                      LoftifyIcons.sortDirection,
+                      size: 16,
+                      color: Theme.of(context).textTheme.labelMedium?.color,
+                    ),
                   ),
                   fontSizeDelta: 1,
                   color: Theme.of(context).textTheme.labelMedium?.color,
@@ -322,68 +357,54 @@ class CollectionDetailScreenState
   }
 
   Widget _buildFooter() {
-    return Container(
-      height: 65,
-      width: MediaQuery.sizeOf(context).width,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.max,
-        children: [
-          Expanded(
-            child: RoundIconTextButton(
-              text: subscribed
-                  ? appLocalizations.unsubscribe
-                  : appLocalizations.subscribeCollection,
-              background: Theme.of(context).primaryColor.withAlpha(40),
-              padding: const EdgeInsets.symmetric(vertical: 15),
-              color: Theme.of(context).primaryColor,
-              onPressed: () {
-                HapticFeedback.mediumImpact();
-                CollectionApi.subscribeOrUnSubscribe(
-                  collectionId: widget.collectionId,
-                  isSubscribe: !subscribed,
-                ).then((value) {
-                  if (value['meta']['status'] != 200) {
-                    IToast.showTop(
-                        value['meta']['desc'] ?? value['meta']['msg']);
-                  } else {
-                    subscribed = !subscribed;
-                    setState(() {});
-                  }
-                });
-              },
-              fontSizeDelta: 2,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: RoundIconTextButton(
-              text: appLocalizations.continueRead,
-              background: Theme.of(context).primaryColor,
-              padding: const EdgeInsets.symmetric(vertical: 15),
-              onPressed: () {
-                if (posts.isNotEmpty) {
-                  RouteUtil.pushPanelCupertinoRoute(
-                    context,
-                    PostDetailScreen(
-                      postDetailData: posts[0],
-                      isArticle: CommonInfoItemBuilder.getPostType(posts[0]) ==
-                          PostType.article,
-                    ),
-                  );
-                } else {
-                  IToast.showTop(appLocalizations.noPostInCollection);
-                }
-              },
-              fontSizeDelta: 2,
-            ),
-          ),
-        ],
-      ),
+    return DetailBottomBar(
+      horizontalPadding: 12,
+      spacing: 10,
+      children: [
+        RoundIconTextButton(
+          text: subscribed
+              ? appLocalizations.unsubscribe
+              : appLocalizations.subscribeCollection,
+          background: Theme.of(context).primaryColor.withAlpha(40),
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          color: Theme.of(context).primaryColor,
+          onPressed: () {
+            HapticFeedback.mediumImpact();
+            CollectionApi.subscribeOrUnSubscribe(
+              collectionId: widget.collectionId,
+              isSubscribe: !subscribed,
+            ).then((value) {
+              if (value['meta']['status'] != 200) {
+                IToast.showTop(value['meta']['desc'] ?? value['meta']['msg']);
+              } else {
+                subscribed = !subscribed;
+                setState(() {});
+              }
+            });
+          },
+          fontSizeDelta: 2,
+        ),
+        RoundIconTextButton(
+          text: appLocalizations.continueRead,
+          background: Theme.of(context).primaryColor,
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          onPressed: () {
+            if (posts.isNotEmpty) {
+              RouteUtil.pushPanelCupertinoRoute(
+                context,
+                PostDetailScreen(
+                  postDetailData: posts[0],
+                  isArticle: CommonInfoItemBuilder.getPostType(posts[0]) ==
+                      PostType.article,
+                ),
+              );
+            } else {
+              IToast.showTop(appLocalizations.noPostInCollection);
+            }
+          },
+          fontSizeDelta: 2,
+        ),
+      ],
     );
   }
 
@@ -463,15 +484,14 @@ class CollectionDetailScreenState
             ),
           ),
           if (ResponsiveUtil.isLandscapeLayout()) ...[
-            CircleIconButton(
-              onTap: () {
+            ChewieIconButton(
+              icon: LoftifyIcons.moreVertical,
+              tooltip: appLocalizations.moreInfo,
+              foregroundColor: Colors.white,
+              onPressed: () {
                 BottomSheetBuilder.showContextMenu(
                     context, _buildMoreButtons());
               },
-              icon: const Icon(
-                Icons.more_vert_rounded,
-                color: Colors.white,
-              ),
             ),
             const SizedBox(width: 5),
           ]
@@ -489,34 +509,34 @@ class CollectionDetailScreenState
           title: appLocalizations.postCount,
           count: postCollection!.postCount,
           countColor: Colors.white,
-          labelColor: Colors.white.withOpacity(0.6),
+          labelColor: LoftifyCoverScrim.secondaryForeground,
         ),
         ItemBuilder.buildStatisticItem(
           context,
           title: appLocalizations.subscribeCount,
           count: postCollection!.subscribedCount,
           countColor: Colors.white,
-          labelColor: Colors.white.withOpacity(0.6),
+          labelColor: LoftifyCoverScrim.secondaryForeground,
         ),
         ItemBuilder.buildStatisticItem(
           context,
           title: appLocalizations.totalHotCount,
           count: postCollection!.postCollectionHot,
           countColor: Colors.white,
-          labelColor: Colors.white.withOpacity(0.6),
+          labelColor: LoftifyCoverScrim.secondaryForeground,
         ),
         ItemBuilder.buildStatisticItem(
           context,
           title: appLocalizations.viewCountLong,
           count: postCollection!.viewCount,
           countColor: Colors.white,
-          labelColor: Colors.white.withOpacity(0.6),
+          labelColor: LoftifyCoverScrim.secondaryForeground,
         ),
       ],
     );
   }
 
-  Widget _buildNineGridGroup() {
+  List<Widget> _buildPostSlivers() {
     List<Widget> widgets = [];
     int startIndex = 0;
     for (var e in _archiveDataList) {
@@ -530,53 +550,39 @@ class CollectionDetailScreenState
       }
       widgets.add(ItemBuilder.buildTitle(
         context,
-        title: appLocalizations.descriptionWithPostCount(e.desc, e.count.toString()),
+        title: appLocalizations.descriptionWithPostCount(
+            e.desc, e.count.toString()),
         topMargin: 16,
         bottomMargin: 0,
       ));
       widgets.add(_buildNineGrid(startIndex, count));
       startIndex += e.count;
     }
-    return EasyRefresh.builder(
-      controller: _refreshController,
-      onRefresh: _onRefresh,
-      onLoad: _onLoad,
-      childBuilder: (context, physics) {
-        return Container(
-          height: MediaQuery.sizeOf(context).height,
-          color: ChewieTheme.getBackground(context),
-          child: LoadMoreNotification(
-            child: ListView(
-              physics: physics,
-              shrinkWrap: true,
-              padding: const EdgeInsets.only(left: 10, right: 10, bottom: 20),
-              children: widgets,
-            ),
-            noMore: noMore,
-            onLoad: _onLoad,
-          ),
-        );
-      },
-    );
+    if (widgets.isEmpty) {
+      return [
+        SliverEmptyPlaceholder(text: appLocalizations.noArticle),
+      ];
+    }
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.only(left: 10, right: 10, bottom: 20),
+        sliver: SliverList.list(children: widgets),
+      ),
+    ];
   }
 
   Widget _buildNineGrid(int startIndex, int count) {
-    return GridView.extent(
-      padding: const EdgeInsets.only(top: 12),
-      shrinkWrap: true,
-      maxCrossAxisExtent: 160,
-      mainAxisSpacing: 6,
-      crossAxisSpacing: 6,
-      physics: const NeverScrollableScrollPhysics(),
-      children: List.generate(count, (index) {
-        int trueIndex = startIndex + index;
+    return LoftifyPostArchiveGrid(
+      itemCount: count,
+      itemBuilder: (context, index, tileExtent) {
+        final trueIndex = startIndex + index;
         return CommonInfoItemBuilder.buildNineGridPostItem(
           context,
           posts[trueIndex],
-          wh: 160,
+          wh: tileExtent,
           activePostId: widget.postId,
         );
-      }),
+      },
     );
   }
 
@@ -584,39 +590,91 @@ class CollectionDetailScreenState
     return FlutterContextMenu(
       entries: [
         FlutterContextMenuItem(
+          appLocalizations.batchDownload,
+          iconData: LoftifyIcons.download,
+          onPressed: _openBatchDownload,
+        ),
+        FlutterContextMenuItem(
           appLocalizations.copyLink,
-          iconData: Icons.copy_rounded,
+          iconData: LoftifyIcons.copy,
           onPressed: () {
             ChewieUtils.copy(context, collectionUrl);
           },
         ),
         FlutterContextMenuItem(appLocalizations.openWithBrowser,
-            iconData: Icons.open_in_browser_rounded, onPressed: () {
+            iconData: LoftifyIcons.openExternal, onPressed: () {
           UriUtil.openExternal(collectionUrl);
         }),
         FlutterContextMenuItem(appLocalizations.shareToOtherApps,
-            iconData: Icons.share_rounded, onPressed: () {
+            iconData: LoftifyIcons.share, onPressed: () {
           UriUtil.share(collectionUrl);
         }),
       ],
     );
   }
 
+  void _openBatchDownload() {
+    RouteUtil.pushPanelCupertinoRoute(
+      context,
+      BatchDownloadScreen(
+        sourceTitle: postCollection?.name ?? appLocalizations.collection,
+        source: DownloadSourceDescriptor(
+          type: DownloadSourceType.collection,
+          sourceId: widget.collectionId.toString(),
+          title: postCollection?.name ?? appLocalizations.collection,
+          thumbnailUrl: postCollection?.coverUrl,
+          metadata: <String, String>{
+            'collectionId': widget.collectionId.toString(),
+            'postId': widget.postId.toString(),
+            'blogId': widget.blogId.toString(),
+            'blogName': widget.blogName,
+          },
+        ),
+        initialItems:
+            posts.map(CommonInfoItemBuilder.getGeneralPostItem).toList(),
+        loadAllItems: _loadAllBatchItems,
+      ),
+    );
+  }
+
+  Future<List<GeneralPostItem>> _loadAllBatchItems() async {
+    if (posts.isEmpty) await _onRefresh();
+    while (!noMore) {
+      final previousLength = posts.length;
+      final result = await _onLoad();
+      if (result == IndicatorResult.fail ||
+          result == IndicatorResult.none ||
+          posts.length == previousLength) {
+        break;
+      }
+    }
+    return posts
+        .map(CommonInfoItemBuilder.getGeneralPostItem)
+        .toList(growable: false);
+  }
+
   Widget _buildBackground({double? height}) {
     String backgroudUrl = postCollection!.coverUrl;
-    return Blur(
-      blur: 20,
-      blurColor: Colors.black12,
-      child: ChewieItemBuilder.buildCachedImage(
-        context: context,
-        imageUrl: backgroudUrl,
-        showLoading: false,
-        fit: BoxFit.cover,
-        width: MediaQuery.sizeOf(context).width * 2,
-        height: height ?? MediaQuery.sizeOf(context).height * 0.7,
-        placeholderBackground: Theme.of(context).textTheme.labelSmall?.color,
-        bottomPadding: 50,
-      ),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Blur(
+          blur: 20,
+          blurColor: Colors.black12,
+          child: ChewieItemBuilder.buildCachedImage(
+            context: context,
+            imageUrl: backgroudUrl,
+            showLoading: false,
+            fit: BoxFit.cover,
+            width: MediaQuery.sizeOf(context).width * 2,
+            height: height ?? MediaQuery.sizeOf(context).height * 0.7,
+            placeholderBackground:
+                Theme.of(context).textTheme.labelSmall?.color,
+            bottomPadding: 50,
+          ),
+        ),
+        const LoftifyCoverScrim(),
+      ],
     );
   }
 }

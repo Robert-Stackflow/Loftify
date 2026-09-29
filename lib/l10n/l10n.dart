@@ -14,9 +14,37 @@
  */
 
 import 'package:awesome_chewie/awesome_chewie.dart';
+import 'package:flutter/widgets.dart';
 
 import '../generated/app_localizations.dart';
 
+export '../generated/app_localizations.dart';
+
 AppLocalizations get appLocalizations {
   return AppLocalizations.of(chewieProvider.rootContext)!;
+}
+
+Locale resolveAppLocale(Locale locale) {
+  for (final supported in AppLocalizations.supportedLocales) {
+    if (supported.languageCode == locale.languageCode &&
+        supported.countryCode == locale.countryCode) {
+      return supported;
+    }
+  }
+  for (final supported in AppLocalizations.supportedLocales) {
+    if (supported.languageCode == locale.languageCode) return supported;
+  }
+  return AppLocalizations.supportedLocales.first;
+}
+
+Locale resolveSystemAppLocale() {
+  return resolveAppLocale(
+    WidgetsBinding.instance.platformDispatcher.locale,
+  );
+}
+
+String formatLocalizedYearMonth(int timestamp) {
+  if (timestamp < 10000000000) timestamp *= 1000;
+  final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+  return appLocalizations.yearAndMonth(date.month, date.year);
 }

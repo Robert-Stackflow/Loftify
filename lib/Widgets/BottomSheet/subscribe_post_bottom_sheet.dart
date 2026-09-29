@@ -1,10 +1,15 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:loftify/Models/favorites_response.dart';
+import 'package:loftify/Widgets/Item/loftify_item_builder.dart';
 
 import '../../Api/user_api.dart';
+import '../../Theme/loftify_design_theme.dart';
 import '../../Utils/utils.dart';
 import '../../l10n/l10n.dart';
+import '../Design/loftify_controls.dart';
+import '../Design/loftify_surfaces.dart';
+import '../loftify_icons.dart';
 
 class SubscribePostBottomSheet extends StatefulWidget {
   const SubscribePostBottomSheet({
@@ -34,8 +39,10 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
     super.initState();
   }
 
-  _fetchFavoriteFolderList({bool refresh = false}) async {
-    if (_loading) return;
+  Future<IndicatorResult> _fetchFavoriteFolderList({
+    bool refresh = false,
+  }) async {
+    if (_loading) return IndicatorResult.none;
     _loading = true;
     int offset = refresh ? 0 : _favoriteFolderList.length;
     return await UserApi.getFavoriteFolderList(offset: offset).then((value) {
@@ -67,7 +74,7 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
     });
   }
 
-  _fetchSubscribeFolderList() async {
+  Future<IndicatorResult> _fetchSubscribeFolderList() async {
     return await UserApi.getSubscribeFolderList(
             postId: widget.postId, blogId: widget.blogId)
         .then((value) {
@@ -97,103 +104,68 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
     });
   }
 
-  _onRefresh() async {
+  Future<IndicatorResult> _onRefresh() async {
     return await _fetchFavoriteFolderList(refresh: true);
   }
 
-  _onLoad() async {
+  Future<IndicatorResult> _onLoad() async {
     return await _fetchFavoriteFolderList();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
-        color: Theme.of(context).canvasColor,
-      ),
-      height: MediaQuery.sizeOf(context).height * 0.8,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildHeader(),
-          const MyDivider(horizontal: 0, vertical: 0),
-          Expanded(child: _buildButtons()),
-          const MyDivider(horizontal: 0, vertical: 0),
-          _buildFooter(),
-        ],
-      ),
+    return LoftifySubscribePanelFrame(
+      title: appLocalizations.selectFolder,
+      createLabel: appLocalizations.newOp,
+      onCreate: _showCreateFolder,
+      itemCount: _favoriteFolderList.length,
+      body: _buildButtons(),
+      footer: _buildFooter(),
     );
   }
 
-  _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-      alignment: Alignment.center,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Container(),
-          Text(
-            appLocalizations.selectFolder,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          ClickableGestureDetector(
-              onTap: () {
-                BottomSheetBuilder.showBottomSheet(
-                  context,
-                  (sheetContext) => InputBottomSheet(
-                    title: appLocalizations.newFolder,
-                    hint: appLocalizations.inputFolderTitle,
-                    text: "",
-                    onConfirm: (text) {
-                      UserApi.createFolder(name: text).then((value) {
-                        if (value['code'] == 0) {
-                          IToast.showTop(appLocalizations.createSuccess);
-                          _fetchFavoriteFolderList();
-                        } else {
-                          IToast.showTop(value['msg']);
-                        }
-                      });
-                    },
-                  ),
-                  preferMinWidth: 400,
-                  responsive: true,
-                );
-              },
-              child: Text(
-                appLocalizations.newOp,
-                style: Theme.of(context).textTheme.titleLarge?.apply(
-                      fontSizeDelta: -2,
-                      color: Theme.of(context).primaryColor,
-                    ),
-              ),
-            ),
-        ],
+  void _showCreateFolder() {
+    BottomSheetBuilder.showBottomSheet(
+      context,
+      (sheetContext) => InputBottomSheet(
+        title: appLocalizations.newFolder,
+        hint: appLocalizations.inputFolderTitle,
+        text: "",
+        onConfirm: (text) {
+          UserApi.createFolder(name: text).then((value) {
+            if (value['code'] == 0) {
+              IToast.showTop(appLocalizations.createSuccess);
+              _fetchFavoriteFolderList();
+            } else {
+              IToast.showTop(value['msg']);
+            }
+          });
+        },
       ),
+      preferMinWidth: 400,
+      responsive: true,
     );
   }
 
-  _buildButtons() {
+  Widget _buildButtons() {
     return EasyRefresh(
       refreshOnStart: true,
       onRefresh: _onRefresh,
       onLoad: _onLoad,
       triggerAxis: Axis.vertical,
       child: _favoriteFolderList.isNotEmpty
-          ? ListView(
-              cacheExtent: 9999,
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              children: List.generate(
-                _favoriteFolderList.length,
-                (index) {
-                  return _buildFolderItem(
-                    context,
-                    _favoriteFolderList[index],
-                  );
-                },
+          ? ListView.builder(
+              cacheExtent: MediaQuery.sizeOf(context).height,
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              itemCount: _favoriteFolderList.length,
+              itemBuilder: (context, index) => KeyedSubtree(
+                key: ValueKey(
+                  'subscribe-folder-${_favoriteFolderList[index].id}',
+                ),
+                child: _buildFolderItem(
+                  context,
+                  _favoriteFolderList[index],
+                ),
               ),
             )
           : EmptyPlaceholder(text: appLocalizations.noFavoriteFolder),
@@ -201,29 +173,54 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
   }
 
   Widget _buildFolderItem(BuildContext context, FavoriteFolder item) {
+    final design = context.design;
+    final selected = item.postSubscribed == 1;
     return Material(
+      color: Colors.transparent,
       child: InkWell(
+        splashFactory: NoSplash.splashFactory,
+        borderRadius: BorderRadius.circular(design.radii.control),
         onTap: () {
           item.postSubscribed = item.postSubscribed == 1 ? 0 : 1;
           setState(() {});
         },
-        child: Container(
-          color: Colors.transparent,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        child: AnimatedContainer(
+          duration: design.motion.effective(context, design.motion.state),
+          margin: EdgeInsets.symmetric(
+            horizontal: design.spacing.lg,
+            vertical: design.spacing.xs,
+          ),
+          padding: EdgeInsets.symmetric(
+            horizontal: design.spacing.md,
+            vertical: design.spacing.md,
+          ),
+          decoration: BoxDecoration(
+            color: selected
+                ? design.colors.accentContainer.withValues(alpha: 0.6)
+                : design.colors.surface,
+            borderRadius: BorderRadius.circular(design.radii.control),
+            border: Border.all(
+              color: selected
+                  ? design.colors.accent.withValues(alpha: 0.5)
+                  : design.colors.outline,
+              width: design.borders.hairline,
+            ),
+          ),
           child: Row(
             children: <Widget>[
               Container(
                 decoration: BoxDecoration(
                   border: Border.all(
-                      color: Theme.of(context).dividerColor, width: 0.5),
-                  borderRadius: BorderRadius.circular(10),
+                      color: design.colors.outline,
+                      width: design.borders.hairline),
+                  borderRadius: BorderRadius.circular(design.radii.control),
                   color: Colors.transparent,
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(design.radii.control),
                   child: SizedBox(
-                    height: 80,
-                    width: 80,
+                    height: 60,
+                    width: 60,
                     child: ChewieItemBuilder.buildCachedImage(
                       context: context,
                       fit: BoxFit.cover,
@@ -233,43 +230,37 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
                   ),
                 ),
               ),
+              SizedBox(width: design.spacing.md),
               Expanded(
-                child: Container(
-                  padding: const EdgeInsets.only(left: 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    mainAxisSize: MainAxisSize.max,
-                    children: <Widget>[
-                      Text(
-                        item.name ?? "",
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      item.name ?? "",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: design.typography.cardTitle,
+                    ),
+                    SizedBox(height: design.spacing.xs),
+                    Text(
+                      "ID: ${item.id}  ·  ${item.postCount}${appLocalizations.chapter}",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: design.typography.metadata.copyWith(
+                        color: design.colors.textMuted,
                       ),
-                      const SizedBox(height: 10),
-                      Text(
-                        "ID: ${item.id}",
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        "${item.postCount}${appLocalizations.chapter}",
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-              CircleIconButton(
+              ChewieIconButton(
                 icon: item.postSubscribed == 1
-                    ? Icon(
-                        Icons.check_circle_outline_rounded,
-                        color: Theme.of(context).primaryColor,
-                      )
-                    : const Icon(Icons.circle_outlined),
-                onTap: () {
+                    ? LoftifyIcons.check
+                    : LoftifyIcons.select,
+                selected: item.postSubscribed == 1,
+                semanticLabel: item.name,
+                onPressed: () {
                   item.postSubscribed = item.postSubscribed == 1 ? 0 : 1;
                   setState(() {});
                 },
@@ -281,39 +272,137 @@ class SubscribePostBottomSheetState extends State<SubscribePostBottomSheet> {
     );
   }
 
-  _buildFooter() {
-    return Container(
-      height: 45,
-      margin: const EdgeInsets.symmetric(vertical: 16, horizontal: 28),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Expanded(
-            child: RoundIconTextButton(
-              text: appLocalizations.cancel,
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: RoundIconTextButton(
-              text: appLocalizations.confirm,
-              background: Theme.of(context).primaryColor,
-              color: Colors.white,
-              onPressed: () {
-                widget.onConfirm?.call(_favoriteFolderList
-                    .where((e) => e.postSubscribed == 1)
-                    .map((e) => e.id.toString())
-                    .toList());
-                Navigator.pop(context);
-              },
-            ),
-          ),
-        ],
+  Widget _buildFooter() {
+    return LoftifyResponsivePanelActions(
+      secondary: LoftifyButton(
+        label: appLocalizations.cancel,
+        variant: LoftifyButtonVariant.secondary,
+        expand: true,
+        onPressed: () => Navigator.pop(context),
       ),
+      primary: LoftifyButton(
+        label: appLocalizations.confirm,
+        expand: true,
+        onPressed: () {
+          widget.onConfirm?.call(_favoriteFolderList
+              .where((e) => e.postSubscribed == 1)
+              .map((e) => e.id.toString())
+              .toList());
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
+}
+
+class LoftifySubscribePanelFrame extends StatelessWidget {
+  const LoftifySubscribePanelFrame({
+    super.key,
+    required this.title,
+    required this.createLabel,
+    required this.onCreate,
+    required this.body,
+    required this.footer,
+    this.itemCount,
+  });
+
+  final String title;
+  final String createLabel;
+  final VoidCallback onCreate;
+  final Widget body;
+  final Widget footer;
+  final int? itemCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final design = context.design;
+    final media = MediaQuery.of(context);
+    final visibleHeight = (media.size.height - media.viewInsets.bottom)
+        .clamp(0.0, double.infinity);
+    final compactHeader = media.size.width < 380 ||
+        media.textScaler.scale(1) > 1.35 ||
+        visibleHeight * 0.8 < 420;
+    final maxPanelHeight =
+        (visibleHeight * (compactHeader ? 0.92 : 0.8)).clamp(0.0, 720.0);
+    final desiredHeight = itemCount == null
+        ? maxPanelHeight
+        : (196.0 + itemCount! * 84).clamp(300.0, 720.0);
+    final panelHeight = desiredHeight.clamp(0.0, maxPanelHeight);
+    final createAction = LoftifyItemBuilder.buildFramedDoubleButton(
+      context: context,
+      isFollowed: false,
+      onTap: onCreate,
+      positiveText: createLabel,
+      negtiveText: createLabel,
+    );
+    return SafeArea(
+      top: false,
+      child: SizedBox(
+        key: const ValueKey('loftify-subscribe-panel'),
+        height: panelHeight,
+        child: LoftifyPanel(
+          title: title,
+          compactHeader: true,
+          trailing: compactHeader ? null : createAction,
+          expandBody: true,
+          body: compactHeader
+              ? Column(
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: design.spacing.xl,
+                        vertical: design.spacing.md,
+                      ),
+                      child: createAction,
+                    ),
+                    Expanded(child: body),
+                  ],
+                )
+              : body,
+          footer: footer,
+          footerPadding: EdgeInsets.fromLTRB(
+            design.spacing.lg,
+            design.spacing.sm,
+            design.spacing.lg,
+            design.spacing.lg,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class LoftifyResponsivePanelActions extends StatelessWidget {
+  const LoftifyResponsivePanelActions({
+    super.key,
+    required this.secondary,
+    required this.primary,
+  });
+
+  final Widget secondary;
+  final Widget primary;
+
+  @override
+  Widget build(BuildContext context) {
+    final design = context.design;
+    final stack = MediaQuery.sizeOf(context).width < 360 ||
+        MediaQuery.textScalerOf(context).scale(1) > 1.35;
+    if (stack) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          primary,
+          SizedBox(height: design.spacing.md),
+          secondary,
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: secondary),
+        SizedBox(width: design.spacing.lg),
+        Expanded(child: primary),
+      ],
     );
   }
 }

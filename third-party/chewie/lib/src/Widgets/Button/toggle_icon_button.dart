@@ -15,8 +15,8 @@ class ToggleIconButton extends StatefulWidget {
     this.tooltip,
     this.onPressed,
     this.resetDuration = const Duration(seconds: 2),
-    this.iconA = const Icon(Icons.access_alarm),
-    this.iconB = const Icon(Icons.access_time),
+    this.iconA = const Icon(ChewieIcons.alarm),
+    this.iconB = const Icon(ChewieIcons.time),
   });
 
   @override

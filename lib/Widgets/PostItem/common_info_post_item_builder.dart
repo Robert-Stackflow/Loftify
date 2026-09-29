@@ -6,7 +6,16 @@ import '../../Utils/utils.dart';
 import '../PostItem/general_post_item_builder.dart';
 
 class CommonInfoItemBuilder {
-  static GeneralPostItem getGeneralPostItem(PostDetailData item) {
+  static GeneralPostItem getGeneralPostItem(
+    PostDetailData item, {
+    void Function(bool liked)? onLikeChanged,
+  }) {
+    if (isInvalid(item)) {
+      return _invalidPostItem(
+        item.post?.id ?? item.postData?.id ?? 0,
+        onLikeChanged: onLikeChanged,
+      );
+    }
     List<PhotoLink> photoLinks = [];
     switch (getPostType(item)) {
       case PostType.video:
@@ -40,7 +49,7 @@ class CommonInfoItemBuilder {
       postId: item.post!.id,
       permalink: item.post!.permalink,
       collectionId: item.post!.postCollection?.id ?? 0,
-      liked: item.liked!,
+      liked: item.liked ?? false,
       blogName: item.post!.blogInfo!.blogName,
       blogNickName: item.post!.blogInfo!.blogNickName,
       title: item.post!.title,
@@ -51,23 +60,54 @@ class CommonInfoItemBuilder {
       likeCount: item.post!.postCount?.favoriteCount ?? 0,
       tags: item.post!.tagList,
       bigAvaImg: item.post!.blogInfo!.bigAvaImg,
+      onLikeChanged: onLikeChanged,
+    );
+  }
+
+  static GeneralPostItem _invalidPostItem(
+    int postId, {
+    void Function(bool liked)? onLikeChanged,
+  }) {
+    return GeneralPostItem(
+      type: PostType.invalid,
+      photoLinks: const [],
+      blogId: 0,
+      postId: postId,
+      permalink: '',
+      collectionId: 0,
+      liked: false,
+      blogName: '',
+      blogNickName: '',
+      title: '',
+      digest: '',
+      content: '',
+      firstImageUrl: '',
+      duration: 0,
+      likeCount: 0,
+      tags: const [],
+      bigAvaImg: '',
+      onLikeChanged: onLikeChanged,
     );
   }
 
   static Widget buildWaterfallFlowPostItem(
-      BuildContext context, PostDetailData item) {
+    BuildContext context,
+    PostDetailData item, {
+    Key? key,
+    void Function(bool liked)? onLikeChanged,
+  }) {
     return WaterfallFlowPostItemWidget(
-      key: ValueKey(item.post!.id),
-      item: getGeneralPostItem(item),
+      key: key ?? ValueKey(item.post?.id ?? item.postData?.id ?? 0),
+      item: getGeneralPostItem(item, onLikeChanged: onLikeChanged),
     );
   }
 
   static bool hasImage(PostDetailData item) {
-    return item.post!.photoLinks.isNotEmpty;
+    return item.post?.photoLinks.isNotEmpty == true;
   }
 
   static bool isVideo(PostDetailData item) {
-    return item.post!.type == 4;
+    return item.post?.type == 4;
   }
 
   static bool isInvalid(PostDetailData item) {
@@ -93,13 +133,16 @@ class CommonInfoItemBuilder {
   static Widget buildNineGridPostItem(
     BuildContext context,
     PostDetailData item, {
+    Key? key,
     double wh = 100,
     int? activePostId,
+    void Function(bool liked)? onLikeChanged,
   }) {
     return GridPostItemWidget(
+      key: key ?? ValueKey(item.post?.id ?? item.postData?.id ?? 0),
       wh: wh,
       activePostId: activePostId,
-      item: getGeneralPostItem(item),
+      item: getGeneralPostItem(item, onLikeChanged: onLikeChanged),
     );
   }
 }

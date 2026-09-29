@@ -105,7 +105,8 @@ class ProgressDialog {
 
   void dismiss() {
     if (_dialogIsOpen) {
-      Navigator.pop(chewieProvider.rootContext);
+      Navigator.pop(chewieProvider.globalNavigatorState?.context ??
+          chewieProvider.rootContext);
       _dialogIsOpen = false;
     }
   }
@@ -125,7 +126,8 @@ class ProgressDialog {
       barrierColor: ChewieTheme.barrierColor,
       barrierDismissible: barrierDismissible,
       barrierLabel: "",
-      context: chewieProvider.rootContext,
+      context: chewieProvider.globalNavigatorState?.context ??
+          chewieProvider.rootContext,
       pageBuilder: (context, animation, secondaryAnimation) =>
           const SizedBox.shrink(),
       transitionBuilder: (context, animation, secondaryAnimation, _) =>

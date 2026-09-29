@@ -32,6 +32,8 @@ class _CustomIndicator extends StatefulWidget {
 
   final Widget indicator;
 
+  final double indicatorOffset;
+
   const _CustomIndicator({
     super.key,
     required this.state,
@@ -40,6 +42,7 @@ class _CustomIndicator extends StatefulWidget {
     this.backgroundColor,
     this.emptyWidget,
     required this.indicator,
+    this.indicatorOffset = 0,
     this.radius,
   });
 
@@ -77,25 +80,18 @@ class _CustomIndicatorState extends State<_CustomIndicator>
   }
 
   Widget _buildIndicator() {
-    final scale = (_offset / _actualTriggerOffset).clamp(0.01, 0.99);
+    final progress =
+        (_offset / math.max(1, _actualTriggerOffset)).clamp(0.0, 1.0);
     Widget indicator;
     switch (_mode) {
       case IndicatorMode.drag:
       case IndicatorMode.armed:
-        const Curve opacityCurve = Interval(
-          0.0,
-          0.8,
-          curve: Curves.easeInOut,
-        );
-        indicator = Opacity(
+        indicator = _CustomActivityIndicator.partiallyRevealed(
           key: const ValueKey('indicatorArmed'),
-          opacity: opacityCurve.transform(scale),
-          child: _CustomActivityIndicator.partiallyRevealed(
-            radius: _radius,
-            progress: scale,
-            color: widget.foregroundColor,
-            indicator: widget.indicator,
-          ),
+          radius: _radius,
+          progress: progress,
+          color: widget.foregroundColor,
+          indicator: widget.indicator,
         );
         break;
       case IndicatorMode.ready:
@@ -112,7 +108,7 @@ class _CustomIndicatorState extends State<_CustomIndicator>
       case IndicatorMode.done:
         indicator = _CustomActivityIndicator(
           key: const ValueKey('indicatorDone'),
-          radius: _radius * scale,
+          radius: _radius,
           color: widget.foregroundColor,
           animating: true,
           indicator: widget.indicator,
@@ -125,8 +121,8 @@ class _CustomIndicatorState extends State<_CustomIndicator>
         break;
     }
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 300),
-      reverseDuration: const Duration(milliseconds: 100),
+      duration: const Duration(milliseconds: 180),
+      reverseDuration: const Duration(milliseconds: 120),
       child: widget.state.result == IndicatorResult.noMore
           ? widget.emptyWidget != null
               ? SizedBox(
@@ -134,7 +130,7 @@ class _CustomIndicatorState extends State<_CustomIndicator>
                   child: widget.emptyWidget!,
                 )
               : Icon(
-                  CupertinoIcons.archivebox,
+                  ChewieIcons.archive,
                   key: const ValueKey('noMoreDefault'),
                   color: widget.foregroundColor,
                 )
@@ -152,25 +148,63 @@ class _CustomIndicatorState extends State<_CustomIndicator>
       offset = _actualTriggerOffset;
     }
     return Stack(
+      key: const ValueKey('refresh-indicator-viewport'),
       alignment: Alignment.center,
+      clipBehavior: widget.indicatorOffset == 0 ? Clip.hardEdge : Clip.none,
       children: [
         SizedBox(
           height: _axis == Axis.vertical ? offset : double.infinity,
           width: _axis == Axis.vertical ? double.infinity : offset,
         ),
         // Indicator.
-        Positioned(
-          top: 0,
-          left: 0,
-          right: _axis == Axis.vertical ? 0 : null,
-          bottom: _axis == Axis.vertical ? null : 0,
-          child: Container(
-            alignment: Alignment.center,
-            height:
-                _axis == Axis.vertical ? _actualTriggerOffset : double.infinity,
-            width:
-                _axis == Axis.vertical ? double.infinity : _actualTriggerOffset,
-            child: _buildIndicator(),
+        Positioned.fill(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Use the laid-out reveal region, not the notifier's prospective
+              // scroll offset: the latter can lead the viewport during a drag.
+              final revealExtent = _axis == Axis.vertical
+                  ? constraints.maxHeight
+                  : constraints.maxWidth;
+              final availableExtent = math.max(
+                0.0,
+                revealExtent - 2 * widget.indicatorOffset.abs(),
+              );
+              // With an unclamped scrollable, the content boundary is driven
+              // by the scroll position. A reported zero is meaningful: the
+              // header can update one frame before the list actually moves.
+              // Never fall back to the header extent in that frame.
+              final notifier = widget.state.notifier;
+              final visibleExtent = notifier.clamping
+                  ? availableExtent
+                  : math.min(
+                      availableExtent,
+                      math.max(
+                        0.0,
+                        notifier.calculateOffsetWithPixels(
+                          notifier.position,
+                          notifier.position.pixels,
+                        ),
+                      ),
+                    );
+              final pullScale =
+                  (visibleExtent * 0.9 / (_radius * 2)).clamp(0.0, 1.0);
+              return ColoredBox(
+                color: widget.backgroundColor ?? const Color(0x00000000),
+                child: Transform.translate(
+                  offset: _axis == Axis.vertical
+                      ? Offset(0, widget.indicatorOffset)
+                      : Offset(widget.indicatorOffset, 0),
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: Transform.scale(
+                      key: const ValueKey('indicatorPullScale'),
+                      scale: pullScale,
+                      child: _buildIndicator(),
+                    ),
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ],
