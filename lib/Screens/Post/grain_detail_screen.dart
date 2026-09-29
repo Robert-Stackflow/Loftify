@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:blur/blur.dart';
 import 'package:flutter/material.dart' hide AnimatedSlide;
@@ -13,6 +15,7 @@ import 'package:loftify/Widgets/PostItem/loftify_post_archive_grid.dart';
 
 import '../../Models/history_response.dart';
 import '../../Models/download_task.dart';
+import '../../Utils/content_order_preference.dart';
 import '../../Screens/Download/batch_download_screen.dart';
 import '../../Utils/post_sequence_source.dart';
 import '../../Widgets/PostDetail/detail_bottom_bar.dart';
@@ -156,6 +159,7 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
   @override
   void initState() {
     super.initState();
+    isOldest = ContentOrderPreference.read(ContentOrderType.grain);
     _postSequenceSource = PostSequenceSource(
       loadMore: () async {
         await _fetchData();
@@ -399,10 +403,13 @@ class GrainDetailScreenState extends BaseDynamicState<GrainDetailScreen>
                   fontSizeDelta: 1,
                   color: Theme.of(context).textTheme.labelMedium?.color,
                   onTap: () {
+                    if (loading) return;
                     HapticFeedback.mediumImpact();
                     setState(() {
                       isOldest = !isOldest;
                     });
+                    unawaited(ContentOrderPreference.write(
+                        ContentOrderType.grain, isOldest));
                     _fetchData(refresh: true, showLoading: true);
                   },
                 ),

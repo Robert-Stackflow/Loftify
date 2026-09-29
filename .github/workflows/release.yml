@@ -171,6 +171,9 @@ jobs:
           ls -R /tmp/artifacts/final
 
       - name: Upload to S3
+        id: upload_s3
+        timeout-minutes: 5
+        continue-on-error: true
         uses: Robert-Stackflow/upload-s3-action@master
         with:
           endpoint: ${{ secrets.AWS_ENDPOINT }}
@@ -179,6 +182,11 @@ jobs:
           aws_bucket: ${{ secrets.AWS_BUCKET }}
           source_dir: /tmp/artifacts/final
           destination_dir: Loftify/${{ steps.get_version.outputs.version }}
+      - name: Report S3 upload failure
+        if: steps.upload_s3.outcome == 'failure'
+        run: |
+          echo "::warning title=S3 upload failed::Continuing with GitHub Release upload."
+          echo "S3 upload failed; GitHub Release upload will still run." >> "$GITHUB_STEP_SUMMARY"
       - name: Upload to release
         uses: Robert-Stackflow/release-action@master
         with:

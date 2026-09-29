@@ -25,6 +25,8 @@ class HiveUtil {
   static const String cookieKey = "cookieKey";
   static const String customAvatarBoxKey = "customAvatarBox";
   static const String searchHistoryKey = "searchHistory";
+  static const String collectionOldestFirstKey = "collectionOldestFirst";
+  static const String grainOldestFirstKey = "grainOldestFirst";
 
   //General
   static const String localeKey = "locale";
