@@ -117,6 +117,7 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
   }
 
   void scrollToTopOrRefresh() {
+    if (appProvider.token.isEmpty) return;
     ScrollController controller = getCurrentController();
     if (controller.hasClients && controller.offset > 30) {
       controller.animateTo(0,
@@ -145,32 +146,28 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
     return controller;
   }
 
-  Function getCurrentCallRefresh() {
-    late Function callRefresh;
+  VoidCallback? getCurrentCallRefresh() {
     switch (_currentTabIndex) {
       case 1:
-        callRefresh =
-            (_tagTabKey.currentState as SubscribeTagTabState).callRefresh;
-        break;
+        final state = _tagTabKey.currentState;
+        return state is SubscribeTagTabState ? state.callRefresh : null;
       case 2:
-        callRefresh =
-            (_collectionTabKey.currentState as SubscribeCollectionTabState)
-                .callRefresh;
-        break;
+        final state = _collectionTabKey.currentState;
+        return state is SubscribeCollectionTabState ? state.callRefresh : null;
       case 3:
-        callRefresh =
-            (_grainTabKey.currentState as SubscribeGrainTabState).callRefresh;
-        break;
+        final state = _grainTabKey.currentState;
+        return state is SubscribeGrainTabState ? state.callRefresh : null;
       case 0:
-        callRefresh =
-            (_followTabKey.currentState as FollowTabState).callRefresh;
-        break;
+        final state = _followTabKey.currentState;
+        return state is FollowTabState ? state.callRefresh : null;
+      default:
+        return null;
     }
-    return callRefresh;
   }
 
   void refresh() {
-    getCurrentCallRefresh()();
+    if (appProvider.token.isEmpty) return;
+    getCurrentCallRefresh()?.call();
   }
 
   void scrollToTop() {

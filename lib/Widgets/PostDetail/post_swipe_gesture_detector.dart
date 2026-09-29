@@ -1,9 +1,11 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
-/// A horizontal drag surface that yields the gesture arena when a pointer
-/// starts inside an interactive horizontal child such as an image carousel.
-class PostSwipeGestureDetector extends StatelessWidget {
+/// Observes a deliberate horizontal pointer movement without entering the
+/// gesture arena. HTML's SelectionArea otherwise wins the arena before the
+/// outer post swipe recognizer, making swipes on article text ineffective.
+/// Interactive horizontal children can opt out through [excludedRegions].
+class PostSwipeGestureDetector extends StatefulWidget {
   const PostSwipeGestureDetector({
     super.key,
     required this.child,
@@ -25,81 +27,144 @@ class PostSwipeGestureDetector extends StatelessWidget {
   final GestureDragEndCallback? onHorizontalDragEnd;
   final GestureDragCancelCallback? onHorizontalDragCancel;
 
+  @override
+  State<PostSwipeGestureDetector> createState() =>
+      _PostSwipeGestureDetectorState();
+}
+
+class _PostSwipeGestureDetectorState extends State<PostSwipeGestureDetector> {
+  int? _pointer;
+  Offset? _start;
+  Offset? _last;
+  VelocityTracker? _velocity;
+  bool _dragging = false;
+
   bool _canStartAt(Offset globalPosition) {
-    for (final key in excludedRegions) {
-      final renderObject = key.currentContext?.findRenderObject();
-      if (renderObject is! RenderBox ||
-          !renderObject.attached ||
-          !renderObject.hasSize) {
-        continue;
-      }
-      final localPosition = renderObject.globalToLocal(globalPosition);
-      if ((Offset.zero & renderObject.size).contains(localPosition)) {
-        return false;
-      }
+    if (_isEdge(globalPosition)) return true;
+    for (final key in widget.excludedRegions) {
+      final region = key.currentContext?.findRenderObject();
+      if (region is! RenderBox || !region.attached || !region.hasSize) continue;
+      final local = region.globalToLocal(globalPosition);
+      if ((Offset.zero & region.size).contains(local)) return false;
     }
     return true;
   }
 
-  bool _isEdgeActivation(BuildContext context, Offset globalPosition) {
-    if (edgeActivationWidth <= 0) return false;
+  bool _isEdge(Offset globalPosition) {
     final renderObject = context.findRenderObject();
-    if (renderObject is! RenderBox ||
-        !renderObject.attached ||
-        !renderObject.hasSize) {
-      return false;
+    if (widget.edgeActivationWidth > 0 &&
+        renderObject is RenderBox &&
+        renderObject.attached &&
+        renderObject.hasSize) {
+      final local = renderObject.globalToLocal(globalPosition);
+      if (local.dx <= widget.edgeActivationWidth ||
+          local.dx >= renderObject.size.width - widget.edgeActivationWidth) {
+        return true;
+      }
     }
-    final localPosition = renderObject.globalToLocal(globalPosition);
-    return localPosition.dx <= edgeActivationWidth ||
-        localPosition.dx >= renderObject.size.width - edgeActivationWidth;
+    return false;
+  }
+
+  void _onDown(PointerDownEvent event) {
+    if (_pointer != null || !_canStartAt(event.position)) return;
+    _pointer = event.pointer;
+    _start = event.position;
+    _last = event.position;
+    _velocity = VelocityTracker.withKind(event.kind)
+      ..addPosition(event.timeStamp, event.position);
+  }
+
+  void _onMove(PointerMoveEvent event) {
+    if (event.pointer != _pointer) return;
+    final start = _start!;
+    final previous = _last!;
+    _last = event.position;
+    _velocity?.addPosition(event.timeStamp, event.position);
+    var delta = event.position - previous;
+    if (!_dragging) {
+      final movement = event.position - start;
+      if (movement.dx.abs() < 12 ||
+          movement.dx.abs() <= movement.dy.abs() * 1.5) {
+        return;
+      }
+      _dragging = true;
+      widget.onHorizontalDragStart?.call(DragStartDetails(
+        globalPosition: start,
+      ));
+      // Include movement accumulated before the horizontal intent threshold,
+      // otherwise the content visibly lags behind the first accepted frame.
+      delta = movement;
+    }
+    widget.onHorizontalDragUpdate?.call(DragUpdateDetails(
+      globalPosition: event.position,
+      delta: Offset(delta.dx, 0),
+      primaryDelta: delta.dx,
+    ));
+  }
+
+  void _onUp(PointerUpEvent event) {
+    if (event.pointer != _pointer) return;
+    _velocity?.addPosition(event.timeStamp, event.position);
+    if (_dragging) {
+      final horizontalVelocity =
+          _velocity?.getVelocity().pixelsPerSecond.dx ?? 0.0;
+      widget.onHorizontalDragEnd?.call(DragEndDetails(
+        velocity: Velocity(pixelsPerSecond: Offset(horizontalVelocity, 0)),
+        primaryVelocity: horizontalVelocity,
+      ));
+    }
+    _clear();
+  }
+
+  void _onCancel(PointerCancelEvent event) {
+    if (event.pointer != _pointer) return;
+    if (_dragging) widget.onHorizontalDragCancel?.call();
+    _clear();
+  }
+
+  void _clear() {
+    _pointer = null;
+    _start = null;
+    _last = null;
+    _velocity = null;
+    _dragging = false;
   }
 
   @override
   Widget build(BuildContext context) {
     return RawGestureDetector(
-      behavior: behavior,
+      behavior: widget.behavior,
       gestures: <Type, GestureRecognizerFactory>{
-        _PostSwipeHorizontalDragGestureRecognizer:
-            GestureRecognizerFactoryWithHandlers<
-                _PostSwipeHorizontalDragGestureRecognizer>(
-          _PostSwipeHorizontalDragGestureRecognizer.new,
-          (recognizer) {
-            recognizer
-              ..canStartAt = (position) {
-                return _isEdgeActivation(context, position) ||
-                    _canStartAt(position);
-              }
-              ..shouldEagerAcceptAt = (position) {
-                return _isEdgeActivation(context, position);
-              }
-              ..onStart = onHorizontalDragStart
-              ..onUpdate = onHorizontalDragUpdate
-              ..onEnd = onHorizontalDragEnd
-              ..onCancel = onHorizontalDragCancel;
-          },
+        _EdgePostSwipeRecognizer:
+            GestureRecognizerFactoryWithHandlers<_EdgePostSwipeRecognizer>(
+          _EdgePostSwipeRecognizer.new,
+          (recognizer) => recognizer
+            ..isEdge = _isEdge
+            ..onStart = (_) {},
         ),
       },
-      child: child,
+      child: Listener(
+        behavior: widget.behavior,
+        onPointerDown: _onDown,
+        onPointerMove: _onMove,
+        onPointerUp: _onUp,
+        onPointerCancel: _onCancel,
+        child: widget.child,
+      ),
     );
   }
 }
 
-class _PostSwipeHorizontalDragGestureRecognizer
-    extends HorizontalDragGestureRecognizer {
-  bool Function(Offset globalPosition)? canStartAt;
-  bool Function(Offset globalPosition)? shouldEagerAcceptAt;
+class _EdgePostSwipeRecognizer extends HorizontalDragGestureRecognizer {
+  bool Function(Offset position)? isEdge;
 
   @override
-  bool isPointerAllowed(PointerEvent event) {
-    if (!(canStartAt?.call(event.position) ?? true)) return false;
-    return super.isPointerAllowed(event);
-  }
+  bool isPointerAllowed(PointerEvent event) =>
+      (isEdge?.call(event.position) ?? false) && super.isPointerAllowed(event);
 
   @override
   void addAllowedPointer(PointerDownEvent event) {
     super.addAllowedPointer(event);
-    if (shouldEagerAcceptAt?.call(event.position) ?? false) {
-      resolve(GestureDisposition.accepted);
-    }
+    resolve(GestureDisposition.accepted);
   }
 }

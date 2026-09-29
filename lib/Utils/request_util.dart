@@ -220,12 +220,12 @@ class RequestUtil {
       list['Data'] = response.data.toString();
       // .substring(0, min(1000, response.data.toString().length));
     }
-    IPrint.format(
-      tag: response.requestOptions.method,
-      status: "Success",
-      list: list,
-      useLogger: true,
-    );
+    // IPrint.format(
+    //   tag: response.requestOptions.method,
+    //   status: "Success",
+    //   list: list,
+    //   useLogger: true,
+    // );
   }
 
   static get(

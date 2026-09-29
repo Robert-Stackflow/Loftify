@@ -59,6 +59,7 @@ Widget _host({
   ThemeData? theme,
   bool enableBlur = true,
   int currentIndex = 0,
+  List<LoftifyNavigationDestination> destinations = _destinations,
   ValueChanged<int>? onSelect,
   ValueChanged<int>? onDoubleTap,
   VoidCallback? onBodyTap,
@@ -81,7 +82,7 @@ Widget _host({
           child: const ColoredBox(color: Color(0xFFB9DAD7)),
         ),
         bottomNavigationBar: LoftifyGlassNavigationBar(
-          destinations: _destinations,
+          destinations: destinations,
           currentIndex: currentIndex,
           enableBlur: enableBlur,
           displayStyle: displayStyle,
@@ -94,6 +95,25 @@ Widget _host({
 }
 
 void main() {
+  testWidgets('three visible destinations can leave search unselected',
+      (tester) async {
+    final selected = <int>[];
+    await tester.pumpWidget(_host(
+      currentIndex: -1,
+      destinations: [
+        _destinations[0],
+        _destinations[2],
+        _destinations[3],
+      ],
+      onSelect: selected.add,
+    ));
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Search'), findsNothing);
+    await tester.tap(find.text('Activity'));
+    expect(selected, [1]);
+  });
+
   testWidgets('uses a clipped translucent blur surface with safe-area inset', (
     tester,
   ) async {
@@ -653,9 +673,8 @@ void main() {
     expect(source, contains('LoftifyGlassNavigationBar('));
     expect(source, contains('enableBlur: !preferences.reduceTransparency'));
     expect(source, contains('shouldShowForKeyboard('));
-    expect(source, contains('_pageController.animateToPage('));
-    expect(source, contains('curve: Curves.easeOutCubic'));
-    expect(source, contains('if (duration == Duration.zero)'));
+    expect(source,
+        contains('_pageController.jumpToPage(_visibleIndexFor(index))'));
     expect(source, isNot(contains('MyBottomNavigationBar(')));
     expect(mainSource, contains('portrait: PanelScreen(key: panelScreenKey)'));
     expect(mainSource, contains('_sideBar(leftPadding: 8, rightPadding: 8)'));

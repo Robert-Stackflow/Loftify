@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:loftify/Utils/app_provider.dart';
+import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/l10n/l10n.dart';
 
 void main() {
@@ -22,6 +23,8 @@ void main() {
   });
 
   tearDown(() async {
+    appProvider.hideHomeAppBarOnScroll = false;
+    appProvider.hideSearchNavigation = false;
     appProvider.locale = null;
     appProvider.themeMode = ActiveThemeMode.system;
     await ChewieHiveUtil.put(
@@ -37,6 +40,19 @@ void main() {
     expect(resolveAppLocale(const Locale('zh', 'HK')), const Locale('zh'));
     expect(resolveAppLocale(const Locale('en', 'GB')), const Locale('en'));
     expect(resolveAppLocale(const Locale('ja')), const Locale('en'));
+  });
+
+  test('home app bar and navigation search preferences persist separately',
+      () async {
+    expect(appProvider.hideHomeAppBarOnScroll, isFalse);
+    expect(appProvider.hideSearchNavigation, isFalse);
+
+    appProvider.hideHomeAppBarOnScroll = true;
+    appProvider.hideSearchNavigation = true;
+    await Hive.box(ChewieHiveUtil.settingsBox).flush();
+
+    expect(ChewieHiveUtil.getBool(HiveUtil.hideHomeAppBarOnScrollKey), isTrue);
+    expect(ChewieHiveUtil.getBool(HiveUtil.hideSearchNavigationKey), isTrue);
   });
 
   test('custom font selection can be restored from persisted metadata',

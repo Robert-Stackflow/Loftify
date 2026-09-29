@@ -65,6 +65,8 @@ class HiveUtil {
   static const String reduceTransparencyKey = "reduceTransparency";
   static const String navigationBarDisplayStyleKey =
       "navigationBarDisplayStyle";
+  static const String hideHomeAppBarOnScrollKey = "hideHomeAppBarOnScroll";
+  static const String hideSearchNavigationKey = "hideSearchNavigation";
   static const String navItemsKey = "navItems";
   static const String tagDetailPostLayoutTypeKey = "tagDetailPostLayoutType";
   static const String showPostDetailFloatingOperationBarKey =

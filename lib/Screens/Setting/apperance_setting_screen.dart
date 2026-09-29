@@ -175,6 +175,23 @@ class _AppearanceSettingScreenState
         CaptionItem(
           title: appLocalizations.home,
           children: [
+            Selector<AppProvider, bool>(
+              selector: (context, provider) => provider.hideHomeAppBarOnScroll,
+              builder: (context, value, child) => CheckboxItem(
+                value: value,
+                title: appLocalizations.hideHomeAppBarOnScroll,
+                onTap: () => appProvider.hideHomeAppBarOnScroll = !value,
+              ),
+            ),
+            Selector<AppProvider, bool>(
+              selector: (context, provider) => provider.hideSearchNavigation,
+              builder: (context, value, child) => CheckboxItem(
+                value: value,
+                title: appLocalizations.hideSearchNavigation,
+                description: appLocalizations.hideSearchNavigationDescription,
+                onTap: () => appProvider.hideSearchNavigation = !value,
+              ),
+            ),
             CheckboxItem(
               value: _showRecommendArticle,
               title: appLocalizations.showArticleInRecommendFlow,

@@ -28,11 +28,26 @@ class FontItem extends StatefulWidget {
 }
 
 class FontItemState extends State<FontItem> {
-  bool exist = true;
+  late Future<bool> _fontExists;
+
+  @override
+  void initState() {
+    super.initState();
+    _fontExists = CustomFont.isFontFileExist(widget.font);
+  }
+
+  @override
+  void didUpdateWidget(covariant FontItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.font != widget.font) {
+      _fontExists = CustomFont.isFontFileExist(widget.font);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final selected = widget.font == widget.currentFont;
+    final labelHeight = MediaQuery.textScalerOf(context).scale(36);
     return Semantics(
       container: true,
       selected: selected,
@@ -48,28 +63,24 @@ class FontItemState extends State<FontItem> {
               Container(
                 width: widget.width,
                 height: widget.height,
-                padding: const EdgeInsets.only(top: 8, left: 10, right: 10),
                 decoration: BoxDecoration(
-                  color: ChewieTheme.canvasColor,
+                  color: selected
+                      ? ChewieTheme.primaryColor.withValues(alpha: 0.06)
+                      : ChewieTheme.canvasColor,
                   border: selected
                       ? Border.all(color: ChewieTheme.primaryColor, width: 1.5)
                       : ChewieTheme.border,
-                  borderRadius: ChewieDimens.borderRadius8,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Stack(
                   children: [
-                    SizedBox(
-                      height: widget.height - 72,
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(12, 14, 12, 40),
                       child: MediaQuery.withNoTextScaling(
-                        child: FutureBuilder(
-                          future: Future<CustomFont>.sync(() async {
-                            exist =
-                                await CustomFont.isFontFileExist(widget.font);
-                            return widget.font;
-                          }),
+                        child: FutureBuilder<bool>(
+                          future: _fontExists,
                           builder: (context, snapshot) {
-                            return exist
+                            return snapshot.data != false
                                 ? Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -112,62 +123,87 @@ class FontItemState extends State<FontItem> {
                                   )
                                 : Text(
                                     chewieLocalizations.fontFileNotExist,
-                                    style: ChewieTheme.bodyMedium.apply(
-                                      fontFamily: widget.font.fontFamily,
-                                      fontWeightDelta: 0,
-                                    ),
-                                    maxLines: 3,
+                                    style: ChewieTheme.bodySmall,
+                                    maxLines: 4,
                                     overflow: TextOverflow.ellipsis,
                                   );
                           },
                         ),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Icon(
-                          selected
-                              ? LucideIcons.circleCheck
-                              : LucideIcons.circle,
-                          size: 18,
-                          color: selected
-                              ? ChewieTheme.primaryColor
-                              : ChewieTheme.bodySmall.color,
-                        ),
-                        if (widget.showDelete) const SizedBox(width: 4),
-                        if (widget.showDelete)
-                          IconButton(
-                            key: ValueKey(
-                              'font-delete-${widget.font.fontFamily}',
-                            ),
-                            icon: Icon(
-                              LucideIcons.trash2,
-                              color: ChewieTheme.errorColor,
-                              size: 17,
-                            ),
-                            constraints: const BoxConstraints.tightFor(
-                              width: 48,
-                              height: 48,
-                            ),
-                            padding: EdgeInsets.zero,
-                            onPressed: () {
-                              widget.onDelete?.call(widget.font);
-                            },
+                    if (selected)
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: ChewieTheme.primaryColor,
+                            shape: BoxShape.circle,
                           ),
-                      ],
-                    ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(3),
+                            child: Icon(
+                              LucideIcons.check,
+                              size: 12,
+                              color:
+                                  ChewieTheme.primaryColor.computeLuminance() >
+                                          0.5
+                                      ? Colors.black
+                                      : Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (widget.showDelete)
+                      Positioned(
+                        right: 2,
+                        bottom: 2,
+                        child: IconButton(
+                          key:
+                              ValueKey('font-delete-${widget.font.fontFamily}'),
+                          icon: Icon(
+                            LucideIcons.trash2,
+                            color: ChewieTheme.errorColor,
+                            size: 17,
+                          ),
+                          constraints: const BoxConstraints.tightFor(
+                            width: 40,
+                            height: 40,
+                          ),
+                          padding: EdgeInsets.zero,
+                          onPressed: () => widget.onDelete?.call(widget.font),
+                        ),
+                      ),
+                    if (!widget.showDelete)
+                      Positioned(
+                        left: 12,
+                        bottom: 12,
+                        child: Container(
+                          width: 22,
+                          height: 3,
+                          decoration: BoxDecoration(
+                            color: selected
+                                ? ChewieTheme.primaryColor
+                                : ChewieTheme.borderColor,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                widget.font.intlFontName,
-                style: ChewieTheme.bodySmall.apply(
-                  fontFamily: widget.font.fontFamily,
+              const SizedBox(height: 6),
+              SizedBox(
+                height: labelHeight,
+                child: Center(
+                  child: Text(
+                    widget.font.intlFontName,
+                    style: ChewieTheme.bodySmall,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
-                textAlign: TextAlign.center,
               ),
             ],
           ),
@@ -196,6 +232,7 @@ class EmptyFontItem extends StatefulWidget {
 class EmptyFontItemState extends State<EmptyFontItem> {
   @override
   Widget build(BuildContext context) {
+    final labelHeight = MediaQuery.textScalerOf(context).scale(36);
     return Semantics(
       container: true,
       button: true,
@@ -215,19 +252,25 @@ class EmptyFontItemState extends State<EmptyFontItem> {
                 decoration: BoxDecoration(
                   color: ChewieTheme.canvasColor,
                   border: ChewieTheme.border,
-                  borderRadius: ChewieDimens.borderRadius8,
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   LucideIcons.plus,
-                  size: 40,
+                  size: 30,
                   color: ChewieTheme.labelSmall.color,
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                chewieLocalizations.loadFontFamily,
-                style: ChewieTheme.bodySmall,
-                textAlign: TextAlign.center,
+              const SizedBox(height: 6),
+              SizedBox(
+                height: labelHeight,
+                child: Center(
+                  child: Text(
+                    chewieLocalizations.loadFontFamily,
+                    style: ChewieTheme.bodySmall,
+                    maxLines: 2,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               ),
             ],
           ),

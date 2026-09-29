@@ -115,7 +115,9 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
     _videoListController.removeListener(_handleVideoControllerChanged);
     _videoListController.dispose();
     _pageController.dispose();
-    if (_isFullScreen) {
+    // Leaving the video page must also release the portrait override used
+    // after exiting full screen (not only an active full-screen lock).
+    if (_sizeBeforeFullscreen != null) {
       unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
       unawaited(ResponsiveUtil.restoreOrientationPolicy(
         logicalSize: _sizeBeforeFullscreen,
@@ -433,7 +435,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      canPop: !_isFullScreen && !_fullScreenTransitionInProgress,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _handleBack();
       },
@@ -477,6 +479,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
         if (mounted) setState(() => _authorPaneOpen = false);
         _resumeFromInterruption();
       },
+      onBackRequested: _handleBack,
       child: content,
     );
   }
@@ -1118,11 +1121,14 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
         return;
       }
 
-      if (mounted) setState(() => _isFullScreen = false);
       await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-      await ResponsiveUtil.restoreOrientationPolicy(
-        logicalSize: _sizeBeforeFullscreen,
+      // Restore a definite portrait orientation before clearing the full-screen
+      // state. The usual tablet policy may allow landscape and leave the video
+      // page sideways even though the controls already say it is not full screen.
+      await SystemChrome.setPreferredOrientations(
+        const [DeviceOrientation.portraitUp],
       );
+      if (mounted) setState(() => _isFullScreen = false);
     } finally {
       _fullScreenTransitionInProgress = false;
     }
@@ -1166,6 +1172,7 @@ class InteractiveAuthorSwipe extends StatefulWidget {
     required this.authorBuilder,
     this.onOpen,
     this.onClose,
+    this.onBackRequested,
   });
 
   final Object authorId;
@@ -1173,6 +1180,7 @@ class InteractiveAuthorSwipe extends StatefulWidget {
   final WidgetBuilder authorBuilder;
   final VoidCallback? onOpen;
   final VoidCallback? onClose;
+  final VoidCallback? onBackRequested;
 
   @override
   State<InteractiveAuthorSwipe> createState() => InteractiveAuthorSwipeState();
@@ -1290,7 +1298,11 @@ class InteractiveAuthorSwipeState extends State<InteractiveAuthorSwipe>
       onRemove: () {
         if (identical(_historyEntry, entry)) _historyEntry = null;
         if (_removingHistoryEntry || !mounted) return;
-        unawaited(_animateClosed(removeHistoryEntry: false));
+        if (widget.onBackRequested != null) {
+          widget.onBackRequested!();
+        } else {
+          unawaited(_animateClosed(removeHistoryEntry: false));
+        }
       },
     );
     _historyEntry = entry;
@@ -1313,7 +1325,13 @@ class InteractiveAuthorSwipeState extends State<InteractiveAuthorSwipe>
         builder: (context) => PopScope(
           canPop: false,
           onPopInvokedWithResult: (didPop, _) {
-            if (!didPop) unawaited(_animateClosed());
+            if (!didPop) {
+              if (widget.onBackRequested != null) {
+                widget.onBackRequested!();
+              } else {
+                unawaited(_animateClosed());
+              }
+            }
           },
           child: widget.authorBuilder(context),
         ),
@@ -1326,7 +1344,13 @@ class InteractiveAuthorSwipeState extends State<InteractiveAuthorSwipe>
     return PopScope(
       canPop: !_open,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && _open) unawaited(_animateClosed());
+        if (!didPop && _open) {
+          if (widget.onBackRequested != null) {
+            widget.onBackRequested!();
+          } else {
+            unawaited(_animateClosed());
+          }
+        }
       },
       child: LayoutBuilder(
         builder: (context, constraints) {

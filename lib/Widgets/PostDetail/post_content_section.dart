@@ -12,6 +12,7 @@ class PostContentSection extends StatefulWidget {
     super.key,
     required this.title,
     required this.content,
+    this.url,
     this.style,
     this.onDownloadSuccess,
     this.textExtractor,
@@ -19,6 +20,7 @@ class PostContentSection extends StatefulWidget {
 
   final String title;
   final String content;
+  final String? url;
   final TextStyle? style;
   final VoidCallback? onDownloadSuccess;
   final String Function(String content)? textExtractor;
@@ -45,6 +47,7 @@ class _PostContentSectionState extends State<PostContentSection> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.title != widget.title ||
         oldWidget.content != widget.content ||
+        oldWidget.url != widget.url ||
         oldWidget.style != widget.style ||
         oldWidget.onDownloadSuccess != widget.onDownloadSuccess ||
         oldWidget.textExtractor != widget.textExtractor) {
@@ -69,6 +72,7 @@ class _PostContentSectionState extends State<PostContentSection> {
         _renderedContent = RepaintBoundary(
           key: ValueKey(_revision),
           child: CustomHtmlWidget(
+            url: widget.url,
             content: '$htmlTitle${widget.content}',
             style: widget.style,
             heightDelta: 0,

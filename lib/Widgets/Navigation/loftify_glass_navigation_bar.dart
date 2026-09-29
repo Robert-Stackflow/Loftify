@@ -38,7 +38,8 @@ class LoftifyGlassNavigationBar extends StatelessWidget {
     this.enableBlur = true,
     this.displayStyle = NavigationBarDisplayStyle.iconOnly,
   })  : assert(destinations.length >= 2),
-        assert(currentIndex >= 0 && currentIndex < destinations.length);
+        assert(currentIndex == -1 ||
+            (currentIndex >= 0 && currentIndex < destinations.length));
 
   final List<LoftifyNavigationDestination> destinations;
   final int currentIndex;

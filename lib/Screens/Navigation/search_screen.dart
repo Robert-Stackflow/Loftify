@@ -25,7 +25,9 @@ import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  const SearchScreen({super.key, this.showBack = false});
+
+  final bool showBack;
 
   static const String routeName = "/search";
 
@@ -206,6 +208,7 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
     return Scaffold(
       backgroundColor: ChewieTheme.getBackground(context),
       appBar: ResponsiveAppBar(
+        showBack: widget.showBack,
         titleWidget: _buildSearchBar(),
         titleLeftMargin: 0,
         rightSpacing: 0,
@@ -745,13 +748,16 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
   }
 
   Widget _buildSearchBar() {
-    double width = ResponsiveUtil.isLandscapeLayout()
-        ? searchBarWidth - 80
-        : min(MediaQuery.of(context).size.width, searchBarWidth);
+    final isCompactWidth = MediaQuery.sizeOf(context).width < 600;
     return Container(
+      key: const ValueKey('search-navigation-bar'),
       margin: const EdgeInsets.all(10),
-      constraints:
-          BoxConstraints(maxWidth: width, minWidth: width, maxHeight: 56),
+      constraints: BoxConstraints(
+        maxWidth: !isCompactWidth && ResponsiveUtil.isLandscapeLayout()
+            ? searchBarWidth - 80
+            : double.infinity,
+        maxHeight: 56,
+      ),
       child: ItemBuilder.buildSearchBar(
         context: context,
         borderRadius: 8,

@@ -94,4 +94,26 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('logged-out navigation tap does not refresh an unmounted tab',
+      (tester) async {
+    appProvider.token = '';
+    addTearDown(() => appProvider.token = 'test-account');
+
+    await mount(tester, const Locale('zh'), false);
+    final state = tester.state<DynamicScreenState>(find.byType(DynamicScreen));
+    final requestsBeforeTap = requests;
+
+    expect(state.getCurrentCallRefresh(), isNull);
+    state.onTapBottomNavigation();
+    state.scrollToTopOrRefresh();
+    state.refresh();
+    await tester.pump();
+
+    expect(requests, requestsBeforeTap);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 5));
+    expect(tester.takeException(), isNull);
+  });
 }

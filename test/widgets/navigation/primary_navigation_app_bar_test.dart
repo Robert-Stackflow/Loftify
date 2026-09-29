@@ -18,7 +18,7 @@ void main() {
     ).readAsStringSync(),
   };
 
-  test('primary pages use fixed responsive app bars', () {
+  test('primary pages retain responsive app bars', () {
     for (final source in sources.values) {
       expect(source, contains('appBar:'));
       expect(source, contains('ResponsiveAppBar('));
@@ -31,13 +31,37 @@ void main() {
     }
   });
 
-  test('home and search restore their original top-bar structure', () {
+  test('home supports optional floating top bar and search action', () {
     expect(sources['home'], contains('title: appLocalizations.home'));
+    expect(sources['home'], contains('appBar: hideAppBar ? null'));
+    expect(sources['home'], contains('SliverAppBar('));
+    expect(sources['home'], contains('ExtendedNestedScrollView('));
+    expect(sources['home'], contains('floatHeaderSlivers: true'));
+    expect(sources['home'], contains('onlyOneScrollInBody: true'));
+    expect(sources['home'], contains('PrimaryScrollController.of(context)'));
+    expect(
+        sources['home'], isNot(contains('SafeArea(\n        top: hideAppBar')));
+    expect(sources['home'], contains('safeArea: false'));
+    expect(sources['home'], contains('refreshOnStart: true'));
+    expect(sources['home'], contains('clamping: true'));
+    expect(sources['home'], contains('await _triggerRefresh()'));
+    expect(sources['home'],
+        contains('distanceFromTop <= MediaQuery.sizeOf(context).height / 2'));
+    expect(sources['home'], isNot(contains('_refreshFeedDirectly')));
+    expect(sources['home'], contains('floating: true'));
+    expect(sources['home'], contains('snap: true'));
+    expect(sources['home'], contains('hideSearchNavigation'));
+    expect(sources['home'], contains('SearchScreen(showBack: true)'));
     expect(
       sources['home'],
       isNot(contains('SliverToBoxAdapter(child: _buildNavigationHeader())')),
     );
 
+    expect(sources['search'], contains('titleWidget: _buildSearchBar()'));
+    expect(sources['search'], contains('showBack: widget.showBack'));
+  });
+
+  test('search keeps its original top-bar structure', () {
     expect(sources['search'], contains('titleWidget: _buildSearchBar()'));
     expect(sources['search'], contains('borderRadius: 8'));
     expect(sources['search'], isNot(contains('search-navigation-avatar')));

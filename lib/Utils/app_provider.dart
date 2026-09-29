@@ -52,6 +52,9 @@ AppProvider appProvider = AppProvider();
 class AppProvider with ChangeNotifier {
   AppProvider() {
     Intl.defaultLocale = (_locale ?? resolveSystemAppLocale()).toString();
+    if (_hideSearchNavigation && _sidebarChoice == SideBarChoice.Search) {
+      _sidebarChoice = SideBarChoice.Home;
+    }
   }
 
   bool _pinSettled = HiveUtil.hasGuesturePasswd();
@@ -106,6 +109,9 @@ class AppProvider with ChangeNotifier {
   SideBarChoice get sidebarChoice => _sidebarChoice;
 
   set sidebarChoice(SideBarChoice value) {
+    if (_hideSearchNavigation && value == SideBarChoice.Search) {
+      value = SideBarChoice.Home;
+    }
     _sidebarChoice = value;
     ChewieHiveUtil.put(HiveUtil.sidebarChoiceKey, value.key);
     notifyListeners();
@@ -332,6 +338,39 @@ class AppProvider with ChangeNotifier {
     if (value == _navigationBarDisplayStyle) return;
     _navigationBarDisplayStyle = value;
     ChewieHiveUtil.put(HiveUtil.navigationBarDisplayStyleKey, value.key);
+    notifyListeners();
+  }
+
+  bool _hideHomeAppBarOnScroll = ChewieHiveUtil.getBool(
+    HiveUtil.hideHomeAppBarOnScrollKey,
+    defaultValue: false,
+  );
+
+  bool get hideHomeAppBarOnScroll => _hideHomeAppBarOnScroll;
+
+  set hideHomeAppBarOnScroll(bool value) {
+    if (value == _hideHomeAppBarOnScroll) return;
+    _hideHomeAppBarOnScroll = value;
+    ChewieHiveUtil.put(HiveUtil.hideHomeAppBarOnScrollKey, value);
+    notifyListeners();
+  }
+
+  bool _hideSearchNavigation = ChewieHiveUtil.getBool(
+    HiveUtil.hideSearchNavigationKey,
+    defaultValue: false,
+  );
+
+  bool get hideSearchNavigation => _hideSearchNavigation;
+
+  set hideSearchNavigation(bool value) {
+    if (value == _hideSearchNavigation) return;
+    _hideSearchNavigation = value;
+    ChewieHiveUtil.put(HiveUtil.hideSearchNavigationKey, value);
+    if (value && _sidebarChoice == SideBarChoice.Search) {
+      _sidebarChoice = SideBarChoice.Home;
+      ChewieHiveUtil.put(HiveUtil.sidebarChoiceKey, _sidebarChoice.key);
+    }
+    panelScreenState?.updateSearchNavigationVisibility();
     notifyListeners();
   }
 

@@ -400,10 +400,13 @@ class MainScreenState extends BaseWindowState<MainScreen>
         children: [
           ResponsiveUtil.selectByPlatform(desktop: const WindowMoveHandle()),
           Consumer<LoftifyControlProvider>(
-            builder: (_, cloudControlProvider, __) =>
-                Selector<AppProvider, SideBarChoice>(
-              selector: (context, appProvider) => appProvider.sidebarChoice,
-              builder: (context, sidebarChoice, child) =>
+            builder: (_, cloudControlProvider, __) => Selector<AppProvider,
+                ({SideBarChoice sidebarChoice, bool hideSearch})>(
+              selector: (context, appProvider) => (
+                sidebarChoice: appProvider.sidebarChoice,
+                hideSearch: appProvider.hideSearchNavigation,
+              ),
+              builder: (context, preferences, child) =>
                   Selector<AppProvider, bool>(
                 selector: (context, appProvider) =>
                     !appProvider.showPanelNavigator,
@@ -417,8 +420,8 @@ class MainScreenState extends BaseWindowState<MainScreen>
                     const SizedBox(height: 8),
                     ToolButton(
                       context: context,
-                      selected:
-                          hideNavigator && sidebarChoice == SideBarChoice.Home,
+                      selected: hideNavigator &&
+                          preferences.sidebarChoice == SideBarChoice.Home,
                       icon: LoftifyIcons.home,
                       selectedIcon: LoftifyIcons.home,
                       onPressed: () async {
@@ -427,23 +430,25 @@ class MainScreenState extends BaseWindowState<MainScreen>
                       },
                       iconSize: 24,
                     ),
+                    if (!preferences.hideSearch) ...[
+                      const SizedBox(height: 8),
+                      ToolButton(
+                        context: context,
+                        selected: hideNavigator &&
+                            preferences.sidebarChoice == SideBarChoice.Search,
+                        icon: LoftifyIcons.search,
+                        selectedIcon: LoftifyIcons.search,
+                        onPressed: () async {
+                          appProvider.sidebarChoice = SideBarChoice.Search;
+                          panelScreenState?.popAll(false);
+                        },
+                      ),
+                    ],
                     const SizedBox(height: 8),
                     ToolButton(
                       context: context,
                       selected: hideNavigator &&
-                          sidebarChoice == SideBarChoice.Search,
-                      icon: LoftifyIcons.search,
-                      selectedIcon: LoftifyIcons.search,
-                      onPressed: () async {
-                        appProvider.sidebarChoice = SideBarChoice.Search;
-                        panelScreenState?.popAll(false);
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    ToolButton(
-                      context: context,
-                      selected: hideNavigator &&
-                          sidebarChoice == SideBarChoice.Dynamic,
+                          preferences.sidebarChoice == SideBarChoice.Dynamic,
                       icon: LoftifyIcons.activity,
                       selectedIcon: LoftifyIcons.activity,
                       onPressed: () async {
@@ -454,8 +459,8 @@ class MainScreenState extends BaseWindowState<MainScreen>
                     const SizedBox(height: 8),
                     ToolButton(
                       context: context,
-                      selected:
-                          hideNavigator && sidebarChoice == SideBarChoice.Mine,
+                      selected: hideNavigator &&
+                          preferences.sidebarChoice == SideBarChoice.Mine,
                       icon: LoftifyIcons.profile,
                       selectedIcon: LoftifyIcons.profile,
                       onPressed: () async {

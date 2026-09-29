@@ -28,6 +28,10 @@ abstract class IndicatorNotifier extends ChangeNotifier {
   /// Wait for the task to complete.
   bool _waitTaskResult;
 
+  int _taskStartCount = 0;
+
+  bool _programmaticCallInProgress = false;
+
   /// Mounted on EasyRefresh.
   bool _mounted = false;
 
@@ -435,6 +439,7 @@ abstract class IndicatorNotifier extends ChangeNotifier {
     ScrollController? scrollController,
     bool jumpToEdge = true,
     bool force = false,
+    bool triggerHaptic = true,
   }) async {
     if (!_mounted) {
       return Future.value();
@@ -448,22 +453,30 @@ abstract class IndicatorNotifier extends ChangeNotifier {
       _mode = IndicatorMode.inactive;
       _processing = false;
     }
-    await animateToOffset(
-      offset: actualTriggerOffset + overOffset,
-      mode: IndicatorMode.ready,
-      duration: duration,
-      curve: curve,
-      scrollController: scrollController,
-      jumpToEdge: jumpToEdge,
-    );
-    // With non-clamping nested positions there is no real pointer release to
-    // advance `ready` into `processing`. The controller call itself is that
-    // release, so start the task once the reveal animation has reached a
-    // visible overscroll. Guarding on offset keeps unattached controllers a
-    // harmless no-op.
-    if (_offset > 0 && !modeLocked && !noMoreLocked && _canProcess) {
-      _setMode(IndicatorMode.processing);
-      _onTask();
+    final taskStartCount = _taskStartCount;
+    _programmaticCallInProgress = true;
+    try {
+      await animateToOffset(
+        offset: actualTriggerOffset + overOffset,
+        mode: IndicatorMode.ready,
+        duration: duration,
+        curve: curve,
+        scrollController: scrollController,
+        jumpToEdge: jumpToEdge,
+      );
+      // A nested position may not emit a pointer release. Start the task once
+      // the header is visible, unless the animation already started it.
+      if (_taskStartCount != taskStartCount) {
+        if (hapticFeedback && triggerHaptic) HapticFeedback.mediumImpact();
+        return;
+      }
+      if (_offset > 0 && !modeLocked && !noMoreLocked && _canProcess) {
+        if (hapticFeedback && triggerHaptic) HapticFeedback.mediumImpact();
+        _setMode(IndicatorMode.processing);
+        _onTask();
+      }
+    } finally {
+      _programmaticCallInProgress = false;
     }
   }
 
@@ -578,7 +591,9 @@ abstract class IndicatorNotifier extends ChangeNotifier {
       return;
     }
     // Haptic feedback
-    if (hapticFeedback && userOffsetNotifier.value) {
+    if (hapticFeedback &&
+        userOffsetNotifier.value &&
+        !_programmaticCallInProgress) {
       if (_indicator.triggerWhenReach) {
         if (_mode == IndicatorMode.processing &&
             oldMode == IndicatorMode.drag) {
@@ -653,8 +668,9 @@ abstract class IndicatorNotifier extends ChangeNotifier {
           }
         }
       } else if (_mode == IndicatorMode.done && offset > 0) {
-        _setMode(IndicatorMode.inactive);
-        // The state does not change until the end
+        // A clamping header is still closing. Re-arming it here starts a
+        // second refresh while the same pull animation is rebounding.
+        if (!clamping) _setMode(IndicatorMode.inactive);
         return;
       } else if (_offset == 0) {
         if (!(_mode == IndicatorMode.ready && !userOffsetNotifier.value)) {
@@ -754,6 +770,7 @@ abstract class IndicatorNotifier extends ChangeNotifier {
     if (!(_canProcess && !_processing && _task != null)) {
       return;
     }
+    _taskStartCount++;
     _processing = true;
     if (_waitTaskResult) {
       try {
@@ -796,6 +813,17 @@ abstract class IndicatorNotifier extends ChangeNotifier {
   /// Reset ballistic.
   /// Trigger [_ERScrollPhysics.createBallisticSimulation].
   void _resetBallistic() {
+    if (clamping && _offset > 0) {
+      // The ready spring may still be settling at the trigger distance when
+      // a fast refresh finishes. Replace it with the closing spring instead
+      // of leaving the indicator held open indefinitely.
+      _clampingAnimationController!.stop(canceled: true);
+      final simulation = createBallisticSimulation(position, 0);
+      if (simulation != null) {
+        _clampingAnimationController!.animateWith(simulation);
+      }
+      return;
+    }
     ScrollActivityDelegate? delegate;
     double velocity = 0;
     if (_position is ScrollPosition) {

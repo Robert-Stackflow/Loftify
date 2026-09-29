@@ -49,6 +49,35 @@ void main() {
     );
   }
 
+  test('missing image base URL does not create an invalid empty scheme', () {
+    expect(WebUtil.getBaseUrl('').toString(), isEmpty);
+    expect(WebUtil.getBaseUrl('relative/path').toString(), isEmpty);
+    expect(WebUtil.getBaseUrl('://').toString(), isEmpty);
+    expect(
+      WebUtil.getBaseUrl('https://yyxzzhxb.lofter.com/post/1ece729f_2b4802463')
+          .toString(),
+      'https://yyxzzhxb.lofter.com',
+    );
+  });
+
+  testWidgets('post body image does not replace content with a URI error',
+      (tester) async {
+    await tester.pumpWidget(buildApp(
+      const Scaffold(
+        body: SingleChildScrollView(
+          child: PostContentSection(
+            title: 'Image post',
+            content: '<p>Before image</p><img src="https://example.com/a.png">',
+          ),
+        ),
+      ),
+    ));
+    await tester.pump();
+
+    expect(find.textContaining('Error rendering content'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   test('post detail parsing tolerates missing and loosely typed fields', () {
     final data = PostDetailData.fromJson({
       'liked': 1,
@@ -166,6 +195,7 @@ void main() {
             builder: (context) => PostContentSection(
               title: 'A deliberately long article title',
               content: '<p>Reading body</p>',
+              url: 'https://yyxzzhxb.lofter.com/post/1ece729f_2b4802463',
               style: context.design.typography.readingBody,
             ),
           ),
@@ -186,6 +216,7 @@ void main() {
       720,
     );
     final html = tester.widget<CustomHtmlWidget>(find.byType(CustomHtmlWidget));
+    expect(html.url, 'https://yyxzzhxb.lofter.com/post/1ece729f_2b4802463');
     expect(html.style?.fontSize, 17);
     expect(html.style?.height, 1.8);
     expect(html.heightDelta, 0);

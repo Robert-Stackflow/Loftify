@@ -2413,6 +2413,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
     return PostContentSection(
       title: _postDetailData!.post!.title,
       content: _postDetailData!.post!.content,
+      url: _postDetailData!.post!.permalink,
       style: context.design.typography.readingBody,
       onDownloadSuccess: _handleDownloadSuccessAction,
     );
