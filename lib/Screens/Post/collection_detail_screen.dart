@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:blur/blur.dart';
 import 'package:flutter/material.dart' hide AnimatedSlide;
@@ -14,6 +16,7 @@ import '../../Models/post_detail_response.dart';
 import '../../Models/recommend_response.dart';
 import '../../Screens/Download/batch_download_screen.dart';
 import '../../Utils/enums.dart';
+import '../../Utils/content_order_preference.dart';
 import '../../Widgets/PostItem/common_info_post_item_builder.dart';
 import '../../Widgets/PostItem/general_post_item.dart';
 import '../../Widgets/PostItem/loftify_post_archive_grid.dart';
@@ -165,6 +168,7 @@ class CollectionDetailScreenState
   @override
   void initState() {
     super.initState();
+    isOldest = ContentOrderPreference.read(ContentOrderType.collection);
     _fetchData(refresh: true);
     _fetchIncantation();
   }
@@ -335,10 +339,13 @@ class CollectionDetailScreenState
                   fontSizeDelta: 1,
                   color: Theme.of(context).textTheme.labelMedium?.color,
                   onTap: () {
+                    if (loading) return;
                     HapticFeedback.mediumImpact();
                     setState(() {
                       isOldest = !isOldest;
                     });
+                    unawaited(ContentOrderPreference.write(
+                        ContentOrderType.collection, isOldest));
                     _fetchData(refresh: true, showLoading: true);
                   },
                 ),
