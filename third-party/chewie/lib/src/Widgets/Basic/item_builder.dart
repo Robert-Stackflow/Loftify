@@ -27,7 +27,7 @@ class ChewieItemBuilder {
     List<Widget> children = const [],
     bool showBack = true,
     Color? backgroundColor,
-    double titleLeftMargin = 5,
+    double? titleLeftMargin = 5,
     bool showBorder = false,
     Function()? onTapBack,
     Widget? overrideBody,
@@ -39,7 +39,7 @@ class ChewieItemBuilder {
     return Scaffold(
       appBar: showTitleBar
           ? ResponsiveAppBar(
-              titleLeftMargin: titleLeftMargin,
+              titleLeftMargin: titleLeftMargin ?? (ResponsiveUtil.isLandscapeLayout() ? 15 : 5),
               showBack: showBack,
               title: title,
               backgroundColor: backgroundColor,

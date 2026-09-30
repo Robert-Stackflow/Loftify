@@ -49,7 +49,7 @@ class _SelectThemeScreenState extends BaseDynamicState<SelectThemeScreen>
       context: context,
       title: appLocalizations.selectTheme,
       showTitleBar: widget.showTitleBar,
-      showBack: !ResponsiveUtil.isLandscapeLayout(),
+      showBack: true,
       padding: widget.padding,
       children: [
         CaptionItem(

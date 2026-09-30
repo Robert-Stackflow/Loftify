@@ -1,6 +1,7 @@
 #include "flutter_window.h"
 
 #include <optional>
+#include <flutter/standard_method_codec.h>
 
 #include "flutter/generated_plugin_registrant.h"
 
@@ -25,6 +26,29 @@ bool FlutterWindow::OnCreate() {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
+  clipboard_channel_ =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          flutter_controller_->engine()->messenger(), "loftify/clipboard",
+          &flutter::StandardMethodCodec::GetInstance());
+  clipboard_channel_->SetMethodCallHandler(
+      [](const flutter::MethodCall<flutter::EncodableValue>& call,
+         std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+        if (call.method_name() != "getMetadata") {
+          result->NotImplemented();
+          return;
+        }
+        const DWORD sequence = GetClipboardSequenceNumber();
+        if (sequence == 0) {
+          result->Error("clipboard_unavailable", "Clipboard access unavailable");
+          return;
+        }
+        result->Success(flutter::EncodableValue(flutter::EncodableMap{
+            {flutter::EncodableValue("revision"),
+             flutter::EncodableValue(std::to_string(sequence))},
+            {flutter::EncodableValue("uptimeMs"),
+             flutter::EncodableValue(static_cast<int64_t>(GetTickCount64()))},
+        }));
+      });
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
@@ -40,6 +64,7 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  clipboard_channel_ = nullptr;
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }

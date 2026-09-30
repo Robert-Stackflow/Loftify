@@ -10,7 +10,6 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 
-import '../../Utils/app_provider.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import 'about_setting_screen.dart';
@@ -40,7 +39,7 @@ class _SettingNavigationScreenState
   late int _selectedIndex;
 
   late final List<Widget> _pages = [
-    GeneralSettingScreen(key: generalSettingScreenKey),
+    const GeneralSettingScreen(),
     const AppearanceSettingScreen(),
     const ImageSettingScreen(),
     const LofterBasicSettingScreen(),

@@ -33,6 +33,7 @@ class WindowMoveHandle extends StatelessWidget {
     return _MoveWindow(
       onDoubleTap: onDoubleTap,
       child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [Expanded(child: child!)]),
     );

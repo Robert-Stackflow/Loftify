@@ -57,7 +57,7 @@ class LoftifyTagHero extends StatelessWidget {
                   (design.typography.label.fontSize ?? 13);
               final stackActions = constraints.maxWidth < 360 ||
                   textScale > 1.3 ||
-                  trailing.length > 1;
+                  (trailing.length > 1 && constraints.maxWidth < 600);
               if (stackActions) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -116,7 +116,7 @@ class LoftifyTagHero extends StatelessWidget {
           ),
           alignment: Alignment.center,
           child: Icon(
-            LoftifyIcons.tag,
+            LoftifyIcons.hash,
             size: design.icons.regular,
             color: design.colors.onAccentContainer,
           ),
@@ -135,11 +135,13 @@ class LoftifyTagHero extends StatelessWidget {
   }
 
   Widget _buildSubscriptionButton() {
-    return LoftifyCompactToggleButton(
+    final button = LoftifyCompactToggleButton(
       label: subscribed ? subscribedLabel : subscribeLabel,
       selected: subscribed,
       onPressed: onSubscriptionPressed,
     );
+    // Keep the toggle's internal Center from consuming a complete Wrap run.
+    return trailing.isEmpty ? button : IntrinsicWidth(child: button);
   }
 }
 

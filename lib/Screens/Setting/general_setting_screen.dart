@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:launch_at_startup/launch_at_startup.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -51,6 +54,7 @@ class GeneralSettingScreenState extends BaseDynamicState<GeneralSettingScreen>
   String _logSize = "";
   bool launchAtStartup = ChewieHiveUtil.getBool(HiveUtil.launchAtStartupKey);
   bool showTray = ChewieHiveUtil.getBool(HiveUtil.showTrayKey);
+  late final StreamSubscription<BoxEvent> _startupSettingSubscription;
 
   Future<void> getLogSize() async {
     double size = await FileOutput.getLogsSize();
@@ -60,19 +64,32 @@ class GeneralSettingScreenState extends BaseDynamicState<GeneralSettingScreen>
     });
   }
 
-  void refreshLauchAtStartup() {
+  void _refreshLaunchAtStartup() {
     if (!mounted) return;
+    final value = ChewieHiveUtil.getBool(HiveUtil.launchAtStartupKey);
+    if (launchAtStartup == value) return;
     setState(() {
-      launchAtStartup = ChewieHiveUtil.getBool(HiveUtil.launchAtStartupKey);
+      launchAtStartup = value;
     });
   }
 
   @override
   void initState() {
     super.initState();
+    // Settings routes can coexist during transitions or in the back stack.
+    // Each instance observes tray changes without sharing a global widget key.
+    _startupSettingSubscription = Hive.box(ChewieHiveUtil.settingsBox)
+        .watch(key: HiveUtil.launchAtStartupKey)
+        .listen((_) => _refreshLaunchAtStartup());
     getLogSize();
     if (ResponsiveUtil.isMobile()) getCacheSize();
     fetchReleases(false);
+  }
+
+  @override
+  void dispose() {
+    _startupSettingSubscription.cancel();
+    super.dispose();
   }
 
   void getCacheSize() {
@@ -125,7 +142,7 @@ class GeneralSettingScreenState extends BaseDynamicState<GeneralSettingScreen>
       context: context,
       title: appLocalizations.generalSetting,
       showTitleBar: widget.showTitleBar,
-      showBack: !ResponsiveUtil.isLandscapeLayout(),
+      showBack: true,
       padding: widget.padding,
       children: [
         CaptionItem(

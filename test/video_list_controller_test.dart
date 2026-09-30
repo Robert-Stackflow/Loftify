@@ -11,6 +11,7 @@ import 'package:loftify/Models/recommend_response.dart';
 import 'package:loftify/Screens/Post/video_detail_screen.dart';
 import 'package:loftify/Screens/Post/video_list_controller.dart';
 import 'package:loftify/Widgets/loftify_icons.dart';
+import 'package:loftify/Widgets/Video/video_controls_visibility.dart';
 import 'package:loftify/l10n/l10n.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_player_platform_interface/video_player_platform_interface.dart';
@@ -272,6 +273,84 @@ void main() {
     expect(player.isPlaying, isFalse);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 100));
+  });
+
+  testWidgets('single tap changes chrome, double tap changes playback',
+      (tester) async {
+    final player = createPlayer();
+    await player.play();
+    final controls = VideoControlsController();
+    await tester.pumpWidget(MaterialApp(
+        home: VideoLongPressGesture(
+      player: player,
+      onOpenMenu: () {},
+      onTap: controls.toggle,
+      onDoubleTap: () {
+        controls.show();
+        unawaited(player.isPlaying
+            ? player.pause(showPauseIcon: true)
+            : player.play());
+      },
+      child: const ColoredBox(color: Colors.black),
+    )));
+    await tester.tapAt(const Offset(200, 200));
+    await tester.pump(kDoubleTapTimeout + const Duration(milliseconds: 50));
+    expect(controls.visible, isFalse);
+    expect(player.isPlaying, isTrue);
+    await tester.tapAt(const Offset(200, 200));
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tapAt(const Offset(200, 200));
+    await tester.pump(const Duration(milliseconds: 80));
+    expect(player.isPlaying, isFalse);
+    expect(controls.visible, isTrue);
+    await tester.pump(kDoubleTapTimeout);
+    await tester.tapAt(const Offset(200, 200));
+    await tester.pump(const Duration(milliseconds: 80));
+    await tester.tapAt(const Offset(200, 200));
+    await tester.pump(const Duration(milliseconds: 80));
+    expect(player.isPlaying, isTrue);
+    await tester.pumpWidget(const SizedBox.shrink());
+    controls.dispose();
+    unawaited(player.close());
+    await tester.pump(const Duration(milliseconds: 100));
+  });
+
+  testWidgets('inactivity hides chrome without playback ticks extending timer',
+      (tester) async {
+    final controls = VideoControlsController();
+    addTearDown(controls.dispose);
+    controls.setPlaying(true);
+    await tester.pumpWidget(MaterialApp(
+        home: VideoControlsVisibility(
+      controller: controls,
+      child: const Text('Controls'),
+    )));
+    await tester.pump(const Duration(seconds: 3));
+    controls.setPlaying(true);
+    await tester.pump(const Duration(seconds: 1));
+    expect(controls.visible, isFalse);
+    expect(
+        tester
+            .widget<IgnorePointer>(find
+                .descendant(
+                  of: find.byType(VideoControlsVisibility),
+                  matching: find.byType(IgnorePointer),
+                )
+                .first)
+            .ignoring,
+        isTrue);
+    controls.show();
+    controls.pointerDown();
+    await tester.pump(const Duration(seconds: 8));
+    expect(controls.visible, isTrue);
+    controls.pointerUp();
+    await tester.pump(const Duration(seconds: 4));
+    expect(controls.visible, isFalse);
+    controls.setPlaying(false);
+    controls.show();
+    await tester.pump(const Duration(seconds: 8));
+    expect(controls.visible, isTrue);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets('danmaku lanes do not overlap and pause with the video',

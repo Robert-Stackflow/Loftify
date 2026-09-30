@@ -39,6 +39,16 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
   final EasyRefreshController _refreshController = EasyRefreshController();
   String currentVersion = "";
   String latestVersion = "";
+  final Map<String, FocusNode> _releaseFocusNodes = {};
+
+  @override
+  void dispose() {
+    _refreshController.dispose();
+    for (final node in _releaseFocusNodes.values) {
+      node.dispose();
+    }
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -48,6 +58,7 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
 
   void getAppInfo() {
     PackageInfo.fromPlatform().then((PackageInfo packageInfo) {
+      if (!mounted) return;
       setState(() {
         currentVersion = packageInfo.version;
       });
@@ -62,16 +73,19 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
       showLatestToast: false,
       noUpdateToastText: chewieLocalizations.failedToGetChangelog,
       onGetCurrentVersion: (currentVersion) {
+        if (!mounted) return;
         setState(() {
           this.currentVersion = currentVersion;
         });
       },
       onGetLatestRelease: (latestVersion, latestReleaseItem) {
+        if (!mounted) return;
         setState(() {
           this.latestVersion = latestVersion;
         });
       },
       onGetReleases: (releases) {
+        if (!mounted) return;
         setState(() {
           releaseItems = releases;
         });
@@ -86,13 +100,6 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
           ? ResponsiveAppBar(
               title: chewieLocalizations.changelog,
               showBack: true,
-              onTapBack: () {
-                if (ResponsiveUtil.isLandscapeLayout()) {
-                  DialogNavigatorHelper.popPage();
-                } else {
-                  Navigator.pop(context);
-                }
-              },
               backgroundColor: ResponsiveUtil.isLandscapeLayout()
                   ? ChewieTheme.canvasColor
                   : ChewieTheme.scaffoldBackgroundColor,
@@ -133,100 +140,113 @@ class _UpdateLogScreenState extends BaseDynamicState<UpdateLogScreen>
       isCurrent ? 0.5 : 0.4,
     ).toColor();
 
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Column(
-            children: [
-              Container(
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isCurrent ? ChewieTheme.primaryColor : color,
-                  border: Border.all(color: Colors.grey.shade300, width: 2),
+    return UpdateLogTimeline(
+      isLast: isLast,
+      marker: Container(
+        width: 14,
+        height: 14,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: isCurrent ? ChewieTheme.primaryColor : color,
+          border: Border.all(color: Colors.grey.shade300, width: 2),
+        ),
+      ).animate().fadeIn(duration: 400.ms).scale(delay: 50.ms),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  "${item.tagName}  $releaseDate",
+                  style: ChewieTheme.bodyMedium,
                 ),
-              ).animate().fadeIn(duration: 400.ms).scale(delay: 50.ms),
-              if (!isLast)
-                Expanded(
-                  child: Container(
-                    width: 2,
-                    margin: const EdgeInsets.only(top: 2),
-                    color: Colors.grey.shade300,
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        "${item.tagName}  $releaseDate",
-                        style: ChewieTheme.bodyMedium,
-                      ),
-                      const SizedBox(width: 6),
-                      if (isCurrent)
-                        RoundIconTextButton(
-                          height: 20,
-                          text: chewieLocalizations.currentVersion,
-                          background: ChewieTheme.primaryColor,
-                          textStyle: ChewieTheme.labelMedium.apply(
-                            color: ChewieTheme.primaryButtonColor,
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          radius: 4,
-                        ),
-                      const Spacer(),
-                      ClickableGestureDetector(
-                        // padding: const EdgeInsets.symmetric(
-                        //   horizontal: 6,
-                        //   vertical: 2,
-                        // ),
-                        child: Icon(
-                          LucideIcons.chevronRight,
-                          size: 16,
-                          color: ChewieTheme.labelMedium.color,
-                        ),
-                        onTap: () {
-                          UriUtil.launchUrlUri(context, item.htmlUrl);
-                        },
-                      ),
-                    ],
-                  ),
-                  if ((item.body ?? "").isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      decoration: BoxDecoration(
-                        color: ChewieTheme.cardColor,
-                        borderRadius: ChewieDimens.borderRadius8,
-                      ),
-                      child: SelectableAreaWrapper(
-                        focusNode: FocusNode(),
-                        child: CustomMarkdownWidget(
-                          item.body ?? "",
-                          baseStyle: ChewieTheme.bodyMedium,
-                        ),
-                      ),
+                const SizedBox(width: 6),
+                if (isCurrent)
+                  RoundIconTextButton(
+                    height: 20,
+                    text: chewieLocalizations.currentVersion,
+                    background: ChewieTheme.primaryColor,
+                    textStyle: ChewieTheme.labelMedium.apply(
+                      color: Colors.white,
                     ),
-                  ],
-                ],
-              ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    radius: 4,
+                  ),
+                const Spacer(),
+                ClickableGestureDetector(
+                  // padding: const EdgeInsets.symmetric(
+                  //   horizontal: 6,
+                  //   vertical: 2,
+                  // ),
+                  child: Icon(
+                    LucideIcons.chevronRight,
+                    size: 16,
+                    color: ChewieTheme.labelMedium.color,
+                  ),
+                  onTap: () {
+                    UriUtil.launchUrlUri(context, item.htmlUrl);
+                  },
+                ),
+              ],
             ),
-          ),
-        ],
+            if ((item.body ?? "").isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: ChewieTheme.cardColor,
+                  borderRadius: ChewieDimens.borderRadius8,
+                ),
+                child: SelectableAreaWrapper(
+                  focusNode: _releaseFocusNodes.putIfAbsent(
+                      item.htmlUrl, FocusNode.new),
+                  child: CustomMarkdownWidget(
+                    item.body ?? "",
+                    baseStyle: ChewieTheme.bodyMedium,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
+}
+
+/// The content determines the height; the timeline is painted alongside it.
+/// Markdown can contain LayoutBuilder and cannot be measured intrinsically.
+class UpdateLogTimeline extends StatelessWidget {
+  const UpdateLogTimeline({
+    super.key,
+    required this.marker,
+    required this.child,
+    required this.isLast,
+  });
+
+  final Widget marker;
+  final Widget child;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) => Stack(
+        children: [
+          if (!isLast)
+            Positioned(
+              left: 6,
+              top: 16,
+              bottom: 0,
+              width: 2,
+              child: ColoredBox(color: Colors.grey.shade300),
+            ),
+          Positioned(left: 0, top: 0, child: marker),
+          Padding(padding: const EdgeInsets.only(left: 30), child: child),
+        ],
+      );
 }

@@ -44,6 +44,8 @@ class CustomHtmlWidget extends StatefulWidget {
     required this.content,
     this.style,
     this.parseImage = true,
+    this.imageBuilder,
+    this.inlineLinks = false,
     this.showLoading = true,
     this.onDownloadSuccess,
     this.heightDelta,
@@ -62,6 +64,10 @@ class CustomHtmlWidget extends StatefulWidget {
   final String content;
   final TextStyle? style;
   final bool parseImage;
+  /// Keep links in the text flow rather than embedding a decorated link widget.
+  final bool inlineLinks;
+  /// Overrides image rendering without changing other HTML content.
+  final Widget? Function(BuildContext context, dom.Element element)? imageBuilder;
   final bool showLoading;
   final Function()? onDownloadSuccess;
   final double? heightDelta;
@@ -236,6 +242,7 @@ class CustomHtmlWidgetState extends State<CustomHtmlWidget> {
       customWidgetBuilder: (element) {
         bool isElementEmpty = element.children.isEmpty && element.text.isEmpty;
         if (element.localName == 'a') {
+          if (widget.inlineLinks) return null;
           return _renderA(
             element,
             renderType: renderType,
@@ -254,6 +261,8 @@ class CustomHtmlWidgetState extends State<CustomHtmlWidget> {
             style: style,
           );
         } else if (element.localName == 'img' && widget.parseImage) {
+          final customImage = widget.imageBuilder?.call(context, element);
+          if (customImage != null) return customImage;
           return SelectionContainer.disabled(
             child: _renderImg(
               element,
@@ -361,6 +370,18 @@ class CustomHtmlWidgetState extends State<CustomHtmlWidget> {
         return null;
       },
       customStylesBuilder: (e) {
+        if (widget.inlineLinks && e.localName == 'a') {
+          final color = ChewieColors.getLinkColor(context)
+              .toARGB32()
+              .toRadixString(16)
+              .padLeft(8, '0')
+              .substring(2);
+          return {
+            'color': '#$color',
+            'text-decoration': 'none',
+            'font-weight': '500',
+          };
+        }
         if (e.attributes.containsKey("data-f-id") &&
             e.attributes["data-f-id"] == "pbf") {
           return {
@@ -396,6 +417,10 @@ class CustomHtmlWidgetState extends State<CustomHtmlWidget> {
         return null;
       },
       onTapUrl: (url) async {
+        if (widget.inlineLinks && WebUtil.isHashOnlyLink(url)) {
+          widget.onHashtagTap?.call(url.substring(1));
+          return true;
+        }
         UriUtil.processUrl(context, url);
         return true;
       },

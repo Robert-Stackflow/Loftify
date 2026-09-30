@@ -198,7 +198,9 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
           ? ExtendedNestedScrollView(
               onlyOneScrollInBody: true,
               headerSliverBuilder: (_, __) => _buildHeaderSlivers(),
-              body: _mainContent(),
+              body: ResponsiveUtil.isLandscapeLayout()
+                  ? LoftifyProfileContentFrame(child: _mainContent())
+                  : _mainContent(),
             )
           : LoadingWidget(
               background: ChewieTheme.getBackground(context),
@@ -269,18 +271,11 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
     } else {
       return [
         SliverToBoxAdapter(
-          child: SizedBox(
-            height: _profileHeaderHeight(
-              context,
-              includesAppBar: false,
-            ),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                _buildHeaderBackground(),
-                _buildInfo(12),
-              ],
-            ),
+          child: Stack(
+            children: [
+              Positioned.fill(child: _buildHeaderBackground()),
+              _buildInfo(16),
+            ],
           ),
         ),
         SliverPersistentHeader(
@@ -289,13 +284,17 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
           delegate: SliverAppBarDelegate(
             radius: 0,
             background: context.design.colors.page,
-            tabBar: TabBarWrapper(
-              tabController: _tabController,
-              tabs: tabList,
-              width: MediaQuery.sizeOf(context).width,
-              isScrollable: false,
-              showBorder: true,
-              onTap: _setCurrentTab,
+            tabBar: PreferredSize(
+              preferredSize: const Size.fromHeight(56),
+              child: LoftifyProfileContentFrame(
+                child: TabBarWrapper(
+                  tabController: _tabController,
+                  tabs: tabList,
+                  isScrollable: false,
+                  showBorder: true,
+                  onTap: _setCurrentTab,
+                ),
+              ),
             ),
           ),
         ),
@@ -593,20 +592,30 @@ class UserDetailScreenState extends BaseDynamicState<UserDetailScreen>
         design.spacing.lg,
       ),
       child: LoftifyProfileHeaderLayout(
-        summary: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildIdentitySummary(
-              hasRemarkName: hasRemarkName,
-              hasDescription: hasDescription,
-            ),
-            SizedBox(height: design.spacing.lg),
-            _buildStatisticsCard(),
-            SizedBox(height: design.spacing.sectionTop),
-            _buildProfileAction(),
-          ],
-        ),
+        stackShowcase: ResponsiveUtil.isLandscapeLayout(),
+        summary: ResponsiveUtil.isLandscapeLayout()
+            ? LoftifyWideProfileSummary(
+                identity: _buildIdentitySummary(
+                  hasRemarkName: hasRemarkName,
+                  hasDescription: hasDescription,
+                ),
+                statistics: _buildStatisticsCard(),
+                action: _buildProfileAction(),
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildIdentitySummary(
+                    hasRemarkName: hasRemarkName,
+                    hasDescription: hasDescription,
+                  ),
+                  SizedBox(height: design.spacing.lg),
+                  _buildStatisticsCard(),
+                  SizedBox(height: design.spacing.sectionTop),
+                  _buildProfileAction(),
+                ],
+              ),
         showcase: showCases.isNotEmpty ? _buildShowCases() : null,
       ),
     );

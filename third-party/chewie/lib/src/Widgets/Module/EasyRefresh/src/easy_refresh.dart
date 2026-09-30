@@ -653,7 +653,10 @@ class _EasyRefreshState extends State<EasyRefresh>
     }
     final content = _InheritedEasyRefresh(
       data: _data,
-      child: child,
+      child: NotificationListener<ScrollUpdateNotification>(
+        onNotification: _handlePointerScrollUpdate,
+        child: child,
+      ),
     );
     // In clamping mode the header owns the reveal distance rather than the
     // scroll position. Move the content by that same distance so it cannot
@@ -672,6 +675,40 @@ class _EasyRefreshState extends State<EasyRefresh>
         );
       },
     );
+  }
+
+  bool _handlePointerScrollUpdate(ScrollUpdateNotification notification) {
+    // Wheel/scrollbar movements use forcePixels rather than applying scroll
+    // physics. Feed their real position into the existing footer state machine
+    // so loading, failure and no-more guards remain shared with touch scrolling.
+    final desktop = defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.macOS ||
+        defaultTargetPlatform == TargetPlatform.linux;
+    final wide =
+        MediaQuery.maybeOf(context)?.orientation == Orientation.landscape;
+    if ((!desktop && !wide) ||
+        notification.depth != 0 ||
+        notification.dragDetails != null ||
+        (notification.scrollDelta ?? 0) <= 0 ||
+        widget.onLoad == null ||
+        _footerNotifier.infiniteOffset == null) {
+      return false;
+    }
+    final position = notification.context == null
+        ? null
+        : Scrollable.maybeOf(notification.context!)?.position;
+    if (position == null) return false;
+    scheduleMicrotask(() {
+      // Wheel updates settle synchronously. Let active drag/ballistic scrolling
+      // continue to use its existing physics path.
+      if (!mounted ||
+          !position.hasContentDimensions ||
+          position.isScrollingNotifier.value) {
+        return;
+      }
+      _footerNotifier._updateOffset(position, position.pixels, false);
+    });
+    return false;
   }
 
   @override

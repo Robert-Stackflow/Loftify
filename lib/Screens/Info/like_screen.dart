@@ -450,6 +450,7 @@ class _LikeScreenState extends BaseDynamicState<LikeScreen>
         ? Column(
             children: [
               ShadowIconButton(
+                boxShadow: const [],
                 icon: const ChewieIcon(LoftifyIcons.moreVertical),
                 onTap: () {
                   BottomSheetBuilder.showContextMenu(

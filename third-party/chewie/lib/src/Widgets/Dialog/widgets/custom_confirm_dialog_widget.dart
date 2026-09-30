@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 class CustomConfirmDialogWidget extends StatefulWidget {
   final String? title;
   final String message;
+  final Widget? messageChild;
   final String? imagePath;
   final String confirmButtonText;
   final String cancelButtonText;
@@ -27,6 +28,7 @@ class CustomConfirmDialogWidget extends StatefulWidget {
     super.key,
     this.title,
     required this.message,
+    this.messageChild,
     required this.confirmButtonText,
     required this.cancelButtonText,
     required this.onTapConfirm,
@@ -95,7 +97,9 @@ class _CustomConfirmDialogWidgetState
                   ),
                   const SizedBox(height: 20),
                 ],
-                if (widget.message.notNullOrEmpty)
+                if (widget.messageChild != null)
+                  widget.messageChild!
+                else if (widget.message.notNullOrEmpty)
                   widget.renderHtml
                       ? CustomHtmlWidget(
                           content: widget.message,

@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:flutter/widgets.dart';
 
 import '../models/context_menu.dart';
-import '../utils/extensions.dart';
 
 /// Calculates the position of the context menu based on the position of the
 /// menu and the position of the parent menu. To prevent the menu from
@@ -11,12 +10,15 @@ import '../utils/extensions.dart';
 ({Offset pos, AlignmentGeometry alignment}) calculateContextMenuBoundaries(
   BuildContext context,
   FlutterContextMenu menu,
+  Size menuSize,
   Rect? parentRect,
   AlignmentGeometry spawnAlignment,
   bool isSubmenu,
 ) {
   final mediaQuery = MediaQuery.of(context);
-  final screenSize = mediaQuery.size;
+  final overlayBox = Navigator.of(context).overlay?.context.findRenderObject();
+  final screenSize =
+      overlayBox is RenderBox ? overlayBox.size : mediaQuery.size;
   final obscuredBottom = max(
     mediaQuery.padding.bottom,
     mediaQuery.viewInsets.bottom,
@@ -27,7 +29,7 @@ import '../utils/extensions.dart';
     screenSize.width - mediaQuery.padding.right - 8,
     screenSize.height - obscuredBottom - 8,
   );
-  final menuRect = context.getWidgetBounds()!;
+  final menuRect = (menu.position ?? Offset.zero) & menuSize;
   AlignmentGeometry nextSpawnAlignment = spawnAlignment;
 
   // final parentRect = menu.parentItemRect;

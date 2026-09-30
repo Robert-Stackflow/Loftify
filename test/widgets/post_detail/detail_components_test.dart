@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:awesome_chewie/awesome_chewie.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Models/post_detail_response.dart';
@@ -9,6 +11,7 @@ import 'package:loftify/Theme/loftify_design_theme.dart';
 import 'package:loftify/Widgets/Design/loftify_reading.dart';
 import 'package:loftify/Widgets/Item/loftify_item_builder.dart';
 import 'package:loftify/Widgets/PostDetail/comment_item.dart';
+import 'package:loftify/Widgets/PostDetail/comment_content.dart';
 import 'package:loftify/Widgets/PostDetail/detail_bottom_bar.dart';
 import 'package:loftify/Widgets/PostDetail/post_content_section.dart';
 import 'package:loftify/Widgets/PostDetail/post_download_action_icon.dart';
@@ -126,6 +129,338 @@ void main() {
     expect(comment.content, isEmpty);
     expect(comment.publisherBlogInfo.blogId, 0);
     expect(comment.l2Comments, hasLength(1));
+  });
+
+  test('incomplete emoji metadata does not discard its comment', () {
+    final comment = Comment.fromJson({
+      'content': 'Text [smile]',
+      'emotes': [
+        {'id': '10000', 'name': '[smile]', 'url': '//example.com/smile.png'},
+        {'name': null, 'url': null},
+      ],
+    });
+    expect(comment.emotes.first.id, 10000);
+    expect(comment.emotes.first.sizeType, 0);
+    expect(comment.emotes.last.name, isEmpty);
+  });
+
+  testWidgets('comment mentions stay on the text baseline and keep navigation',
+      (tester) async {
+    const url = 'https://www.lofter.com/mentionredirect.do?blogId=2923652384';
+    final processUrl = UriUtil.processUrl;
+    String? openedUrl;
+    UriUtil.processUrl =
+        (context, url, {bool pass = false, bool quiet = false}) async {
+      openedUrl = url;
+      return true;
+    };
+    addTearDown(() => UriUtil.processUrl = processUrl);
+    final comment = Comment.fromJson({
+      'content': '前文<a loftermentionblogid="2923652384" href="$url" '
+          'class="f-atbox s-fc2" target="_blank">@Z-尘</a>后文',
+    });
+    await tester.pumpWidget(buildApp(Scaffold(
+      body: SizedBox(width: 280, child: CommentContent(comment: comment)),
+    )));
+    await tester.pump();
+    final text = find.byWidgetPredicate((widget) =>
+        widget is RichText && widget.text.toPlainText() == '前文@Z-尘后文');
+    expect(text, findsOneWidget);
+    expect(find.byType(Icon), findsNothing);
+    final paragraph = tester.renderObject<RenderParagraph>(text);
+    final before = paragraph
+        .getBoxesForSelection(
+            const TextSelection(baseOffset: 0, extentOffset: 2))
+        .first;
+    final mention = paragraph
+        .getBoxesForSelection(
+            const TextSelection(baseOffset: 2, extentOffset: 6))
+        .first;
+    expect(mention.top, closeTo(before.top, 1));
+    expect(mention.bottom, closeTo(before.bottom, 1));
+    expect(tester.getSize(find.byType(CustomHtmlWidget)).height, lessThan(32));
+    await tester.tapAt(paragraph.localToGlobal(mention.toRect().center));
+    await tester.pump();
+    expect(openedUrl, url);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'long comment links wrap within narrow content at large text scale',
+      (tester) async {
+    final comment = Comment.fromJson({
+      'content': '前文<a href="https://example.com">这是一条很长的链接文字需要在评论区域自然换行</a>后文',
+    });
+    await tester.pumpWidget(buildApp(Scaffold(
+      body: MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(1.6)),
+        child: SizedBox(width: 160, child: CommentContent(comment: comment)),
+      ),
+    )));
+    await tester.pump();
+    expect(tester.getSize(find.byType(CustomHtmlWidget)).width, 160);
+    expect(
+        tester.getSize(find.byType(CustomHtmlWidget)).height, greaterThan(40));
+    expect(find.byType(Icon), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('comment picture placeholders use a full rounded themed surface',
+      (tester) async {
+    final comment = Comment.fromJson({
+      'content': '[图片]',
+      'images': [
+        {'orign': 'https://example.com/placeholder.png', 'ow': 400, 'oh': 200}
+      ],
+    });
+    for (final dark in [false, true]) {
+      await tester.pumpWidget(buildApp(
+          Scaffold(
+            body: CommentContent(comment: comment),
+          ),
+          dark: dark));
+      final placeholder =
+          find.byKey(const ValueKey('comment-image-placeholder'));
+      expect(placeholder, findsOneWidget);
+      expect(tester.getSize(placeholder), const Size(200, 100));
+      final box =
+          tester.widget<DecoratedBox>(placeholder).decoration as BoxDecoration;
+      final context = tester.element(placeholder);
+      expect(
+          box.color,
+          Theme.of(context)
+              .extension<LoftifyDesignThemeData>()!
+              .colors
+              .surfaceMuted);
+      expect(box.borderRadius, BorderRadius.circular(8));
+      expect(find.byIcon(Icons.image_outlined), findsNothing);
+      expect(tester.takeException(), isNull);
+    }
+  });
+
+  // Shape returned by /comment/l1/hotnew.json for comment 7131656534.
+  const stickerUrl = 'https://imglf3.lf127.net/img/7e4fb8d0ab6d9e4f/'
+      'SmFTRmhPQ2N4cVdaYmUxR1Btb2VCNGoveThSdmZmZ0YxQU1qdklVeHFIND0.jpg';
+  Map<String, dynamic> uploadedStickerFixture() => {
+        'id': 7131656534,
+        'content': '三只我都要了！[表情]',
+        'images': [
+          {'orign': stickerUrl, 'ow': 198, 'oh': 142, 'raw': null, 'type': 1},
+        ],
+      };
+
+  test('uploaded stickers survive parsing and serialization without emotes',
+      () {
+    final comment = Comment.fromJson(uploadedStickerFixture());
+    expect(comment.emotes, isEmpty);
+    expect(comment.images.single.url, stickerUrl);
+    expect(comment.images.single.ow, 198);
+    expect(comment.images.single.oh, 142);
+    expect(comment.images.single.raw, isEmpty);
+    final restored = Comment.fromJson(comment.toJson());
+    expect(restored.images.single.url, stickerUrl);
+    expect(restored.images.single.type, 1);
+    expect(
+        Comment.fromJson({
+          'images': [null, false]
+        }).images,
+        isEmpty);
+    expect(Comment.fromJson({'images': null}).images, isEmpty);
+  });
+
+  testWidgets('real uploaded sticker replaces placeholder in comment and reply',
+      (tester) async {
+    final comment = Comment.fromJson({
+      ...uploadedStickerFixture(),
+      'l2Count': 1,
+      'l2Comments': [uploadedStickerFixture()],
+    });
+    await tester.binding.setSurfaceSize(const Size(320, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(buildApp(Scaffold(
+      body: SingleChildScrollView(
+        child: Builder(
+          builder: (context) => LoftifyItemBuilder.buildCommentRow(
+            context,
+            comment,
+            writerId: 1,
+          ),
+        ),
+      ),
+    )));
+    await tester.pump();
+    final stickers = find.byWidgetPredicate((widget) =>
+        widget is CachedNetworkImage && widget.imageUrl == stickerUrl);
+    expect(stickers, findsNWidgets(2));
+    for (final element in stickers.evaluate()) {
+      final size = tester.getSize(find.byWidget(element.widget));
+      expect(size.width, 120);
+      expect(size.height, closeTo(120 * 142 / 198, 0.01));
+    }
+    for (final widget in tester.widgetList<CustomHtmlWidget>(
+      find.byType(CustomHtmlWidget),
+    )) {
+      expect(widget.content, contains('三只我都要了！<img'));
+      expect(widget.content, contains('data-comment-sticker="true"'));
+    }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'mixed attachments and named emotes keep order and missing markers',
+      (tester) async {
+    final comment = Comment.fromJson({
+      'content': 'Missing[图片]A[图片]B[smile]C[表情]D[图片]',
+      'emotes': [
+        {'name': '[smile]', 'url': 'https://example.com/smile.png'}
+      ],
+      'images': [
+        {'orign': '://'},
+        {'orign': '//example.com/photo.png', 'ow': '800', 'oh': 400},
+        {
+          'raw': 'https://example.com/sticker.gif',
+          'ow': 100,
+          'oh': 100,
+          'type': 1
+        },
+      ],
+    });
+    await tester.pumpWidget(buildApp(Scaffold(
+      body: CommentContent(comment: comment),
+    )));
+    await tester.pump();
+    final html = tester.widget<CustomHtmlWidget>(find.byType(CustomHtmlWidget));
+    expect(html.content, contains('A<img'));
+    expect(html.content, startsWith('Missing[图片]A<img'));
+    expect(html.content, contains('B<img'));
+    expect(html.content, contains('C<img'));
+    expect(html.content, endsWith('D[图片]'));
+    final images = tester
+        .widgetList<CachedNetworkImage>(find.byType(CachedNetworkImage))
+        .toList();
+    expect(images.map((image) => image.imageUrl), [
+      'https://example.com/photo.png',
+      'https://example.com/smile.png',
+      'https://example.com/sticker.gif',
+    ]);
+    expect(images.first.width, 200);
+    expect(images.first.height, 100);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+      'attachments without markers render while invalid ones preserve text',
+      (tester) async {
+    final comment = Comment.fromJson({
+      'content': 'Attachment',
+      'images': [
+        {'orign': stickerUrl, 'type': 1}
+      ],
+    });
+    await tester
+        .pumpWidget(buildApp(Scaffold(body: CommentContent(comment: comment))));
+    await tester.pump();
+    expect(find.byType(CachedNetworkImage), findsOneWidget);
+    final invalid = Comment.fromJson({
+      'content': 'Keep [表情]',
+      'images': [
+        {'orign': '://'},
+        {'orign': null}
+      ],
+    });
+    await tester
+        .pumpWidget(buildApp(Scaffold(body: CommentContent(comment: invalid))));
+    await tester.pump();
+    expect(find.byType(CachedNetworkImage), findsNothing);
+    expect(
+        tester.widget<CustomHtmlWidget>(find.byType(CustomHtmlWidget)).content,
+        'Keep [表情]');
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final width in [320.0, 1000.0]) {
+    testWidgets('comment and reply media stay visible and bounded at $width',
+        (tester) async {
+      await tester.binding.setSurfaceSize(Size(width, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      Map<String, dynamic> fixture(int id) => {
+            'id': id,
+            'content': 'Before [smile] after [smile]'
+                '<img src="" data-src="//example.com/comment.png" alt="photo">',
+            'emotes': [
+              {
+                'name': '[smile]',
+                'url': '//example.com/smile.png',
+                'sizeType': 1,
+              },
+              {'name': '', 'url': 'https://example.com/unused.png'},
+            ],
+          };
+      final comment = Comment.fromJson({
+        ...fixture(1),
+        'l2Count': 1,
+        'l2Comments': [fixture(2)],
+      });
+      await tester.pumpWidget(buildApp(Scaffold(
+        body: SingleChildScrollView(
+          child: Builder(
+            builder: (context) => LoftifyItemBuilder.buildCommentRow(
+              context,
+              comment,
+              writerId: 1,
+            ),
+          ),
+        ),
+      )));
+      await tester.pump();
+      final emoji = find.byWidgetPredicate((widget) =>
+          widget is CachedNetworkImage &&
+          widget.imageUrl == 'https://example.com/smile.png');
+      final photos = find.byWidgetPredicate((widget) =>
+          widget is CachedNetworkImage &&
+          widget.imageUrl == 'https://example.com/comment.png');
+      expect(emoji, findsNWidgets(4));
+      expect(photos, findsNWidgets(2));
+      for (final element in emoji.evaluate()) {
+        expect(
+            tester.getSize(find.byWidget(element.widget)), const Size(38, 38));
+        expect(
+          element.findAncestorWidgetOfExactType<Padding>()?.padding,
+          const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+        );
+      }
+      for (final element in photos.evaluate()) {
+        final size = tester.getSize(find.byWidget(element.widget));
+        expect(size.width, lessThanOrEqualTo(200));
+        expect(size.height, 200);
+      }
+      expect(find.textContaining('Error rendering content'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('emoji replacement preserves HTML attributes and bad media text',
+      (tester) async {
+    final comment = Comment.fromJson({
+      'content': '<a href="https://example.com/[smile]">[smile]</a>'
+          '<img src="://" alt="[bad image]"> [unknown]',
+      'emotes': [
+        {'name': '[smile]', 'url': 'https://example.com/smile.png?a=1&b=2'},
+        {'name': '[unknown]', 'url': ''},
+      ],
+    });
+    await tester.pumpWidget(buildApp(Scaffold(
+      body: CommentContent(comment: comment),
+    )));
+    await tester.pump();
+    final rendered =
+        tester.widget<CustomHtmlWidget>(find.byType(CustomHtmlWidget));
+    expect(rendered.content, contains('href="https://example.com/[smile]"'));
+    expect(rendered.content, contains('a=1&amp;b=2'));
+    expect(rendered.content, contains('[unknown]'));
+    expect(find.text('[bad image]'), findsOneWidget);
+    expect(find.textContaining('Error rendering content'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('four detail actions stay separated above the safe area',

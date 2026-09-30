@@ -1,7 +1,6 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:loftify/Screens/Setting/general_setting_screen.dart';
 import 'package:tuple/tuple.dart';
 
 import '../Screens/Navigation/home_screen.dart';
@@ -33,12 +32,6 @@ GlobalKey<HomeScreenState> homeScreenKey = GlobalKey<HomeScreenState>();
 
 HomeScreenState? get homeScreenState => homeScreenKey.currentState;
 
-GlobalKey<GeneralSettingScreenState> generalSettingScreenKey =
-    GlobalKey<GeneralSettingScreenState>();
-
-GeneralSettingScreenState? get generalSettingScreenState =>
-    generalSettingScreenKey.currentState;
-
 GlobalKey<DialogWrapperWidgetState> dialogNavigatorKey =
     GlobalKey<DialogWrapperWidgetState>();
 
@@ -50,12 +43,13 @@ RouteObserver<PageRoute> routeObserver = RouteObserver();
 AppProvider appProvider = AppProvider();
 
 class AppProvider with ChangeNotifier {
-  AppProvider() {
+  AppProvider({bool Function()? isLandscapeLayout})
+      : _isLandscapeLayout =
+            isLandscapeLayout ?? ResponsiveUtil.isLandscapeLayout {
     Intl.defaultLocale = (_locale ?? resolveSystemAppLocale()).toString();
-    if (_hideSearchNavigation && _sidebarChoice == SideBarChoice.Search) {
-      _sidebarChoice = SideBarChoice.Home;
-    }
   }
+
+  final bool Function() _isLandscapeLayout;
 
   bool _pinSettled = HiveUtil.hasGuesturePasswd();
 
@@ -106,10 +100,13 @@ class AppProvider with ChangeNotifier {
   SideBarChoice _sidebarChoice = SideBarChoice.fromString(
       ChewieHiveUtil.getString(HiveUtil.sidebarChoiceKey) ?? "");
 
-  SideBarChoice get sidebarChoice => _sidebarChoice;
+  SideBarChoice get sidebarChoice =>
+      shouldHideSearchNavigation && _sidebarChoice == SideBarChoice.Search
+          ? SideBarChoice.Home
+          : _sidebarChoice;
 
   set sidebarChoice(SideBarChoice value) {
-    if (_hideSearchNavigation && value == SideBarChoice.Search) {
+    if (shouldHideSearchNavigation && value == SideBarChoice.Search) {
       value = SideBarChoice.Home;
     }
     _sidebarChoice = value;
@@ -348,6 +345,11 @@ class AppProvider with ChangeNotifier {
 
   bool get hideHomeAppBarOnScroll => _hideHomeAppBarOnScroll;
 
+  // Keep the stored preference independent of the current layout. Wide layouts
+  // must not inherit mobile toolbar/navigation behavior when the device rotates.
+  bool get shouldHideHomeAppBarOnScroll =>
+      !_isLandscapeLayout() && _hideHomeAppBarOnScroll;
+
   set hideHomeAppBarOnScroll(bool value) {
     if (value == _hideHomeAppBarOnScroll) return;
     _hideHomeAppBarOnScroll = value;
@@ -362,15 +364,21 @@ class AppProvider with ChangeNotifier {
 
   bool get hideSearchNavigation => _hideSearchNavigation;
 
+  bool get shouldHideSearchNavigation =>
+      !_isLandscapeLayout() && _hideSearchNavigation;
+
   set hideSearchNavigation(bool value) {
     if (value == _hideSearchNavigation) return;
+    final wasHidden = shouldHideSearchNavigation;
     _hideSearchNavigation = value;
     ChewieHiveUtil.put(HiveUtil.hideSearchNavigationKey, value);
-    if (value && _sidebarChoice == SideBarChoice.Search) {
+    if (shouldHideSearchNavigation && _sidebarChoice == SideBarChoice.Search) {
       _sidebarChoice = SideBarChoice.Home;
       ChewieHiveUtil.put(HiveUtil.sidebarChoiceKey, _sidebarChoice.key);
     }
-    panelScreenState?.updateSearchNavigationVisibility();
+    if (wasHidden != shouldHideSearchNavigation) {
+      panelScreenState?.updateSearchNavigationVisibility();
+    }
     notifyListeners();
   }
 

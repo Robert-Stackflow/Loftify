@@ -33,7 +33,7 @@ class _SelectFontScreenState extends BaseDynamicState<SelectFontScreen>
       context: context,
       title: appLocalizations.chooseFontFamily,
       showTitleBar: widget.showTitleBar,
-      showBack: !ResponsiveUtil.isLandscapeLayout(),
+      showBack: true,
       padding: widget.padding,
       children: [
         CaptionItem(

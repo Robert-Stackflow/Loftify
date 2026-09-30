@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:awesome_chewie/awesome_chewie.dart';
+import 'package:loftify/Widgets/Design/loftify_content_frame.dart';
 import 'package:loftify/Widgets/PostDetail/post_swipe_gesture_detector.dart';
 
 Widget _host(Widget child) => MaterialApp(
@@ -7,6 +10,73 @@ Widget _host(Widget child) => MaterialApp(
     );
 
 void main() {
+  for (final kind in [PointerDeviceKind.mouse, PointerDeviceKind.touch]) {
+    testWidgets('split divider resizes without switching posts ($kind)',
+        (tester) async {
+      final bodyKey = GlobalKey();
+      final recommendationsKey = GlobalKey();
+      var postUpdates = 0;
+      tester.view.physicalSize = const Size(1800, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(_host(LoftifyContentFrame(
+          child: PostSwipeGestureDetector(
+        activeRegion: bodyKey,
+        onHorizontalDragUpdate: (_) => postUpdates++,
+        child: ResizableContainer(
+          direction: Axis.horizontal,
+          children: [
+            ResizableChild(
+              size: const ResizableSize.ratio(0.6),
+              divider: const ResizableDivider(padding: 12),
+              child: ColoredBox(key: bodyKey, color: Colors.white),
+            ),
+            ResizableChild(
+              child: ColoredBox(key: recommendationsKey, color: Colors.grey),
+            ),
+          ],
+        ),
+      ))));
+      await tester.pumpAndSettle();
+      final split = tester.getRect(find.byType(ResizableContainer));
+      expect(split.width, 1180);
+      expect(split.center.dx, 900);
+      final initialBody = tester.getRect(find.byKey(bodyKey));
+      final dividerStart = Offset(initialBody.right + 6, initialBody.center.dy);
+      final gesture = await tester.startGesture(dividerStart, kind: kind);
+      await gesture.moveBy(const Offset(30, 0));
+      await gesture.moveBy(const Offset(70, 0));
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(tester.getSize(find.byKey(bodyKey)).width,
+          greaterThan(initialBody.width));
+      expect(postUpdates, 0);
+
+      // The entire drag belongs to the pane in which it began, even when it
+      // crosses into the article. The outer screen edge must not bypass it.
+      final right = tester.getRect(find.byKey(recommendationsKey));
+      await tester.dragFrom(
+          Offset(right.right - 8, right.center.dy), const Offset(-350, 0));
+      expect(postUpdates, 0);
+      await tester.drag(find.byKey(bodyKey), const Offset(100, 0));
+      expect(postUpdates, greaterThan(0));
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('unmounted desktop pane keeps phone swipes enabled',
+      (tester) async {
+    var updates = 0;
+    await tester.pumpWidget(_host(PostSwipeGestureDetector(
+      activeRegion: GlobalKey(),
+      onHorizontalDragUpdate: (_) => updates++,
+      child: const SizedBox.expand(),
+    )));
+    await tester.dragFrom(const Offset(80, 400), const Offset(150, 0));
+    expect(updates, greaterThan(0));
+  });
+
   testWidgets('interactive horizontal child owns drags that start inside it', (
     tester,
   ) async {

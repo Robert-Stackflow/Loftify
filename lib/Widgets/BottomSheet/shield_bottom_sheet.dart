@@ -71,7 +71,7 @@ class ShieldBottomSheetState extends State<ShieldBottomSheet> {
                 for (final tag in tags)
                   LoftifyTag(
                     label: tag,
-                    leading: LoftifyIcons.tag,
+                    leading: LoftifyIcons.hash,
                     showSelectedIcon: false,
                     onPressed: () => widget.onShieldTag?.call(tag),
                   ),

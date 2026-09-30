@@ -77,7 +77,7 @@ class _BlacklistSettingScreenState
       context: context,
       title: appLocalizations.blacklistSetting,
       showTitleBar: widget.showTitleBar,
-      showBack: !ResponsiveUtil.isLandscapeLayout(),
+      showBack: true,
       padding: widget.padding,
       overrideBody: EasyRefresh(
         controller: _refreshController,

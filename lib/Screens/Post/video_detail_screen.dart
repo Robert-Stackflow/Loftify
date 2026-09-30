@@ -27,6 +27,7 @@ import '../../Widgets/BottomSheet/comment_bottom_sheet.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../Widgets/loftify_reaction_icon.dart';
+import '../../Widgets/Video/video_controls_visibility.dart';
 import '../../l10n/l10n.dart';
 
 class VideoDetailScreen extends StatefulWidget {
@@ -80,6 +81,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
   int offset = 0;
   final PageController _pageController = PageController();
   final VideoListController _videoListController = VideoListController();
+  final VideoControlsController _controls = VideoControlsController();
   final GlobalKey<InteractiveAuthorSwipeState> _authorSwipeKey =
       GlobalKey<InteractiveAuthorSwipeState>();
   final Map<int, double> _downloadProgress = {};
@@ -114,6 +116,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
     WidgetsBinding.instance.removeObserver(this);
     _videoListController.removeListener(_handleVideoControllerChanged);
     _videoListController.dispose();
+    _controls.dispose();
     _pageController.dispose();
     // Leaving the video page must also release the portrait override used
     // after exiting full screen (not only an active full-screen lock).
@@ -186,6 +189,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
   void _handleVideoControllerChanged() {
     final value =
         _videoListController.currentPlayerOrNull?.controllerOrNull?.value;
+    _controls.setPlaying((value?.isPlaying ?? false) && _routeVisible);
     if (_continuousPlayback &&
         !_autoAdvanceInProgress &&
         (value?.isCompleted ?? false)) {
@@ -195,6 +199,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
   }
 
   void _pauseForInterruption() {
+    _controls.setPlaying(false);
     final player = _videoListController.currentPlayerOrNull;
     _resumeAfterInterruption =
         _resumeAfterInterruption || (player?.isPlaying ?? false);
@@ -454,11 +459,20 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
   }
 
   Widget _buildInteractiveVideoExperience() {
-    final content = Stack(
-      children: [
-        _buildBody(),
-        _buildTopWidget(),
-      ],
+    final content = Listener(
+      onPointerDown: (_) => _controls.pointerDown(),
+      onPointerUp: (_) => _controls.pointerUp(),
+      onPointerCancel: (_) => _controls.pointerUp(),
+      child: MouseRegion(
+        onHover: (_) => _controls.show(),
+        child: Stack(
+          children: [
+            _buildBody(),
+            VideoControlsVisibility(
+                controller: _controls, child: _buildTopWidget()),
+          ],
+        ),
+      ),
     );
     final item = _currentPostItem;
     if (item?.blogInfo == null) return content;
@@ -503,6 +517,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
       scrollDirection: Axis.vertical,
       itemCount: _videoListController.videoCount,
       onPageChanged: (index) {
+        _controls.show();
         final player = _videoListController.playerOfIndex(index);
         _currentPostItem = player?.videoInfo;
         unawaited(_uploadHistory());
@@ -517,7 +532,9 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
         return _buildVideoPage(
           item,
           hidePauseIcon: !player.showPauseIcon,
-          onSingleTap: () async {
+          onSingleTap: _controls.toggle,
+          onDoubleTap: () async {
+            _controls.show();
             if (player.loadState == VideoLoadState.failed) {
               await player.retry(
                 autoplay: index == _videoListController.index.value,
@@ -638,6 +655,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
     bool hidePauseIcon = false,
     required Widget video,
     Function()? onSingleTap,
+    VoidCallback? onDoubleTap,
     required CustomVideoController progressPlayer,
     required bool Function() canResumeAfterScrub,
   }) {
@@ -677,23 +695,26 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
               ),
             ),
           ),
-        const Positioned(
+        Positioned(
           left: 0,
           right: 0,
           bottom: 0,
-          child: IgnorePointer(
-            child: SizedBox(
-              height: 260,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Color(0x33000000),
-                      Color(0xB3000000),
-                    ],
+          child: VideoControlsVisibility(
+            controller: _controls,
+            child: const IgnorePointer(
+              child: SizedBox(
+                height: 260,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Color(0x33000000),
+                        Color(0xB3000000),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -704,16 +725,22 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
           left: 0,
           right: 0,
           bottom: bottomSafeInset + 14,
-          child: _buildVideoMeta(postListItem),
+          child: VideoControlsVisibility(
+            controller: _controls,
+            child: _buildVideoMeta(postListItem),
+          ),
         ),
         Positioned(
           left: 0,
           right: 0,
           bottom: bottomSafeInset,
-          child: ImmersiveVideoProgressBar(
-            player: progressPlayer,
-            canResume: canResumeAfterScrub,
-            semanticLabel: appLocalizations.video,
+          child: VideoControlsVisibility(
+            controller: _controls,
+            child: ImmersiveVideoProgressBar(
+              player: progressPlayer,
+              canResume: canResumeAfterScrub,
+              semanticLabel: appLocalizations.video,
+            ),
           ),
         ),
       ],
@@ -721,6 +748,7 @@ class _VideoDetailScreenState extends BaseDynamicState<VideoDetailScreen>
     return VideoLongPressGesture(
       player: progressPlayer,
       onTap: onSingleTap,
+      onDoubleTap: onDoubleTap,
       onOpenMenu: () => unawaited(_showVideoActions(postListItem)),
       child: body,
     );
@@ -1426,6 +1454,7 @@ class VideoLongPressGesture extends StatefulWidget {
     required this.child,
     required this.onOpenMenu,
     this.onTap,
+    this.onDoubleTap,
     this.edgeFraction = 0.16,
     this.minimumEdgeWidth = 52,
     this.maximumEdgeWidth = 92,
@@ -1436,6 +1465,7 @@ class VideoLongPressGesture extends StatefulWidget {
   final Widget child;
   final VoidCallback onOpenMenu;
   final VoidCallback? onTap;
+  final VoidCallback? onDoubleTap;
   final double edgeFraction;
   final double minimumEdgeWidth;
   final double maximumEdgeWidth;
@@ -1498,6 +1528,7 @@ class _VideoLongPressGestureState extends State<VideoLongPressGesture> {
       builder: (context, constraints) => GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: widget.onTap,
+        onDoubleTap: widget.onDoubleTap,
         onLongPressStart: (details) =>
             _handleLongPressStart(details, constraints.maxWidth),
         onLongPressEnd: (_) => _stopTemporarySpeed(),

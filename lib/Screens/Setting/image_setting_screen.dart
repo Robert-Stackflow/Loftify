@@ -53,7 +53,7 @@ class _ImageSettingScreenState extends BaseDynamicState<ImageSettingScreen>
       context: context,
       title: appLocalizations.imageSetting,
       showTitleBar: widget.showTitleBar,
-      showBack: !ResponsiveUtil.isLandscapeLayout(),
+      showBack: true,
       padding: widget.padding,
       children: [
         if (showImageQualitySettings) ..._imageQualitySettings(),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../Theme/loftify_design_theme.dart';
 import '../Design/loftify_surfaces.dart';
+import '../Design/loftify_content_frame.dart';
 import '../loftify_icons.dart';
 
 const _coverTextShadows = <Shadow>[
@@ -12,18 +13,83 @@ const _coverTextShadows = <Shadow>[
   ),
 ];
 
+const double loftifyProfileMaxContentWidth = loftifyPageMaxContentWidth;
+
+/// Align wide tabs and every tab's viewport to the profile heading.
+class LoftifyProfileContentFrame extends StatelessWidget {
+  const LoftifyProfileContentFrame({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return LoftifyContentFrame(child: child);
+  }
+}
+
+/// Wide profiles size to their contents instead of stretching a follow action
+/// and four statistics across the entire desktop window.
+class LoftifyWideProfileSummary extends StatelessWidget {
+  const LoftifyWideProfileSummary({
+    super.key,
+    required this.identity,
+    required this.statistics,
+    required this.action,
+  });
+
+  final Widget identity;
+  final Widget statistics;
+  final Widget action;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final largeText = MediaQuery.textScalerOf(context).scale(14) > 21;
+      final compactAction = ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 240),
+        child: action,
+      );
+      final inline = constraints.maxWidth >= 600 && !largeText;
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          identity,
+          const SizedBox(height: 16),
+          if (inline)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(child: statistics),
+                const SizedBox(width: 16),
+                compactAction,
+              ],
+            )
+          else ...[
+            statistics,
+            const SizedBox(height: 12),
+            Align(alignment: Alignment.centerLeft, child: compactAction),
+          ],
+        ],
+      );
+    });
+  }
+}
+
 /// Content-width and reflow contract for the complete profile heading.
 class LoftifyProfileHeaderLayout extends StatelessWidget {
   const LoftifyProfileHeaderLayout({
     super.key,
     required this.summary,
     this.showcase,
-    this.maxContentWidth = 1180,
+    this.maxContentWidth = loftifyProfileMaxContentWidth,
+    this.stackShowcase = false,
   });
 
   final Widget summary;
   final Widget? showcase;
   final double maxContentWidth;
+  final bool stackShowcase;
 
   static bool usesSideBySide(
     BuildContext context, {
@@ -43,7 +109,8 @@ class LoftifyProfileHeaderLayout extends StatelessWidget {
         constraints: BoxConstraints(maxWidth: maxContentWidth),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final sideBySide = showcase != null &&
+            final sideBySide = !stackShowcase &&
+                showcase != null &&
                 constraints.maxWidth >= 820 &&
                 MediaQuery.textScalerOf(context).scale(14) / 14 <= 1.35;
             if (sideBySide) {

@@ -8,6 +8,8 @@ class ShadowIconButton extends StatelessWidget {
   final Function()? onLongPress;
   final double radius;
   final EdgeInsets? padding;
+  final Color? backgroundColor;
+  final List<BoxShadow>? boxShadow;
 
   const ShadowIconButton({
     super.key,
@@ -16,6 +18,8 @@ class ShadowIconButton extends StatelessWidget {
     this.onLongPress,
     this.radius = 8,
     this.padding,
+    this.backgroundColor,
+    this.boxShadow,
   });
 
   @override
@@ -26,10 +30,10 @@ class ShadowIconButton extends StatelessWidget {
         decoration: BoxDecoration(
           border: Border.all(color: ChewieTheme.dividerColor, width: 0.8),
           borderRadius: BorderRadius.circular(radius + 1),
-          boxShadow: ChewieTheme.defaultBoxShadow,
+          boxShadow: boxShadow ?? ChewieTheme.defaultBoxShadow,
         ),
         child: InkAnimation(
-          color: ChewieTheme.scaffoldBackgroundColor,
+          color: backgroundColor ?? ChewieTheme.scaffoldBackgroundColor,
           borderRadius: BorderRadius.circular(radius),
           onTap: onTap,
           onLongPress: onLongPress,

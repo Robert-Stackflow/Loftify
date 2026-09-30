@@ -300,7 +300,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
 
   Widget _buildFollowingCard() {
     return ContainerItem(
-      backgroundColor: Theme.of(context).canvasColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       child: Column(
         children: [
           ItemBuilder.buildTitle(
@@ -321,6 +321,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
               );
             },
           ),
+          const SizedBox(height: 8),
           ListView(
             shrinkWrap: true,
             padding: EdgeInsets.zero,
@@ -344,7 +345,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
 
   Widget _buildFollowerCard() {
     return ContainerItem(
-      backgroundColor: Theme.of(context).canvasColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       child: Column(
         children: [
           ItemBuilder.buildTitle(
@@ -365,6 +366,7 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
               );
             },
           ),
+          const SizedBox(height: 8),
           ListView(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -755,7 +757,8 @@ class _MineScreenState extends BaseDynamicState<MineScreen>
     return ResponsiveAppBar(
       titleWidget: const SizedBox.shrink(),
       actions: actions,
-      landscapeActions: actions,
+      // These actions already live in the desktop navigation rail.
+      landscapeActions: ResponsiveUtil.isDesktop() ? const [] : actions,
     );
   }
 

@@ -20,6 +20,7 @@ import '../../Utils/app_provider.dart';
 import '../../Utils/asset_util.dart';
 import '../../Utils/enums.dart';
 import '../PostDetail/comment_item.dart';
+import '../PostDetail/comment_content.dart';
 import '../Design/loftify_controls.dart';
 import '../../l10n/l10n.dart';
 import '../loftify_icons.dart';
@@ -242,24 +243,13 @@ class LoftifyItemBuilder {
   }
 
   static Widget _buildCommentContent(BuildContext context, Comment comment) {
-    var richContent = comment.content;
-    for (final emote in comment.emotes) {
-      final image =
-          '<img src="${emote.url}" style="height:38px;width:38px;" alt=""/>';
-      richContent = richContent.replaceAll(emote.name, image);
-    }
     return ItemBuilder.buildCopyable(
       context,
       text: comment.content,
       toastText: appLocalizations.haveCopiedComment(
         comment.publisherBlogInfo.blogNickName,
       ),
-      child: CustomHtmlWidget(
-        content: richContent,
-        parseImage: false,
-        showLoading: false,
-        style: Theme.of(context).textTheme.bodyMedium,
-      ),
+      child: CommentContent(comment: comment),
     );
   }
 

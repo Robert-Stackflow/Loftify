@@ -92,7 +92,7 @@ class _AboutSettingScreenState extends BaseDynamicState<AboutSettingScreen>
       context: context,
       title: appLocalizations.about,
       showTitleBar: widget.showTitleBar,
-      showBack: !ResponsiveUtil.isLandscapeLayout(),
+      showBack: true,
       padding: widget.padding,
       overrideBody: EasyRefresh(
         child: ListView(

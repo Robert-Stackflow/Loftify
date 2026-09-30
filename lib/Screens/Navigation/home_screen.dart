@@ -158,12 +158,13 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    MediaQuery.sizeOf(context);
     final design = context.design;
     final hideAppBar = context.select<AppProvider, bool>(
-      (provider) => provider.hideHomeAppBarOnScroll,
+      (provider) => provider.shouldHideHomeAppBarOnScroll,
     );
     final showSearchAction = context.select<AppProvider, bool>(
-      (provider) => provider.hideSearchNavigation,
+      (provider) => provider.shouldHideSearchNavigation,
     );
     return Scaffold(
       backgroundColor: design.colors.page,
@@ -358,7 +359,7 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
   double get _homeDistanceFromTop {
     final feed = _feedScrollController;
     final feedDistance = feed.hasClients && feed.offset > 0 ? feed.offset : 0.0;
-    final appBarDistance = appProvider.hideHomeAppBarOnScroll &&
+    final appBarDistance = appProvider.shouldHideHomeAppBarOnScroll &&
             _nestedScrollController.hasClients &&
             !identical(feed, _nestedScrollController)
         ? (_nestedScrollController.offset > 0
@@ -378,7 +379,7 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
     lastRefreshTime = nowTime;
     await _refreshController.callRefresh(
       scrollController: feed,
-      jumpToEdge: !appProvider.hideHomeAppBarOnScroll,
+      jumpToEdge: !appProvider.shouldHideHomeAppBarOnScroll,
     );
   }
 
@@ -389,6 +390,7 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
         ? Column(
             children: [
               ShadowIconButton(
+                boxShadow: const [],
                 icon: RotationTransition(
                   turns: Tween(begin: 0.0, end: 1.0)
                       .animate(_refreshRotationController),
@@ -400,6 +402,7 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
               ),
               const SizedBox(height: 10),
               ShadowIconButton(
+                boxShadow: const [],
                 icon: const ChewieIcon(LoftifyIcons.scrollTop),
                 onTap: () {
                   scrollToTop();
@@ -411,7 +414,7 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
   }
 
   ScrollController get _feedScrollController =>
-      appProvider.hideHomeAppBarOnScroll
+      appProvider.shouldHideHomeAppBarOnScroll
           ? _nestedInnerScrollController ?? _nestedScrollController
           : _scrollController;
 
@@ -421,7 +424,7 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
       await feed.animateTo(0,
           duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
     }
-    if (appProvider.hideHomeAppBarOnScroll &&
+    if (appProvider.shouldHideHomeAppBarOnScroll &&
         _nestedScrollController.hasClients &&
         _nestedScrollController.offset > 0) {
       await _nestedScrollController.animateTo(0,
@@ -437,7 +440,7 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
 
   @override
   List<ScrollController> getScrollControllers() {
-    if (!appProvider.hideHomeAppBarOnScroll) return [_scrollController];
+    if (!appProvider.shouldHideHomeAppBarOnScroll) return [_scrollController];
     final inner = _nestedInnerScrollController;
     return [
       _nestedScrollController,

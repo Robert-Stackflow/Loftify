@@ -68,7 +68,7 @@ class _TagShieldSettingScreenState
       context: context,
       title: appLocalizations.tagShieldSetting,
       showTitleBar: widget.showTitleBar,
-      showBack: !ResponsiveUtil.isLandscapeLayout(),
+      showBack: true,
       padding: widget.padding,
       actions: [
         CircleIconButton(

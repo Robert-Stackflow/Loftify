@@ -54,6 +54,38 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('wide tag hero keeps subscription and tools on the title row',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1200, 800));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(_TestApp(
+      width: 1100,
+      child: LoftifyTagHero(
+        tag: 'Photography',
+        metrics: const [LoftifyTagMetric('100 views')],
+        subscribed: false,
+        subscribeLabel: 'Subscribe',
+        subscribedLabel: 'Subscribed',
+        onSubscriptionPressed: _noop,
+        trailing: [
+          for (var i = 0; i < 3; i++)
+            IconButton(
+                key: ValueKey('tool-$i'),
+                onPressed: _noop,
+                icon: const Icon(Icons.search)),
+        ],
+      ),
+    ));
+    final titleY = tester.getCenter(find.text('Photography')).dy;
+    expect(tester.getCenter(find.text('Subscribe')).dy, closeTo(titleY, 1));
+    expect(tester.getCenter(find.byKey(const ValueKey('tool-2'))).dy,
+        closeTo(titleY, 1));
+    expect(
+        tester.getSize(find.byKey(const ValueKey('loftify-tag-hero'))).height,
+        lessThan(150));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('unsubscribed and subscribed actions keep restrained states',
       (tester) async {
     await tester.pumpWidget(

@@ -1,5 +1,9 @@
 {
   "@@locale": "zh_CN",
+  "clipboardLinkTitle": "发现 Loftify 链接",
+  "clipboardLinkMessage": "剪贴板中有可以打开的链接，要在 Loftify 中查看吗？",
+  "clipboardLinkDismiss": "暂不打开",
+  "clipboardLinkOpen": "打开链接",
   "appName": "Loftify",
   "all": "全部",
   "save": "保存",

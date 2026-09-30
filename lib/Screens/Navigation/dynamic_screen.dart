@@ -252,6 +252,8 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
         ? Column(
             children: [
               ShadowIconButton(
+                boxShadow: const [],
+                backgroundColor: ChewieTheme.canvasColor,
                 icon: RotationTransition(
                   turns: Tween(begin: 0.0, end: 1.0)
                       .animate(_refreshRotationController),
@@ -263,6 +265,8 @@ class DynamicScreenState extends BaseDynamicState<DynamicScreen>
               ),
               const SizedBox(height: 10),
               ShadowIconButton(
+                boxShadow: const [],
+                backgroundColor: ChewieTheme.canvasColor,
                 icon: const ChewieIcon(LoftifyIcons.scrollTop),
                 onTap: () {
                   scrollToTop();

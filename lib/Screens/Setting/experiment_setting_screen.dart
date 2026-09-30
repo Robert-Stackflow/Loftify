@@ -90,7 +90,7 @@ class _ExperimentSettingScreenState
       context: context,
       title: appLocalizations.experimentSetting,
       showTitleBar: widget.showTitleBar,
-      showBack: !ResponsiveUtil.isLandscapeLayout(),
+      showBack: true,
       padding: widget.padding,
       children: [
         Selector<AppProvider, bool>(

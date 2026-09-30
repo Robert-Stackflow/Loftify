@@ -76,7 +76,7 @@ class _FilenameSettingScreenState
       context: context,
       title: appLocalizations.filenameFormat,
       showTitleBar: widget.showTitleBar,
-      showBack: !ResponsiveUtil.isLandscapeLayout(),
+      showBack: true,
       padding: widget.padding,
       children: [
         CaptionItem(
