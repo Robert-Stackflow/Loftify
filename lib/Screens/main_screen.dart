@@ -8,10 +8,12 @@ import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:loftify/Api/server_api.dart';
 import 'package:loftify/Screens/Login/login_by_captcha_screen.dart';
 import 'package:loftify/Screens/panel_screen.dart';
+import 'package:loftify/Theme/loftify_design_theme.dart';
 import 'package:loftify/Utils/cloud_control_provider.dart';
 import 'package:loftify/Utils/lottie_files.dart';
 import 'package:loftify/Widgets/Design/loftify_state_view.dart';
 import 'package:loftify/Widgets/Item/item_builder.dart';
+import 'package:loftify/Widgets/Navigation/loftify_glass_navigation_bar.dart';
 import 'package:loftify/Widgets/loftify_icons.dart';
 import 'package:provider/provider.dart';
 import 'package:tray_manager/tray_manager.dart';
@@ -25,6 +27,8 @@ import '../Utils/app_provider.dart';
 import '../Utils/enums.dart';
 import '../Utils/hive_util.dart';
 import '../Utils/utils.dart';
+import '../Utils/clipboard_link_controller.dart';
+import '../Widgets/Dialog/clipboard_link_dialog.dart';
 import 'Info/system_notice_screen.dart';
 import 'Info/user_detail_screen.dart';
 import 'Lock/pin_verify_screen.dart';
@@ -47,6 +51,8 @@ class MainScreenState extends BaseWindowState<MainScreen>
         TrayListener,
         AutomaticKeepAliveClientMixin {
   Timer? _timer;
+  Timer? _clipboardTimer;
+  late final ClipboardLinkController _clipboardLinks;
   late AnimationController darkModeController;
   Widget? darkModeWidget;
   FullBlogInfo? blogInfo;
@@ -70,6 +76,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
   void onWindowFocus() {
     cancleTimer();
     super.onWindowFocus();
+    _scheduleClipboardCheck();
   }
 
   @override
@@ -135,12 +142,26 @@ class MainScreenState extends BaseWindowState<MainScreen>
   @override
   void initState() {
     super.initState();
+    _clipboardLinks = ClipboardLinkController(
+      canPrompt: () =>
+          mounted &&
+          !_hasJumpedToPinVerify &&
+          (WidgetsBinding.instance.lifecycleState == null ||
+              WidgetsBinding.instance.lifecycleState ==
+                  AppLifecycleState.resumed) &&
+          (ModalRoute.of(context)?.isCurrent ?? false),
+      confirm: (url) => ClipboardLinkDialog.show(context, url),
+      open: (url) async {
+        await UriUtil.processUrl(context, url, pass: false);
+      },
+    );
     windowManager.addListener(this);
     WidgetsBinding.instance.addObserver(this);
     darkModeController = AnimationController(vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       showQQGroupDialog();
       jumpToLogin();
+      _scheduleClipboardCheck();
       darkModeWidget = LottieFiles.buildAnimation(
         LottieFiles.sunLight,
         size: 25,
@@ -283,8 +304,16 @@ class MainScreenState extends BaseWindowState<MainScreen>
             showWindowTitle: true,
           ), onThen: (_) {
         _hasJumpedToPinVerify = false;
+        _scheduleClipboardCheck();
       });
     }
+  }
+
+  void _scheduleClipboardCheck() {
+    _clipboardTimer?.cancel();
+    _clipboardTimer = Timer(const Duration(milliseconds: 600), () {
+      if (mounted) unawaited(_clipboardLinks.check());
+    });
   }
 
   @override
@@ -308,21 +337,25 @@ class MainScreenState extends BaseWindowState<MainScreen>
   }
 
   _buildDesktopBody() {
-    return Row(
-      children: [
-        _sideBar(leftPadding: 8, rightPadding: 8),
-        Expanded(
-          child: Stack(
-            children: [
-              PanelScreen(key: panelScreenKey),
-              Positioned(
-                right: 0,
-                child: _titleBar(),
-              ),
-            ],
+    return ColoredBox(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Row(
+        children: [
+          _sideBar(leftPadding: 8, rightPadding: 8),
+          Expanded(
+            child: Stack(
+              children: [
+                PanelScreen(key: panelScreenKey),
+                Positioned(
+                  right: 0,
+                  width: desktopWindowControlsWidth,
+                  child: _titleBar(),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -342,7 +375,8 @@ class MainScreenState extends BaseWindowState<MainScreen>
         FlutterContextMenuItem.divider(),
         FlutterContextMenuItem(
           appLocalizations.logout,
-          status: MenuItemStatus.warning,
+          status: MenuItemStatus.error,
+          style: MenuItemStyle(errorColor: Theme.of(context).colorScheme.error),
           iconData: LoftifyIcons.logout,
           onPressed: () async {
             HiveUtil.confirmLogout(context);
@@ -377,6 +411,42 @@ class MainScreenState extends BaseWindowState<MainScreen>
       appProvider.themeMode = ActiveThemeMode.dark;
       darkModeController.reverse();
     }
+  }
+
+  Widget _buildSidebarNavigationItem({
+    required SideBarChoice choice,
+    required LoftifyNavigationDestination destination,
+    required bool selected,
+  }) {
+    return LoftifyNavigationRailItem(
+      destination: destination,
+      selected: selected,
+      onTap: () {
+        appProvider.sidebarChoice = choice;
+        panelScreenState?.popAll(false);
+      },
+    );
+  }
+
+  Widget _buildSidebarActionButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    final iconColor = LoftifyDesignThemeData.of(context).colors.textPrimary;
+    return ToolButton(
+      context: context,
+      icon: icon,
+      // The theme Lottie uses a 25px canvas with transparent margins; these
+      // glyphs are visually larger at the same nominal size.
+      iconSize: 20,
+      padding: const EdgeInsets.all(7),
+      colors: ChewieColors.getNormalButtonColors(context).copyWith(
+        iconNormal: iconColor,
+        iconMouseOver: iconColor,
+        iconMouseDown: iconColor,
+      ),
+      onPressed: onPressed,
+    );
   }
 
   _sideBar({
@@ -416,57 +486,51 @@ class MainScreenState extends BaseWindowState<MainScreen>
                   children: [
                     ResponsiveUtil.selectByPlatform(
                         desktop: const SizedBox(height: 5)),
-                    ResponsiveUtil.selectByPlatform(desktop: _buildLogo()),
                     const SizedBox(height: 8),
-                    ToolButton(
-                      context: context,
+                    _buildSidebarNavigationItem(
+                      choice: SideBarChoice.Home,
                       selected: hideNavigator &&
                           preferences.sidebarChoice == SideBarChoice.Home,
-                      icon: LoftifyIcons.home,
-                      selectedIcon: LoftifyIcons.home,
-                      onPressed: () async {
-                        appProvider.sidebarChoice = SideBarChoice.Home;
-                        panelScreenState?.popAll(false);
-                      },
-                      iconSize: 24,
+                      destination: LoftifyNavigationDestination(
+                        icon: LoftifyIcons.home,
+                        lottieAsset: LottieFiles.navHome,
+                        label: appLocalizations.home,
+                      ),
                     ),
                     if (!preferences.hideSearch) ...[
                       const SizedBox(height: 8),
-                      ToolButton(
-                        context: context,
+                      _buildSidebarNavigationItem(
+                        choice: SideBarChoice.Search,
                         selected: hideNavigator &&
                             preferences.sidebarChoice == SideBarChoice.Search,
-                        icon: LoftifyIcons.search,
-                        selectedIcon: LoftifyIcons.search,
-                        onPressed: () async {
-                          appProvider.sidebarChoice = SideBarChoice.Search;
-                          panelScreenState?.popAll(false);
-                        },
+                        destination: LoftifyNavigationDestination(
+                          icon: LoftifyIcons.search,
+                          lottieAsset: LottieFiles.navSearch,
+                          label: appLocalizations.search,
+                        ),
                       ),
                     ],
                     const SizedBox(height: 8),
-                    ToolButton(
-                      context: context,
+                    _buildSidebarNavigationItem(
+                      choice: SideBarChoice.Dynamic,
                       selected: hideNavigator &&
                           preferences.sidebarChoice == SideBarChoice.Dynamic,
-                      icon: LoftifyIcons.activity,
-                      selectedIcon: LoftifyIcons.activity,
-                      onPressed: () async {
-                        appProvider.sidebarChoice = SideBarChoice.Dynamic;
-                        panelScreenState?.popAll(false);
-                      },
+                      destination: LoftifyNavigationDestination(
+                        icon: LoftifyIcons.activity,
+                        lottieAsset: LottieFiles.navHeart,
+                        label: appLocalizations.dynamicTab,
+                      ),
                     ),
                     const SizedBox(height: 8),
-                    ToolButton(
-                      context: context,
+                    _buildSidebarNavigationItem(
+                      choice: SideBarChoice.Mine,
                       selected: hideNavigator &&
                           preferences.sidebarChoice == SideBarChoice.Mine,
-                      icon: LoftifyIcons.profile,
-                      selectedIcon: LoftifyIcons.profile,
-                      onPressed: () async {
-                        appProvider.sidebarChoice = SideBarChoice.Mine;
-                        panelScreenState?.popAll(false);
-                      },
+                      destination: LoftifyNavigationDestination(
+                        icon: LoftifyIcons.profile,
+                        lottieAsset: LottieFiles.navUser,
+                        label: appLocalizations.mine,
+                      ),
                     ),
                     const Spacer(),
                     const SizedBox(height: 8),
@@ -511,8 +575,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
                     ),
                     const SizedBox(height: 2),
                     if (cloudControlProvider.globalControl.showDress) ...[
-                      ToolButton(
-                        context: context,
+                      _buildSidebarActionButton(
                         icon: LoftifyIcons.dress,
                         onPressed: () {
                           RouteUtil.pushPanelCupertinoRoute(
@@ -521,8 +584,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
                       ),
                       const SizedBox(height: 2),
                     ],
-                    ToolButton(
-                      context: context,
+                    _buildSidebarActionButton(
                       icon: LoftifyIcons.notifications,
                       onPressed: () {
                         RouteUtil.pushPanelCupertinoRoute(
@@ -530,8 +592,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
                       },
                     ),
                     const SizedBox(height: 2),
-                    ToolButton(
-                      context: context,
+                    _buildSidebarActionButton(
                       icon: LoftifyIcons.settings,
                       onPressed: () {
                         RouteUtil.pushPanelCupertinoRoute(
@@ -545,27 +606,6 @@ class MainScreenState extends BaseWindowState<MainScreen>
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  _buildLogo({
-    double size = 50,
-  }) {
-    return IgnorePointer(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        clipBehavior: Clip.antiAlias,
-        child: Container(
-          width: size,
-          height: size,
-          decoration: const BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/logo-transparent.png'),
-              fit: BoxFit.contain,
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -610,6 +650,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
       case AppLifecycleState.resumed:
         fetchData();
         cancleTimer();
+        _scheduleClipboardCheck();
         break;
       case AppLifecycleState.paused:
         setTimer();
@@ -623,6 +664,8 @@ class MainScreenState extends BaseWindowState<MainScreen>
 
   @override
   void dispose() {
+    _clipboardTimer?.cancel();
+    _clipboardLinks.dispose();
     trayManager.removeListener(this);
     WidgetsBinding.instance.removeObserver(this);
     windowManager.removeListener(this);

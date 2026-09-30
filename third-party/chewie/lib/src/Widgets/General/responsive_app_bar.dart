@@ -51,6 +51,10 @@ class ResponsiveAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final bool isLandscape = ResponsiveUtil.isLandscapeLayout();
+    // Desktop window controls are painted over the right side of the panel.
+    // Keep the page title and actions out of their hit/paint area.
+    final double windowControlsSpacing =
+        ResponsiveUtil.isDesktop() ? desktopWindowControlsWidth : rightSpacing;
     void handleBack() {
       if (onTapBack != null) {
         onTapBack!();
@@ -106,11 +110,11 @@ class ResponsiveAppBar extends StatelessWidget implements PreferredSizeWidget {
                                   .backButtonTooltip,
                             ),
                           ),
-                        Expanded(child: titleContent),
+                        Flexible(child: titleContent),
                         ...[
                           ...desktopActions,
                           ...landscapeActions,
-                          const SizedBox(width: 44),
+                          SizedBox(width: windowControlsSpacing),
                         ],
                       ],
                     ),

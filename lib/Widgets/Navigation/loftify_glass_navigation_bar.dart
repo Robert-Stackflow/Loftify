@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import '../../Utils/enums.dart';
 import '../../Utils/lottie_files.dart';
+import 'package:loftify/Widgets/Design/loftify_lottie.dart';
 
 @immutable
 class LoftifyNavigationDestination {
@@ -313,6 +314,104 @@ class _LoftifyNavigationItemState extends State<_LoftifyNavigationItem> {
   }
 }
 
+/// Compact desktop counterpart to the bottom navigation item. It shares the
+/// same Lottie icon and selection colors without changing the mobile layout.
+class LoftifyNavigationRailItem extends StatefulWidget {
+  const LoftifyNavigationRailItem({
+    super.key,
+    required this.destination,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final LoftifyNavigationDestination destination;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  State<LoftifyNavigationRailItem> createState() =>
+      _LoftifyNavigationRailItemState();
+}
+
+class _LoftifyNavigationRailItemState extends State<LoftifyNavigationRailItem> {
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (_pressed == value) return;
+    setState(() => _pressed = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final selectedColor = theme.colorScheme.primary;
+    final foregroundColor =
+        widget.selected ? selectedColor : theme.colorScheme.onSurfaceVariant;
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    return Tooltip(
+      message: widget.destination.label,
+      excludeFromSemantics: true,
+      child: Semantics(
+        button: true,
+        selected: widget.selected,
+        label: widget.destination.label,
+        excludeSemantics: true,
+        onTap: widget.onTap,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            excludeFromSemantics: true,
+            onTap: widget.onTap,
+            onTapDown: (_) => _setPressed(true),
+            onTapUp: (_) => _setPressed(false),
+            onTapCancel: () => _setPressed(false),
+            child: AnimatedScale(
+              scale: _pressed ? 0.94 : 1,
+              duration: reduceMotion
+                  ? Duration.zero
+                  : const Duration(milliseconds: 90),
+              curve: Curves.easeOutCubic,
+              child: AnimatedContainer(
+                key: ValueKey(
+                  'loftify-rail-selection-${widget.destination.label}',
+                ),
+                width: 42,
+                height: 42,
+                alignment: Alignment.center,
+                duration: reduceMotion
+                    ? Duration.zero
+                    : const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                decoration: BoxDecoration(
+                  color: widget.selected
+                      ? selectedColor.withValues(alpha: 0.11)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: widget.selected
+                        ? selectedColor.withValues(alpha: 0.18)
+                        : Colors.transparent,
+                    width: 0.8,
+                  ),
+                ),
+                child: _NavigationIcon(
+                  rail: true,
+                  icon: widget.destination.icon,
+                  lottieAsset: widget.destination.lottieAsset,
+                  selected: widget.selected,
+                  badgeCount: widget.destination.badgeCount,
+                  color: foregroundColor,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _NavigationLabel extends StatelessWidget {
   const _NavigationLabel({
     required this.label,
@@ -366,6 +465,7 @@ class _NavigationLabel extends StatelessWidget {
 
 class _NavigationIcon extends StatelessWidget {
   const _NavigationIcon({
+    this.rail = false,
     required this.icon,
     required this.lottieAsset,
     required this.selected,
@@ -374,6 +474,7 @@ class _NavigationIcon extends StatelessWidget {
   });
 
   final IconData icon;
+  final bool rail;
   final String? lottieAsset;
   final bool selected;
   final int badgeCount;
@@ -392,6 +493,7 @@ class _NavigationIcon extends StatelessWidget {
             ChewieIcon(icon, size: 22, color: color)
           else
             LoftifyNavigationLottieIcon(
+              rail: rail,
               asset: lottieAsset!,
               selected: selected,
               color: color,
@@ -453,12 +555,14 @@ class LoftifyNavigationLottieIcon extends StatefulWidget {
     required this.selected,
     required this.color,
     this.size = 22,
+    this.rail = false,
   });
 
   final String asset;
   final bool selected;
   final Color color;
   final double size;
+  final bool rail;
 
   @override
   State<LoftifyNavigationLottieIcon> createState() =>
@@ -526,6 +630,17 @@ class _LoftifyNavigationLottieIconState
       size: widget.size,
       controller: _controller,
       tint: widget.color,
+      // The source loading glyph has 70% layer opacity and extends to the
+      // crop boundary. Normalize only the rail variant; mobile stays intact.
+      opacity: widget.rail && _usesLoadingMark ? 100 : null,
+      specOverride: widget.rail && _usesLoadingMark
+          ? const LoftifyLottieSpec(
+              asset: LottieFiles.navHome,
+              sourceSize: Size.square(128),
+              contentBounds: Rect.fromLTWH(32, 20, 64, 82),
+              opticalFill: 0.94,
+            )
+          : null,
       strokeWidth: _usesLoadingMark && widget.selected ? 6.8 : null,
       onLoaded: () {
         _loaded = true;

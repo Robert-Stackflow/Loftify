@@ -353,16 +353,19 @@ class LottieFiles {
     bool? repeat,
     Color? tint,
     double? strokeWidth,
+    LoftifyLottieSpec? specOverride,
+    int? opacity,
   }) {
     return Builder(
       key: key,
       builder: (context) => LoftifyLottie(
-        spec: specFor(path),
+        spec: specOverride ?? specFor(path),
         size: size,
         controller: controller,
         repeat: repeat,
         tint: tint,
         strokeWidth: strokeWidth,
+        opacity: opacity,
         onLoaded: (_) {
           if (controller != null && autoForward == true) controller.value = 1;
           onLoaded?.call();

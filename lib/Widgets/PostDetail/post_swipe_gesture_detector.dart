@@ -10,6 +10,7 @@ class PostSwipeGestureDetector extends StatefulWidget {
     super.key,
     required this.child,
     this.excludedRegions = const <GlobalKey>[],
+    this.activeRegion,
     this.behavior = HitTestBehavior.translucent,
     this.edgeActivationWidth = 28,
     this.onHorizontalDragStart,
@@ -20,6 +21,10 @@ class PostSwipeGestureDetector extends StatefulWidget {
 
   final Widget child;
   final List<GlobalKey> excludedRegions;
+
+  /// When mounted, only drags starting inside this region can switch posts.
+  /// An unmounted region leaves the single-pane/mobile behavior unchanged.
+  final GlobalKey? activeRegion;
   final HitTestBehavior behavior;
   final double edgeActivationWidth;
   final GestureDragStartCallback? onHorizontalDragStart;
@@ -40,6 +45,7 @@ class _PostSwipeGestureDetectorState extends State<PostSwipeGestureDetector> {
   bool _dragging = false;
 
   bool _canStartAt(Offset globalPosition) {
+    if (!_isInActiveRegion(globalPosition)) return false;
     if (_isEdge(globalPosition)) return true;
     for (final key in widget.excludedRegions) {
       final region = key.currentContext?.findRenderObject();
@@ -48,6 +54,15 @@ class _PostSwipeGestureDetectorState extends State<PostSwipeGestureDetector> {
       if ((Offset.zero & region.size).contains(local)) return false;
     }
     return true;
+  }
+
+  bool _isInActiveRegion(Offset globalPosition) {
+    final region = widget.activeRegion?.currentContext?.findRenderObject();
+    if (region is! RenderBox || !region.attached || !region.hasSize) {
+      return true;
+    }
+    return (Offset.zero & region.size)
+        .contains(region.globalToLocal(globalPosition));
   }
 
   bool _isEdge(Offset globalPosition) {
@@ -139,7 +154,8 @@ class _PostSwipeGestureDetectorState extends State<PostSwipeGestureDetector> {
             GestureRecognizerFactoryWithHandlers<_EdgePostSwipeRecognizer>(
           _EdgePostSwipeRecognizer.new,
           (recognizer) => recognizer
-            ..isEdge = _isEdge
+            ..isEdge =
+                ((position) => _isInActiveRegion(position) && _isEdge(position))
             ..onStart = (_) {},
         ),
       },

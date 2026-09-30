@@ -355,7 +355,6 @@ class Utils {
     } else if (menuItem.key == TrayKey.launchAtStartup.key) {
       menuItem.checked = !(menuItem.checked == true);
       ChewieHiveUtil.put(HiveUtil.launchAtStartupKey, menuItem.checked);
-      generalSettingScreenState?.refreshLauchAtStartup();
       if (menuItem.checked == true) {
         await LaunchAtStartup.instance.enable();
       } else {

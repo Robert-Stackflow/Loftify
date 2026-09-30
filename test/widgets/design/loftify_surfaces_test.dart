@@ -265,6 +265,31 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('archive empty sliver supports intrinsic layout and scrolling',
+      (tester) async {
+    final previous = chewieProvider.stateWidgetBuilder;
+    chewieProvider.stateWidgetBuilder = LoftifyStateView.fromChewie;
+    addTearDown(() => chewieProvider.stateWidgetBuilder = previous);
+
+    for (final width in [390.0, 1000.0]) {
+      await tester.pumpWidget(_TestApp(
+        width: width,
+        child: const CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(child: SizedBox(height: 180)),
+            SliverEmptyPlaceholder(text: 'No articles'),
+          ],
+        ),
+      ));
+      await tester.pump();
+      expect(find.text('No articles'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.drag(find.text('No articles'), const Offset(0, -100));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    }
+  });
+
   testWidgets('icon-only loading state keeps its localized semantic label',
       (tester) async {
     final previous = chewieProvider.stateWidgetBuilder;

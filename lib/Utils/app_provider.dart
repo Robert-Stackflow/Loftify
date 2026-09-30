@@ -1,7 +1,6 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:loftify/Screens/Setting/general_setting_screen.dart';
 import 'package:tuple/tuple.dart';
 
 import '../Screens/Navigation/home_screen.dart';
@@ -32,12 +31,6 @@ SearchScreenState? get searchScreenState => searchScreenKey.currentState;
 GlobalKey<HomeScreenState> homeScreenKey = GlobalKey<HomeScreenState>();
 
 HomeScreenState? get homeScreenState => homeScreenKey.currentState;
-
-GlobalKey<GeneralSettingScreenState> generalSettingScreenKey =
-    GlobalKey<GeneralSettingScreenState>();
-
-GeneralSettingScreenState? get generalSettingScreenState =>
-    generalSettingScreenKey.currentState;
 
 GlobalKey<DialogWrapperWidgetState> dialogNavigatorKey =
     GlobalKey<DialogWrapperWidgetState>();

@@ -595,6 +595,11 @@ class ItemBuilder {
                         fontSizeDelta: hintFontSizeDelta,
                       ),
                   decoration: InputDecoration(
+                    // Desktop compact density offsets a dense, borderless
+                    // field's baseline even when textAlignVertical is center.
+                    visualDensity: ResponsiveUtil.isLandscapeLayout()
+                        ? VisualDensity.standard
+                        : null,
                     isDense: true,
                     filled: false,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 8),

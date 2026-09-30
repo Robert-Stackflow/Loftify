@@ -116,6 +116,7 @@ class CustomConfirmDialog {
     BuildContext context, {
     String? title,
     required String message,
+    Widget? messageChild,
     String? imagePath,
     TextAlign messageTextAlign = TextAlign.center,
     required String confirmButtonText,
@@ -143,6 +144,7 @@ class CustomConfirmDialog {
             DialogAnimation(
           animation: animation,
           child: CustomConfirmDialogWidget(
+            messageChild: messageChild,
             renderHtml: renderHtml,
             title: title,
             message: message,
@@ -167,6 +169,7 @@ class CustomConfirmDialog {
     BuildContext context, {
     String? title,
     required String message,
+    Widget? messageChild,
     String? imagePath,
     required String confirmButtonText,
     TextAlign messageTextAlign = TextAlign.center,
@@ -198,6 +201,7 @@ class CustomConfirmDialog {
         },
         pageBuilder: (animation, secondaryAnimation, child) =>
             CustomConfirmDialogWidget(
+          messageChild: messageChild,
           title: title,
           message: message,
           confirmButtonText: confirmButtonText,

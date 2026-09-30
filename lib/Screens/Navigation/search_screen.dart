@@ -19,6 +19,7 @@ import '../../Utils/hive_util.dart';
 import '../../Utils/tab_state_util.dart';
 import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
+import '../../Widgets/Design/loftify_content_frame.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../Widgets/loftify_icons.dart';
@@ -205,20 +206,33 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final isWideLayout = ResponsiveUtil.isLandscapeLayout();
+    final content = Stack(
+      children: [
+        _buildMainBody(),
+        if (_sugList.isNotEmpty) _buildSuggestList(),
+      ],
+    );
     return Scaffold(
       backgroundColor: ChewieTheme.getBackground(context),
       appBar: ResponsiveAppBar(
         showBack: widget.showBack,
-        titleWidget: _buildSearchBar(),
-        titleLeftMargin: 0,
+        title: isWideLayout ? appLocalizations.search : '',
+        titleWidget: isWideLayout ? null : _buildSearchBar(),
+        titleLeftMargin: isWideLayout ? 16 : 0,
         rightSpacing: 0,
       ),
-      body: Stack(
-        children: [
-          _buildMainBody(),
-          if (_sugList.isNotEmpty) _buildSuggestList(),
-        ],
-      ),
+      body: isWideLayout
+          ? LoftifyContentFrame(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildSearchBar(),
+                  Expanded(child: content),
+                ],
+              ),
+            )
+          : content,
       extendBody: true,
     );
   }
@@ -748,15 +762,15 @@ class SearchScreenState extends BaseDynamicState<SearchScreen>
   }
 
   Widget _buildSearchBar() {
-    final isCompactWidth = MediaQuery.sizeOf(context).width < 600;
+    final isWideLayout = ResponsiveUtil.isLandscapeLayout();
     return Container(
       key: const ValueKey('search-navigation-bar'),
-      margin: const EdgeInsets.all(10),
+      margin: isWideLayout
+          ? const EdgeInsets.fromLTRB(16, 12, 16, 12)
+          : const EdgeInsets.all(10),
       constraints: BoxConstraints(
-        maxWidth: !isCompactWidth && ResponsiveUtil.isLandscapeLayout()
-            ? searchBarWidth - 80
-            : double.infinity,
-        maxHeight: 56,
+        minHeight: isWideLayout ? 48 : 0,
+        maxHeight: isWideLayout ? 48 : 56,
       ),
       child: ItemBuilder.buildSearchBar(
         context: context,

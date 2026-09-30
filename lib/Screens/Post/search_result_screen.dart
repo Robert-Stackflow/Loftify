@@ -16,6 +16,8 @@ import '../../Utils/utils.dart';
 import '../../Utils/hive_util.dart';
 import '../../Utils/paged_data_controller.dart';
 import '../../Utils/tab_state_util.dart';
+import '../../Widgets/Design/loftify_state_view.dart';
+import '../../Widgets/Design/loftify_content_frame.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
@@ -241,44 +243,60 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final isWideLayout = ResponsiveUtil.isLandscapeLayout();
+    final content = Stack(
+      children: [
+        _buildTabView(),
+        if (_sugList.isNotEmpty) _buildSuggestList(),
+      ],
+    );
     return Scaffold(
       backgroundColor: ChewieTheme.getBackground(context),
       appBar: ResponsiveAppBar(
         showBack: true,
-        titleLeftMargin: 0,
-        titleWidget: _buildSearchBar(),
-        bottomHeight: 56,
-        bottomWidget: TabBarWrapper(
-          tabController: _tabController,
-          tabs: _tabLabelList
-              .asMap()
-              .entries
-              .map(
-                (entry) => ItemBuilder.buildAnimatedTab(
-                  context,
-                  selected: entry.key == _currentTabIndex,
-                  text: entry.value,
-                  controller: _tabController,
-                  tabIndex: entry.key,
-                ),
-              )
-              .toList(),
-          showBorder: true,
-          width: MediaQuery.sizeOf(context).width,
-          isScrollable: false,
-          onTap: (index) {
-            _setCurrentTab(index);
-          },
-        ),
+        title: isWideLayout ? appLocalizations.searchResultPage : '',
+        titleLeftMargin: isWideLayout ? 16 : 0,
+        titleWidget: isWideLayout ? null : _buildSearchBar(),
+        bottomHeight: isWideLayout ? null : 56,
+        bottomWidget: isWideLayout ? null : _buildTabs(),
       ),
-      body: Stack(
-        children: [
-          _buildTabView(),
-          if (_sugList.isNotEmpty) _buildSuggestList(),
-        ],
-      ),
+      body: isWideLayout
+          ? LoftifyContentFrame(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildSearchBar(),
+                  SizedBox(height: 56, child: _buildTabs()),
+                  Expanded(child: content),
+                ],
+              ),
+            )
+          : content,
     );
   }
+
+  Widget _buildTabs() => TabBarWrapper(
+        tabController: _tabController,
+        tabs: _tabLabelList
+            .asMap()
+            .entries
+            .map(
+              (entry) => ItemBuilder.buildAnimatedTab(
+                context,
+                selected: entry.key == _currentTabIndex,
+                text: entry.value,
+                controller: _tabController,
+                tabIndex: entry.key,
+              ),
+            )
+            .toList(),
+        showBorder: true,
+        width: MediaQuery.sizeOf(context).width,
+        isScrollable: false,
+        onTap: (index) {
+          _setCurrentTab(index);
+        },
+      );
 
   void initTab() {
     _tabController = TabController(
@@ -767,7 +785,6 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
                 SliverList(
                   delegate: SliverChildListDelegate(
                     [
-                      const SizedBox(height: 10),
                       if (_allResult!.tags.isEmpty &&
                           _allResult!.tagRank == null &&
                           _allResult!.posts.isEmpty)
@@ -866,7 +883,14 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
                 SliverFillRemaining(
                   hasScrollBody: false,
                   child: _allPagingController.lastError == null
-                      ? LoadingWidget(
+                      ? LoftifyStateView(
+                          visual: LoftifyStateVisual.loading,
+                          title: chewieLocalizations.loading,
+                          indicatorSize: 50,
+                          padding: const EdgeInsets.only(bottom: 100),
+                          // The sliver measures intrinsic height and owns
+                          // scrolling; don't nest the adaptive scroll body.
+                          scrollWhenConstrained: false,
                           background: ChewieTheme.getBackground(context),
                         )
                       : Center(
@@ -906,7 +930,6 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
           SliverList(
             delegate: SliverChildListDelegate(
               [
-                const SizedBox(height: 10),
                 if (_tagList.isEmpty && _tagRank == null)
                   Container(
                     margin: const EdgeInsets.symmetric(vertical: 16),
@@ -968,7 +991,6 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
           SliverList(
             delegate: SliverChildListDelegate(
               [
-                const SizedBox(height: 10),
                 if (_collectionList.isEmpty)
                   Container(
                     margin: const EdgeInsets.symmetric(vertical: 16),
@@ -1030,7 +1052,6 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
           SliverList(
             delegate: SliverChildListDelegate(
               [
-                const SizedBox(height: 10),
                 if (_postList.isEmpty)
                   Container(
                     margin: const EdgeInsets.symmetric(vertical: 16),
@@ -1090,7 +1111,6 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
           SliverList(
             delegate: SliverChildListDelegate(
               [
-                const SizedBox(height: 10),
                 if (_grainList.isEmpty)
                   Container(
                     margin: const EdgeInsets.symmetric(vertical: 16),
@@ -1152,7 +1172,6 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
           SliverList(
             delegate: SliverChildListDelegate(
               [
-                const SizedBox(height: 10),
                 if (_userList.isEmpty)
                   Container(
                     margin: const EdgeInsets.symmetric(vertical: 16),
@@ -1199,13 +1218,21 @@ class _SearchResultScreenState extends BaseDynamicState<SearchResultScreen>
   }
 
   Widget _buildSearchBar() {
-    double width = ResponsiveUtil.isLandscapeLayout()
-        ? searchBarWidth - 100
+    final isWideLayout = ResponsiveUtil.isLandscapeLayout();
+    final width = isWideLayout
+        ? loftifyPageMaxContentWidth
         : min(MediaQuery.of(context).size.width, searchBarWidth);
     return Container(
-      margin: const EdgeInsets.all(10),
-      constraints:
-          BoxConstraints(maxWidth: width, minWidth: width, maxHeight: 56),
+      key: const ValueKey('search-results-bar'),
+      margin: isWideLayout
+          ? const EdgeInsets.fromLTRB(16, 12, 16, 12)
+          : const EdgeInsets.all(10),
+      constraints: BoxConstraints(
+        maxWidth: width,
+        minWidth: isWideLayout ? 0 : width,
+        minHeight: isWideLayout ? 48 : 0,
+        maxHeight: isWideLayout ? 48 : 56,
+      ),
       child: ItemBuilder.buildSearchBar(
         context: context,
         borderRadius: 8,

@@ -74,9 +74,13 @@ class ContextMenuWidget extends StatelessWidget {
     );
 
     final mediaQuery = MediaQuery.of(context);
+    final overlayBox =
+        Navigator.of(context).overlay?.context.findRenderObject();
+    final availableWidth =
+        overlayBox is RenderBox ? overlayBox.size.width : mediaQuery.size.width;
     final safeWidth = max(
       0.0,
-      mediaQuery.size.width - mediaQuery.padding.horizontal - 16,
+      availableWidth - mediaQuery.padding.horizontal - 16,
     );
 
     return TweenAnimationBuilder<double>(
@@ -90,6 +94,7 @@ class ContextMenuWidget extends StatelessWidget {
           alignment: state.spawnAlignment,
           scale: value,
           child: Container(
+            key: state.menuKey,
             padding: state.padding,
             constraints: BoxConstraints(
               maxWidth: min(state.maxWidth, safeWidth),

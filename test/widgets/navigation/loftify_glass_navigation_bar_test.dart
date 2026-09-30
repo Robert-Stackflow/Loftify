@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/lottie_files.dart';
 import 'package:loftify/Widgets/Navigation/loftify_glass_navigation_bar.dart';
+import 'package:loftify/Widgets/Design/loftify_lottie.dart';
 import 'package:loftify/Widgets/loftify_icons.dart';
 
 const _destinations = <LoftifyNavigationDestination>[
@@ -95,6 +96,82 @@ Widget _host({
 }
 
 void main() {
+  testWidgets('desktop rail uses mobile Lottie icons and selection colors',
+      (tester) async {
+    final tapped = <String>[];
+    const selectedColor = Color(0xFF2A9C93);
+    final scheme = ColorScheme.fromSeed(seedColor: selectedColor).copyWith(
+      primary: selectedColor,
+    );
+    await tester.pumpWidget(MaterialApp(
+      theme: ThemeData(colorScheme: scheme),
+      home: Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              LoftifyNavigationRailItem(
+                destination: _destinations[0],
+                selected: true,
+                onTap: () => tapped.add('Home'),
+              ),
+              LoftifyNavigationRailItem(
+                destination: _destinations[1],
+                selected: false,
+                onTap: () => tapped.add('Search'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ));
+
+    final home = find.byType(LoftifyNavigationRailItem).first;
+    final search = find.byType(LoftifyNavigationRailItem).last;
+    final homeIcon = tester.widget<LoftifyNavigationLottieIcon>(find.descendant(
+      of: home,
+      matching: find.byType(LoftifyNavigationLottieIcon),
+    ));
+    final searchIcon =
+        tester.widget<LoftifyNavigationLottieIcon>(find.descendant(
+      of: search,
+      matching: find.byType(LoftifyNavigationLottieIcon),
+    ));
+    expect(homeIcon.asset, LottieFiles.navHome);
+    expect(homeIcon.selected, isTrue);
+    expect(homeIcon.color, selectedColor);
+    expect(homeIcon.size, 22);
+    final homeAnimation = tester.widget<LoftifyLottie>(find.descendant(
+      of: home,
+      matching: find.byType(LoftifyLottie),
+    ));
+    expect(homeAnimation.opacity, 100);
+    expect(
+        homeAnimation.spec.contentBounds, const Rect.fromLTWH(32, 20, 64, 82));
+    expect(searchIcon.asset, LottieFiles.navSearch);
+    expect(searchIcon.color, scheme.onSurfaceVariant);
+    expect(tester.getSize(home), const Size(42, 42));
+    final selection = tester.widget<AnimatedContainer>(
+      find.byKey(const ValueKey('loftify-rail-selection-Home')),
+    );
+    expect((selection.decoration as BoxDecoration).color,
+        selectedColor.withValues(alpha: 0.11));
+
+    await tester.tap(search);
+    expect(tapped, ['Search']);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('mobile home animation retains its original opacity and framing',
+      (tester) async {
+    await tester.pumpWidget(_host());
+    final home = tester
+        .widgetList<LoftifyLottie>(find.byType(LoftifyLottie))
+        .firstWhere((widget) => widget.spec.asset == LottieFiles.navHome);
+    expect(home.opacity, isNull);
+    expect(home.spec.contentBounds, const Rect.fromLTWH(34, 22, 60, 76));
+  });
+
   testWidgets('three visible destinations can leave search unselected',
       (tester) async {
     final selected = <int>[];

@@ -7,7 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:loftify/Screens/Navigation/search_screen.dart';
+import 'package:loftify/Screens/Post/collection_detail_screen.dart';
+import 'package:loftify/Screens/Post/grain_detail_screen.dart';
 import 'package:loftify/Screens/Post/search_result_screen.dart';
+import 'package:loftify/Widgets/Design/loftify_state_view.dart';
 import 'package:loftify/Utils/request_util.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/generated/app_localizations.dart';
@@ -153,6 +156,65 @@ void main() {
     }));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
+  }
+
+  for (final width in [390.0, 1000.0, 1800.0]) {
+    testWidgets('pending search and detail routes lay out at width $width',
+        (tester) async {
+      final previous = chewieProvider.stateWidgetBuilder;
+      chewieProvider.stateWidgetBuilder = LoftifyStateView.fromChewie;
+      addTearDown(() => chewieProvider.stateWidgetBuilder = previous);
+      holdInitial = true;
+      await mount(tester, resultsPage: true, size: Size(width, 844));
+      expect(find.byType(LoftifyStateView), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      final searchBar = find.byKey(const ValueKey('search-results-bar'));
+      expect(
+        find.ancestor(of: searchBar, matching: find.byType(ResponsiveAppBar)),
+        ResponsiveUtil.isLandscapeLayout() ? findsNothing : findsOneWidget,
+      );
+      if (width == 1800) {
+        final tabs = tester.getRect(find.byType(TabBarWrapper));
+        final content = tester.getRect(
+          find.byKey(const PageStorageKey('search-all-initial')),
+        );
+        expect(tabs.width, 1180);
+        expect(content.width, 1180);
+        expect(tabs.center.dx, width / 2);
+        expect(content.center.dx, width / 2);
+        expect(tester.getSize(searchBar).width, 1180);
+        expect(tester.getCenter(searchBar).dx, width / 2);
+        expect(tester.getBottomLeft(searchBar).dy, lessThanOrEqualTo(tabs.top));
+      }
+
+      final navigator =
+          tester.state<NavigatorState>(find.byType(Navigator).first);
+      for (final page in const <Widget>[
+        CollectionDetailScreen(
+          collectionId: 1,
+          postId: 1,
+          blogId: 1,
+          blogName: 'test',
+        ),
+        GrainDetailScreen(grainId: 1, blogId: 1),
+      ]) {
+        navigator.push(MaterialPageRoute<void>(builder: (_) => page));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+        expect(find.byType(LoadingWidget), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        // Relayout the retained search route as well as the visible detail.
+        tester.view.physicalSize = Size(width, 700);
+        await tester.pump();
+        expect(tester.takeException(), isNull);
+        navigator.pop();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+        expect(tester.takeException(), isNull);
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
   }
 
   testWidgets('rank row fills page and horizontal swipe stays on next board',

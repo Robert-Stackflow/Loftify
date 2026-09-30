@@ -73,7 +73,7 @@ class _UserDynamicShieldSettingScreenState
       context: context,
       title: appLocalizations.userDynamicShieldSetting,
       showTitleBar: widget.showTitleBar,
-      showBack: !ResponsiveUtil.isLandscapeLayout(),
+      showBack: true,
       padding: widget.padding,
       overrideBody: EasyRefresh(
         controller: _refreshController,

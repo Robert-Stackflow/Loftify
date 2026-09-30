@@ -11,6 +11,73 @@ import 'package:loftify/Widgets/Profile/profile_overview_card.dart';
 import 'package:loftify/Widgets/loftify_icons.dart';
 
 void main() {
+  testWidgets('profile tabs and content share the centered heading width',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1800, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(_TestApp(
+      width: 1800,
+      child: Builder(
+          builder: (context) => Column(children: [
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: context.design.spacing.xl),
+                  child: const LoftifyProfileHeaderLayout(
+                    summary: SizedBox(
+                        key: ValueKey('heading'),
+                        height: 100,
+                        width: double.infinity),
+                  ),
+                ),
+                for (final name in ['tabs', 'content'])
+                  LoftifyProfileContentFrame(
+                    child: SizedBox(
+                        key: ValueKey(name),
+                        height: 56,
+                        width: double.infinity),
+                  ),
+              ])),
+    ));
+    final heading = tester.getRect(find.byKey(const ValueKey('heading')));
+    expect(heading.width, loftifyProfileMaxContentWidth);
+    for (final name in ['tabs', 'content']) {
+      final rect = tester.getRect(find.byKey(ValueKey(name)));
+      expect(rect.left, heading.left);
+      expect(rect.right, heading.right);
+    }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('wide profile reflows naturally and keeps action compact',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(1300, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    for (final width in [500.0, 1100.0]) {
+      await tester.pumpWidget(_TestApp(
+        width: width,
+        child: const LoftifyWideProfileSummary(
+          identity: SizedBox(key: ValueKey('identity'), height: 100),
+          statistics: SizedBox(key: ValueKey('statistics'), height: 64),
+          action: SizedBox(
+              key: ValueKey('action'), height: 48, width: double.infinity),
+        ),
+      ));
+      final identity = tester.getRect(find.byKey(const ValueKey('identity')));
+      final stats = tester.getRect(find.byKey(const ValueKey('statistics')));
+      final action = tester.getRect(find.byKey(const ValueKey('action')));
+      expect(stats.top, greaterThan(identity.bottom));
+      if (width >= 600) {
+        expect(action.left, greaterThan(stats.right));
+        expect(action.center.dy, closeTo(stats.center.dy, 1));
+      } else {
+        expect(action.top, greaterThan(stats.bottom));
+      }
+      expect(tester.getSize(find.byKey(const ValueKey('action'))).width,
+          lessThanOrEqualTo(240));
+      expect(tester.takeException(), isNull);
+    }
+  });
+
   setUpAll(() async {
     final directory = Directory(
       '${Directory.current.path}/build/test_hive/profile_header_components',

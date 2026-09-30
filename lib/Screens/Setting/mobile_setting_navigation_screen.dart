@@ -16,7 +16,6 @@
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 
-import '../../Utils/app_provider.dart';
 import '../../Widgets/loftify_icons.dart';
 import '../../l10n/l10n.dart';
 import 'apperance_setting_screen.dart';
@@ -50,7 +49,7 @@ class _MobileSettingNavigationScreenState
       context: context,
       title: appLocalizations.setting,
       showTitleBar: widget.showTitleBar,
-      showBack: !ResponsiveUtil.isLandscapeLayout(),
+      showBack: true,
       padding: widget.padding,
       children: [
         CaptionItem(
@@ -64,7 +63,7 @@ class _MobileSettingNavigationScreenState
               onTap: () {
                 RouteUtil.pushCupertinoRoute(
                   context,
-                  GeneralSettingScreen(key: generalSettingScreenKey),
+                  const GeneralSettingScreen(),
                 );
               },
             ),

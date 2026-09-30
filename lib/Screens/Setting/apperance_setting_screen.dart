@@ -69,7 +69,7 @@ class _AppearanceSettingScreenState
       context: context,
       title: appLocalizations.appearanceSetting,
       showTitleBar: widget.showTitleBar,
-      showBack: !ResponsiveUtil.isLandscapeLayout(),
+      showBack: true,
       padding: widget.padding,
       children: [
         CaptionItem(

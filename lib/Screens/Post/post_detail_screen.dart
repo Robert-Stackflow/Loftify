@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:card_swiper/card_swiper.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:loftify/Api/post_api.dart';
 import 'package:loftify/Api/user_api.dart';
@@ -40,12 +39,13 @@ import '../../Utils/uri_util.dart';
 import '../../Utils/utils.dart';
 import '../../Theme/loftify_design_theme.dart';
 import '../../Widgets/Design/loftify_content_reference.dart';
+import '../../Widgets/Design/loftify_content_frame.dart';
 import '../../Widgets/Design/loftify_reading.dart';
 import '../../Widgets/Item/item_builder.dart';
 import '../../Widgets/Item/loftify_item_builder.dart';
 import '../../Widgets/PostItem/recommend_flow_item_builder.dart';
 import '../../Widgets/PostDetail/detail_bottom_bar.dart';
-import '../../Widgets/PostDetail/lazy_comment_jump.dart';
+import '../../Widgets/PostDetail/post_content_sliver.dart';
 import '../../Widgets/PostDetail/post_content_section.dart';
 import '../../Widgets/PostDetail/post_download_action_icon.dart';
 import '../../Widgets/PostDetail/post_swipe_gesture_detector.dart';
@@ -137,8 +137,8 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
   final GlobalKey _operationViewportKey = GlobalKey();
   final GlobalKey _commentListViewportKey = GlobalKey();
   final GlobalKey _commentEndViewportKey = GlobalKey();
-  final GlobalKey _commonContentSliverKey = GlobalKey();
   final GlobalKey _imageSwiperViewportKey = GlobalKey();
+  final GlobalKey _postBodyPaneKey = GlobalKey();
   final ResizableController _resizableController = ResizableController();
   DownloadState downloadState = DownloadState.none;
   double _downloadProgress = 0;
@@ -954,16 +954,19 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
   Widget build(BuildContext context) {
     super.build(context);
     final design = context.design;
+    final content = Stack(
+      fit: StackFit.expand,
+      children: [
+        _buildPostSwipeLayer(_buildBody()),
+        _buildFloatingOperationOverlay(),
+      ],
+    );
     return Scaffold(
       appBar: _buildAppBar(),
       backgroundColor: design.colors.page,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          _buildPostSwipeLayer(_buildBody()),
-          _buildFloatingOperationOverlay(),
-        ],
-      ),
+      body: ResponsiveUtil.isLandscapeLayout()
+          ? LoftifyContentFrame(child: content)
+          : content,
     );
   }
 
@@ -998,6 +1001,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
     return PostSwipeGestureDetector(
       behavior: HitTestBehavior.translucent,
       excludedRegions: [_imageSwiperViewportKey],
+      activeRegion: _postBodyPaneKey,
       onHorizontalDragStart: _handlePostSwipeStart,
       onHorizontalDragUpdate: _handlePostSwipeUpdate,
       onHorizontalDragEnd: _handlePostSwipeEnd,
@@ -1295,8 +1299,7 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
         controller: _scrollController,
         physics: physics,
         slivers: [
-          SliverList.list(
-            key: _commonContentSliverKey,
+          PostContentSliver(
             children: _buildCommonContent(false),
           ),
           _buildRecommendFlow(),
@@ -1306,50 +1309,45 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
   }
 
   _buildTabletMainBody() {
-    return ResizableContainer(
-      direction: Axis.horizontal,
-      controller: _resizableController,
-      // divider: ResizableDivider(
-      //   color: Theme
-      //       .of(context)
-      //       .dividerColor,
-      //   thickness: ResponsiveUtil.isMobile() ? 2 : 1,
-      //   size: 6,
-      //   onHoverEnter: () {
-      //     if (ResponsiveUtil.isMobile()) {
-      //       HapticFeedback.lightImpact();
-      //     }
-      //   },
-      // ),
-      children: [
-        ResizableChild(
-          size: ResizableSize.pixels(
-            isArticle
-                ? MediaQuery.sizeOf(context).width * 2 / 3
-                : max(MediaQuery.sizeOf(context).width * 1 / 3, 400),
-          ),
-          // minSize: 300,
-          child: EasyRefresh.builder(
-            onRefresh: _onRefresh,
-            triggerAxis: Axis.vertical,
-            childBuilder: (context, physics) =>
-                NotificationListener<ScrollNotification>(
-              onNotification: _handlePostScrollNotification,
-              child: ListView(
-                controller: _tabletScrollController,
-                physics: physics,
-                children: _buildCommonContent(true),
-              ),
-            ),
-          ),
-        ),
-        ResizableChild(
-          // minSize: 300,
-          size: const ResizableSize.expand(),
-          child: _buildRecommendFlow(sliver: false),
-        ),
-      ],
-    );
+    return LayoutBuilder(
+        builder: (context, constraints) => ResizableContainer(
+              direction: Axis.horizontal,
+              controller: _resizableController,
+              children: [
+                ResizableChild(
+                  size: ResizableSize.pixels(
+                    isArticle
+                        ? constraints.maxWidth * 2 / 3
+                        : max(constraints.maxWidth * 1 / 3, 400),
+                  ),
+                  divider: const ResizableDivider(padding: 12),
+                  child: EasyRefresh.builder(
+                    key: _postBodyPaneKey,
+                    onRefresh: _onRefresh,
+                    triggerAxis: Axis.vertical,
+                    childBuilder: (context, physics) =>
+                        NotificationListener<ScrollNotification>(
+                      onNotification: _handlePostScrollNotification,
+                      child: CustomScrollView(
+                        controller: _tabletScrollController,
+                        physics: physics,
+                        slivers: [
+                          PostContentSliver(children: _buildCommonContent(true)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                ResizableChild(
+                  // minSize: 300,
+                  size: const ResizableSize.expand(),
+                  child: NotificationListener<ScrollNotification>(
+                    onNotification: _handlePostScrollNotification,
+                    child: _buildRecommendFlow(sliver: false),
+                  ),
+                ),
+              ],
+            ));
   }
 
   void _handleDoubleTapDown(TapDownDetails details) {
@@ -1729,24 +1727,9 @@ class _PostDetailScreenState extends BaseDynamicState<PostDetailScreen>
             ? _scrollController
             : null;
     if (controller == null) return;
-    final requestedPostId = postId;
-
-    // The heading may be unmounted by the lazy sliver. Its parent sliver
-    // remains mounted, so approach the end of the post content first. This
-    // works from both a long article above and recommendations below.
-    final mainSliver =
-        _commonContentSliverKey.currentContext?.findRenderObject();
-    final contentExtent = tabletBody
-        ? controller.position.maxScrollExtent +
-            controller.position.viewportDimension
-        : mainSliver is RenderSliver
-            ? mainSliver.geometry?.scrollExtent
-            : null;
-    await revealLazyComment(
+    await revealPostComment(
       controller: controller,
       anchorKey: commentKey,
-      contentExtent: contentExtent,
-      isActive: () => mounted && requestedPostId == postId,
     );
   }
 

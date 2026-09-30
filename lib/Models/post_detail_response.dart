@@ -907,6 +907,7 @@ class Comment {
   int blogId;
   String content;
   List<CommentEmote> emotes;
+  List<CommentImage> images;
   int id;
   String ipLocation;
   List<Comment> l2Comments;
@@ -927,6 +928,7 @@ class Comment {
     required this.blogId,
     required this.content,
     required this.emotes,
+    this.images = const [],
     required this.id,
     required this.ipLocation,
     required this.l2Comments,
@@ -950,6 +952,14 @@ class Comment {
       l2CommentOffset: -1,
       blogId: _detailInt(json['blogId']),
       content: _detailString(json['content']),
+      images: json['images'] is List
+          ? (json['images'] as List)
+              .whereType<Map>()
+              .map((value) => CommentImage.fromJson(
+                    Map<String, dynamic>.from(value),
+                  ))
+              .toList()
+          : [],
       emotes: json['emotes'] is List
           ? (json['emotes'] as List)
               .whereType<Map>()
@@ -992,6 +1002,7 @@ class Comment {
     data['blogId'] = blogId;
     data['content'] = content;
     data['emotes'] = emotes.map((v) => v.toJson()).toList();
+    data['images'] = images.map((v) => v.toJson()).toList();
     data['id'] = id;
     data['ipLocation'] = ipLocation;
     data['l2Comments'] = l2Comments;
@@ -1006,6 +1017,41 @@ class Comment {
     data['top'] = top;
     return data;
   }
+}
+
+/// Uploaded comment pictures/stickers are separate from named emotes.
+class CommentImage {
+  const CommentImage({
+    required this.orign,
+    this.raw = '',
+    this.ow = 0,
+    this.oh = 0,
+    this.type = 0,
+  });
+
+  final String orign;
+  final String raw;
+  final int ow;
+  final int oh;
+  final int type;
+
+  String get url => orign.trim().isNotEmpty ? orign.trim() : raw.trim();
+
+  factory CommentImage.fromJson(Map<String, dynamic> json) => CommentImage(
+        orign: _detailString(json['orign']),
+        raw: _detailString(json['raw']),
+        ow: _detailInt(json['ow']),
+        oh: _detailInt(json['oh']),
+        type: _detailInt(json['type']),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'orign': orign,
+        'raw': raw,
+        'ow': ow,
+        'oh': oh,
+        'type': type,
+      };
 }
 
 class CommentEmote {
@@ -1023,10 +1069,10 @@ class CommentEmote {
 
   factory CommentEmote.fromJson(Map<String, dynamic> json) {
     return CommentEmote(
-      id: json['id'],
-      name: json['name'],
-      sizeType: json['sizeType'],
-      url: json['url'],
+      id: _detailInt(json['id']),
+      name: _detailString(json['name']),
+      sizeType: _detailInt(json['sizeType']),
+      url: _detailString(json['url']),
     );
   }
 

@@ -11,9 +11,55 @@ import 'package:share_plus/share_plus.dart';
 
 import '../Screens/Info/user_detail_screen.dart';
 import '../Screens/Post/post_detail_screen.dart';
+import '../Screens/Post/video_detail_screen.dart';
 import '../l10n/l10n.dart';
 
 class LoftifyUriUtil {
+  /// Pure recognition: never open a page or resolve a short URL while scanning.
+  static String? extractSupportedClipboardUrl(String text) {
+    final candidates = RegExp(r'''(?:https?|lofter)://[^\s<>"'`()\[\]]+''');
+    for (final match in candidates.allMatches(text)) {
+      final url = match[0]!
+          .replaceAll('&amp;', '&')
+          .replaceFirst(RegExp(r'[.,;!，。；！、)\]）】》]+$'), '');
+      final uri = Uri.tryParse(url);
+      if (uri == null ||
+          uri.userInfo.isNotEmpty ||
+          !(uri.host == 'lofter.com' || uri.host.endsWith('.lofter.com'))) {
+        continue;
+      }
+      var recognitionUrl = url;
+      try {
+        if (url.contains('%')) recognitionUrl = Uri.decodeComponent(url);
+      } on FormatException {
+        // Match processUrl: malformed escapes must not break clipboard checks.
+      } on ArgumentError {
+        // Uri.decodeComponent also uses ArgumentError for malformed escapes.
+      }
+      // Match the URL itself, not another URL embedded in its query string.
+      final path = uri.path;
+      if ((path.startsWith('/post/') && isPostUrl(recognitionUrl)) ||
+          (path == '/mentionredirect.do' &&
+              isMentionBlogIdUrl(recognitionUrl)) ||
+          (path == '/videoDetail' && isVideoUrl(recognitionUrl)) ||
+          (path == '/front/blog/collection/share' &&
+              isCollectionUrl(recognitionUrl)) ||
+          (path.startsWith('/collection/') &&
+              isCollectionShareUrl(recognitionUrl)) ||
+          ((path == '/grain/detail' || path == '/front/blog/grain/detail') &&
+              isGrainShareUrl(recognitionUrl)) ||
+          ((path.startsWith('/tag/') || path.startsWith('/front/blog/tag/')) &&
+              isTagUrl(recognitionUrl)) ||
+          (uri.host == 's.lofter.com' && isShortLinkUrl(recognitionUrl)) ||
+          (!['www.lofter.com', 's.lofter.com', 'api.lofter.com']
+                  .contains(uri.host) &&
+              isHomePageUrl(recognitionUrl))) {
+        return url;
+      }
+    }
+    return null;
+  }
+
   static bool isShortLinkUrl(String url) {
     var reg = RegExp(r"(http|https|lofter)://s\.lofter\.com/-s/[0-9a-zA-Z]+");
     return reg.hasMatch(url);
@@ -210,6 +256,8 @@ class LoftifyUriUtil {
           url = Uri.decodeComponent(url);
         } on FormatException {
           // 保留原始文本，让调用方按普通搜索词继续处理。
+        } on ArgumentError {
+          // 不完整的百分号编码也可能抛出 ArgumentError。
         }
       }
       if (LoftifyUriUtil.isShortLinkUrl(url)) {
@@ -225,6 +273,27 @@ class LoftifyUriUtil {
           UserDetailScreen(
             blogId: NumberUtil.parseToInt(blogId),
             blogName: "",
+          ),
+        );
+        return true;
+      } else if (isVideoUrl(url)) {
+        if (!quiet) await CustomLoadingDialog.dismissLoading();
+        if (!context.mounted) return false;
+        RouteUtil.pushPanelCupertinoRoute(
+          context,
+          VideoDetailScreen(meta: extractVideoInfo(url)),
+        );
+        return true;
+      } else if (isCollectionUrl(url)) {
+        if (!quiet) await CustomLoadingDialog.dismissLoading();
+        if (!context.mounted) return false;
+        RouteUtil.pushPanelCupertinoRoute(
+          context,
+          CollectionDetailScreen(
+            blogName: '',
+            postId: 0,
+            blogId: 0,
+            collectionId: extractCollectionId(url),
           ),
         );
         return true;

@@ -153,7 +153,7 @@ class _LofterBasicSettingScreenState
       context: context,
       title: appLocalizations.lofterBasicSetting,
       showTitleBar: widget.showTitleBar,
-      showBack: !ResponsiveUtil.isLandscapeLayout(),
+      showBack: true,
       padding: widget.padding,
       overrideBody: EasyRefresh.builder(
         controller: _refreshController,

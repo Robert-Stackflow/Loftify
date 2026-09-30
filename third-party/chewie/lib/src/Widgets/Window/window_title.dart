@@ -17,6 +17,9 @@ import 'package:awesome_chewie/awesome_chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
+/// Width reserved for the desktop pin, minimize, maximize and close controls.
+const double desktopWindowControlsWidth = 169;
+
 class WindowTitleWrapper extends StatelessWidget {
   final Color? backgroundColor;
   final List<Widget> leftWidgets;
@@ -36,7 +39,7 @@ class WindowTitleWrapper extends StatelessWidget {
     required this.isMaximized,
     required this.onStayOnTopTap,
     this.forceClose = false,
-    this.height = 56,
+    this.height = 48,
   });
 
   @override
@@ -50,6 +53,7 @@ class WindowTitleWrapper extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             ...leftWidgets,
             Row(
@@ -102,9 +106,9 @@ class WindowTitleWrapper extends StatelessWidget {
                     }
                   },
                 ),
+                const SizedBox(width: 8),
               ],
             ),
-            const SizedBox(width: 8),
           ],
         ),
       ),

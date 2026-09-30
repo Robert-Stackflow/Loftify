@@ -13,6 +13,7 @@ import 'context_menu_widget.dart';
 /// This class is used to manage the state of the context menu. It provides methods to
 /// show and hide the context menu, and to update the position of the context menu.
 class ContextMenuState extends ChangeNotifier {
+  final GlobalKey menuKey = GlobalKey();
   final focusScopeNode = FocusScopeNode();
 
   final overlayController = OverlayPortalController(debugLabel: 'ContextMenu');
@@ -135,8 +136,14 @@ class ContextMenuState extends ChangeNotifier {
     closeSubmenu();
 
     final items = parent.items;
-    final submenuParentRect = context.getWidgetBounds();
-    if (submenuParentRect == null) return;
+    final globalParentRect = context.getWidgetBounds();
+    if (globalParentRect == null) return;
+    final overlayBox =
+        Navigator.of(context).overlay?.context.findRenderObject();
+    final submenuParentRect = overlayBox is RenderBox
+        ? overlayBox.globalToLocal(globalParentRect.topLeft) &
+            globalParentRect.size
+        : globalParentRect;
 
     final submenuPosition =
         _calculateSubmenuPosition(submenuParentRect, spawnAlignment);
@@ -167,9 +174,12 @@ class ContextMenuState extends ChangeNotifier {
     focusScopeNode.requestFocus();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final menuBox = menuKey.currentContext?.findRenderObject();
+      if (menuBox is! RenderBox) return;
       final boundaries = calculateContextMenuBoundaries(
         context,
         menu,
+        menuBox.size,
         parentItemRect,
         _spawnAlignment,
         _isSubmenu,

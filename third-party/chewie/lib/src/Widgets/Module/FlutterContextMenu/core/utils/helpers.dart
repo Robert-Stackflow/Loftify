@@ -20,7 +20,16 @@ Future<T?> showContextMenu<T>(
   bool maintainState = false,
   FocusNode? focusNode,
 }) async {
-  final menuState = ContextMenuState(menu: contextMenu);
+  // Pointer positions are global, while this route may be hosted by a nested
+  // navigator (the desktop panel starts to the right of the navigation rail).
+  final overlayBox = Navigator.of(context).overlay?.context.findRenderObject();
+  final menuPosition = contextMenu.position;
+  final localPosition = menuPosition != null && overlayBox is RenderBox
+      ? overlayBox.globalToLocal(menuPosition)
+      : menuPosition;
+  final menuState = ContextMenuState(
+    menu: contextMenu.copyWith(position: localPosition),
+  );
   return await Navigator.push<T>(
     context,
     PageRouteBuilder<T>(

@@ -391,6 +391,8 @@ class _HistoryScreenState extends BaseDynamicState<HistoryScreen>
         ? Column(
             children: [
               ShadowIconButton(
+                boxShadow: const [],
+                backgroundColor: ChewieTheme.canvasColor,
                 icon: const ChewieIcon(LoftifyIcons.moreVertical),
                 onTap: () {
                   BottomSheetBuilder.showContextMenu(

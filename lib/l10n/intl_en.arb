@@ -1,5 +1,9 @@
 {
   "@@locale": "en",
+  "clipboardLinkTitle": "Loftify link found",
+  "clipboardLinkMessage": "Your clipboard contains a supported link. Would you like to open it in Loftify?",
+  "clipboardLinkDismiss": "Not now",
+  "clipboardLinkOpen": "Open link",
   "appName": "Loftify",
   "all": "All",
   "save": "Save",

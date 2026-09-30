@@ -6,6 +6,7 @@ class DialogBuilder {
     BuildContext context, {
     String? title,
     String? message,
+    Widget? messageChild,
     String? imagePath,
     TextAlign messageTextAlign = TextAlign.center,
     String? confirmButtonText,
@@ -24,9 +25,10 @@ class DialogBuilder {
     bool responsive = true,
   }) {
     if (responsive && ResponsiveUtil.isWideDevice()) {
-      CustomConfirmDialog.show(
+      return CustomConfirmDialog.show(
         context,
         message: message ?? "",
+        messageChild: messageChild,
         messageTextAlign: messageTextAlign,
         imagePath: imagePath,
         title: title,
@@ -45,9 +47,10 @@ class DialogBuilder {
         customDialogType: customDialogType ?? CustomDialogType.normal,
       );
     } else {
-      CustomConfirmDialog.showAnimatedFromBottom(
+      return CustomConfirmDialog.showAnimatedFromBottom(
         context,
         message: message ?? "",
+        messageChild: messageChild,
         imagePath: imagePath,
         title: title,
         messageTextAlign: messageTextAlign,

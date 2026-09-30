@@ -359,6 +359,7 @@ class _FavoriteFolderListScreenState
         ? Column(
             children: [
               ShadowIconButton(
+                boxShadow: const [],
                 icon: const ChewieIcon(LoftifyIcons.add),
                 onTap: handleAdd,
               ),

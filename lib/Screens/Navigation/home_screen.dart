@@ -389,6 +389,7 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
         ? Column(
             children: [
               ShadowIconButton(
+                boxShadow: const [],
                 icon: RotationTransition(
                   turns: Tween(begin: 0.0, end: 1.0)
                       .animate(_refreshRotationController),
@@ -400,6 +401,7 @@ class HomeScreenState extends BaseDynamicState<HomeScreen>
               ),
               const SizedBox(height: 10),
               ShadowIconButton(
+                boxShadow: const [],
                 icon: const ChewieIcon(LoftifyIcons.scrollTop),
                 onTap: () {
                   scrollToTop();

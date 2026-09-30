@@ -43,7 +43,7 @@ class _SettingScreenState extends BaseDynamicState<SettingScreen>
       context: context,
       title: appLocalizations.setting,
       showTitleBar: widget.showTitleBar,
-      showBack: !ResponsiveUtil.isLandscapeLayout(),
+      showBack: true,
       padding: widget.padding,
       children: [
         CaptionItem(
@@ -54,8 +54,8 @@ class _SettingScreenState extends BaseDynamicState<SettingScreen>
               title: appLocalizations.generalSetting,
               showLeading: true,
               onTap: () {
-                RouteUtil.pushPanelCupertinoRoute(context,
-                    GeneralSettingScreen(key: generalSettingScreenKey));
+                RouteUtil.pushPanelCupertinoRoute(
+                    context, const GeneralSettingScreen());
               },
               leading: LoftifyIcons.generalSettings,
             ),
@@ -142,7 +142,7 @@ class _SettingScreenState extends BaseDynamicState<SettingScreen>
             RouteUtil.pushPanelCupertinoRoute(
                 context, const TagShieldSettingScreen());
           },
-          leading: LoftifyIcons.tag,
+          leading: LoftifyIcons.hash,
         ),
         EntryItem(
           showLeading: true,
