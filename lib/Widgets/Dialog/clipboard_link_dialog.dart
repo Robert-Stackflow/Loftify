@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../Theme/loftify_design_theme.dart';
+import '../../Utils/clipboard_link_controller.dart';
 import '../../generated/app_localizations.dart';
 
 /// Content only: the shared confirmation dialog owns its surface and route.
@@ -11,17 +12,19 @@ class ClipboardLinkDialog extends StatelessWidget {
 
   final String url;
 
-  static Future<bool> show(BuildContext context, String url) async {
+  static Future<ClipboardLinkDecision?> show(
+      BuildContext context, String url) async {
     final strings = AppLocalizations.of(context)!;
-    var accepted = false;
+    ClipboardLinkDecision? decision;
     await DialogBuilder.showConfirmDialog(
       context,
       messageChild: ClipboardLinkDialog(url: url),
       confirmButtonText: strings.clipboardLinkOpen,
       cancelButtonText: strings.clipboardLinkDismiss,
-      onTapConfirm: () => accepted = true,
+      onTapConfirm: () => decision = ClipboardLinkDecision.open,
+      onTapCancel: () => decision = ClipboardLinkDecision.dismiss,
     );
-    return accepted;
+    return decision;
   }
 
   @override

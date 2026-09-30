@@ -1,6 +1,8 @@
 package com.cloudchewie.loftify;
 
 import android.os.Build
+import android.content.ClipboardManager
+import android.content.Context
 import android.view.Surface
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -21,6 +23,24 @@ class MainActivity : FlutterFragmentActivity() {
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         registerWith(flutterEngine);
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "loftify/clipboard"
+        ).setMethodCallHandler { call, result ->
+            if (call.method != "getMetadata") {
+                result.notImplemented()
+                return@setMethodCallHandler
+            }
+            try {
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val timestamp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    clipboard.primaryClipDescription?.timestamp ?: 0L
+                } else 0L
+                result.success(mapOf("revision" to timestamp.takeIf { it > 0 }?.toString()))
+            } catch (_: SecurityException) {
+                result.error("clipboard_unavailable", "Clipboard access unavailable", null)
+            }
+        }
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             backDesktopChannel

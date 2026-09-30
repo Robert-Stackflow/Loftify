@@ -474,7 +474,7 @@ class MainScreenState extends BaseWindowState<MainScreen>
                 ({SideBarChoice sidebarChoice, bool hideSearch})>(
               selector: (context, appProvider) => (
                 sidebarChoice: appProvider.sidebarChoice,
-                hideSearch: appProvider.hideSearchNavigation,
+                hideSearch: appProvider.shouldHideSearchNavigation,
               ),
               builder: (context, preferences, child) =>
                   Selector<AppProvider, bool>(

@@ -90,13 +90,14 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
   List<GlobalKey> _keyList = [];
   bool unlogin = false;
   int _currentIndex = 0;
+  bool _searchNavigationHidden = false;
   List<SideBarChoice> get _visibleChoices =>
-      visiblePanelChoices(hideSearch: appProvider.hideSearchNavigation);
+      visiblePanelChoices(hideSearch: appProvider.shouldHideSearchNavigation);
 
   int _visibleIndexFor(int logicalIndex) {
     final index = visiblePanelPageIndex(
       SideBarChoice.fromInt(logicalIndex),
-      hideSearch: appProvider.hideSearchNavigation,
+      hideSearch: appProvider.shouldHideSearchNavigation,
     );
     return index < 0 ? 0 : index;
   }
@@ -120,6 +121,7 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
   }
 
   void _configurePages() {
+    _searchNavigationHidden = appProvider.shouldHideSearchNavigation;
     _keyList = [
       homeScreenKey,
       searchScreenKey,
@@ -127,10 +129,7 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
       GlobalKey(),
     ];
     _pageList = _buildVisiblePages();
-    _currentIndex = appProvider.hideSearchNavigation &&
-            appProvider.sidebarChoice == SideBarChoice.Search
-        ? SideBarChoice.Home.index
-        : appProvider.sidebarChoice.index;
+    _currentIndex = appProvider.sidebarChoice.index;
     _replacePageController(_currentIndex);
   }
 
@@ -260,7 +259,8 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
 
   void updateSearchNavigationVisibility() {
     if (_keyList.length != SideBarChoice.values.length) return;
-    if (appProvider.hideSearchNavigation &&
+    _searchNavigationHidden = appProvider.shouldHideSearchNavigation;
+    if (appProvider.shouldHideSearchNavigation &&
         _currentIndex == SideBarChoice.Search.index) {
       _currentIndex = SideBarChoice.Home.index;
     }
@@ -272,7 +272,7 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
   @override
   void jumpToPage(int index) {
     if (index < 0 || index >= SideBarChoice.values.length) return;
-    if (appProvider.hideSearchNavigation &&
+    if (appProvider.shouldHideSearchNavigation &&
         index == SideBarChoice.Search.index) {
       index = SideBarChoice.Home.index;
     }
@@ -306,6 +306,18 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Subscribe locally as well: the layout helper reads the root MediaQuery.
+    // A tablet rotation can change the visible pages without a preference edit.
+    MediaQuery.sizeOf(context);
+    if (_searchNavigationHidden != appProvider.shouldHideSearchNavigation) {
+      _currentIndex = appProvider.sidebarChoice.index;
+      updateSearchNavigationVisibility();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     super.build(context);
     var scaffold = Stack(
@@ -333,6 +345,9 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
                   ],
                 )
               : PageView(
+                  // The same pixel offset refers to a different logical tab
+                  // when search is inserted/removed. Use the new initial page.
+                  key: ValueKey(_searchNavigationHidden),
                   physics: const NeverScrollableScrollPhysics(),
                   controller: _pageController,
                   children: _pageList,
@@ -388,7 +403,7 @@ class PanelScreenState extends BasePanelScreenState<PanelScreen>
         selector: (context, appProvider) => (
           reduceTransparency: appProvider.reduceTransparency,
           displayStyle: appProvider.navigationBarDisplayStyle,
-          hideSearchNavigation: appProvider.hideSearchNavigation,
+          hideSearchNavigation: appProvider.shouldHideSearchNavigation,
         ),
         builder: (context, preferences, child) {
           final visibleChoices = visiblePanelChoices(

@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:loftify/Utils/app_provider.dart';
+import 'package:loftify/Utils/enums.dart';
 import 'package:loftify/Utils/hive_util.dart';
 import 'package:loftify/l10n/l10n.dart';
 
@@ -53,6 +54,47 @@ void main() {
 
     expect(ChewieHiveUtil.getBool(HiveUtil.hideHomeAppBarOnScrollKey), isTrue);
     expect(ChewieHiveUtil.getBool(HiveUtil.hideSearchNavigationKey), isTrue);
+  });
+
+  test('mobile home preferences only take effect in the portrait layout',
+      () async {
+    var landscape = true;
+    final provider = AppProvider(isLandscapeLayout: () => landscape);
+    addTearDown(provider.dispose);
+    provider.hideHomeAppBarOnScroll = true;
+    provider.hideSearchNavigation = true;
+    provider.sidebarChoice = SideBarChoice.Search;
+    expect(provider.sidebarChoice, SideBarChoice.Search);
+    expect(provider.shouldHideHomeAppBarOnScroll, isFalse);
+    expect(provider.shouldHideSearchNavigation, isFalse);
+
+    landscape = false;
+    expect(provider.shouldHideHomeAppBarOnScroll, isTrue);
+    expect(provider.shouldHideSearchNavigation, isTrue);
+    expect(provider.sidebarChoice, SideBarChoice.Home);
+    provider.sidebarChoice = SideBarChoice.Search;
+    expect(provider.sidebarChoice, SideBarChoice.Home);
+
+    landscape = true;
+    expect(provider.shouldHideHomeAppBarOnScroll, isFalse);
+    expect(provider.shouldHideSearchNavigation, isFalse);
+    provider.sidebarChoice = SideBarChoice.Search;
+    expect(provider.sidebarChoice, SideBarChoice.Search);
+    expect(provider.hideHomeAppBarOnScroll, isTrue);
+    expect(provider.hideSearchNavigation, isTrue);
+    await Hive.box(ChewieHiveUtil.settingsBox).flush();
+
+    final restored = AppProvider(isLandscapeLayout: () => true);
+    addTearDown(restored.dispose);
+    expect(restored.sidebarChoice, SideBarChoice.Search);
+    expect(restored.hideHomeAppBarOnScroll, isTrue);
+    expect(restored.hideSearchNavigation, isTrue);
+    expect(restored.shouldHideHomeAppBarOnScroll, isFalse);
+    expect(restored.shouldHideSearchNavigation, isFalse);
+    // Reset the independent provider's persisted preferences for later tests.
+    provider.hideHomeAppBarOnScroll = false;
+    provider.hideSearchNavigation = false;
+    provider.sidebarChoice = SideBarChoice.Home;
   });
 
   test('custom font selection can be restored from persisted metadata',

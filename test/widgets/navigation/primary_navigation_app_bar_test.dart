@@ -50,7 +50,7 @@ void main() {
     expect(sources['home'], isNot(contains('_refreshFeedDirectly')));
     expect(sources['home'], contains('floating: true'));
     expect(sources['home'], contains('snap: true'));
-    expect(sources['home'], contains('hideSearchNavigation'));
+    expect(sources['home'], contains('shouldHideSearchNavigation'));
     expect(sources['home'], contains('SearchScreen(showBack: true)'));
     expect(
       sources['home'],

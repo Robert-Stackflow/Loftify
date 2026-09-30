@@ -18,11 +18,14 @@ import 'package:provider/provider.dart';
 class _UnusedCookieManager extends Fake implements CookieManager {}
 
 void main() {
+  var landscapeLayout = false;
   setUpAll(() async {
     final directory = Directory('build/test_hive/home_navigation_refresh');
     await directory.create(recursive: true);
     Hive.init(directory.absolute.path);
     await Hive.openBox(ChewieHiveUtil.settingsBox);
+    // Exercise both layout policies independently of the test host platform.
+    appProvider = AppProvider(isLandscapeLayout: () => landscapeLayout);
     RequestUtil.cookieManager = _UnusedCookieManager();
     EasyRefresh.defaultHeaderBuilder = () => LottieCupertinoHeader(
           backgroundColor: Colors.transparent,
@@ -34,16 +37,22 @@ void main() {
         );
   });
 
-  for (final hideAppBar in [false, true]) {
+  for (final config in [
+    (landscape: false, preference: false),
+    (landscape: false, preference: true),
+    (landscape: true, preference: true),
+  ]) {
+    final hideAppBar = !config.landscape && config.preference;
     for (final startDistance in [250.0, 600.0]) {
       testWidgets(
-          'home navigation from $startDistance px (hide app bar: $hideAppBar)',
+          'home navigation from $startDistance px ($config)',
           (tester) async {
+        landscapeLayout = config.landscape;
         tester.view.physicalSize = const Size(390, 844);
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
-        appProvider.hideHomeAppBarOnScroll = hideAppBar;
+        appProvider.hideHomeAppBarOnScroll = config.preference;
         addTearDown(() => appProvider.hideHomeAppBarOnScroll = false);
 
         var requests = 0;
@@ -119,6 +128,8 @@ void main() {
         }
         expect(requests, 1);
         expect(haptics, isEmpty);
+        expect(find.byKey(const ValueKey('home-floating-app-bar')),
+            hideAppBar ? findsOneWidget : findsNothing);
 
         final state = tester.state<HomeScreenState>(find.byType(HomeScreen));
         if (hideAppBar) {

@@ -1,26 +1,32 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 import 'package:awesome_chewie/awesome_chewie.dart';
-import 'package:loftify/Theme/loftify_design_theme.dart';
 import 'package:loftify/Utils/clipboard_link_controller.dart';
+import 'package:loftify/Utils/clipboard_snapshot.dart';
 import 'package:loftify/Utils/uri_util.dart';
-import 'package:loftify/Widgets/Dialog/clipboard_link_dialog.dart';
-import 'package:loftify/generated/app_localizations.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
-    final directory = Directory('build/test_hive/clipboard_links');
-    await directory.create(recursive: true);
+    final directory =
+        await Directory.systemTemp.createTemp('loftify_clipboard_test_');
     Hive.init(directory.path);
     await Hive.openBox(ChewieHiveUtil.settingsBox);
   });
+  setUp(() async => Hive.box(ChewieHiveUtil.settingsBox).clear());
+  tearDownAll(Hive.close);
   const url = 'https://ruiiiiii.lofter.com/post/1dd2a51a_34f468525';
+  ClipboardSnapshot snapshot(String text, {String? revision = '100'}) =>
+      ClipboardSnapshot(
+        text: text,
+        platform: 'android',
+        revision: revision,
+        observedAtMs: 1000,
+      );
   test('extract only supported Loftify URLs from copied share text', () {
     for (final input in [url, '分享给你：$url。', '[$url]($url)', '查看 <$url>']) {
       expect(LoftifyUriUtil.extractSupportedClipboardUrl(input), url);
@@ -60,10 +66,12 @@ void main() {
     var text = url;
     final controller = ClipboardLinkController(
       canPrompt: () => true,
-      readText: () async => text,
+      readSnapshot: () async => snapshot(text),
       confirm: (_) async {
         prompts++;
-        return accepted;
+        return accepted
+            ? ClipboardLinkDecision.open
+            : ClipboardLinkDecision.dismiss;
       },
       open: (_) async {
         opens++;
@@ -84,18 +92,18 @@ void main() {
 
   test('overlapping resume events and disposal cannot open duplicate dialogs',
       () async {
-    final read = Completer<String?>();
+    final read = Completer<ClipboardSnapshot?>();
     var prompts = 0;
     var reads = 0;
     final controller = ClipboardLinkController(
       canPrompt: () => true,
-      readText: () {
+      readSnapshot: () {
         reads++;
         return read.future;
       },
       confirm: (_) async {
         prompts++;
-        return true;
+        return ClipboardLinkDecision.open;
       },
       open: (_) async => fail('disposed controller must not navigate'),
     );
@@ -103,7 +111,7 @@ void main() {
     await controller.check();
     expect(reads, 1);
     controller.dispose();
-    read.complete(url);
+    read.complete(snapshot(url));
     await pending;
     expect(prompts, 0);
   });
@@ -113,7 +121,7 @@ void main() {
     var reads = 0;
     final controller = ClipboardLinkController(
       canPrompt: () => allowed,
-      readText: () async {
+      readSnapshot: () async {
         reads++;
         throw PlatformException(code: 'denied');
       },
@@ -128,47 +136,104 @@ void main() {
     controller.dispose();
   });
 
-  testWidgets('clipboard dialog stays bounded and cancel returns false',
-      (tester) async {
-    await tester.binding.setSurfaceSize(const Size(320, 600));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    bool? result;
-    await tester.pumpWidget(MaterialApp(
-      theme: LoftifyTheme.build(ChewieThemeColorData.defaultLightThemes.first),
-      localizationsDelegates: const [
-        ChewieLocalizations.delegate,
-        ...AppLocalizations.localizationsDelegates
-      ],
-      supportedLocales: AppLocalizations.supportedLocales,
-      locale: const Locale('en'),
-      home: Builder(builder: (context) {
-        chewieProvider.setRootContext(context);
-        return Scaffold(
-            body: TextButton(
-          onPressed: () async {
-            result = await ClipboardLinkDialog.show(context, url);
+  for (final decision in ClipboardLinkDecision.values) {
+    test('$decision persists across restart; recopying the URL prompts again',
+        () async {
+      var prompts = 0;
+      var opens = 0;
+      var revision = '100';
+      ClipboardLinkController create() => ClipboardLinkController(
+            canPrompt: () => true,
+            readSnapshot: () async => snapshot(url, revision: revision),
+            confirm: (_) async {
+              prompts++;
+              return decision;
+            },
+            open: (_) async {
+              // The explicit choice must already be on disk before navigation.
+              expect(ClipboardLinkStore().read(), isNotNull);
+              opens++;
+            },
+          );
+      final first = create();
+      await first.check();
+      first.dispose();
+      await Hive.box(ChewieHiveUtil.settingsBox).close();
+      await Hive.openBox(ChewieHiveUtil.settingsBox);
+      final restarted = create();
+      await restarted.check();
+      expect(prompts, 1);
+      expect(opens, decision == ClipboardLinkDecision.open ? 1 : 0);
+      expect(ClipboardLinkStore().read().toString(), isNot(contains(url)));
+      revision = '200';
+      await restarted.check();
+      expect(prompts, 2);
+      restarted.dispose();
+    });
+  }
+
+  test('no decision is not persisted or suppressed on next foreground check',
+      () async {
+    var prompts = 0;
+    ClipboardLinkController create() => ClipboardLinkController(
+          canPrompt: () => true,
+          readSnapshot: () async => snapshot(url),
+          confirm: (_) async {
+            prompts++;
+            return null;
           },
-          child: const Text('Show'),
-        ));
-      }),
-    ));
-    await tester.tap(find.text('Show'));
-    await tester.pumpAndSettle();
-    expect(find.text('Loftify link found'), findsOneWidget);
-    expect(find.byType(CustomConfirmDialogWidget), findsOneWidget);
-    expect(find.byIcon(LucideIcons.link), findsOneWidget);
-    expect(find.byType(BackdropFilter), findsWidgets);
-    final route =
-        ModalRoute.of(tester.element(find.byType(ClipboardLinkDialog)))!;
-    expect(route.barrierColor, ChewieTheme.barrierColor);
-    expect(tester.takeException(), isNull);
-    await tester.tap(find.text('Not now'));
-    await tester.pumpAndSettle();
-    expect(result, isFalse);
-    await tester.tap(find.text('Show'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Open link'));
-    await tester.pumpAndSettle();
-    expect(result, isTrue);
+          open: (_) async => fail('must not open'),
+        );
+    final first = create();
+    await first.check();
+    await first.check();
+    expect(prompts, 2);
+    expect(ClipboardLinkStore().read(), isNull);
+    first.dispose();
+    final restarted = create();
+    await restarted.check();
+    expect(prompts, 3);
+    restarted.dispose();
+  });
+
+  test('copy during a dialog does not mark the new clipboard as handled',
+      () async {
+    var revision = '100';
+    var prompts = 0;
+    final controller = ClipboardLinkController(
+      canPrompt: () => true,
+      readSnapshot: () async => snapshot(url, revision: revision),
+      confirm: (_) async {
+        prompts++;
+        revision = '200';
+        return ClipboardLinkDecision.dismiss;
+      },
+      open: (_) async => fail('must not open'),
+    );
+    await controller.check();
+    await controller.check();
+    await controller.check();
+    expect(prompts, 2);
+    controller.dispose();
+  });
+
+  test('missing metadata falls back to persisted URL fingerprint', () async {
+    var prompts = 0;
+    ClipboardLinkController create() => ClipboardLinkController(
+          canPrompt: () => true,
+          readSnapshot: () async => snapshot(url, revision: null),
+          confirm: (_) async {
+            prompts++;
+            return ClipboardLinkDecision.dismiss;
+          },
+          open: (_) async => fail('must not open'),
+        );
+    final first = create();
+    await first.check();
+    first.dispose();
+    final second = create();
+    await second.check();
+    expect(prompts, 1);
+    second.dispose();
   });
 }

@@ -114,11 +114,69 @@ void main() {
       ));
       final controller =
           tester.widget<PageView>(find.byType(PageView)).controller!;
-      final expectedIndex = hideSearch ? 1 : 2;
+      // Desktop always keeps the search page, regardless of the mobile setting.
+      const expectedIndex = 2;
       expect(controller.initialPage, expectedIndex);
       await tester.pump();
       expect(controller.page, expectedIndex.toDouble());
       await tester.pumpWidget(const SizedBox());
     });
   }
+
+  testWidgets('layout changes restore search without changing the selected tab',
+      (tester) async {
+    var landscape = false;
+    final originalProvider = appProvider;
+    appProvider = AppProvider(isLandscapeLayout: () => landscape);
+    appProvider.hideSearchNavigation = true;
+    appProvider.sidebarChoice = SideBarChoice.Dynamic;
+    addTearDown(() {
+      appProvider.hideSearchNavigation = false;
+      appProvider.sidebarChoice = SideBarChoice.Home;
+      appProvider.dispose();
+      appProvider = originalProvider;
+    });
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(ChangeNotifierProvider.value(
+      value: appProvider,
+      child: MaterialApp(
+        theme: ChewieThemeColorData.defaultLightThemes.first.toThemeData(),
+        localizationsDelegates: const [
+          ChewieLocalizations.delegate,
+          ...AppLocalizations.localizationsDelegates,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Builder(builder: (context) {
+          chewieProvider.setRootContext(context);
+          return const PanelScreen();
+        }),
+      ),
+    ));
+    await tester.pump();
+    PageController controller() =>
+        tester.widget<PageView>(find.byType(PageView)).controller!;
+    expect(controller().page, 1);
+
+    landscape = true;
+    tester.view.physicalSize = const Size(1200, 800);
+    await tester.pump();
+    await tester.pump();
+    expect(controller().page, 2);
+    expect(appProvider.sidebarChoice, SideBarChoice.Dynamic);
+    expect(appProvider.hideSearchNavigation, isTrue);
+    expect(appProvider.shouldHideSearchNavigation, isFalse);
+
+    landscape = false;
+    tester.view.physicalSize = const Size(390, 844);
+    await tester.pump();
+    await tester.pump();
+    expect(controller().page, 1);
+    expect(appProvider.sidebarChoice, SideBarChoice.Dynamic);
+    expect(appProvider.shouldHideSearchNavigation, isTrue);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 }
